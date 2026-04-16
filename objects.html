@@ -442,7 +442,6 @@
             let workStages = [];
             let axes = [];
             
-            // DOM элементы
             const listView = document.getElementById('list-view');
             const detailView = document.getElementById('detail-view');
             const objectsContainer = document.getElementById('objects-container');
@@ -506,7 +505,7 @@
                     const select = document.getElementById('gpr-stage');
                     select.innerHTML = '<option value="">Выберите вид работ</option>';
                     data.forEach(stage => {
-                        select.innerHTML += `<option value="${stage.id}">${stage.name}</option>`;
+                        select.innerHTML += `<option value="${stage.id}">${escapeHtml(stage.name)}</option>`;
                     });
                 } catch (error) {
                     console.error('Ошибка загрузки этапов:', error);
@@ -582,13 +581,11 @@
                     const { data: project } = await supabase.from('projects').select('*').eq('id', projectId).single();
                     const { data: blocks } = await supabase.from('blocks').select('id, name').eq('project_id', projectId);
                     
-                    // Загружаем оси
                     if (blocks && blocks.length > 0) {
                         const blockIds = blocks.map(b => b.id);
                         const { data: axesData } = await supabase.from('axes').select('*').in('block_id', blockIds);
                         axes = axesData || [];
                         
-                        // Заполняем выпадающий список осей
                         const axisSelect = document.getElementById('gpr-axis');
                         axisSelect.innerHTML = '<option value="">Выберите ось</option>';
                         axes.forEach(axis => {
@@ -612,7 +609,6 @@
                     listView.classList.add('hidden');
                     detailView.classList.remove('hidden');
                     
-                    // Сброс вкладки на Инфо
                     document.querySelector('[data-tab="info"]').click();
                     
                 } catch (error) {
@@ -625,21 +621,65 @@
                 if (!currentProjectId) return;
                 
                 try {
-                    const { data: gprData, error } = await supabase
+                    const { data: blocks, error: blocksError } = await supabase
+                        .from('blocks')
+                        .select('id')
+                        .eq('project_id', currentProjectId);
+                    
+                    if (blocksError) throw blocksError;
+                    
+                    if (!blocks || blocks.length === 0) {
+                        document.getElementById('gpr-list').innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">Нет блоков. Сначала создайте оси объекта.</p>';
+                        document.getElementById('gpr-total').classList.add('hidden');
+                        return;
+                    }
+                    
+                    const blockIds = blocks.map(b => b.id);
+                    
+                    const { data: axes, error: axesError } = await supabase
+                        .from('axes')
+                        .select('id, name')
+                        .in('block_id', blockIds);
+                    
+                    if (axesError) throw axesError;
+                    
+                    if (!axes || axes.length === 0) {
+                        document.getElementById('gpr-list').innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">Нет осей для отображения</p>';
+                        document.getElementById('gpr-total').classList.add('hidden');
+                        return;
+                    }
+                    
+                    const axisIds = axes.map(a => a.id);
+                    const axisMap = {};
+                    axes.forEach(a => { axisMap[a.id] = a; });
+                    
+                    const { data: gprData, error: gprError } = await supabase
                         .from('schedule_plan')
-                        .select(`
-                            *,
-                            axes!inner(name),
-                            work_stages(name)
-                        `)
-                        .eq('axes.block_id.project_id', currentProjectId)
+                        .select('*')
+                        .in('axis_id', axisIds)
                         .order('created_at', { ascending: false });
                     
-                    if (error) throw error;
+                    if (gprError) throw gprError;
                     
-                    renderGPRList(gprData || []);
+                    const { data: stages, error: stagesError } = await supabase
+                        .from('work_stages')
+                        .select('*');
+                    
+                    if (stagesError) throw stagesError;
+                    
+                    const stageMap = {};
+                    if (stages) stages.forEach(s => { stageMap[s.id] = s; });
+                    
+                    const enrichedData = (gprData || []).map(item => ({
+                        ...item,
+                        axes: axisMap[item.axis_id],
+                        work_stages: stageMap[item.stage_id]
+                    }));
+                    
+                    renderGPRList(enrichedData);
                 } catch (error) {
                     console.error('Ошибка загрузки ГПР:', error);
+                    document.getElementById('gpr-list').innerHTML = '<p style="color: #dc2626; text-align: center; padding: 20px;">Ошибка загрузки данных: ' + error.message + '</p>';
                 }
             }
             
@@ -732,7 +772,6 @@
                     
                     if (error) throw error;
                     
-                    // Очистка формы
                     document.getElementById('gpr-brigade').value = '';
                     document.getElementById('gpr-volume').value = '';
                     document.getElementById('gpr-price').value = '';
