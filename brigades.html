@@ -354,7 +354,6 @@
             let allBrigades = [];
             
             const roleBadge = document.getElementById('role-badge');
-            const tabCreateBtn = document.getElementById('tab-create-btn');
             
             // Вкладки
             document.querySelectorAll('.tab').forEach(tab => {
@@ -397,9 +396,8 @@
                     currentRole = data.role;
                     roleBadge.textContent = currentRole === 'manager' ? 'Руководитель' : 'ИТР';
                     
-                    if (currentRole !== 'manager') {
-                        tabCreateBtn.classList.add('hidden');
-                    }
+                    // Вкладка "Создать" доступна всем (ИТР и руководителям)
+                    // Ничего не скрываем
                     
                     return data;
                 } catch (error) {
@@ -491,12 +489,10 @@
                             
                             <div class="brigade-footer">
                                 <span>🏗️ Активных: ${activeProjects} | ✅ Завершено: ${completedProjects}</span>
-                                ${currentRole === 'manager' ? `
-                                    <div class="brigade-actions">
-                                        <button class="btn-secondary" onclick="editBrigade('${brigade.id}')">✏️</button>
-                                        <button class="btn-secondary" onclick="viewProjects('${brigade.id}')">📋</button>
-                                    </div>
-                                ` : ''}
+                                <div class="brigade-actions">
+                                    <button class="btn-secondary" onclick="editBrigade('${brigade.id}')">✏️</button>
+                                    <button class="btn-secondary" onclick="viewProjects('${brigade.id}')">📋</button>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -617,10 +613,8 @@
                     
                     if (error) throw error;
                     
-                    // Обновляем локальные данные
                     await loadBrigades();
                     
-                    // Обновляем модальное окно
                     const brigadeId = allBrigades.find(b => 
                         b.projects.some(p => p.id === projectBrigadeId)
                     )?.id;
