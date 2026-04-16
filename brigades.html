@@ -99,15 +99,6 @@
             font-size: 13px;
             cursor: pointer;
         }
-        .btn-danger {
-            background: #fee2e2;
-            color: #dc2626;
-            border: 1px solid #fca5a5;
-            padding: 8px 14px;
-            border-radius: 8px;
-            font-size: 13px;
-            cursor: pointer;
-        }
         
         .brigades-list {
             display: flex;
@@ -230,10 +221,6 @@
             cursor: pointer;
             color: #6b7280;
         }
-        .projects-list {
-            margin-top: 10px;
-            font-size: 13px;
-        }
         .project-status-item {
             display: flex;
             justify-content: space-between;
@@ -326,7 +313,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <span class="modal-title">Объекты бригады</span>
-                <button class="close-btn" onclick="closeProjectsModal()">&times;</button>
+                <button class="close-btn" id="close-modal-btn">&times;</button>
             </div>
             <div id="modal-projects-list"></div>
         </div>
@@ -383,6 +370,11 @@
                 });
             });
             
+            // Закрытие модального окна
+            document.getElementById('close-modal-btn').addEventListener('click', () => {
+                document.getElementById('projects-modal').classList.add('hidden');
+            });
+            
             // Загрузка пользователя
             async function loadUserData() {
                 try {
@@ -395,10 +387,6 @@
                     currentUser = data;
                     currentRole = data.role;
                     roleBadge.textContent = currentRole === 'manager' ? 'Руководитель' : 'ИТР';
-                    
-                    // Вкладка "Создать" доступна всем (ИТР и руководителям)
-                    // Ничего не скрываем
-                    
                     return data;
                 } catch (error) {
                     console.error('Ошибка загрузки пользователя:', error);
@@ -478,7 +466,7 @@
                     const completedProjects = brigade.projects.filter(p => p.status === 'completed').length;
                     
                     html += `
-                        <div class="brigade-card">
+                        <div class="brigade-card" data-brigade-id="${brigade.id}">
                             <div class="brigade-header">
                                 <span class="brigade-name">${escapeHtml(brigade.name)}</span>
                                 <span class="brigade-status ${statusClass}">${statusText}</span>
@@ -490,8 +478,8 @@
                             <div class="brigade-footer">
                                 <span>🏗️ Активных: ${activeProjects} | ✅ Завершено: ${completedProjects}</span>
                                 <div class="brigade-actions">
-                                    <button class="btn-secondary" onclick="editBrigade('${brigade.id}')">✏️</button>
-                                    <button class="btn-secondary" onclick="viewProjects('${brigade.id}')">📋</button>
+                                    <button class="btn-secondary edit-brigade-btn" data-id="${brigade.id}">✏️</button>
+                                    <button class="btn-secondary view-projects-btn" data-id="${brigade.id}">📋</button>
                                 </div>
                             </div>
                         </div>
@@ -500,6 +488,98 @@
                 
                 html += '</div>';
                 container.innerHTML = html;
+                
+                // Обработчики кнопок
+                container.querySelectorAll('.edit-brigade-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        editBrigadeHandler(btn.dataset.id);
+                    });
+                });
+                
+                container.querySelectorAll('.view-projects-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        viewProjectsHandler(btn.dataset.id);
+                    });
+                });
+            }
+            
+            function editBrigadeHandler(id) {
+                const brigade = allBrigades.find(b => b.id === id);
+                if (!brigade) {
+                    console.error('Бригада не найдена:', id);
+                    return;
+                }
+                
+                document.getElementById('form-title').textContent = 'Редактирование бригады';
+                document.getElementById('edit-id').value = brigade.id;
+                document.getElementById('brigade-name').value = brigade.name || '';
+                document.getElementById('brigade-foreman').value = brigade.foreman_name || '';
+                document.getElementById('brigade-phone').value = brigade.phone || '';
+                document.getElementById('brigade-contract').value = brigade.contract_number || '';
+                document.getElementById('brigade-status').value = brigade.status || 'active';
+                
+                document.querySelector('[data-tab="create"]').click();
+            }
+            
+            function viewProjectsHandler(id) {
+                const brigade = allBrigades.find(b => b.id === id);
+                if (!brigade) return;
+                
+                const modal = document.getElementById('projects-modal');
+                const listContainer = document.getElementById('modal-projects-list');
+                
+                if (brigade.projects.length === 0) {
+                    listContainer.innerHTML = '<p style="color: #6b7280; padding: 20px; text-align: center;">Нет привязанных объектов</p>';
+                } else {
+                    let html = '<div style="max-height: 400px; overflow-y: auto;">';
+                    brigade.projects.forEach(p => {
+                        html += `
+                            <div class="project-status-item">
+                                <span>${escapeHtml(p.projects?.name || '—')}</span>
+                                <select class="status-select" data-project-id="${p.id}">
+                                    <option value="active" ${p.status === 'active' ? 'selected' : ''}>Активен</option>
+                                    <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>Завершён</option>
+                                    <option value="terminated" ${p.status === 'terminated' ? 'selected' : ''}>Расторгнут</option>
+                                </select>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    listContainer.innerHTML = html;
+                    
+                    listContainer.querySelectorAll('.status-select').forEach(select => {
+                        select.addEventListener('change', async (e) => {
+                            const projectId = select.dataset.projectId;
+                            const newStatus = select.value;
+                            await updateProjectStatusHandler(projectId, newStatus);
+                        });
+                    });
+                }
+                
+                modal.classList.remove('hidden');
+            }
+            
+            async function updateProjectStatusHandler(projectBrigadeId, newStatus) {
+                try {
+                    const { error } = await supabase
+                        .from('brigade_projects')
+                        .update({ status: newStatus, updated_at: new Date() })
+                        .eq('id', projectBrigadeId);
+                    
+                    if (error) throw error;
+                    
+                    await loadBrigades();
+                    
+                    const brigadeId = allBrigades.find(b => 
+                        b.projects.some(p => p.id === projectBrigadeId)
+                    )?.id;
+                    if (brigadeId) {
+                        viewProjectsHandler(brigadeId);
+                    }
+                } catch (error) {
+                    console.error('Ошибка обновления статуса:', error);
+                    alert('Ошибка при обновлении статуса');
+                }
             }
             
             function resetForm() {
@@ -511,22 +591,6 @@
                 document.getElementById('brigade-contract').value = '';
                 document.getElementById('brigade-status').value = 'active';
             }
-            
-            // Редактирование бригады
-            window.editBrigade = function(id) {
-                const brigade = allBrigades.find(b => b.id === id);
-                if (!brigade) return;
-                
-                document.getElementById('form-title').textContent = 'Редактирование бригады';
-                document.getElementById('edit-id').value = brigade.id;
-                document.getElementById('brigade-name').value = brigade.name || '';
-                document.getElementById('brigade-foreman').value = brigade.foreman_name || '';
-                document.getElementById('brigade-phone').value = brigade.phone || '';
-                document.getElementById('brigade-contract').value = brigade.contract_number || '';
-                document.getElementById('brigade-status').value = brigade.status || 'active';
-                
-                document.querySelector('[data-tab="create"]').click();
-            };
             
             // Сохранение бригады
             document.getElementById('save-brigade-btn').addEventListener('click', async () => {
@@ -572,64 +636,6 @@
                 resetForm();
                 document.querySelector('[data-tab="list"]').click();
             });
-            
-            // Просмотр проектов бригады
-            window.viewProjects = function(brigadeId) {
-                const brigade = allBrigades.find(b => b.id === brigadeId);
-                if (!brigade) return;
-                
-                const modal = document.getElementById('projects-modal');
-                const listContainer = document.getElementById('modal-projects-list');
-                
-                if (brigade.projects.length === 0) {
-                    listContainer.innerHTML = '<p style="color: #6b7280;">Нет привязанных объектов</p>';
-                } else {
-                    let html = '<div style="max-height: 400px; overflow-y: auto;">';
-                    brigade.projects.forEach(p => {
-                        html += `
-                            <div class="project-status-item">
-                                <span>${escapeHtml(p.projects?.name || '—')}</span>
-                                <select class="status-select" onchange="updateProjectStatus('${p.id}', this.value)">
-                                    <option value="active" ${p.status === 'active' ? 'selected' : ''}>Активен</option>
-                                    <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>Завершён</option>
-                                    <option value="terminated" ${p.status === 'terminated' ? 'selected' : ''}>Расторгнут</option>
-                                </select>
-                            </div>
-                        `;
-                    });
-                    html += '</div>';
-                    listContainer.innerHTML = html;
-                }
-                
-                modal.classList.remove('hidden');
-            };
-            
-            window.updateProjectStatus = async function(projectBrigadeId, newStatus) {
-                try {
-                    const { error } = await supabase
-                        .from('brigade_projects')
-                        .update({ status: newStatus, updated_at: new Date() })
-                        .eq('id', projectBrigadeId);
-                    
-                    if (error) throw error;
-                    
-                    await loadBrigades();
-                    
-                    const brigadeId = allBrigades.find(b => 
-                        b.projects.some(p => p.id === projectBrigadeId)
-                    )?.id;
-                    if (brigadeId) {
-                        viewProjects(brigadeId);
-                    }
-                } catch (error) {
-                    console.error('Ошибка обновления статуса:', error);
-                    alert('Ошибка при обновлении статуса');
-                }
-            };
-            
-            window.closeProjectsModal = function() {
-                document.getElementById('projects-modal').classList.add('hidden');
-            };
             
             async function init() {
                 const user = await loadUserData();
