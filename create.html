@@ -216,6 +216,11 @@
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 userId = tg.initDataUnsafe.user.id;
             }
+            // ВРЕМЕННО ДЛЯ ТЕСТА В WEB
+            if (!userId) {
+                userId = 531738802;
+                console.log('Используем тестовый ID:', userId);
+            }
             console.log('User ID:', userId);
             
             // DOM элементы
@@ -412,7 +417,7 @@
                 }
             });
             
-            console.log('Страница загружена v2');
+            console.log('Страница загружена v3 - тестовый ID');
         })();
     </script>
 </body>
