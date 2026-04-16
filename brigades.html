@@ -56,7 +56,6 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        /* Форма */
         .form-card {
             background: white;
             border-radius: 16px;
@@ -100,8 +99,16 @@
             font-size: 13px;
             cursor: pointer;
         }
+        .btn-danger {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fca5a5;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
         
-        /* Список бригад */
         .brigades-list {
             display: flex;
             flex-direction: column;
@@ -148,6 +155,10 @@
             padding-top: 12px;
             border-top: 1px solid #f3f4f6;
         }
+        .brigade-actions {
+            display: flex;
+            gap: 8px;
+        }
         .filter-bar {
             display: flex;
             gap: 8px;
@@ -180,12 +191,44 @@
             color: #6b7280;
         }
         .hidden { display: none !important; }
-        .badge {
-            background: #e5e7eb;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            margin-left: 8px;
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e3a8a;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6b7280;
         }
         .projects-list {
             margin-top: 10px;
@@ -195,11 +238,17 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 6px 0;
+            padding: 8px 0;
             border-bottom: 1px dashed #e5e7eb;
         }
         .project-status-item:last-child {
             border-bottom: none;
+        }
+        .status-select {
+            padding: 4px 8px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -212,7 +261,7 @@
         
         <div class="tabs">
             <button class="tab active" data-tab="list">📋 Список</button>
-            <button class="tab" data-tab="create">➕ Создать</button>
+            <button class="tab" data-tab="create" id="tab-create-btn">➕ Создать</button>
         </div>
         
         <!-- Вкладка списка -->
@@ -231,39 +280,55 @@
         <!-- Вкладка создания -->
         <div id="tab-create" class="tab-content">
             <div class="form-card">
-                <h3 style="margin-bottom: 20px; color: #1e3a8a;">Новая бригада</h3>
+                <h3 style="margin-bottom: 20px; color: #1e3a8a;" id="form-title">Новая бригада</h3>
+                
+                <input type="hidden" id="edit-id">
                 
                 <div class="form-group">
                     <label>Название бригады *</label>
-                    <input type="text" id="new-name" placeholder="Например: Бригада Иванова" required>
+                    <input type="text" id="brigade-name" placeholder="Например: Бригада Иванова" required>
                 </div>
                 
                 <div class="form-group">
                     <label>ФИО Бригадира *</label>
-                    <input type="text" id="new-foreman" placeholder="Иванов Иван Иванович" required>
+                    <input type="text" id="brigade-foreman" placeholder="Иванов Иван Иванович" required>
                 </div>
                 
                 <div class="form-group">
                     <label>Номер телефона *</label>
-                    <input type="tel" id="new-phone" placeholder="+77001234567" required>
+                    <input type="tel" id="brigade-phone" placeholder="+77001234567" required>
                 </div>
                 
                 <div class="form-group">
                     <label>Номер договора</label>
-                    <input type="text" id="new-contract" placeholder="ДОГ-2024-001">
+                    <input type="text" id="brigade-contract" placeholder="ДОГ-2024-001">
                 </div>
                 
                 <div class="form-group">
                     <label>Статус</label>
-                    <select id="new-status">
+                    <select id="brigade-status">
                         <option value="active">Активна</option>
                         <option value="inactive">Неактивна</option>
                         <option value="terminated">Расторгнута</option>
                     </select>
                 </div>
                 
-                <button class="btn-primary" id="create-brigade-btn">Создать бригаду</button>
+                <div class="brigade-actions" style="gap: 10px;">
+                    <button class="btn-primary" id="save-brigade-btn">Сохранить</button>
+                    <button class="btn-secondary" id="cancel-edit-btn">Отмена</button>
+                </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- Модальное окно для проектов бригады -->
+    <div id="projects-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">Объекты бригады</span>
+                <button class="close-btn" onclick="closeProjectsModal()">&times;</button>
+            </div>
+            <div id="modal-projects-list"></div>
         </div>
     </div>
 
@@ -289,6 +354,7 @@
             let allBrigades = [];
             
             const roleBadge = document.getElementById('role-badge');
+            const tabCreateBtn = document.getElementById('tab-create-btn');
             
             // Вкладки
             document.querySelectorAll('.tab').forEach(tab => {
@@ -301,6 +367,9 @@
                     
                     if (tabName === 'list') {
                         loadBrigades();
+                    }
+                    if (tabName === 'create') {
+                        resetForm();
                     }
                 });
             });
@@ -328,9 +397,8 @@
                     currentRole = data.role;
                     roleBadge.textContent = currentRole === 'manager' ? 'Руководитель' : 'ИТР';
                     
-                    // Скрываем кнопку создания для ИТР
                     if (currentRole !== 'manager') {
-                        document.querySelector('[data-tab="create"]').classList.add('hidden');
+                        tabCreateBtn.classList.add('hidden');
                     }
                     
                     return data;
@@ -342,12 +410,7 @@
             
             function escapeHtml(text) {
                 if (!text) return '';
-                return String(text).replace(/[&<>]/g, function(c) {
-                    if (c === '&') return '&amp;';
-                    if (c === '<') return '&lt;';
-                    if (c === '>') return '&gt;';
-                    return c;
-                });
+                return String(text);
             }
             
             // Загрузка бригад
@@ -356,7 +419,6 @@
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
                 
                 try {
-                    // Загружаем бригады
                     const { data: brigades, error } = await supabase
                         .from('brigades')
                         .select('*')
@@ -364,7 +426,6 @@
                     
                     if (error) throw error;
                     
-                    // Загружаем связи с объектами
                     const { data: brigadeProjects, error: bpError } = await supabase
                         .from('brigade_projects')
                         .select('*, projects(name)')
@@ -372,7 +433,6 @@
                     
                     if (bpError) throw bpError;
                     
-                    // Группируем проекты по бригадам
                     const projectsByBrigade = {};
                     (brigadeProjects || []).forEach(bp => {
                         if (!projectsByBrigade[bp.brigade_id]) {
@@ -416,7 +476,6 @@
                         'terminated': 'Расторгнута'
                     }[brigade.status] || brigade.status;
                     
-                    // Считаем активные объекты
                     const activeProjects = brigade.projects.filter(p => p.status === 'active').length;
                     const completedProjects = brigade.projects.filter(p => p.status === 'completed').length;
                     
@@ -430,24 +489,13 @@
                             <div class="brigade-info">📞 ${escapeHtml(brigade.phone || '—')}</div>
                             <div class="brigade-info">📄 Договор: ${escapeHtml(brigade.contract_number || '—')}</div>
                             
-                            ${brigade.projects.length > 0 ? `
-                                <div class="projects-list">
-                                    <strong style="font-size: 13px;">Объекты:</strong>
-                                    ${brigade.projects.map(p => `
-                                        <div class="project-status-item">
-                                            <span>${escapeHtml(p.projects?.name || '—')}</span>
-                                            <span class="brigade-status status-${p.status}">${
-                                                {'active':'Активен','completed':'Завершён','terminated':'Расторгнут'}[p.status]
-                                            }</span>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            ` : '<div class="brigade-info" style="margin-top: 8px;">Нет привязанных объектов</div>'}
-                            
                             <div class="brigade-footer">
                                 <span>🏗️ Активных: ${activeProjects} | ✅ Завершено: ${completedProjects}</span>
                                 ${currentRole === 'manager' ? `
-                                    <button class="btn-secondary" onclick="editBrigade('${brigade.id}')">✏️</button>
+                                    <div class="brigade-actions">
+                                        <button class="btn-secondary" onclick="editBrigade('${brigade.id}')">✏️</button>
+                                        <button class="btn-secondary" onclick="viewProjects('${brigade.id}')">📋</button>
+                                    </div>
                                 ` : ''}
                             </div>
                         </div>
@@ -458,50 +506,135 @@
                 container.innerHTML = html;
             }
             
-            // Создание бригады
-            document.getElementById('create-brigade-btn').addEventListener('click', async () => {
-                const name = document.getElementById('new-name').value.trim();
-                const foreman = document.getElementById('new-foreman').value.trim();
-                const phone = document.getElementById('new-phone').value.trim();
-                const contract = document.getElementById('new-contract').value.trim();
-                const status = document.getElementById('new-status').value;
+            function resetForm() {
+                document.getElementById('form-title').textContent = 'Новая бригада';
+                document.getElementById('edit-id').value = '';
+                document.getElementById('brigade-name').value = '';
+                document.getElementById('brigade-foreman').value = '';
+                document.getElementById('brigade-phone').value = '';
+                document.getElementById('brigade-contract').value = '';
+                document.getElementById('brigade-status').value = 'active';
+            }
+            
+            // Редактирование бригады
+            window.editBrigade = function(id) {
+                const brigade = allBrigades.find(b => b.id === id);
+                if (!brigade) return;
+                
+                document.getElementById('form-title').textContent = 'Редактирование бригады';
+                document.getElementById('edit-id').value = brigade.id;
+                document.getElementById('brigade-name').value = brigade.name || '';
+                document.getElementById('brigade-foreman').value = brigade.foreman_name || '';
+                document.getElementById('brigade-phone').value = brigade.phone || '';
+                document.getElementById('brigade-contract').value = brigade.contract_number || '';
+                document.getElementById('brigade-status').value = brigade.status || 'active';
+                
+                document.querySelector('[data-tab="create"]').click();
+            };
+            
+            // Сохранение бригады
+            document.getElementById('save-brigade-btn').addEventListener('click', async () => {
+                const id = document.getElementById('edit-id').value;
+                const name = document.getElementById('brigade-name').value.trim();
+                const foreman = document.getElementById('brigade-foreman').value.trim();
+                const phone = document.getElementById('brigade-phone').value.trim();
+                const contract = document.getElementById('brigade-contract').value.trim();
+                const status = document.getElementById('brigade-status').value;
                 
                 if (!name || !foreman || !phone) {
                     alert('Заполните обязательные поля');
                     return;
                 }
                 
+                const data = {
+                    name, foreman_name: foreman, phone,
+                    contract_number: contract || null, status,
+                    updated_at: new Date()
+                };
+                
                 try {
-                    const { error } = await supabase
-                        .from('brigades')
-                        .insert({
-                            name: name,
-                            foreman_name: foreman,
-                            phone: phone,
-                            contract_number: contract || null,
-                            status: status
-                        });
+                    let error;
+                    if (id) {
+                        ({ error } = await supabase.from('brigades').update(data).eq('id', id));
+                    } else {
+                        ({ error } = await supabase.from('brigades').insert(data));
+                    }
                     
                     if (error) throw error;
                     
-                    alert('Бригада создана!');
-                    document.getElementById('new-name').value = '';
-                    document.getElementById('new-foreman').value = '';
-                    document.getElementById('new-phone').value = '';
-                    document.getElementById('new-contract').value = '';
-                    
-                    // Переключаемся на список
+                    alert(id ? 'Бригада обновлена!' : 'Бригада создана!');
+                    resetForm();
                     document.querySelector('[data-tab="list"]').click();
                     loadBrigades();
                 } catch (error) {
                     console.error('Ошибка:', error);
-                    alert('Ошибка при создании бригады');
+                    alert('Ошибка при сохранении');
                 }
             });
             
-            // Глобальная функция для редактирования (заглушка)
-            window.editBrigade = function(id) {
-                alert('Редактирование бригады будет доступно в следующей версии');
+            document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+                resetForm();
+                document.querySelector('[data-tab="list"]').click();
+            });
+            
+            // Просмотр проектов бригады
+            window.viewProjects = function(brigadeId) {
+                const brigade = allBrigades.find(b => b.id === brigadeId);
+                if (!brigade) return;
+                
+                const modal = document.getElementById('projects-modal');
+                const listContainer = document.getElementById('modal-projects-list');
+                
+                if (brigade.projects.length === 0) {
+                    listContainer.innerHTML = '<p style="color: #6b7280;">Нет привязанных объектов</p>';
+                } else {
+                    let html = '<div style="max-height: 400px; overflow-y: auto;">';
+                    brigade.projects.forEach(p => {
+                        html += `
+                            <div class="project-status-item">
+                                <span>${escapeHtml(p.projects?.name || '—')}</span>
+                                <select class="status-select" onchange="updateProjectStatus('${p.id}', this.value)">
+                                    <option value="active" ${p.status === 'active' ? 'selected' : ''}>Активен</option>
+                                    <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>Завершён</option>
+                                    <option value="terminated" ${p.status === 'terminated' ? 'selected' : ''}>Расторгнут</option>
+                                </select>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    listContainer.innerHTML = html;
+                }
+                
+                modal.classList.remove('hidden');
+            };
+            
+            window.updateProjectStatus = async function(projectBrigadeId, newStatus) {
+                try {
+                    const { error } = await supabase
+                        .from('brigade_projects')
+                        .update({ status: newStatus, updated_at: new Date() })
+                        .eq('id', projectBrigadeId);
+                    
+                    if (error) throw error;
+                    
+                    // Обновляем локальные данные
+                    await loadBrigades();
+                    
+                    // Обновляем модальное окно
+                    const brigadeId = allBrigades.find(b => 
+                        b.projects.some(p => p.id === projectBrigadeId)
+                    )?.id;
+                    if (brigadeId) {
+                        viewProjects(brigadeId);
+                    }
+                } catch (error) {
+                    console.error('Ошибка обновления статуса:', error);
+                    alert('Ошибка при обновлении статуса');
+                }
+            };
+            
+            window.closeProjectsModal = function() {
+                document.getElementById('projects-modal').classList.add('hidden');
             };
             
             async function init() {
