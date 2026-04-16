@@ -264,7 +264,7 @@
             </div>
         </div>
         
-        <!-- Вкладка создания -->
+        <!-- Вкладка создания/редактирования -->
         <div id="tab-create" class="tab-content">
             <div class="form-card">
                 <h3 style="margin-bottom: 20px; color: #1e3a8a;" id="form-title">Новая бригада</h3>
@@ -355,7 +355,7 @@
                         loadBrigades();
                     }
                     if (tabName === 'create') {
-                        resetForm();
+                        // Не сбрасываем форму при переключении, если редактирование
                     }
                 });
             });
@@ -432,6 +432,7 @@
                         projects: projectsByBrigade[b.id] || []
                     }));
                     
+                    console.log('Загружены бригады:', allBrigades);
                     renderBrigadesList();
                 } catch (error) {
                     console.error('Ошибка загрузки:', error);
@@ -504,11 +505,17 @@
             }
             
             function editBrigadeHandler(id) {
+                console.log('Редактирование бригады с ID:', id);
+                console.log('Все бригады:', allBrigades);
+                
                 const brigade = allBrigades.find(b => b.id === id);
                 if (!brigade) {
                     console.error('Бригада не найдена:', id);
+                    alert('Бригада не найдена');
                     return;
                 }
+                
+                console.log('Найдена бригада:', brigade);
                 
                 document.getElementById('form-title').textContent = 'Редактирование бригады';
                 document.getElementById('edit-id').value = brigade.id;
@@ -518,7 +525,11 @@
                 document.getElementById('brigade-contract').value = brigade.contract_number || '';
                 document.getElementById('brigade-status').value = brigade.status || 'active';
                 
-                document.querySelector('[data-tab="create"]').click();
+                // Переключаемся на вкладку создания
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.querySelector('[data-tab="create"]').classList.add('active');
+                document.getElementById('tab-create').classList.add('active');
             }
             
             function viewProjectsHandler(id) {
