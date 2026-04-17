@@ -380,11 +380,17 @@
                     try {
                         const { data: gpr, error: gprError } = await supabase
                             .from('schedule_plan')
-                            .select('*, axes(name), work_stages(name), projects!inner(name, responsible_worker_id)')
+                            .select('*, axes(name), work_stages(name)')
                             .eq('id', scheduleId)
                             .single();
                         
                         if (gprError) throw gprError;
+                        
+                        const { data: projectData } = await supabase
+                            .from('projects')
+                            .select('name, responsible_worker_id')
+                            .eq('id', currentProjectId)
+                            .single();
                         
                         const currentEnd = gpr.plan_end ? new Date(gpr.plan_end) : new Date();
                         currentEnd.setDate(currentEnd.getDate() + days);
@@ -413,7 +419,7 @@
                                 priority: 'high',
                                 created_by: currentUser?.id
                             };
-                            if (gpr.projects?.responsible_worker_id) taskData.responsible_ids = [gpr.projects.responsible_worker_id];
+                            if (projectData?.responsible_worker_id) taskData.responsible_ids = [projectData.responsible_worker_id];
                             await supabase.from('tasks').insert(taskData);
                             alert('Сдвиг сохранён! Создана задача «Написать письмо заказчику»');
                         } else {
