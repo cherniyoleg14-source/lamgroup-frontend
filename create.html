@@ -18,153 +18,170 @@
             max-width: 500px;
             margin: 0 auto;
             background: white;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
         }
         h1 {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1e3a8a;
-            margin-bottom: 20px;
+            font-size: 26px;
+            font-weight: 800;
+            color: #1a2e4b;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.5px;
         }
-        .form-group { margin-bottom: 16px; }
+        .logo-badge {
+            background: linear-gradient(135deg, #1a2e4b, #2c4c7c);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 14px;
+            margin-left: 8px;
+        }
+        .form-group { margin-bottom: 18px; }
         label {
             display: block;
-            font-size: 14px;
-            font-weight: 500;
-            color: #374151;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a5568;
             margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
-        label .required { color: #dc2626; }
+        label .required { color: #e53e3e; }
         input, select {
             width: 100%;
-            padding: 12px 14px;
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-            font-size: 16px;
+            padding: 14px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 14px;
+            font-size: 15px;
             background: white;
+            transition: all 0.2s;
         }
         input:focus, select:focus {
             outline: none;
-            border-color: #1e3a8a;
-            box-shadow: 0 0 0 3px rgba(30,58,138,0.1);
+            border-color: #2c4c7c;
+            box-shadow: 0 0 0 3px rgba(44, 76, 124, 0.1);
         }
         .row-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 14px;
         }
-        .axes-section {
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid #e5e7eb;
-        }
-        .axis-input {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        .axis-input input { flex: 1; }
-        .btn-add {
-            background: none;
-            border: 1px dashed #9ca3af;
-            color: #4b5563;
-            padding: 10px;
-            border-radius: 10px;
+        .btn-primary {
             width: 100%;
-            font-size: 14px;
-            cursor: pointer;
-            margin-top: 8px;
-        }
-        .btn-add:hover {
-            background: #f9fafb;
-            border-color: #1e3a8a;
-            color: #1e3a8a;
-        }
-        .btn-remove {
-            background: #fee2e2;
-            border: none;
-            color: #dc2626;
-            width: 36px;
-            height: 44px;
-            border-radius: 10px;
-            font-size: 18px;
-            cursor: pointer;
-        }
-        .btn-submit {
-            width: 100%;
-            background: #1e3a8a;
+            background: #1a2e4b;
             color: white;
             border: none;
             padding: 16px;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 600;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
             cursor: pointer;
             margin-top: 24px;
+            transition: all 0.2s;
         }
-        .btn-submit:disabled {
-            background: #9ca3af;
+        .btn-primary:hover {
+            background: #2c4c7c;
+            transform: translateY(-1px);
+        }
+        .btn-primary:disabled {
+            background: #a0aec0;
             cursor: not-allowed;
         }
         .message {
             margin-top: 16px;
-            padding: 12px;
-            border-radius: 10px;
+            padding: 14px;
+            border-radius: 14px;
             text-align: center;
             font-size: 14px;
+            font-weight: 500;
             display: none;
         }
-        .message.success { background: #d1fae5; color: #065f46; display: block; }
-        .message.error { background: #fee2e2; color: #991b1b; display: block; }
-        .message.info { background: #dbeafe; color: #1e40af; display: block; }
-        .note { font-size: 12px; color: #6b7280; margin-top: 4px; }
+        .message.success { background: #f0fff4; color: #22543d; display: block; border: 1px solid #9ae6b4; }
+        .message.error { background: #fff5f5; color: #9b2c2c; display: block; border: 1px solid #feb2b2; }
+        .message.info { background: #ebf8ff; color: #2c5282; display: block; border: 1px solid #90cdf4; }
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 20px 0 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .axes-container { margin-bottom: 10px; }
+        .axis-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .axis-item input { flex: 1; }
+        .btn-icon {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-add {
+            background: none;
+            border: 2px dashed #cbd5e0;
+            color: #4a5568;
+            padding: 12px;
+            border-radius: 14px;
+            width: 100%;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+        }
+        .btn-add:hover {
+            background: #f7fafc;
+            border-color: #2c4c7c;
+            color: #2c4c7c;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🏗️ Новый объект</h1>
+        <h1>
+            LamGroup
+            <span class="logo-badge">Construction</span>
+        </h1>
         
         <form id="project-form">
             <div class="form-group">
                 <label>Название объекта <span class="required">*</span></label>
-                <input type="text" id="name" placeholder="Например: ЖК Солнечный" required>
+                <input type="text" id="name" placeholder="ЖК Солнечный" required>
             </div>
             
             <div class="form-group">
                 <label>Адрес <span class="required">*</span></label>
-                <input type="text" id="address" placeholder="ул. Примерная, д. 1" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Ссылка 2ГИС <span class="required">*</span></label>
-                <input type="text" id="gis_link" placeholder="https://2gis.ru/..." required>
+                <input type="text" id="address" placeholder="ул. Примерная, 1" required>
             </div>
             
             <div class="row-2">
+                <div class="form-group">
+                    <label>Цена договора (₸) <span class="required">*</span></label>
+                    <input type="number" step="0.01" id="contract_price" placeholder="0" required>
+                </div>
                 <div class="form-group">
                     <label>Проектная S (м²) <span class="required">*</span></label>
                     <input type="number" step="0.01" id="project_area" placeholder="1000" required>
                 </div>
-                <div class="form-group">
-                    <label>Фактическая S (м²)</label>
-                    <input type="number" step="0.01" id="actual_area" value="0">
-                </div>
             </div>
-            
-            <div class="row-2">
-                <div class="form-group">
-                    <label>Парапеты (п.м.)</label>
-                    <input type="number" step="0.01" id="parapet_qty" value="0">
-                </div>
-                <div class="form-group">
-                    <label>Откосы (п.м.)</label>
-                    <input type="number" step="0.01" id="slope_qty" value="0">
-                </div>
-            </div>
-            
+
             <div class="row-2">
                 <div class="form-group">
                     <label>Дата начала <span class="required">*</span></label>
@@ -176,24 +193,11 @@
                 </div>
             </div>
             
-            <div class="form-group">
-                <label>Количество блоков</label>
-                <select id="block_count">
-                    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                    <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-                    <option value="7">7</option><option value="8">8</option><option value="9">9</option>
-                    <option value="10">10</option>
-                </select>
-            </div>
+            <div class="section-title">⚙️ Оси объекта</div>
+            <div id="axes-container" class="axes-container"></div>
+            <button type="button" class="btn-add" id="add-axis">+ Добавить ось</button>
             
-            <div class="axes-section">
-                <label>Оси объекта <span class="required">*</span></label>
-                <div id="axes-container"></div>
-                <button type="button" class="btn-add" id="add-axis">+ Добавить ось</button>
-                <div class="note">Например: А/1, Б/2-4</div>
-            </div>
-            
-            <button type="submit" class="btn-submit" id="submit-btn">Создать объект</button>
+            <button type="submit" class="btn-primary" id="submit-btn">Создать объект</button>
         </form>
         
         <div id="message" class="message"></div>
@@ -201,223 +205,105 @@
 
     <script>
         (function() {
-            // Инициализация Telegram
             const tg = window.Telegram.WebApp;
             tg.expand();
             tg.ready();
             
-            // Supabase
             const SUPABASE_URL = 'https://owagntywpiymqhbfoxye.supabase.co';
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YWdudHl3cGl5bXFoYmZveHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTg5MDUsImV4cCI6MjA5MTg5NDkwNX0.p-3xAhbFgH5lcGnbBfkcQQFVza_Yc2qoY6VBlhmmFGg';
-            const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             
-            // ID пользователя
             let userId = null;
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 userId = tg.initDataUnsafe.user.id;
             }
-            // ВРЕМЕННО ДЛЯ ТЕСТА В WEB
-            if (!userId) {
-                userId = 531738802;
-                console.log('Используем тестовый ID:', userId);
-            }
-            console.log('User ID:', userId);
+            if (!userId) userId = 531738802;
             
-            // DOM элементы
             const axesContainer = document.getElementById('axes-container');
             const addAxisBtn = document.getElementById('add-axis');
             const form = document.getElementById('project-form');
             const submitBtn = document.getElementById('submit-btn');
             const messageDiv = document.getElementById('message');
             
-            // Функция показа сообщения
             function showMessage(text, type) {
                 messageDiv.textContent = text;
-                messageDiv.className = 'message ' + type;
+                messageDiv.className = `message ${type}`;
             }
             
-            // Функция создания поля для оси
-            function createAxisInput(value) {
-                if (!value) value = '';
-                var div = document.createElement('div');
-                div.className = 'axis-input';
-                div.innerHTML = '<input type="text" name="axis_name[]" placeholder="Например: А/1" value="' + value + '" class="axis-field">' +
-                               '<button type="button" class="btn-remove">✕</button>';
-                div.querySelector('.btn-remove').addEventListener('click', function() {
-                    div.remove();
-                });
+            function createAxisInput(value = '') {
+                const div = document.createElement('div');
+                div.className = 'axis-item';
+                div.innerHTML = `
+                    <input type="text" name="axis_name[]" placeholder="Например: Ось 1" value="${value}">
+                    <button type="button" class="btn-icon" onclick="this.parentElement.remove()">✕</button>
+                `;
                 return div;
             }
             
-            // Добавляем первую ось
             axesContainer.appendChild(createAxisInput(''));
+            addAxisBtn.addEventListener('click', () => axesContainer.appendChild(createAxisInput('')));
             
-            // Обработчик добавления оси
-            addAxisBtn.addEventListener('click', function() {
-                axesContainer.appendChild(createAxisInput(''));
-                console.log('Ось добавлена');
-            });
-            
-            // Даты по умолчанию
-            var today = new Date();
-            var future = new Date();
+            const today = new Date();
+            const future = new Date();
             future.setDate(today.getDate() + 30);
             document.getElementById('start_date').value = today.toISOString().split('T')[0];
             document.getElementById('end_date_contract').value = future.toISOString().split('T')[0];
             
-            // Отправка формы
-            form.addEventListener('submit', async function(e) {
+            form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                console.log('Форма отправлена');
-                
-                if (!userId) {
-                    showMessage('Ошибка: не удалось определить пользователя', 'error');
-                    return;
-                }
+                if (!userId) { showMessage('Ошибка Telegram ID', 'error'); return; }
                 
                 submitBtn.disabled = true;
                 submitBtn.textContent = 'Сохранение...';
                 showMessage('Создаём объект...', 'info');
                 
                 try {
-                    var name = document.getElementById('name').value.trim();
-                    var address = document.getElementById('address').value.trim();
-                    var gis_link = document.getElementById('gis_link').value.trim();
-                    var project_area = parseFloat(document.getElementById('project_area').value);
-                    var actual_area = parseFloat(document.getElementById('actual_area').value) || 0;
-                    var parapet_qty = parseFloat(document.getElementById('parapet_qty').value) || 0;
-                    var slope_qty = parseFloat(document.getElementById('slope_qty').value) || 0;
-                    var start_date = document.getElementById('start_date').value;
-                    var end_date_contract = document.getElementById('end_date_contract').value;
-                    var block_count = parseInt(document.getElementById('block_count').value);
+                    const name = document.getElementById('name').value.trim();
+                    const address = document.getElementById('address').value.trim();
+                    const contract_price = parseFloat(document.getElementById('contract_price').value) || 0;
+                    const project_area = parseFloat(document.getElementById('project_area').value);
+                    const start_date = document.getElementById('start_date').value;
+                    const end_date_contract = document.getElementById('end_date_contract').value;
                     
-                    var axisInputs = document.querySelectorAll('input[name="axis_name[]"]');
-                    var axes = [];
-                    for (var i = 0; i < axisInputs.length; i++) {
-                        var val = axisInputs[i].value.trim();
-                        if (val) axes.push(val);
-                    }
+                    const axisInputs = document.querySelectorAll('input[name="axis_name[]"]');
+                    const axes = Array.from(axisInputs).map(i => i.value.trim()).filter(v => v);
                     
-                    if (axes.length === 0) {
-                        showMessage('Добавьте хотя бы одну ось!', 'error');
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Создать объект';
-                        return;
-                    }
+                    if (axes.length === 0) { showMessage('Добавьте оси', 'error'); submitBtn.disabled = false; submitBtn.textContent = 'Создать объект'; return; }
                     
-                    console.log('Ищем пользователя в базе...');
-                    var userResponse = await supabaseClient
-                        .from('users')
-                        .select('id')
-                        .eq('telegram_id', userId)
-                        .single();
+                    const { data: userData } = await supabase.from('users').select('id').eq('telegram_id', userId).single();
+                    if (!userData) { showMessage('Пользователь не найден', 'error'); return; }
                     
-                    if (userResponse.error || !userResponse.data) {
-                        console.error('Ошибка пользователя:', userResponse.error);
-                        showMessage('Пользователь не найден. Введите /start в боте', 'error');
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Создать объект';
-                        return;
-                    }
-                    
-                    var responsible_worker_id = userResponse.data.id;
-                    console.log('Пользователь найден:', responsible_worker_id);
-                    
-                    console.log('Создаём проект...');
-                    var projectResponse = await supabaseClient
+                    const { data: projectData, error: projectError } = await supabase
                         .from('projects')
                         .insert({
-                            name: name,
-                            address: address,
-                            gis_link: gis_link,
-                            project_area: project_area,
-                            actual_area: actual_area,
-                            parapet_qty: parapet_qty,
-                            slope_qty: slope_qty,
-                            start_date: start_date,
-                            end_date_contract: end_date_contract,
-                            block_count: block_count,
-                            responsible_worker_id: responsible_worker_id,
-                            status: 'active'
+                            name, address, contract_price, project_area,
+                            start_date, end_date_contract,
+                            responsible_worker_id: userData.id,
+                            status: 'preparation',
+                            block_count: 1
                         })
-                        .select('id')
-                        .single();
+                        .select('id').single();
                     
-                    if (projectResponse.error) {
-                        console.error('Ошибка создания проекта:', projectResponse.error);
-                        showMessage('Ошибка: ' + projectResponse.error.message, 'error');
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Создать объект';
-                        return;
-                    }
+                    if (projectError) throw projectError;
                     
-                    var projectId = projectResponse.data.id;
-                    console.log('Проект создан:', projectId);
-                    
-                    var blockNames = [];
-                    for (var i = 1; i <= block_count; i++) {
-                        blockNames.push({ project_id: projectId, name: 'Блок ' + i, description: '' });
-                    }
-                    
-                    console.log('Создаём блоки...');
-                    var blocksResponse = await supabaseClient
+                    const { data: blockData } = await supabase
                         .from('blocks')
-                        .insert(blockNames)
-                        .select('id, name');
+                        .insert({ project_id: projectData.id, name: 'Блок 1' })
+                        .select('id').single();
                     
-                    if (blocksResponse.error) {
-                        console.error('Ошибка блоков:', blocksResponse.error);
-                        showMessage('Ошибка при создании блоков', 'error');
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Создать объект';
-                        return;
-                    }
+                    const axesToInsert = axes.map(name => ({ block_id: blockData.id, name }));
+                    await supabase.from('axes').insert(axesToInsert);
                     
-                    var firstBlockId = blocksResponse.data[0].id;
-                    var axesToInsert = [];
-                    for (var i = 0; i < axes.length; i++) {
-                        axesToInsert.push({
-                            block_id: firstBlockId,
-                            name: axes[i],
-                            progress_percent: 0
-                        });
-                    }
-                    
-                    console.log('Создаём оси...');
-                    var axesResponse = await supabaseClient
-                        .from('axes')
-                        .insert(axesToInsert);
-                    
-                    if (axesResponse.error) {
-                        console.error('Ошибка осей:', axesResponse.error);
-                        showMessage('Ошибка при создании осей', 'error');
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Создать объект';
-                        return;
-                    }
-                    
-                    console.log('Всё успешно!');
-                    showMessage('✅ Объект "' + name + '" успешно создан!', 'success');
-                    form.reset();
-                    axesContainer.innerHTML = '';
-                    axesContainer.appendChild(createAxisInput(''));
-                    document.getElementById('start_date').value = today.toISOString().split('T')[0];
-                    document.getElementById('end_date_contract').value = future.toISOString().split('T')[0];
-                    
-                    setTimeout(function() {
-                        tg.close();
-                    }, 2000);
+                    showMessage(`✅ Объект "${name}" создан!`, 'success');
+                    setTimeout(() => tg.close(), 1500);
                     
                 } catch (error) {
-                    console.error('Ошибка:', error);
                     showMessage('Ошибка: ' + error.message, 'error');
                 } finally {
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Создать объект';
                 }
             });
-            
-            console.log('Страница загружена v3 - тестовый ID');
         })();
     </script>
 </body>
