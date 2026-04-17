@@ -78,20 +78,8 @@
         }
         .modal-title { font-size: 20px; font-weight: 700; color: #1a2e4b; }
         .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; }
-        .gpr-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            flex-wrap: wrap;
-        }
-        .delay-badge {
-            background: #fef3c7;
-            color: #92400e;
-            padding: 4px 8px;
-            border-radius: 30px;
-            font-size: 12px;
-            margin-left: 8px;
-        }
+        .gpr-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .delay-badge { background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 30px; font-size: 12px; margin-left: 8px; }
     </style>
 </head>
 <body>
@@ -179,7 +167,6 @@
             </div>
         </div>
         
-        <!-- Модальное окно сдвига сроков -->
         <div id="shift-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
@@ -187,23 +174,9 @@
                     <button class="close-btn" id="close-shift-modal">&times;</button>
                 </div>
                 <input type="hidden" id="shift-schedule-id">
-                <div class="form-group">
-                    <label>Количество дней *</label>
-                    <input type="number" id="shift-days" min="1" value="1" required>
-                </div>
-                <div class="form-group">
-                    <label>Причина *</label>
-                    <select id="shift-reason" required>
-                        <option value="customer">По вине Заказчика</option>
-                        <option value="contractor">По вине Монтажника</option>
-                        <option value="weather">Погодные условия</option>
-                        <option value="other">Другое</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Описание</label>
-                    <textarea id="shift-description" rows="3" placeholder="Опишите причину сдвига..."></textarea>
-                </div>
+                <div class="form-group"><label>Количество дней *</label><input type="number" id="shift-days" min="1" value="1" required></div>
+                <div class="form-group"><label>Причина *</label><select id="shift-reason" required><option value="customer">По вине Заказчика</option><option value="contractor">По вине Монтажника</option><option value="weather">Погодные условия</option><option value="other">Другое</option></select></div>
+                <div class="form-group"><label>Описание</label><textarea id="shift-description" rows="3" placeholder="Опишите причину сдвига..."></textarea></div>
                 <button class="btn-primary" id="save-shift-btn">Сохранить сдвиг</button>
             </div>
         </div>
@@ -383,12 +356,11 @@
                             .select('*, axes(name), work_stages(name)')
                             .eq('id', scheduleId)
                             .single();
-                        
                         if (gprError) throw gprError;
                         
                         const { data: projectData } = await supabase
                             .from('projects')
-                            .select('name, responsible_worker_id')
+                            .select('responsible_worker_id')
                             .eq('id', currentProjectId)
                             .single();
                         
@@ -398,15 +370,8 @@
                         
                         const { error: updateError } = await supabase
                             .from('schedule_plan')
-                            .update({
-                                plan_end: newEndDate,
-                                delay_reason: reason,
-                                delay_days: days,
-                                delay_description: description,
-                                letter_sent: false
-                            })
+                            .update({ plan_end: newEndDate, delay_reason: reason, delay_days: days, delay_description: description, letter_sent: false })
                             .eq('id', scheduleId);
-                        
                         if (updateError) throw updateError;
                         
                         if (reason === 'customer') {
@@ -417,14 +382,14 @@
                                 description: `Требуется написать письмо заказчику. Причина: ${description || 'Сдвиг по вине заказчика'}. Сдвиг на ${days} дн.`,
                                 status: 'pending',
                                 priority: 'high',
-                                created_by: currentUser?.id
+                                created_by: currentUser?.id,
+                                responsible_ids: projectData?.responsible_worker_id ? [projectData.responsible_worker_id] : []
                             };
-                            if (projectData?.responsible_worker_id) taskData.responsible_ids = [projectData.responsible_worker_id];
-                            await supabase.from('tasks').insert(taskData);
-                            alert('Сдвиг сохранён! Создана задача «Написать письмо заказчику»');
-                        } else {
-                            alert('Сдвиг сохранён!');
-                        }
+                            console.log('Создаём задачу:', taskData);
+                            const { error: taskError } = await supabase.from('tasks').insert(taskData);
+                            if (taskError) { console.error('Ошибка задачи:', taskError); alert('Сдвиг сохранён, но задача не создана: ' + taskError.message); }
+                            else { alert('Сдвиг сохранён! Создана задача «Написать письмо заказчику»'); }
+                        } else { alert('Сдвиг сохранён!'); }
                         
                         modal.classList.add('hidden');
                         loadGprProgress();
@@ -465,8 +430,7 @@
                     const brigadeName = brigadeSelect.options[brigadeSelect.selectedIndex]?.text.split(' (')[0] || '';
                     
                     const { error } = await supabase.from('schedule_plan').insert({
-                        axis_id: axis, stage_id: stage, brigade_id: brigade,
-                        brigade_name: brigadeName,
+                        axis_id: axis, stage_id: stage, brigade_id: brigade, brigade_name: brigadeName,
                         volume, price_per_unit: price, total_cost: volume * price,
                         plan_start: document.getElementById('gpr-start').value,
                         plan_end: document.getElementById('gpr-end').value,
@@ -601,13 +565,8 @@
                 const cust = (data || []).filter(c => c.section === 'foreman_customer');
                 const work = (data || []).filter(c => c.section === 'foreman_workers');
                 
-                document.getElementById('checklist-customer').innerHTML = cust.map(c => `
-                    <div class="checklist-item"><input type="checkbox" ${c.is_completed ? 'checked' : ''} data-id="${c.id}"><label>${c.item_text}</label></div>
-                `).join('');
-                
-                document.getElementById('checklist-workers').innerHTML = work.map(c => `
-                    <div class="checklist-item"><input type="checkbox" ${c.is_completed ? 'checked' : ''} data-id="${c.id}"><label>${c.item_text}</label></div>
-                `).join('');
+                document.getElementById('checklist-customer').innerHTML = cust.map(c => `<div class="checklist-item"><input type="checkbox" ${c.is_completed ? 'checked' : ''} data-id="${c.id}"><label>${c.item_text}</label></div>`).join('');
+                document.getElementById('checklist-workers').innerHTML = work.map(c => `<div class="checklist-item"><input type="checkbox" ${c.is_completed ? 'checked' : ''} data-id="${c.id}"><label>${c.item_text}</label></div>`).join('');
                 
                 document.querySelectorAll('#tab-checklist input[type="checkbox"]').forEach(cb => {
                     cb.addEventListener('change', async () => {
