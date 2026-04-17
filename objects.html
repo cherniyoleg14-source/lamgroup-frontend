@@ -22,6 +22,7 @@
         .object-name { font-weight: 700; color: #1a2e4b; }
         .status-preparation { background: #fef3c7; color: #92400e; padding: 5px 12px; border-radius: 30px; font-size: 12px; }
         .status-in_progress { background: #d1fae5; color: #065f46; padding: 5px 12px; border-radius: 30px; }
+        .status-completed { background: #e2e8f0; color: #1a2e4b; padding: 5px 12px; border-radius: 30px; }
         .progress-bar { height: 8px; background: #e2e8f0; border-radius: 10px; margin: 12px 0; }
         .progress-fill { height: 100%; background: #1a2e4b; border-radius: 10px; width: 0%; }
         .back-btn { background: none; border: none; color: #1a2e4b; font-size: 18px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
@@ -298,8 +299,12 @@
                     const volume = parseFloat(document.getElementById('gpr-volume').value) || 0;
                     const price = parseFloat(document.getElementById('gpr-price').value) || 0;
                     
+                    const brigadeSelect = document.getElementById('gpr-brigade');
+                    const brigadeName = brigadeSelect.options[brigadeSelect.selectedIndex]?.text.split(' (')[0] || '';
+                    
                     const { error } = await supabase.from('schedule_plan').insert({
                         axis_id: axis, stage_id: stage, brigade_id: brigade,
+                        brigade_name: brigadeName,
                         volume, price_per_unit: price, total_cost: volume * price,
                         plan_start: document.getElementById('gpr-start').value,
                         plan_end: document.getElementById('gpr-end').value,
@@ -363,7 +368,14 @@
             async function loadGprCreate() {}
             
             async function loadGprProgress() {
-                const { data } = await supabase.from('schedule_plan').select('*, axes(name), work_stages(name), brigades(name)').eq('axis_id.block_id.project_id', currentProjectId);
+                const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
+                if (!blocks || blocks.length === 0) return;
+                const blockIds = blocks.map(b => b.id);
+                const { data: axes } = await supabase.from('axes').select('id').in('block_id', blockIds);
+                if (!axes || axes.length === 0) return;
+                const axisIds = axes.map(a => a.id);
+                
+                const { data } = await supabase.from('schedule_plan').select('*, axes(name), work_stages(name), brigades(name)').in('axis_id', axisIds);
                 const container = document.getElementById('gpr-progress-list');
                 if (!data || data.length === 0) { container.innerHTML = '<div class="info-card"><p>Нет работ в ГПР</p></div>'; return; }
                 
