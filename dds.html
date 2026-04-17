@@ -7,6 +7,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, sans-serif; background: #f5f7fa; padding: 16px; }
@@ -15,9 +16,17 @@
         h1 { font-size: 26px; font-weight: 800; color: #1a2e4b; display: flex; align-items: center; gap: 8px; }
         .role-badge { background: #e2e8f0; color: #1a2e4b; padding: 6px 14px; border-radius: 30px; font-size: 14px; font-weight: 600; }
         
+        /* Filter Bar */
+        .filter-section { background: white; border-radius: 20px; padding: 16px; margin-bottom: 16px; }
+        .filter-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .filter-select { flex: 1; min-width: 150px; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 14px; font-size: 14px; background: white; }
+        .btn-export { background: #1a2e4b; color: white; padding: 12px 20px; border-radius: 14px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .btn-export:hover { background: #2c4c7c; }
+        
         /* KPI Cards */
         .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .kpi-card { background: white; border-radius: 20px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .kpi-card { background: white; border-radius: 20px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.2s; }
+        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
         .kpi-label { font-size: 13px; color: #64748b; margin-bottom: 6px; }
         .kpi-value { font-size: 24px; font-weight: 800; color: #1a2e4b; }
         .kpi-trend { font-size: 12px; margin-top: 4px; }
@@ -33,6 +42,17 @@
         .tab.active { color: #1a2e4b; border-bottom-color: #1a2e4b; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        
+        /* Chart Container */
+        .chart-container { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .chart-title { font-weight: 700; color: #1a2e4b; }
+        .chart-legend { display: flex; gap: 16px; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+        .legend-color { width: 12px; height: 12px; border-radius: 4px; }
+        .legend-income { background: #10b981; }
+        .legend-expense { background: #ef4444; }
+        .legend-payout { background: #f59e0b; }
         
         /* Forms */
         .form-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
@@ -56,13 +76,10 @@
         .status-pending { background: #fef3c7; color: #92400e; }
         .status-paid { background: #d1fae5; color: #065f46; }
         
-        /* Calendar */
-        .calendar-strip { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; margin-bottom: 20px; }
-        .calendar-day { background: white; border-radius: 16px; padding: 12px; min-width: 70px; text-align: center; border: 1px solid #e2e8f0; cursor: pointer; }
-        .calendar-day.active { background: #1a2e4b; color: white; }
-        .calendar-day .day { font-size: 20px; font-weight: 700; }
-        .calendar-day .month { font-size: 12px; }
-        .calendar-day .amount { font-size: 11px; margin-top: 6px; font-weight: 600; }
+        /* Period Selector */
+        .period-selector { display: flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 30px; }
+        .period-btn { padding: 8px 16px; border: none; background: none; border-radius: 30px; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; }
+        .period-btn.active { background: white; color: #1a2e4b; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .loading { text-align: center; padding: 40px; }
@@ -76,28 +93,43 @@
             <span class="role-badge" id="role-badge">Загрузка...</span>
         </div>
         
-        <!-- KPI Cards -->
-        <div class="kpi-grid">
-            <div class="kpi-card primary">
-                <div class="kpi-label">Баланс</div>
-                <div class="kpi-value" id="kpi-balance">0 ₸</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Поступления</div>
-                <div class="kpi-value" id="kpi-income">0 ₸</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Расходы</div>
-                <div class="kpi-value" id="kpi-expense">0 ₸</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-label">Выплаты монтажникам</div>
-                <div class="kpi-value" id="kpi-payouts">0 ₸</div>
+        <!-- Фильтры -->
+        <div class="filter-section">
+            <div class="filter-row">
+                <select id="filter-project" class="filter-select">
+                    <option value="">Все объекты</option>
+                </select>
+                <div class="period-selector">
+                    <button class="period-btn active" data-period="month">Месяц</button>
+                    <button class="period-btn" data-period="quarter">Квартал</button>
+                    <button class="period-btn" data-period="year">Год</button>
+                </div>
+                <button class="btn-export" id="export-excel">
+                    📊 Excel
+                </button>
             </div>
         </div>
         
-        <!-- Календарь платежей -->
-        <div class="calendar-strip" id="calendar-strip"></div>
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card primary" id="card-balance">
+                <div class="kpi-label">Баланс</div>
+                <div class="kpi-value" id="kpi-balance">0 ₸</div>
+                <div class="kpi-trend" id="trend-balance"></div>
+            </div>
+            <div class="kpi-card" id="card-income">
+                <div class="kpi-label">Поступления</div>
+                <div class="kpi-value" id="kpi-income">0 ₸</div>
+            </div>
+            <div class="kpi-card" id="card-expense">
+                <div class="kpi-label">Расходы</div>
+                <div class="kpi-value" id="kpi-expense">0 ₸</div>
+            </div>
+            <div class="kpi-card" id="card-payouts">
+                <div class="kpi-label">Выплаты</div>
+                <div class="kpi-value" id="kpi-payouts">0 ₸</div>
+            </div>
+        </div>
         
         <!-- Tabs -->
         <div class="tabs">
@@ -110,9 +142,22 @@
         
         <!-- Сводка -->
         <div id="tab-summary" class="tab-content active">
-            <div class="form-card">
-                <h3 style="margin-bottom: 16px;">📊 Движение по месяцам</h3>
-                <canvas id="cashflow-chart" style="width:100%; height:200px;"></canvas>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <span class="chart-title">📈 Движение денежных средств</span>
+                    <div class="chart-legend">
+                        <div class="legend-item"><span class="legend-color legend-income"></span> Поступления</div>
+                        <div class="legend-item"><span class="legend-color legend-expense"></span> Расходы</div>
+                        <div class="legend-item"><span class="legend-color legend-payout"></span> Выплаты</div>
+                    </div>
+                </div>
+                <canvas id="cashflow-chart" style="width:100%; height:220px;"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-header">
+                    <span class="chart-title">🥧 Структура расходов</span>
+                </div>
+                <canvas id="expense-pie-chart" style="width:100%; height:200px;"></canvas>
             </div>
             <div id="summary-list" class="transaction-list"></div>
         </div>
@@ -170,15 +215,19 @@
             let userId = tg.initDataUnsafe?.user?.id || 531738802;
             let currentUser = null, currentRole = 'worker';
             let allProjects = [], allIncome = [], allExpenses = [], allWorkOrders = [];
+            let currentPeriod = 'month';
+            let selectedProjectId = '';
+            let cashflowChart, pieChart;
             
             async function init() {
                 await loadUser();
                 await loadProjects();
                 await loadAllData();
                 setupTabs();
+                setupFilters();
                 setupForms();
-                renderCalendar();
-                renderChart();
+                setupKpiCards();
+                renderCharts();
             }
             
             async function loadUser() {
@@ -193,40 +242,64 @@
                 const { data } = await query;
                 allProjects = data || [];
                 
-                const projectSelects = ['income-project', 'expense-project'];
-                projectSelects.forEach(id => {
-                    const select = document.getElementById(id);
+                const filterSelect = document.getElementById('filter-project');
+                const incomeSelect = document.getElementById('income-project');
+                const expenseSelect = document.getElementById('expense-project');
+                
+                [filterSelect, incomeSelect, expenseSelect].forEach(select => {
                     if (select) {
-                        select.innerHTML = '<option value="">Без объекта</option>';
+                        select.innerHTML = '<option value="">Все объекты</option>';
                         allProjects.forEach(p => select.innerHTML += `<option value="${p.id}">${p.name}</option>`);
                     }
                 });
             }
             
             async function loadAllData() {
-                // Поступления
-                const { data: income } = await supabase.from('income').select('*, projects(name)').order('date', { ascending: false });
-                allIncome = income || [];
+                let incomeQuery = supabase.from('income').select('*, projects(name)').order('date', { ascending: false });
+                let expenseQuery = supabase.from('expenses').select('*, projects(name)').order('date', { ascending: false });
+                let orderQuery = supabase.from('work_orders').select('*, projects(name), brigades(name)').in('status', ['approved', 'pending_manager']).order('created_at', { ascending: false });
                 
-                // Расходы (из expenses + общие расходы ДДС)
-                const { data: expenses } = await supabase.from('expenses').select('*, projects(name)').order('date', { ascending: false });
-                allExpenses = expenses || [];
+                if (selectedProjectId) {
+                    incomeQuery = incomeQuery.eq('project_id', selectedProjectId);
+                    expenseQuery = expenseQuery.eq('project_id', selectedProjectId);
+                    orderQuery = orderQuery.eq('project_id', selectedProjectId);
+                }
                 
-                // Наряды (для выплат)
-                const { data: orders } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').in('status', ['approved', 'pending_manager']).order('created_at', { ascending: false });
-                allWorkOrders = orders || [];
+                const [incomeRes, expenseRes, orderRes] = await Promise.all([incomeQuery, expenseQuery, orderQuery]);
+                
+                allIncome = incomeRes.data || [];
+                allExpenses = expenseRes.data || [];
+                allWorkOrders = orderRes.data || [];
                 
                 updateKPI();
                 renderAllLists();
+                renderCharts();
+            }
+            
+            function filterByPeriod(data, dateField = 'date') {
+                const now = new Date();
+                return data.filter(item => {
+                    const itemDate = new Date(item[dateField] || item.created_at);
+                    if (currentPeriod === 'month') {
+                        return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+                    } else if (currentPeriod === 'quarter') {
+                        const quarter = Math.floor(now.getMonth() / 3);
+                        return Math.floor(itemDate.getMonth() / 3) === quarter && itemDate.getFullYear() === now.getFullYear();
+                    }
+                    return itemDate.getFullYear() === now.getFullYear();
+                });
             }
             
             function updateKPI() {
-                const totalIncome = allIncome.filter(i => i.status === 'paid').reduce((s, i) => s + (i.amount || 0), 0);
-                const pendingIncome = allIncome.filter(i => i.status === 'pending').reduce((s, i) => s + (i.amount || 0), 0);
-                const totalExpense = allExpenses.filter(e => e.payment_status === 'paid').reduce((s, e) => s + (e.amount || 0), 0);
-                const pendingExpense = allExpenses.filter(e => e.payment_status === 'pending').reduce((s, e) => s + (e.amount || 0), 0);
-                const totalPayouts = allWorkOrders.filter(o => o.payment_status === 'paid').reduce((s, o) => s + (o.total_amount || 0), 0);
-                const pendingPayouts = allWorkOrders.filter(o => o.payment_status === 'pending').reduce((s, o) => s + (o.total_amount || 0), 0);
+                const filteredIncome = filterByPeriod(allIncome);
+                const filteredExpense = filterByPeriod(allExpenses);
+                const filteredOrders = filterByPeriod(allWorkOrders, 'created_at');
+                
+                const totalIncome = filteredIncome.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
+                const pendingIncome = filteredIncome.filter(i => i.status === 'pending').reduce((s, i) => s + i.amount, 0);
+                const totalExpense = filteredExpense.filter(e => e.payment_status === 'paid').reduce((s, e) => s + e.amount, 0);
+                const pendingExpense = filteredExpense.filter(e => e.payment_status === 'pending').reduce((s, e) => s + e.amount, 0);
+                const totalPayouts = filteredOrders.filter(o => o.payment_status === 'paid').reduce((s, o) => s + o.total_amount, 0);
                 
                 document.getElementById('kpi-balance').textContent = (totalIncome - totalExpense - totalPayouts).toLocaleString() + ' ₸';
                 document.getElementById('kpi-income').textContent = totalIncome.toLocaleString() + ' ₸';
@@ -244,8 +317,9 @@
             
             function renderIncomeList() {
                 const container = document.getElementById('income-list');
-                if (allIncome.length === 0) { container.innerHTML = '<div class="empty-state">Нет поступлений</div>'; return; }
-                container.innerHTML = allIncome.map(i => `
+                const filtered = filterByPeriod(allIncome);
+                if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">Нет поступлений</div>'; return; }
+                container.innerHTML = filtered.map(i => `
                     <div class="transaction-item">
                         <div class="transaction-header">
                             <span class="transaction-title">${i.description || '—'}</span>
@@ -262,8 +336,9 @@
             
             function renderExpenseList() {
                 const container = document.getElementById('expense-list');
-                if (allExpenses.length === 0) { container.innerHTML = '<div class="empty-state">Нет расходов</div>'; return; }
-                container.innerHTML = allExpenses.map(e => `
+                const filtered = filterByPeriod(allExpenses);
+                if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">Нет расходов</div>'; return; }
+                container.innerHTML = filtered.map(e => `
                     <div class="transaction-item">
                         <div class="transaction-header">
                             <span class="transaction-title">${e.name || '—'}</span>
@@ -280,8 +355,9 @@
             
             function renderPayoutsList() {
                 const container = document.getElementById('payouts-list');
-                if (allWorkOrders.length === 0) { container.innerHTML = '<div class="empty-state">Нет нарядов к выплате</div>'; return; }
-                container.innerHTML = allWorkOrders.map(o => `
+                const filtered = filterByPeriod(allWorkOrders, 'created_at');
+                if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">Нет нарядов к выплате</div>'; return; }
+                container.innerHTML = filtered.map(o => `
                     <div class="transaction-item">
                         <div class="transaction-header">
                             <span class="transaction-title">${o.work_type} — ${o.axis_name}</span>
@@ -350,46 +426,119 @@
                 `).join('');
             }
             
-            function renderCalendar() {
-                const strip = document.getElementById('calendar-strip');
-                const days = [];
-                for (let i = -3; i <= 14; i++) {
-                    const d = new Date();
-                    d.setDate(d.getDate() + i);
-                    days.push(d);
-                }
+            function renderCharts() {
+                const filteredIncome = filterByPeriod(allIncome);
+                const filteredExpense = filterByPeriod(allExpenses);
+                const filteredOrders = filterByPeriod(allWorkOrders, 'created_at');
                 
-                strip.innerHTML = days.map(d => {
-                    const dateStr = d.toISOString().split('T')[0];
-                    const dayTotal = allIncome.filter(i => i.date === dateStr).reduce((s, i) => s + i.amount, 0) - allExpenses.filter(e => e.date === dateStr).reduce((s, e) => s + e.amount, 0);
-                    return `<div class="calendar-day">
-                        <div class="day">${d.getDate()}</div>
-                        <div class="month">${d.toLocaleDateString('ru-RU', { month: 'short' })}</div>
-                        <div class="amount" style="color: ${dayTotal >= 0 ? '#065f46' : '#991b1b'}">${dayTotal.toLocaleString()} ₸</div>
-                    </div>`;
-                }).join('');
-            }
-            
-            function renderChart() {
+                // Линейный график
+                const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
+                const incomeByMonth = new Array(12).fill(0);
+                const expenseByMonth = new Array(12).fill(0);
+                const payoutByMonth = new Array(12).fill(0);
+                
+                filteredIncome.forEach(i => { if (i.status === 'paid') incomeByMonth[new Date(i.date).getMonth()] += i.amount; });
+                filteredExpense.forEach(e => { if (e.payment_status === 'paid') expenseByMonth[new Date(e.date).getMonth()] += e.amount; });
+                filteredOrders.forEach(o => { if (o.payment_status === 'paid') payoutByMonth[new Date(o.created_at).getMonth()] += o.total_amount; });
+                
                 const ctx = document.getElementById('cashflow-chart').getContext('2d');
-                const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'];
-                new Chart(ctx, {
+                if (cashflowChart) cashflowChart.destroy();
+                cashflowChart = new Chart(ctx, {
                     type: 'line',
                     data: {
                         labels: months,
+                        datasets: [
+                            { label: 'Поступления', data: incomeByMonth, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', tension: 0.4, fill: true },
+                            { label: 'Расходы', data: expenseByMonth, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.4, fill: true },
+                            { label: 'Выплаты', data: payoutByMonth, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', tension: 0.4, fill: true }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+                
+                // Круговая диаграмма расходов
+                const expenseCategories = {};
+                filteredExpense.filter(e => e.payment_status === 'paid').forEach(e => {
+                    const cat = e.category || 'other';
+                    expenseCategories[cat] = (expenseCategories[cat] || 0) + e.amount;
+                });
+                
+                const pieCtx = document.getElementById('expense-pie-chart').getContext('2d');
+                if (pieChart) pieChart.destroy();
+                pieChart = new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(expenseCategories),
                         datasets: [{
-                            label: 'Поступления',
-                            data: [120000, 190000, 150000, 250000, 220000, 300000],
-                            borderColor: '#065f46',
-                            tension: 0.4
-                        }, {
-                            label: 'Расходы',
-                            data: [80000, 120000, 100000, 180000, 150000, 200000],
-                            borderColor: '#991b1b',
-                            tension: 0.4
+                            data: Object.values(expenseCategories),
+                            backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#64748b']
                         }]
                     },
                     options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+            
+            function setupFilters() {
+                document.getElementById('filter-project').addEventListener('change', (e) => {
+                    selectedProjectId = e.target.value;
+                    loadAllData();
+                });
+                
+                document.querySelectorAll('.period-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        currentPeriod = btn.dataset.period;
+                        loadAllData();
+                    });
+                });
+                
+                document.getElementById('export-excel').addEventListener('click', exportToExcel);
+            }
+            
+            function exportToExcel() {
+                const wb = XLSX.utils.book_new();
+                
+                // Поступления
+                const incomeData = allIncome.map(i => ({
+                    Дата: i.date, Объект: i.projects?.name || 'Общий', Описание: i.description,
+                    Сумма: i.amount, Статус: i.status === 'paid' ? 'Получено' : 'Ожидается'
+                }));
+                const incomeSheet = XLSX.utils.json_to_sheet(incomeData);
+                XLSX.utils.book_append_sheet(wb, incomeSheet, 'Поступления');
+                
+                // Расходы
+                const expenseData = allExpenses.map(e => ({
+                    Дата: e.date, Объект: e.projects?.name || 'Общий', Описание: e.name,
+                    Категория: e.category, Сумма: e.amount, Статус: e.payment_status === 'paid' ? 'Оплачен' : 'План'
+                }));
+                const expenseSheet = XLSX.utils.json_to_sheet(expenseData);
+                XLSX.utils.book_append_sheet(wb, expenseSheet, 'Расходы');
+                
+                // Выплаты
+                const payoutData = allWorkOrders.map(o => ({
+                    Дата: o.created_at?.split('T')[0], Объект: o.projects?.name,
+                    Бригада: o.brigades?.name, Работа: `${o.work_type} — ${o.axis_name}`,
+                    Сумма: o.total_amount, Статус: o.payment_status === 'paid' ? 'Выплачено' : 'К выплате'
+                }));
+                const payoutSheet = XLSX.utils.json_to_sheet(payoutData);
+                XLSX.utils.book_append_sheet(wb, payoutSheet, 'Выплаты');
+                
+                XLSX.writeFile(wb, `ДДС_LamGroup_${new Date().toISOString().split('T')[0]}.xlsx`);
+            }
+            
+            function setupKpiCards() {
+                document.getElementById('card-income').addEventListener('click', () => {
+                    document.querySelector('[data-tab="income"]').click();
+                });
+                document.getElementById('card-expense').addEventListener('click', () => {
+                    document.querySelector('[data-tab="expense"]').click();
+                });
+                document.getElementById('card-payouts').addEventListener('click', () => {
+                    document.querySelector('[data-tab="payouts"]').click();
+                });
+                document.getElementById('card-balance').addEventListener('click', () => {
+                    document.querySelector('[data-tab="summary"]').click();
                 });
             }
             
@@ -416,6 +565,8 @@
                     
                     await supabase.from('income').insert({ project_id, description, amount, date, status, created_by: currentUser?.id });
                     alert('Поступление добавлено!');
+                    document.getElementById('income-desc').value = '';
+                    document.getElementById('income-amount').value = '';
                     loadAllData();
                 });
                 
@@ -430,6 +581,8 @@
                     
                     await supabase.from('expenses').insert({ project_id, name, amount, date, payment_status, category: 'other', payment_type: 'invoice', created_by: currentUser?.id });
                     alert('Расход добавлен!');
+                    document.getElementById('expense-desc').value = '';
+                    document.getElementById('expense-amount').value = '';
                     loadAllData();
                 });
                 
