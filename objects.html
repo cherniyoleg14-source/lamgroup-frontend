@@ -34,9 +34,10 @@
         .info-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
         .form-group { margin-bottom: 16px; }
         label { font-weight: 700; color: #475569; font-size: 13px; text-transform: uppercase; display: block; margin-bottom: 6px; }
-        input, select { width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 16px; font-size: 15px; background: white; }
+        input, select, textarea { width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 16px; font-size: 15px; background: white; }
         .btn-primary { width: 100%; background: #1a2e4b; color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; cursor: pointer; margin-top: 10px; }
         .btn-secondary { background: #f1f5f9; color: #1a2e4b; padding: 12px 16px; border-radius: 14px; font-weight: 600; border: 1px solid #e2e8f0; cursor: pointer; }
+        .btn-danger { background: #fee2e2; color: #991b1b; padding: 8px 14px; border-radius: 14px; font-weight: 600; border: 1px solid #fca5a5; cursor: pointer; }
         .gpr-item { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid #e2e8f0; }
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .hidden { display: none !important; }
@@ -47,6 +48,48 @@
         .message { padding: 14px; border-radius: 14px; margin: 16px 0; display: none; }
         .message.success { background: #d1fae5; color: #065f46; display: block; }
         .message.error { background: #fee2e2; color: #991b1b; display: block; }
+        
+        /* Модальное окно */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title { font-size: 20px; font-weight: 700; color: #1a2e4b; }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; }
+        .gpr-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .delay-badge {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 4px 8px;
+            border-radius: 30px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
     </style>
 </head>
 <body>
@@ -133,6 +176,36 @@
                 <div id="issues-list"></div>
             </div>
         </div>
+        
+        <!-- Модальное окно сдвига сроков -->
+        <div id="shift-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <span class="modal-title">⏰ Сдвиг сроков</span>
+                    <button class="close-btn" id="close-shift-modal">&times;</button>
+                </div>
+                <input type="hidden" id="shift-schedule-id">
+                <div class="form-group">
+                    <label>Количество дней *</label>
+                    <input type="number" id="shift-days" min="1" value="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Причина *</label>
+                    <select id="shift-reason" required>
+                        <option value="customer">По вине Заказчика</option>
+                        <option value="contractor">По вине Монтажника</option>
+                        <option value="weather">Погодные условия</option>
+                        <option value="other">Другое</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Описание</label>
+                    <textarea id="shift-description" rows="3" placeholder="Опишите причину сдвига..."></textarea>
+                </div>
+                <button class="btn-primary" id="save-shift-btn">Сохранить сдвиг</button>
+            </div>
+        </div>
+        
         <div id="message" class="message"></div>
     </div>
 
@@ -158,6 +231,7 @@
                 setupFilters();
                 setupTabs();
                 setupForms();
+                setupShiftModal();
             }
             
             async function loadUser() {
@@ -283,6 +357,67 @@
                 document.querySelector('[data-tab="info"]').click();
             }
             
+            function setupShiftModal() {
+                const modal = document.getElementById('shift-modal');
+                const closeBtn = document.getElementById('close-shift-modal');
+                const saveBtn = document.getElementById('save-shift-btn');
+                
+                closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+                modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+                
+                saveBtn.addEventListener('click', async () => {
+                    const scheduleId = document.getElementById('shift-schedule-id').value;
+                    const days = parseInt(document.getElementById('shift-days').value) || 0;
+                    const reason = document.getElementById('shift-reason').value;
+                    const description = document.getElementById('shift-description').value;
+                    
+                    if (!scheduleId || days <= 0) { showMessage('Укажите количество дней', 'error'); return; }
+                    
+                    // Получаем текущую работу
+                    const { data: gpr } = await supabase.from('schedule_plan').select('*, axes(name), work_stages(name), projects(name, responsible_worker_id)').eq('id', scheduleId).single();
+                    
+                    // Обновляем дату окончания
+                    const newEndDate = gpr.plan_end ? new Date(gpr.plan_end) : new Date();
+                    newEndDate.setDate(newEndDate.getDate() + days);
+                    
+                    await supabase.from('schedule_plan').update({
+                        plan_end: newEndDate.toISOString().split('T')[0],
+                        delay_reason: reason,
+                        delay_days: days,
+                        delay_description: description,
+                        letter_sent: false
+                    }).eq('id', scheduleId);
+                    
+                    // Если причина "Заказчик" — создаём задачу
+                    if (reason === 'customer') {
+                        await supabase.from('tasks').insert({
+                            project_id: gpr.projects?.id || currentProjectId,
+                            type: 'letter',
+                            title: `Сдвиг сроков: ${gpr.axes?.name} — ${gpr.work_stages?.name}`,
+                            description: `Требуется написать письмо заказчику. Причина: ${description || 'Сдвиг по вине заказчика'}. Сдвиг на ${days} дн.`,
+                            status: 'pending',
+                            priority: 'high',
+                            responsible_ids: gpr.projects?.responsible_worker_id ? [gpr.projects.responsible_worker_id] : [],
+                            created_by: currentUser?.id
+                        });
+                        showMessage('Сдвиг сохранён! Создана задача «Написать письмо заказчику»', 'success');
+                    } else {
+                        showMessage('Сдвиг сохранён!', 'success');
+                    }
+                    
+                    modal.classList.add('hidden');
+                    loadGprProgress();
+                });
+            }
+            
+            window.openShiftModal = (scheduleId) => {
+                document.getElementById('shift-schedule-id').value = scheduleId;
+                document.getElementById('shift-days').value = 1;
+                document.getElementById('shift-reason').value = 'customer';
+                document.getElementById('shift-description').value = '';
+                document.getElementById('shift-modal').classList.remove('hidden');
+            };
+            
             function setupForms() {
                 document.getElementById('back-btn').addEventListener('click', () => {
                     document.getElementById('detail-view').classList.add('hidden');
@@ -385,12 +520,16 @@
                 
                 let html = '';
                 data.forEach(i => {
+                    const hasDelay = i.delay_days > 0;
                     html += `<div class="gpr-item">
-                        <div><strong>${i.axes?.name}</strong> — ${i.work_stages?.name}</div>
+                        <div><strong>${i.axes?.name}</strong> — ${i.work_stages?.name} ${hasDelay ? `<span class="delay-badge">⏰ +${i.delay_days} дн.</span>` : ''}</div>
                         <div>👷 ${i.brigades?.name}</div>
                         <div>Прогресс: <strong>${i.progress || 0}%</strong></div>
                         <input type="range" min="0" max="100" value="${i.progress || 0}" class="progress-slider" data-id="${i.id}" style="width:100%; margin:10px 0">
-                        <button class="btn-secondary" data-id="${i.id}" onclick="updateProgress(this)">Обновить прогресс</button>
+                        <div class="gpr-actions">
+                            <button class="btn-secondary" data-id="${i.id}" onclick="updateProgress(this)">Обновить прогресс</button>
+                            <button class="btn-danger" onclick="openShiftModal('${i.id}')">⏰ Сдвиг</button>
+                        </div>
                         ${i.progress == 100 ? `<button class="btn-primary" style="margin-top:8px" data-id="${i.id}" onclick="createWorkOrder(this)">📋 Сформировать Наряд</button>` : ''}
                     </div>`;
                 });
