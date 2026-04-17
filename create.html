@@ -8,302 +8,145 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f3f4f6;
-            padding: 16px;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 24px;
-            padding: 24px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            border: 1px solid #f0f0f0;
-        }
-        h1 {
-            font-size: 26px;
-            font-weight: 800;
-            color: #1a2e4b;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            letter-spacing: -0.5px;
-        }
-        .logo-badge {
-            background: linear-gradient(135deg, #1a2e4b, #2c4c7c);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 30px;
-            font-size: 14px;
-            margin-left: 8px;
-        }
-        .form-group { margin-bottom: 18px; }
-        label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #4a5568;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        label .required { color: #e53e3e; }
-        input, select {
-            width: 100%;
-            padding: 14px 16px;
-            border: 1.5px solid #e2e8f0;
-            border-radius: 14px;
-            font-size: 15px;
-            background: white;
-            transition: all 0.2s;
-        }
-        input:focus, select:focus {
-            outline: none;
-            border-color: #2c4c7c;
-            box-shadow: 0 0 0 3px rgba(44, 76, 124, 0.1);
-        }
-        .row-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
-        .btn-primary {
-            width: 100%;
-            background: #1a2e4b;
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 24px;
-            transition: all 0.2s;
-        }
-        .btn-primary:hover {
-            background: #2c4c7c;
-            transform: translateY(-1px);
-        }
-        .btn-primary:disabled {
-            background: #a0aec0;
-            cursor: not-allowed;
-        }
-        .message {
-            margin-top: 16px;
-            padding: 14px;
-            border-radius: 14px;
-            text-align: center;
-            font-size: 14px;
-            font-weight: 500;
-            display: none;
-        }
-        .message.success { background: #f0fff4; color: #22543d; display: block; border: 1px solid #9ae6b4; }
-        .message.error { background: #fff5f5; color: #9b2c2c; display: block; border: 1px solid #feb2b2; }
-        .message.info { background: #ebf8ff; color: #2c5282; display: block; border: 1px solid #90cdf4; }
-        .section-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #2d3748;
-            margin: 20px 0 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        .axes-container { margin-bottom: 10px; }
-        .axis-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        .axis-item input { flex: 1; }
-        .btn-icon {
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            color: #4a5568;
-            width: 44px;
-            height: 44px;
-            border-radius: 14px;
-            font-size: 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .btn-add {
-            background: none;
-            border: 2px dashed #cbd5e0;
-            color: #4a5568;
-            padding: 12px;
-            border-radius: 14px;
-            width: 100%;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 8px;
-            transition: all 0.2s;
-        }
-        .btn-add:hover {
-            background: #f7fafc;
-            border-color: #2c4c7c;
-            color: #2c4c7c;
-        }
+        body { font-family: -apple-system, sans-serif; background: #f5f7fa; padding: 16px; }
+        .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; }
+        h1 { color: #1a2e4b; margin-bottom: 24px; }
+        .form-group { margin-bottom: 16px; }
+        label { font-weight: 600; color: #475569; font-size: 13px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 16px; font-size: 15px; }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .btn-primary { width: 100%; background: #1a2e4b; color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; margin-top: 24px; cursor: pointer; }
+        .section-title { font-size: 18px; font-weight: 700; margin: 24px 0 16px; color: #1a2e4b; }
+        .stage-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding: 12px; background: #f8fafc; border-radius: 14px; }
+        .stage-item input[type="checkbox"] { width: 24px; height: 24px; accent-color: #1a2e4b; }
+        .stage-name { flex: 1; font-weight: 500; }
+        .stage-price { width: 100px; }
+        .stage-unit { width: 80px; }
+        .axis-item { display: flex; gap: 10px; margin-bottom: 10px; }
+        .btn-add { background: none; border: 2px dashed #cbd5e0; padding: 12px; border-radius: 14px; width: 100%; cursor: pointer; }
+        .message { padding: 14px; border-radius: 14px; margin-top: 16px; display: none; }
+        .message.success { background: #d1fae5; color: #065f46; display: block; }
+        .message.error { background: #fee2e2; color: #991b1b; display: block; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>
-            LamGroup
-            <span class="logo-badge">Construction</span>
-        </h1>
-        
+        <h1>🏗️ Новый объект</h1>
         <form id="project-form">
-            <div class="form-group">
-                <label>Название объекта <span class="required">*</span></label>
-                <input type="text" id="name" placeholder="ЖК Солнечный" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Адрес <span class="required">*</span></label>
-                <input type="text" id="address" placeholder="ул. Примерная, 1" required>
-            </div>
-            
+            <div class="form-group"><label>Название *</label><input type="text" id="name" required></div>
+            <div class="form-group"><label>Адрес *</label><input type="text" id="address" required></div>
             <div class="row-2">
-                <div class="form-group">
-                    <label>Цена договора (₸) <span class="required">*</span></label>
-                    <input type="number" step="0.01" id="contract_price" placeholder="0" required>
-                </div>
-                <div class="form-group">
-                    <label>Проектная S (м²) <span class="required">*</span></label>
-                    <input type="number" step="0.01" id="project_area" placeholder="1000" required>
-                </div>
+                <div class="form-group"><label>Цена договора (₸) *</label><input type="number" id="contract_price" required></div>
+                <div class="form-group"><label>Проектная S (м²) *</label><input type="number" id="project_area" required></div>
             </div>
-
             <div class="row-2">
-                <div class="form-group">
-                    <label>Дата начала <span class="required">*</span></label>
-                    <input type="date" id="start_date" required>
-                </div>
-                <div class="form-group">
-                    <label>Дата окончания (ГПР) <span class="required">*</span></label>
-                    <input type="date" id="end_date_contract" required>
-                </div>
+                <div class="form-group"><label>Дата начала *</label><input type="date" id="start_date" required></div>
+                <div class="form-group"><label>Дата окончания (договор) *</label><input type="date" id="end_date_contract" required></div>
             </div>
             
-            <div class="section-title">⚙️ Оси объекта</div>
-            <div id="axes-container" class="axes-container"></div>
+            <div class="section-title">📊 Этапы работ и цены</div>
+            <div id="stages-container"></div>
+            
+            <div class="section-title">📍 Оси объекта</div>
+            <div id="axes-container"></div>
             <button type="button" class="btn-add" id="add-axis">+ Добавить ось</button>
             
-            <button type="submit" class="btn-primary" id="submit-btn">Создать объект</button>
+            <button type="submit" class="btn-primary">Создать объект</button>
         </form>
-        
         <div id="message" class="message"></div>
     </div>
-
     <script>
         (function() {
-            const tg = window.Telegram.WebApp;
-            tg.expand();
-            tg.ready();
-            
+            const tg = window.Telegram.WebApp; tg.expand(); tg.ready();
             const SUPABASE_URL = 'https://owagntywpiymqhbfoxye.supabase.co';
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YWdudHl3cGl5bXFoYmZveHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTg5MDUsImV4cCI6MjA5MTg5NDkwNX0.p-3xAhbFgH5lcGnbBfkcQQFVza_Yc2qoY6VBlhmmFGg';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             
-            let userId = null;
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                userId = tg.initDataUnsafe.user.id;
-            }
-            if (!userId) userId = 531738802;
+            let userId = tg.initDataUnsafe?.user?.id || 531738802;
+            let workStages = [];
             
+            const stagesContainer = document.getElementById('stages-container');
             const axesContainer = document.getElementById('axes-container');
-            const addAxisBtn = document.getElementById('add-axis');
-            const form = document.getElementById('project-form');
-            const submitBtn = document.getElementById('submit-btn');
             const messageDiv = document.getElementById('message');
             
-            function showMessage(text, type) {
-                messageDiv.textContent = text;
-                messageDiv.className = `message ${type}`;
+            function showMessage(text, type) { messageDiv.textContent = text; messageDiv.className = `message ${type}`; }
+            
+            async function loadStages() {
+                const { data } = await supabase.from('work_stages').select('*').order('id');
+                workStages = data || [];
+                stagesContainer.innerHTML = workStages.map(s => `
+                    <div class="stage-item">
+                        <input type="checkbox" class="stage-check" data-id="${s.id}" data-name="${s.name}">
+                        <span class="stage-name">${s.name}</span>
+                        <input type="number" placeholder="Цена" class="stage-price" data-id="${s.id}" step="0.01">
+                        <select class="stage-unit" data-id="${s.id}">
+                            <option value="м²">м²</option>
+                            <option value="п.м.">п.м.</option>
+                        </select>
+                    </div>
+                `).join('');
             }
             
-            function createAxisInput(value = '') {
-                const div = document.createElement('div');
-                div.className = 'axis-item';
-                div.innerHTML = `
-                    <input type="text" name="axis_name[]" placeholder="Например: Ось 1" value="${value}">
-                    <button type="button" class="btn-icon" onclick="this.parentElement.remove()">✕</button>
-                `;
+            function createAxisInput() {
+                const div = document.createElement('div'); div.className = 'axis-item';
+                div.innerHTML = `<input type="text" name="axis_name[]" placeholder="Ось"><button type="button" onclick="this.parentElement.remove()">✕</button>`;
                 return div;
             }
             
-            axesContainer.appendChild(createAxisInput(''));
-            addAxisBtn.addEventListener('click', () => axesContainer.appendChild(createAxisInput('')));
+            axesContainer.appendChild(createAxisInput());
+            document.getElementById('add-axis').addEventListener('click', () => axesContainer.appendChild(createAxisInput()));
             
-            const today = new Date();
-            const future = new Date();
-            future.setDate(today.getDate() + 30);
+            const today = new Date(); const future = new Date(); future.setDate(today.getDate() + 30);
             document.getElementById('start_date').value = today.toISOString().split('T')[0];
             document.getElementById('end_date_contract').value = future.toISOString().split('T')[0];
             
-            form.addEventListener('submit', async (e) => {
+            document.getElementById('project-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                if (!userId) { showMessage('Ошибка Telegram ID', 'error'); return; }
-                
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Сохранение...';
                 showMessage('Создаём объект...', 'info');
                 
                 try {
-                    const name = document.getElementById('name').value.trim();
-                    const address = document.getElementById('address').value.trim();
-                    const contract_price = parseFloat(document.getElementById('contract_price').value) || 0;
+                    const name = document.getElementById('name').value;
+                    const address = document.getElementById('address').value;
+                    const contract_price = parseFloat(document.getElementById('contract_price').value);
                     const project_area = parseFloat(document.getElementById('project_area').value);
                     const start_date = document.getElementById('start_date').value;
                     const end_date_contract = document.getElementById('end_date_contract').value;
                     
-                    const axisInputs = document.querySelectorAll('input[name="axis_name[]"]');
-                    const axes = Array.from(axisInputs).map(i => i.value.trim()).filter(v => v);
-                    
-                    if (axes.length === 0) { showMessage('Добавьте оси', 'error'); submitBtn.disabled = false; submitBtn.textContent = 'Создать объект'; return; }
+                    const axes = Array.from(document.querySelectorAll('input[name="axis_name[]"]')).map(i => i.value).filter(v => v);
+                    if (axes.length === 0) { showMessage('Добавьте оси', 'error'); return; }
                     
                     const { data: userData } = await supabase.from('users').select('id').eq('telegram_id', userId).single();
                     if (!userData) { showMessage('Пользователь не найден', 'error'); return; }
                     
-                    const { data: projectData, error: projectError } = await supabase
-                        .from('projects')
-                        .insert({
-                            name, address, contract_price, project_area,
-                            start_date, end_date_contract,
-                            responsible_worker_id: userData.id,
-                            status: 'preparation',
-                            block_count: 1
-                        })
-                        .select('id').single();
+                    const { data: project, error } = await supabase.from('projects').insert({
+                        name, address, contract_price, project_area, start_date, end_date_contract,
+                        responsible_worker_id: userData.id, status: 'preparation', block_count: 1
+                    }).select('id').single();
+                    if (error) throw error;
                     
-                    if (projectError) throw projectError;
+                    const { data: block } = await supabase.from('blocks').insert({ project_id: project.id, name: 'Блок 1' }).select('id').single();
+                    await supabase.from('axes').insert(axes.map(name => ({ block_id: block.id, name })));
                     
-                    const { data: blockData } = await supabase
-                        .from('blocks')
-                        .insert({ project_id: projectData.id, name: 'Блок 1' })
-                        .select('id').single();
+                    // Сохраняем выбранные этапы с ценами
+                    const selectedStages = [];
+                    document.querySelectorAll('.stage-check:checked').forEach(cb => {
+                        const id = cb.dataset.id;
+                        const price = document.querySelector(`.stage-price[data-id="${id}"]`).value;
+                        const unit = document.querySelector(`.stage-unit[data-id="${id}"]`).value;
+                        if (price) selectedStages.push({ stage_id: id, price, unit });
+                    });
                     
-                    const axesToInsert = axes.map(name => ({ block_id: blockData.id, name }));
-                    await supabase.from('axes').insert(axesToInsert);
+                    // Здесь можно сохранить в отдельную таблицу project_stages (создадим позже)
+                    console.log('Этапы с ценами:', selectedStages);
                     
                     showMessage(`✅ Объект "${name}" создан!`, 'success');
                     setTimeout(() => tg.close(), 1500);
-                    
-                } catch (error) {
-                    showMessage('Ошибка: ' + error.message, 'error');
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Создать объект';
+                } catch (err) {
+                    showMessage('Ошибка: ' + err.message, 'error');
                 }
             });
+            
+            loadStages();
         })();
     </script>
 </body>
