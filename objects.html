@@ -49,7 +49,6 @@
         .message.success { background: #d1fae5; color: #065f46; display: block; }
         .message.error { background: #fee2e2; color: #991b1b; display: block; }
         
-        /* Модальное окно */
         .modal {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -57,8 +56,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 9999;
         }
+        .modal.hidden { display: none !important; }
         .modal-content {
             background: white;
             border-radius: 24px;
@@ -67,6 +67,8 @@
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
+            position: relative;
+            z-index: 10000;
         }
         .modal-header {
             display: flex;
@@ -327,7 +329,6 @@
                     showDetail(id); loadProjects();
                 });
                 
-                // Load axes
                 const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', id);
                 if (blocks && blocks.length > 0) {
                     const blockIds = blocks.map(b => b.id);
@@ -371,42 +372,63 @@
                     const reason = document.getElementById('shift-reason').value;
                     const description = document.getElementById('shift-description').value;
                     
-                    if (!scheduleId || days <= 0) { showMessage('Укажите количество дней', 'error'); return; }
+                    if (!scheduleId || days <= 0) { alert('Укажите количество дней'); return; }
                     
-                    // Получаем текущую работу
-                    const { data: gpr } = await supabase.from('schedule_plan').select('*, axes(name), work_stages(name), projects(name, responsible_worker_id)').eq('id', scheduleId).single();
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'Сохранение...';
                     
-                    // Обновляем дату окончания
-                    const newEndDate = gpr.plan_end ? new Date(gpr.plan_end) : new Date();
-                    newEndDate.setDate(newEndDate.getDate() + days);
-                    
-                    await supabase.from('schedule_plan').update({
-                        plan_end: newEndDate.toISOString().split('T')[0],
-                        delay_reason: reason,
-                        delay_days: days,
-                        delay_description: description,
-                        letter_sent: false
-                    }).eq('id', scheduleId);
-                    
-                    // Если причина "Заказчик" — создаём задачу
-                    if (reason === 'customer') {
-                        await supabase.from('tasks').insert({
-                            project_id: gpr.projects?.id || currentProjectId,
-                            type: 'letter',
-                            title: `Сдвиг сроков: ${gpr.axes?.name} — ${gpr.work_stages?.name}`,
-                            description: `Требуется написать письмо заказчику. Причина: ${description || 'Сдвиг по вине заказчика'}. Сдвиг на ${days} дн.`,
-                            status: 'pending',
-                            priority: 'high',
-                            responsible_ids: gpr.projects?.responsible_worker_id ? [gpr.projects.responsible_worker_id] : [],
-                            created_by: currentUser?.id
-                        });
-                        showMessage('Сдвиг сохранён! Создана задача «Написать письмо заказчику»', 'success');
-                    } else {
-                        showMessage('Сдвиг сохранён!', 'success');
+                    try {
+                        const { data: gpr, error: gprError } = await supabase
+                            .from('schedule_plan')
+                            .select('*, axes(name), work_stages(name), projects!inner(name, responsible_worker_id)')
+                            .eq('id', scheduleId)
+                            .single();
+                        
+                        if (gprError) throw gprError;
+                        
+                        const currentEnd = gpr.plan_end ? new Date(gpr.plan_end) : new Date();
+                        currentEnd.setDate(currentEnd.getDate() + days);
+                        const newEndDate = currentEnd.toISOString().split('T')[0];
+                        
+                        const { error: updateError } = await supabase
+                            .from('schedule_plan')
+                            .update({
+                                plan_end: newEndDate,
+                                delay_reason: reason,
+                                delay_days: days,
+                                delay_description: description,
+                                letter_sent: false
+                            })
+                            .eq('id', scheduleId);
+                        
+                        if (updateError) throw updateError;
+                        
+                        if (reason === 'customer') {
+                            const taskData = {
+                                project_id: currentProjectId,
+                                type: 'letter',
+                                title: `Сдвиг сроков: ${gpr.axes?.name || '—'} — ${gpr.work_stages?.name || '—'}`,
+                                description: `Требуется написать письмо заказчику. Причина: ${description || 'Сдвиг по вине заказчика'}. Сдвиг на ${days} дн.`,
+                                status: 'pending',
+                                priority: 'high',
+                                created_by: currentUser?.id
+                            };
+                            if (gpr.projects?.responsible_worker_id) taskData.responsible_ids = [gpr.projects.responsible_worker_id];
+                            await supabase.from('tasks').insert(taskData);
+                            alert('Сдвиг сохранён! Создана задача «Написать письмо заказчику»');
+                        } else {
+                            alert('Сдвиг сохранён!');
+                        }
+                        
+                        modal.classList.add('hidden');
+                        loadGprProgress();
+                    } catch (error) {
+                        console.error('Ошибка:', error);
+                        alert('Ошибка: ' + error.message);
+                    } finally {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Сохранить сдвиг';
                     }
-                    
-                    modal.classList.add('hidden');
-                    loadGprProgress();
                 });
             }
             
@@ -433,7 +455,6 @@
                     
                     const volume = parseFloat(document.getElementById('gpr-volume').value) || 0;
                     const price = parseFloat(document.getElementById('gpr-price').value) || 0;
-                    
                     const brigadeSelect = document.getElementById('gpr-brigade');
                     const brigadeName = brigadeSelect.options[brigadeSelect.selectedIndex]?.text.split(' (')[0] || '';
                     
@@ -446,7 +467,7 @@
                         progress: 0
                     });
                     if (error) { showMessage('Ошибка: ' + error.message, 'error'); }
-                    else { showMessage('Работа добавлена!', 'success'); loadGprCreate(); }
+                    else { showMessage('Работа добавлена!', 'success'); }
                 });
                 
                 document.getElementById('add-expense-btn').addEventListener('click', async () => {
@@ -455,8 +476,7 @@
                     if (!name || !amount) { showMessage('Заполните наименование и сумму', 'error'); return; }
                     
                     const { error } = await supabase.from('expenses').insert({
-                        project_id: currentProjectId,
-                        name, amount,
+                        project_id: currentProjectId, name, amount,
                         category: document.getElementById('exp-category').value,
                         quantity: parseFloat(document.getElementById('exp-qty').value) || 1,
                         payment_type: document.getElementById('exp-payment').value,
@@ -473,8 +493,7 @@
                     if (!name || !qty) { showMessage('Заполните наименование и количество', 'error'); return; }
                     
                     const { error } = await supabase.from('materials').insert({
-                        project_id: currentProjectId,
-                        name, quantity: qty,
+                        project_id: currentProjectId, name, quantity: qty,
                         supplier: document.getElementById('mat-supplier').value,
                         invoice_number: document.getElementById('mat-invoice').value,
                         unit: document.getElementById('mat-unit').value,
@@ -490,8 +509,8 @@
                     
                     const resp = document.getElementById('issue-resp').value;
                     const { error } = await supabase.from('project_issues').insert({
-                        project_id: currentProjectId,
-                        title, description: document.getElementById('issue-desc').value,
+                        project_id: currentProjectId, title,
+                        description: document.getElementById('issue-desc').value,
                         responsible_ids: resp ? [resp] : [],
                         created_by: currentUser?.id
                     });
@@ -553,7 +572,7 @@
                     volume: gpr.volume, price: gpr.price_per_unit, total_amount: gpr.total_cost,
                     created_by: currentUser?.id, status: 'pending_foreman'
                 });
-                showMessage('Наряд создан и отправлен на проверку!', 'success');
+                showMessage('Наряд создан!', 'success');
                 loadGprProgress();
             };
             
@@ -561,14 +580,14 @@
                 const { data } = await supabase.from('expenses').select('*').eq('project_id', currentProjectId).order('created_at', { ascending: false });
                 const container = document.getElementById('expenses-list');
                 if (!data || data.length === 0) { container.innerHTML = '<div class="info-card"><p>Нет расходов</p></div>'; return; }
-                container.innerHTML = data.map(e => `<div class="gpr-item"><strong>${e.name}</strong> — ${e.amount} ₸<br><small>${e.category} | ${e.payment_status} | ${new Date(e.created_at).toLocaleDateString('ru-RU')}</small></div>`).join('');
+                container.innerHTML = data.map(e => `<div class="gpr-item"><strong>${e.name}</strong> — ${e.amount} ₸<br><small>${e.category} | ${e.payment_status}</small></div>`).join('');
             }
             
             async function loadMaterials() {
                 const { data } = await supabase.from('materials').select('*').eq('project_id', currentProjectId).order('created_at', { ascending: false });
                 const container = document.getElementById('materials-list');
                 if (!data || data.length === 0) { container.innerHTML = '<div class="info-card"><p>Нет материалов</p></div>'; return; }
-                container.innerHTML = data.map(m => `<div class="gpr-item"><strong>${m.name}</strong> — ${m.quantity} ${m.unit}<br><small>${m.supplier || ''} ${m.invoice_number || ''}</small></div>`).join('');
+                container.innerHTML = data.map(m => `<div class="gpr-item"><strong>${m.name}</strong> — ${m.quantity} ${m.unit}<br><small>${m.supplier || ''}</small></div>`).join('');
             }
             
             async function loadChecklist() {
@@ -577,17 +596,11 @@
                 const work = (data || []).filter(c => c.section === 'foreman_workers');
                 
                 document.getElementById('checklist-customer').innerHTML = cust.map(c => `
-                    <div class="checklist-item">
-                        <input type="checkbox" ${c.is_completed ? 'checked' : ''} data-id="${c.id}">
-                        <label>${c.item_text}</label>
-                    </div>
+                    <div class="checklist-item"><input type="checkbox" ${c.is_completed ? 'checked' : ''} data-id="${c.id}"><label>${c.item_text}</label></div>
                 `).join('');
                 
                 document.getElementById('checklist-workers').innerHTML = work.map(c => `
-                    <div class="checklist-item">
-                        <input type="checkbox" ${c.is_completed ? 'checked' : ''} data-id="${c.id}">
-                        <label>${c.item_text}</label>
-                    </div>
+                    <div class="checklist-item"><input type="checkbox" ${c.is_completed ? 'checked' : ''} data-id="${c.id}"><label>${c.item_text}</label></div>
                 `).join('');
                 
                 document.querySelectorAll('#tab-checklist input[type="checkbox"]').forEach(cb => {
@@ -601,7 +614,7 @@
                 const { data } = await supabase.from('project_issues').select('*').eq('project_id', currentProjectId).order('created_at', { ascending: false });
                 const container = document.getElementById('issues-list');
                 if (!data || data.length === 0) { container.innerHTML = '<div class="info-card"><p>Нет проблем</p></div>'; return; }
-                container.innerHTML = data.map(i => `<div class="gpr-item"><strong>${i.title}</strong><br>${i.description || ''}<br><small>Статус: ${i.status} | ${new Date(i.created_at).toLocaleDateString('ru-RU')}</small></div>`).join('');
+                container.innerHTML = data.map(i => `<div class="gpr-item"><strong>${i.title}</strong><br>${i.description || ''}<br><small>${i.status}</small></div>`).join('');
             }
             
             init();
