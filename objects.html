@@ -10,791 +10,746 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f3f4f6;
+            background: #f5f7fa;
             padding: 16px;
             min-height: 100vh;
         }
         .container { max-width: 600px; margin: 0 auto; }
-        h1 {
-            font-size: 24px;
-            font-weight: 700;
-            color: #1e3a8a;
-            margin-bottom: 20px;
+        
+        /* Header */
+        .app-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: #1a2e4b;
+            letter-spacing: -0.5px;
         }
         .role-badge {
-            background: #e5e7eb;
-            color: #374151;
-            padding: 4px 10px;
-            border-radius: 20px;
+            background: #e2e8f0;
+            color: #1a2e4b;
+            padding: 6px 14px;
+            border-radius: 30px;
             font-size: 14px;
-            font-weight: 500;
-            margin-left: 10px;
+            font-weight: 600;
         }
+        
+        /* Filters */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid #d1d5db;
+            background: white;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .filter-btn.active {
+            background: #1a2e4b;
+            color: white;
+            border-color: #1a2e4b;
+        }
+        
+        /* Objects Grid */
         .objects-grid {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 14px;
         }
         .object-card {
             background: white;
-            border-radius: 16px;
-            padding: 16px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
             cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.2s;
-            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
+            border: 1px solid #edf2f7;
         }
-        .object-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .object-card:active { transform: scale(0.99); }
         .object-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
-        .object-name { font-size: 18px; font-weight: 600; color: #1e3a8a; }
+        .object-name { font-size: 18px; font-weight: 700; color: #1a2e4b; }
         .object-status {
-            padding: 4px 8px;
-            border-radius: 12px;
+            padding: 5px 12px;
+            border-radius: 30px;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 700;
+            text-transform: uppercase;
         }
-        .status-active { background: #d1fae5; color: #065f46; }
-        .status-completed { background: #dbeafe; color: #1e40af; }
+        .status-preparation { background: #fef3c7; color: #92400e; }
+        .status-mobilization { background: #dbeafe; color: #1e40af; }
+        .status-in_progress { background: #d1fae5; color: #065f46; }
+        .status-completed { background: #e2e8f0; color: #1a2e4b; }
         .status-paused { background: #fee2e2; color: #991b1b; }
-        .object-address {
-            font-size: 14px;
-            color: #6b7280;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .object-progress { margin-bottom: 12px; }
+        
+        .object-address { font-size: 14px; color: #64748b; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .progress-section { margin: 14px 0; }
         .progress-bar {
             height: 8px;
-            background: #e5e7eb;
-            border-radius: 4px;
+            background: #e2e8f0;
+            border-radius: 10px;
             overflow: hidden;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .progress-fill {
             height: 100%;
-            background: #1e3a8a;
-            border-radius: 4px;
+            background: linear-gradient(90deg, #2c4c7c, #1a2e4b);
+            border-radius: 10px;
             width: 0%;
         }
         .progress-text {
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
-            color: #6b7280;
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
         }
         .object-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 13px;
-            color: #6b7280;
+            color: #64748b;
             padding-top: 12px;
-            border-top: 1px solid #f3f4f6;
+            border-top: 1px solid #f1f5f9;
         }
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            background: white;
-            border-radius: 16px;
-            color: #6b7280;
+        .date-badge {
+            background: #f8fafc;
+            padding: 4px 10px;
+            border-radius: 30px;
         }
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #6b7280;
-        }
-        .error-message {
-            background: #fee2e2;
-            color: #991b1b;
-            padding: 16px;
-            border-radius: 12px;
-            text-align: center;
-        }
+        
+        /* Detail View */
         .back-btn {
             background: none;
             border: none;
-            color: #1e3a8a;
-            font-size: 16px;
+            color: #1a2e4b;
+            font-size: 18px;
+            font-weight: 600;
             cursor: pointer;
             padding: 8px 0;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
         }
-        .hidden { display: none !important; }
-        
-        /* Стили для вкладок */
         .tabs {
             display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 8px;
+            gap: 4px;
+            margin: 16px 0;
+            border-bottom: 2px solid #e2e8f0;
+            overflow-x: auto;
         }
         .tab {
-            padding: 8px 16px;
+            padding: 10px 14px;
             background: none;
             border: none;
             font-size: 14px;
-            font-weight: 500;
-            color: #6b7280;
+            font-weight: 600;
+            color: #64748b;
             cursor: pointer;
-            border-radius: 20px;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
             transition: all 0.2s;
         }
-        .tab:hover { background: #f3f4f6; }
         .tab.active {
-            background: #1e3a8a;
-            color: white;
+            color: #1a2e4b;
+            border-bottom-color: #1a2e4b;
         }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        /* Стили для ГПР */
-        .gpr-form {
+        /* Cards & Forms */
+        .info-card {
             background: white;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 16px;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
         }
-        .form-group { margin-bottom: 14px; }
+        .form-group { margin-bottom: 16px; }
         .form-group label {
             display: block;
             font-size: 13px;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 4px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+            text-transform: uppercase;
         }
         .form-group input, .form-group select {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-            font-size: 14px;
+            padding: 14px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 15px;
             background: white;
-        }
-        .row-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .row-3 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
         }
         .btn-primary {
-            background: #1e3a8a;
+            width: 100%;
+            background: #1a2e4b;
             color: white;
             border: none;
-            padding: 14px;
-            border-radius: 12px;
+            padding: 16px;
+            border-radius: 16px;
             font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary:active { background: #2c4c7c; }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #1a2e4b;
+            border: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            width: 100%;
         }
-        .btn-secondary {
-            background: #f3f4f6;
-            color: #374151;
-            border: 1px solid #d1d5db;
-            padding: 10px 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .gpr-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 16px;
-        }
+        
+        /* GPR Items */
         .gpr-item {
             background: white;
-            border-radius: 12px;
-            padding: 14px;
-            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
         }
         .gpr-header {
             display: flex;
             justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .gpr-axis { font-weight: 700; color: #1a2e4b; }
+        .gpr-stage { background: #e2e8f0; padding: 4px 10px; border-radius: 30px; font-size: 12px; }
+        .progress-slider {
+            width: 100%;
+            margin: 12px 0;
+        }
+        .row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .hidden { display: none !important; }
+        .loading { text-align: center; padding: 40px; color: #64748b; }
+        .empty-state { text-align: center; padding: 40px; background: white; border-radius: 20px; color: #64748b; }
+        .message { padding: 14px; border-radius: 14px; margin-bottom: 16px; display: none; }
+        .message.success { background: #d1fae5; color: #065f46; display: block; }
+        .message.error { background: #fee2e2; color: #991b1b; display: block; }
+        
+        /* Checklist */
+        .checklist-item {
+            display: flex;
             align-items: center;
-            margin-bottom: 8px;
-        }
-        .gpr-axis {
-            font-weight: 600;
-            color: #1e3a8a;
-        }
-        .gpr-stage {
-            background: #e5e7eb;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-        .gpr-brigade {
-            font-size: 13px;
-            color: #6b7280;
-            margin-bottom: 8px;
-        }
-        .gpr-progress {
-            height: 6px;
-            background: #e5e7eb;
-            border-radius: 3px;
-            margin: 8px 0;
-        }
-        .gpr-progress-fill {
-            height: 100%;
-            background: #10b981;
-            border-radius: 3px;
-            width: 0%;
-        }
-        .gpr-footer {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            margin-top: 8px;
-        }
-        .gpr-cost {
-            font-weight: 600;
-            color: #1e3a8a;
-        }
-        .total-section {
-            background: #1e3a8a;
-            color: white;
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 16px;
-        }
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        .total-row:last-child {
-            margin-bottom: 0;
-            padding-top: 8px;
-            border-top: 1px solid rgba(255,255,255,0.2);
-            font-weight: 700;
-            font-size: 18px;
-        }
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
+            gap: 12px;
             padding: 12px 0;
-            border-bottom: 1px solid #f3f4f6;
+            border-bottom: 1px solid #f1f5f9;
         }
-        .detail-label { color: #6b7280; font-size: 14px; }
-        .detail-value { font-weight: 500; color: #1f2937; font-size: 14px; }
-        .delete-btn {
-            background: none;
-            border: none;
-            color: #dc2626;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 4px 8px;
+        .checklist-item input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            accent-color: #1a2e4b;
+        }
+        .checklist-item label {
+            flex: 1;
+            font-size: 14px;
+            color: #334155;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- LIST VIEW -->
         <div id="list-view">
-            <h1>
-                📋 Объекты
+            <div class="app-header">
+                <h1>🏗️ Объекты</h1>
                 <span class="role-badge" id="role-badge">Загрузка...</span>
-            </h1>
-            <div id="objects-container">
-                <div class="loading">Загрузка объектов...</div>
             </div>
+            
+            <div class="filter-bar">
+                <button class="filter-btn active" data-filter="all">Все</button>
+                <button class="filter-btn" data-filter="my">Мои</button>
+                <button class="filter-btn" data-filter="preparation">Подготовка</button>
+                <button class="filter-btn" data-filter="in_progress">В работе</button>
+                <button class="filter-btn" data-filter="completed">Завершён</button>
+            </div>
+            
+            <div id="objects-container"><div class="loading">Загрузка объектов...</div></div>
         </div>
         
+        <!-- DETAIL VIEW -->
         <div id="detail-view" class="hidden">
-            <button class="back-btn" id="back-btn">← Назад к списку</button>
-            <h1>🏗️ <span id="detail-name">Объект</span></h1>
+            <button class="back-btn" id="back-btn">← Назад</button>
+            <div class="app-header">
+                <h1 id="detail-name">Объект</h1>
+                <span class="role-badge" id="detail-status-badge"></span>
+            </div>
             
             <div class="tabs">
                 <button class="tab active" data-tab="info">📋 Инфо</button>
-                <button class="tab" data-tab="gpr">📊 ГПР</button>
+                <button class="tab" data-tab="gpr-plan">📅 План ГПР</button>
+                <button class="tab" data-tab="gpr-fact">📊 Прогресс</button>
+                <button class="tab" data-tab="expenses">💰 Расходы</button>
+                <button class="tab" data-tab="materials">📦 Материалы</button>
+                <button class="tab" data-tab="checklist">✅ Чек-лист</button>
+                <button class="tab" data-tab="issues">⚠️ Проблемы</button>
             </div>
             
+            <!-- TAB: INFO -->
             <div id="tab-info" class="tab-content active">
-                <div class="object-detail" id="detail-content"></div>
+                <div class="info-card" id="detail-content"></div>
             </div>
             
-            <div id="tab-gpr" class="tab-content">
-                <!-- Форма добавления работы -->
-                <div class="gpr-form">
-                    <h3 style="margin-bottom: 16px; color: #1e3a8a;">➕ Добавить работу</h3>
-                    
+            <!-- TAB: GPR PLAN -->
+            <div id="tab-gpr-plan" class="tab-content">
+                <div class="info-card">
+                    <h3 style="margin-bottom: 20px;">➕ Добавить работу</h3>
                     <div class="form-group">
                         <label>Ось *</label>
-                        <select id="gpr-axis" required></select>
+                        <select id="gpr-axis"></select>
                     </div>
-                    
                     <div class="form-group">
                         <label>Вид работ *</label>
-                        <select id="gpr-stage" required></select>
+                        <select id="gpr-stage"></select>
                     </div>
-                    
                     <div class="form-group">
-                        <label>Название бригады *</label>
-                        <input type="text" id="gpr-brigade" placeholder="Например: Бригада Иванова" required>
+                        <label>Бригада *</label>
+                        <select id="gpr-brigade"></select>
                     </div>
-                    
                     <div class="row-2">
-                        <div class="form-group">
-                            <label>Кол-во человек</label>
-                            <input type="number" id="gpr-workers" value="1" min="1">
-                        </div>
-                        <div class="form-group">
-                            <label>Объём</label>
-                            <input type="number" step="0.01" id="gpr-volume" placeholder="0" required>
-                        </div>
+                        <div class="form-group"><label>Объём</label><input type="number" id="gpr-volume" step="0.01"></div>
+                        <div class="form-group"><label>Цена за ед.</label><input type="number" id="gpr-price" step="0.01"></div>
                     </div>
-                    
                     <div class="row-2">
-                        <div class="form-group">
-                            <label>Ед. изм.</label>
-                            <select id="gpr-unit">
-                                <option value="м²">м²</option>
-                                <option value="п.м.">п.м.</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Цена за ед. (₸)</label>
-                            <input type="number" step="0.01" id="gpr-price" placeholder="0" required>
-                        </div>
+                        <div class="form-group"><label>Начало</label><input type="date" id="gpr-start"></div>
+                        <div class="form-group"><label>Окончание</label><input type="date" id="gpr-end"></div>
                     </div>
-                    
-                    <div class="row-2">
-                        <div class="form-group">
-                            <label>Дата начала</label>
-                            <input type="date" id="gpr-start">
-                        </div>
-                        <div class="form-group">
-                            <label>Дата окончания</label>
-                            <input type="date" id="gpr-end">
-                        </div>
-                    </div>
-                    
+                    <button class="btn-primary" id="add-gpr-btn">Добавить в план</button>
+                </div>
+                <div id="gpr-plan-list"></div>
+            </div>
+            
+            <!-- TAB: GPR FACT (PROGRESS) -->
+            <div id="tab-gpr-fact" class="tab-content">
+                <div id="gpr-progress-list"></div>
+            </div>
+            
+            <!-- TAB: EXPENSES -->
+            <div id="tab-expenses" class="tab-content">
+                <div class="info-card">
+                    <h3 style="margin-bottom: 16px;">➕ Добавить расход</h3>
+                    <div class="form-group"><label>Наименование</label><input type="text" id="exp-name"></div>
                     <div class="form-group">
-                        <label>Сумма: <span id="gpr-total-preview">0 ₸</span></label>
+                        <label>Статья</label>
+                        <select id="exp-category">
+                            <option value="delivery">Доставка</option>
+                            <option value="consumables">Расходники</option>
+                            <option value="cradles">Люльки</option>
+                            <option value="scaffolding">Леса</option>
+                            <option value="other">Прочее</option>
+                        </select>
                     </div>
-                    
-                    <button class="btn-primary" id="add-gpr-btn">Добавить в ГПР</button>
+                    <div class="row-2">
+                        <div class="form-group"><label>Кол-во</label><input type="number" id="exp-qty" value="1"></div>
+                        <div class="form-group"><label>Сумма</label><input type="number" id="exp-amount" step="0.01"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Вид оплаты</label>
+                        <select id="exp-payment">
+                            <option value="cash">Наличка</option>
+                            <option value="card_itr">Карта ИТР</option>
+                            <option value="card_volodya">Карта Володи</option>
+                            <option value="card_makha">Карта Маха</option>
+                            <option value="invoice">По счету</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Статус</label>
+                        <select id="exp-status">
+                            <option value="pending">План оплаты</option>
+                            <option value="paid">Оплачен</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" id="add-expense-btn">Сохранить расход</button>
                 </div>
-                
-                <!-- Список работ -->
-                <div id="gpr-list-container">
-                    <h3 style="margin: 16px 0 12px; color: #374151;">📌 План работ</h3>
-                    <div id="gpr-list" class="gpr-list"></div>
+                <div id="expenses-list"></div>
+            </div>
+            
+            <!-- TAB: MATERIALS -->
+            <div id="tab-materials" class="tab-content">
+                <div class="info-card">
+                    <h3 style="margin-bottom: 16px;">➕ Добавить материал</h3>
+                    <div class="form-group"><label>Поставщик</label><input type="text" id="mat-supplier"></div>
+                    <div class="form-group"><label>№ накладной</label><input type="text" id="mat-invoice"></div>
+                    <div class="form-group"><label>Наименование</label><input type="text" id="mat-name"></div>
+                    <div class="row-2">
+                        <div class="form-group"><label>Количество</label><input type="number" id="mat-qty" step="0.01"></div>
+                        <div class="form-group"><label>Ед.изм</label><input type="text" id="mat-unit" value="шт"></div>
+                    </div>
+                    <button class="btn-primary" id="add-material-btn">Добавить</button>
                 </div>
-                
-                <!-- Итоги -->
-                <div id="gpr-total" class="total-section hidden">
-                    <div class="total-row">
-                        <span>Общий объём:</span>
-                        <span id="total-volume">0</span>
-                    </div>
-                    <div class="total-row">
-                        <span>Количество бригад:</span>
-                        <span id="total-brigades">0</span>
-                    </div>
-                    <div class="total-row">
-                        <span>Общая стоимость:</span>
-                        <span id="total-cost">0 ₸</span>
-                    </div>
+                <div id="materials-list"></div>
+            </div>
+            
+            <!-- TAB: CHECKLIST -->
+            <div id="tab-checklist" class="tab-content">
+                <div class="info-card">
+                    <h3 style="margin-bottom: 16px;">Взаимодействие с Заказчиком</h3>
+                    <div id="checklist-customer"></div>
+                </div>
+                <div class="info-card">
+                    <h3 style="margin-bottom: 16px;">Взаимодействие с Монтажниками</h3>
+                    <div id="checklist-workers"></div>
                 </div>
             </div>
+            
+            <!-- TAB: ISSUES -->
+            <div id="tab-issues" class="tab-content">
+                <div class="info-card">
+                    <h3 style="margin-bottom: 16px;">➕ Новая проблема</h3>
+                    <div class="form-group"><label>Наименование</label><input type="text" id="issue-title"></div>
+                    <div class="form-group"><label>Описание</label><input type="text" id="issue-desc"></div>
+                    <div class="form-group"><label>Ответственный (ID)</label><input type="text" id="issue-resp" placeholder="Введите ID пользователя"></div>
+                    <button class="btn-primary" id="add-issue-btn">Создать</button>
+                </div>
+                <div id="issues-list"></div>
+            </div>
         </div>
+        
+        <div id="message" class="message"></div>
     </div>
 
     <script>
         (function() {
             const tg = window.Telegram.WebApp;
-            tg.expand();
-            tg.ready();
+            tg.expand(); tg.ready();
             
             const SUPABASE_URL = 'https://owagntywpiymqhbfoxye.supabase.co';
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YWdudHl3cGl5bXFoYmZveHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTg5MDUsImV4cCI6MjA5MTg5NDkwNX0.p-3xAhbFgH5lcGnbBfkcQQFVza_Yc2qoY6VBlhmmFGg';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             
             let userId = null;
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                userId = tg.initDataUnsafe.user.id;
-            }
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) userId = tg.initDataUnsafe.user.id;
             if (!userId) userId = 531738802;
             
-            let currentUser = null;
-            let currentRole = 'worker';
-            let currentProjectId = null;
-            let workStages = [];
-            let axes = [];
+            let currentUser = null, currentRole = 'worker', currentProjectId = null;
+            let currentFilter = 'all', allProjects = [], allBrigades = [], workStages = [];
             
-            const listView = document.getElementById('list-view');
-            const detailView = document.getElementById('detail-view');
+            // UI Elements
+            const listView = document.getElementById('list-view'), detailView = document.getElementById('detail-view');
             const objectsContainer = document.getElementById('objects-container');
-            const roleBadge = document.getElementById('role-badge');
-            const backBtn = document.getElementById('back-btn');
             
-            // Вкладки
-            const tabs = document.querySelectorAll('.tab');
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabName = tab.dataset.tab;
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                    tab.classList.add('active');
-                    document.getElementById(`tab-${tabName}`).classList.add('active');
-                    
-                    if (tabName === 'gpr' && currentProjectId) {
-                        loadGPRData();
-                    }
-                });
-            });
-            
-            // Расчёт суммы в форме
-            const volumeInput = document.getElementById('gpr-volume');
-            const priceInput = document.getElementById('gpr-price');
-            const totalPreview = document.getElementById('gpr-total-preview');
-            
-            function updateTotalPreview() {
-                const volume = parseFloat(volumeInput.value) || 0;
-                const price = parseFloat(priceInput.value) || 0;
-                totalPreview.textContent = (volume * price).toLocaleString() + ' ₸';
-            }
-            volumeInput.addEventListener('input', updateTotalPreview);
-            priceInput.addEventListener('input', updateTotalPreview);
-            
-            // Загрузка данных пользователя
-            async function loadUserData() {
-                try {
-                    const { data, error } = await supabase
-                        .from('users')
-                        .select('*')
-                        .eq('telegram_id', userId)
-                        .single();
-                    if (error) throw error;
-                    currentUser = data;
-                    currentRole = data.role;
-                    roleBadge.textContent = currentRole === 'manager' ? 'Руководитель' : 'ИТР';
-                    return data;
-                } catch (error) {
-                    console.error('Ошибка загрузки пользователя:', error);
-                    return null;
-                }
+            // Init
+            async function init() {
+                await loadUser();
+                await loadWorkStages();
+                await loadBrigades();
+                await loadProjects();
+                setupTabs();
+                setupFilters();
+                setupForms();
             }
             
-            // Загрузка справочника этапов работ
+            async function loadUser() {
+                const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
+                if (data) { currentUser = data; currentRole = data.role; }
+                document.getElementById('role-badge').textContent = currentRole === 'manager' ? 'Руководитель' : 'ИТР';
+            }
+            
             async function loadWorkStages() {
-                try {
-                    const { data, error } = await supabase.from('work_stages').select('*').order('id');
-                    if (error) throw error;
-                    workStages = data;
-                    const select = document.getElementById('gpr-stage');
+                const { data } = await supabase.from('work_stages').select('*').order('id');
+                workStages = data || [];
+                const select = document.getElementById('gpr-stage');
+                if (select) {
                     select.innerHTML = '<option value="">Выберите вид работ</option>';
-                    data.forEach(stage => {
-                        select.innerHTML += `<option value="${stage.id}">${escapeHtml(stage.name)}</option>`;
-                    });
-                } catch (error) {
-                    console.error('Ошибка загрузки этапов:', error);
+                    workStages.forEach(s => select.innerHTML += `<option value="${s.id}">${s.name}</option>`);
                 }
             }
             
-            // Загрузка объектов
-            async function loadObjects() {
-                objectsContainer.innerHTML = '<div class="loading">Загрузка объектов...</div>';
-                try {
-                    let query = supabase.from('projects').select('*').order('created_at', { ascending: false });
-                    if (currentRole !== 'manager' && currentUser) {
-                        query = query.eq('responsible_worker_id', currentUser.id);
-                    }
-                    const { data: projects, error } = await query;
-                    if (error) throw error;
-                    
-                    if (!projects || projects.length === 0) {
-                        objectsContainer.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏗️</div><h3>Нет объектов</h3><p>${currentRole === 'manager' ? 'Здесь будут отображаться все объекты' : 'У вас пока нет созданных объектов'}</p></div>`;
-                        return;
-                    }
-                    
-                    renderObjects(projects);
-                } catch (error) {
-                    objectsContainer.innerHTML = '<div class="error-message">Ошибка загрузки объектов</div>';
+            async function loadBrigades() {
+                const { data } = await supabase.from('brigades').select('*').eq('status', 'active').order('name');
+                allBrigades = data || [];
+                const select = document.getElementById('gpr-brigade');
+                if (select) {
+                    select.innerHTML = '<option value="">Выберите бригаду</option>';
+                    allBrigades.forEach(b => select.innerHTML += `<option value="${b.id}">${b.name} (${b.foreman_name || ''})</option>`);
                 }
             }
             
-            function escapeHtml(text) {
-                if (!text) return '';
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
+            async function loadProjects() {
+                objectsContainer.innerHTML = '<div class="loading">Загрузка...</div>';
+                let query = supabase.from('projects').select('*, users!projects_responsible_worker_id_fkey(full_name)').order('created_at', { ascending: false });
+                if (currentRole !== 'manager') query = query.eq('responsible_worker_id', currentUser.id);
+                
+                const { data, error } = await query;
+                if (error) { objectsContainer.innerHTML = '<div class="error">Ошибка загрузки</div>'; return; }
+                
+                // Calculate progress
+                for (let p of data) {
+                    const { data: gpr } = await supabase.from('schedule_plan').select('progress').eq('axis_id.block_id.project_id', p.id);
+                    if (gpr && gpr.length > 0) {
+                        p.avg_progress = Math.round(gpr.reduce((acc, i) => acc + (i.progress || 0), 0) / gpr.length);
+                    } else p.avg_progress = 0;
+                }
+                
+                allProjects = data || [];
+                renderProjects();
             }
             
-            function renderObjects(projects) {
+            function renderProjects() {
+                let filtered = allProjects;
+                if (currentFilter === 'my') filtered = allProjects.filter(p => p.responsible_worker_id === currentUser.id);
+                else if (currentFilter !== 'all') filtered = allProjects.filter(p => p.status === currentFilter);
+                
+                if (filtered.length === 0) {
+                    objectsContainer.innerHTML = '<div class="empty-state">🏗️ Нет объектов</div>';
+                    return;
+                }
+                
                 let html = '<div class="objects-grid">';
-                projects.forEach(project => {
-                    const statusClass = `status-${project.status || 'active'}`;
-                    const statusText = { 'active': 'В работе', 'completed': 'Завершён', 'paused': 'Приостановлен' }[project.status] || project.status;
-                    const startDate = project.start_date ? new Date(project.start_date).toLocaleDateString('ru-RU') : '—';
-                    const endDate = project.end_date_contract ? new Date(project.end_date_contract).toLocaleDateString('ru-RU') : '—';
+                filtered.forEach(p => {
+                    const statusMap = {
+                        'preparation': { text: '📋 Подготовка', class: 'status-preparation' },
+                        'mobilization': { text: '🚚 Мобилизация', class: 'status-mobilization' },
+                        'in_progress': { text: '🔨 В работе', class: 'status-in_progress' },
+                        'completed': { text: '✅ Завершён', class: 'status-completed' },
+                        'paused': { text: '⏸️ Пауза', class: 'status-paused' }
+                    };
+                    const st = statusMap[p.status] || { text: p.status, class: '' };
+                    const start = p.start_date ? new Date(p.start_date).toLocaleDateString('ru-RU') : '—';
+                    const end = p.end_date_contract ? new Date(p.end_date_contract).toLocaleDateString('ru-RU') : '—';
                     
-                    html += `
-                        <div class="object-card" data-project-id="${project.id}">
-                            <div class="object-header">
-                                <span class="object-name">${escapeHtml(project.name)}</span>
-                                <span class="object-status ${statusClass}">${statusText}</span>
-                            </div>
-                            <div class="object-address"><span>📍</span> ${escapeHtml(project.address)}</div>
-                            <div class="object-progress">
-                                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
-                                <div class="progress-text"><span>Готовность: 0%</span><span>План: —</span></div>
-                            </div>
-                            <div class="object-footer">
-                                <div class="object-dates"><span class="date-badge">📅 ${startDate}</span><span class="date-badge">🏁 ${endDate}</span></div>
-                                <span>👉</span>
-                            </div>
+                    html += `<div class="object-card" data-id="${p.id}">
+                        <div class="object-header">
+                            <span class="object-name">${p.name}</span>
+                            <span class="object-status ${st.class}">${st.text}</span>
                         </div>
-                    `;
+                        <div class="object-address">📍 ${p.address}</div>
+                        <div class="progress-section">
+                            <div class="progress-bar"><div class="progress-fill" style="width:${p.avg_progress}%"></div></div>
+                            <div class="progress-text"><span>Готовность: ${p.avg_progress}%</span><span>План: —</span></div>
+                        </div>
+                        <div class="object-footer">
+                            <span>👤 ${p.users?.full_name || '—'}</span>
+                            <div><span class="date-badge">📅 ${start}</span><span class="date-badge">🏁 ${end}</span></div>
+                        </div>
+                    </div>`;
                 });
                 html += '</div>';
                 objectsContainer.innerHTML = html;
-                
-                document.querySelectorAll('.object-card').forEach(card => {
-                    card.addEventListener('click', () => showProjectDetail(card.dataset.projectId));
+                document.querySelectorAll('.object-card').forEach(c => c.addEventListener('click', () => showDetail(c.dataset.id)));
+            }
+            
+            function setupFilters() {
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        currentFilter = btn.dataset.filter;
+                        renderProjects();
+                    });
                 });
             }
             
-            async function showProjectDetail(projectId) {
-                currentProjectId = projectId;
-                try {
-                    const { data: project } = await supabase.from('projects').select('*').eq('id', projectId).single();
-                    const { data: blocks } = await supabase.from('blocks').select('id, name').eq('project_id', projectId);
-                    
-                    if (blocks && blocks.length > 0) {
-                        const blockIds = blocks.map(b => b.id);
-                        const { data: axesData } = await supabase.from('axes').select('*').in('block_id', blockIds);
-                        axes = axesData || [];
+            function setupTabs() {
+                document.querySelectorAll('.tab').forEach(t => {
+                    t.addEventListener('click', () => {
+                        const tabName = t.dataset.tab;
+                        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+                        document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+                        t.classList.add('active');
+                        document.getElementById(`tab-${tabName}`).classList.add('active');
                         
-                        const axisSelect = document.getElementById('gpr-axis');
-                        axisSelect.innerHTML = '<option value="">Выберите ось</option>';
-                        axes.forEach(axis => {
-                            axisSelect.innerHTML += `<option value="${axis.id}">${escapeHtml(axis.name)}</option>`;
-                        });
-                    }
-                    
-                    const statusMap = { 'active': 'В работе', 'completed': 'Завершён', 'paused': 'Приостановлен' };
-                    document.getElementById('detail-name').textContent = project.name;
-                    document.getElementById('detail-content').innerHTML = `
-                        <div class="detail-row"><span class="detail-label">Статус</span><span class="detail-value">${statusMap[project.status] || project.status}</span></div>
-                        <div class="detail-row"><span class="detail-label">Адрес</span><span class="detail-value">${escapeHtml(project.address)}</span></div>
-                        <div class="detail-row"><span class="detail-label">Проектная площадь</span><span class="detail-value">${project.project_area} м²</span></div>
-                        <div class="detail-row"><span class="detail-label">Фактическая площадь</span><span class="detail-value">${project.actual_area || 0} м²</span></div>
-                        <div class="detail-row"><span class="detail-label">Парапеты</span><span class="detail-value">${project.parapet_qty || 0} п.м.</span></div>
-                        <div class="detail-row"><span class="detail-label">Откосы</span><span class="detail-value">${project.slope_qty || 0} п.м.</span></div>
-                        <div class="detail-row"><span class="detail-label">Дата начала</span><span class="detail-value">${new Date(project.start_date).toLocaleDateString('ru-RU')}</span></div>
-                        <div class="detail-row"><span class="detail-label">Дата окончания</span><span class="detail-value">${new Date(project.end_date_contract).toLocaleDateString('ru-RU')}</span></div>
-                    `;
-                    
-                    listView.classList.add('hidden');
-                    detailView.classList.remove('hidden');
-                    
-                    document.querySelector('[data-tab="info"]').click();
-                    
-                } catch (error) {
-                    console.error('Ошибка:', error);
-                }
+                        if (tabName === 'gpr-plan') loadGprPlan();
+                        else if (tabName === 'gpr-fact') loadGprProgress();
+                        else if (tabName === 'expenses') loadExpenses();
+                        else if (tabName === 'materials') loadMaterials();
+                        else if (tabName === 'checklist') loadChecklist();
+                        else if (tabName === 'issues') loadIssues();
+                    });
+                });
             }
             
-            // Загрузка данных ГПР
-            async function loadGPRData() {
-                if (!currentProjectId) return;
+            async function showDetail(projectId) {
+                currentProjectId = projectId;
+                const { data: p } = await supabase.from('projects').select('*, users(full_name)').eq('id', projectId).single();
                 
-                try {
-                    const { data: blocks, error: blocksError } = await supabase
-                        .from('blocks')
-                        .select('id')
-                        .eq('project_id', currentProjectId);
-                    
-                    if (blocksError) throw blocksError;
-                    
-                    if (!blocks || blocks.length === 0) {
-                        document.getElementById('gpr-list').innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">Нет блоков. Сначала создайте оси объекта.</p>';
-                        document.getElementById('gpr-total').classList.add('hidden');
-                        return;
-                    }
-                    
-                    const blockIds = blocks.map(b => b.id);
-                    
-                    const { data: axes, error: axesError } = await supabase
-                        .from('axes')
-                        .select('id, name')
-                        .in('block_id', blockIds);
-                    
-                    if (axesError) throw axesError;
-                    
-                    if (!axes || axes.length === 0) {
-                        document.getElementById('gpr-list').innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">Нет осей для отображения</p>';
-                        document.getElementById('gpr-total').classList.add('hidden');
-                        return;
-                    }
-                    
-                    const axisIds = axes.map(a => a.id);
-                    const axisMap = {};
-                    axes.forEach(a => { axisMap[a.id] = a; });
-                    
-                    const { data: gprData, error: gprError } = await supabase
-                        .from('schedule_plan')
-                        .select('*')
-                        .in('axis_id', axisIds)
-                        .order('created_at', { ascending: false });
-                    
-                    if (gprError) throw gprError;
-                    
-                    const { data: stages, error: stagesError } = await supabase
-                        .from('work_stages')
-                        .select('*');
-                    
-                    if (stagesError) throw stagesError;
-                    
-                    const stageMap = {};
-                    if (stages) stages.forEach(s => { stageMap[s.id] = s; });
-                    
-                    const enrichedData = (gprData || []).map(item => ({
-                        ...item,
-                        axes: axisMap[item.axis_id],
-                        work_stages: stageMap[item.stage_id]
-                    }));
-                    
-                    renderGPRList(enrichedData);
-                } catch (error) {
-                    console.error('Ошибка загрузки ГПР:', error);
-                    document.getElementById('gpr-list').innerHTML = '<p style="color: #dc2626; text-align: center; padding: 20px;">Ошибка загрузки данных: ' + error.message + '</p>';
-                }
-            }
-            
-            function renderGPRList(items) {
-                const container = document.getElementById('gpr-list');
-                const totalSection = document.getElementById('gpr-total');
+                const statusMap = {
+                    'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация',
+                    'in_progress': '🔨 В работе', 'completed': '✅ Завершён', 'paused': '⏸️ Пауза'
+                };
                 
-                if (!items || items.length === 0) {
-                    container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">Нет добавленных работ</p>';
-                    totalSection.classList.add('hidden');
-                    return;
-                }
+                document.getElementById('detail-name').textContent = p.name;
+                document.getElementById('detail-status-badge').textContent = statusMap[p.status] || p.status;
                 
-                let html = '';
-                let totalCost = 0;
-                let totalVolume = 0;
-                const brigades = new Set();
+                // Load axes for select
+                const { data: axes } = await supabase.from('axes').select('*').eq('block_id.project_id', projectId);
+                const axisSelect = document.getElementById('gpr-axis');
+                axisSelect.innerHTML = '<option value="">Выберите ось</option>';
+                if (axes) axes.forEach(a => axisSelect.innerHTML += `<option value="${a.id}">${a.name}</option>`);
                 
-                items.forEach(item => {
-                    totalCost += parseFloat(item.total_cost) || 0;
-                    totalVolume += parseFloat(item.volume) || 0;
-                    brigades.add(item.brigade_name);
-                    
-                    const axisName = item.axes?.name || '—';
-                    const stageName = item.work_stages?.name || '—';
-                    const progress = item.progress || 0;
-                    
-                    html += `
-                        <div class="gpr-item">
-                            <div class="gpr-header">
-                                <span class="gpr-axis">${escapeHtml(axisName)}</span>
-                                <span class="gpr-stage">${escapeHtml(stageName)}</span>
-                            </div>
-                            <div class="gpr-brigade">
-                                👷 ${escapeHtml(item.brigade_name)} (${item.workers_count || 1} чел.)
-                            </div>
-                            <div>Объём: ${item.volume || 0} ${item.unit || 'м²'}</div>
-                            <div>Цена: ${item.price_per_unit || 0} ₸/${item.unit || 'м²'}</div>
-                            <div class="gpr-progress">
-                                <div class="gpr-progress-fill" style="width: ${progress}%"></div>
-                            </div>
-                            <div class="gpr-footer">
-                                <span>Прогресс: ${progress}%</span>
-                                <span class="gpr-cost">${parseFloat(item.total_cost || 0).toLocaleString()} ₸</span>
-                            </div>
-                        </div>
-                    `;
+                // Info Tab
+                document.getElementById('detail-content').innerHTML = `
+                    <div style="margin-bottom:16px"><strong>Адрес:</strong> ${p.address}</div>
+                    <div style="margin-bottom:16px"><strong>Цена договора:</strong> ${p.contract_price?.toLocaleString() || 0} ₸</div>
+                    <div style="margin-bottom:16px"><strong>Проектная площадь:</strong> ${p.project_area} м²</div>
+                    <div style="margin-bottom:16px"><strong>Ответственный:</strong> ${p.users?.full_name || '—'}</div>
+                    <div class="form-group">
+                        <label>Сменить статус</label>
+                        <select id="change-status">
+                            <option value="preparation" ${p.status === 'preparation' ? 'selected' : ''}>📋 Подготовка</option>
+                            <option value="mobilization" ${p.status === 'mobilization' ? 'selected' : ''}>🚚 Мобилизация</option>
+                            <option value="in_progress" ${p.status === 'in_progress' ? 'selected' : ''}>🔨 В работе</option>
+                            <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>✅ Завершён</option>
+                            <option value="paused" ${p.status === 'paused' ? 'selected' : ''}>⏸️ Пауза</option>
+                        </select>
+                    </div>
+                    <button class="btn-secondary" id="update-status-btn">Обновить статус</button>
+                `;
+                
+                document.getElementById('update-status-btn').addEventListener('click', async () => {
+                    const newStatus = document.getElementById('change-status').value;
+                    await supabase.from('projects').update({ status: newStatus }).eq('id', projectId);
+                    showDetail(projectId);
+                    loadProjects();
                 });
                 
-                container.innerHTML = html;
-                
-                document.getElementById('total-volume').textContent = totalVolume.toLocaleString();
-                document.getElementById('total-brigades').textContent = brigades.size;
-                document.getElementById('total-cost').textContent = totalCost.toLocaleString() + ' ₸';
-                totalSection.classList.remove('hidden');
+                listView.classList.add('hidden');
+                detailView.classList.remove('hidden');
+                document.querySelector('[data-tab="info"]').click();
             }
             
-            // Добавление работы в ГПР
-            document.getElementById('add-gpr-btn').addEventListener('click', async () => {
-                const axisId = document.getElementById('gpr-axis').value;
-                const stageId = document.getElementById('gpr-stage').value;
-                const brigade = document.getElementById('gpr-brigade').value.trim();
-                const workers = parseInt(document.getElementById('gpr-workers').value) || 1;
-                const volume = parseFloat(document.getElementById('gpr-volume').value) || 0;
-                const unit = document.getElementById('gpr-unit').value;
-                const price = parseFloat(document.getElementById('gpr-price').value) || 0;
-                const startDate = document.getElementById('gpr-start').value;
-                const endDate = document.getElementById('gpr-end').value;
+            function setupForms() {
+                // Back button
+                document.getElementById('back-btn').addEventListener('click', () => {
+                    detailView.classList.add('hidden');
+                    listView.classList.remove('hidden');
+                    loadProjects();
+                });
                 
-                if (!axisId || !stageId || !brigade) {
-                    alert('Заполните обязательные поля: ось, вид работ, бригада');
-                    return;
-                }
-                
-                try {
+                // Add GPR
+                document.getElementById('add-gpr-btn').addEventListener('click', async () => {
+                    const axis = document.getElementById('gpr-axis').value;
+                    const stage = document.getElementById('gpr-stage').value;
+                    const brigade = document.getElementById('gpr-brigade').value;
+                    const volume = parseFloat(document.getElementById('gpr-volume').value) || 0;
+                    const price = parseFloat(document.getElementById('gpr-price').value) || 0;
+                    
+                    if (!axis || !stage || !brigade) { alert('Заполните обязательные поля'); return; }
+                    
                     const { error } = await supabase.from('schedule_plan').insert({
-                        axis_id: axisId,
-                        stage_id: parseInt(stageId),
-                        brigade_name: brigade,
-                        workers_count: workers,
-                        volume: volume,
-                        unit: unit,
-                        price_per_unit: price,
-                        total_cost: volume * price,
-                        plan_start: startDate || null,
-                        plan_end: endDate || null,
-                        progress: 0,
-                        status: 'planned'
+                        axis_id: axis, stage_id: stage, brigade_id: brigade,
+                        volume, price_per_unit: price, total_cost: volume * price,
+                        plan_start: document.getElementById('gpr-start').value,
+                        plan_end: document.getElementById('gpr-end').value,
+                        progress: 0
                     });
                     
-                    if (error) throw error;
-                    
-                    document.getElementById('gpr-brigade').value = '';
-                    document.getElementById('gpr-volume').value = '';
-                    document.getElementById('gpr-price').value = '';
-                    totalPreview.textContent = '0 ₸';
-                    
-                    loadGPRData();
-                } catch (error) {
-                    console.error('Ошибка добавления:', error);
-                    alert('Ошибка при добавлении работы');
-                }
-            });
-            
-            backBtn.addEventListener('click', () => {
-                detailView.classList.add('hidden');
-                listView.classList.remove('hidden');
-                loadObjects();
-            });
-            
-            async function init() {
-                await loadWorkStages();
-                const user = await loadUserData();
-                if (user) await loadObjects();
+                    if (!error) {
+                        alert('Работа добавлена!');
+                        loadGprPlan();
+                    }
+                });
             }
+            
+            async function loadGprPlan() {
+                const container = document.getElementById('gpr-plan-list');
+                const { data } = await supabase.from('schedule_plan').select('*, axes(name), work_stages(name), brigades(name, foreman_name)').eq('axis_id.block_id.project_id', currentProjectId);
+                if (!data || data.length === 0) { container.innerHTML = '<p>Нет работ в плане</p>'; return; }
+                
+                let html = '<div style="margin-top:20px">';
+                data.forEach(i => {
+                    html += `<div class="gpr-item">
+                        <div class="gpr-header"><span class="gpr-axis">${i.axes?.name}</span><span class="gpr-stage">${i.work_stages?.name}</span></div>
+                        <div>👷 ${i.brigades?.name} (${i.brigades?.foreman_name})</div>
+                        <div>Объём: ${i.volume} | Цена: ${i.price_per_unit} ₸ | Сумма: ${i.total_cost} ₸</div>
+                    </div>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            }
+            
+            async function loadGprProgress() {
+                const container = document.getElementById('gpr-progress-list');
+                const { data } = await supabase.from('schedule_plan').select('*, axes(name), work_stages(name), brigades(name)').eq('axis_id.block_id.project_id', currentProjectId);
+                if (!data || data.length === 0) { container.innerHTML = '<p>Нет работ</p>'; return; }
+                
+                let html = '';
+                data.forEach(i => {
+                    html += `<div class="gpr-item">
+                        <div class="gpr-header"><span class="gpr-axis">${i.axes?.name}</span><span class="gpr-stage">${i.work_stages?.name}</span></div>
+                        <div>👷 ${i.brigades?.name}</div>
+                        <div>Прогресс: <strong>${i.progress || 0}%</strong></div>
+                        <input type="range" min="0" max="100" value="${i.progress || 0}" class="progress-slider" data-id="${i.id}">
+                        <button class="btn-secondary" data-id="${i.id}" data-progress="${i.progress}" onclick="updateProgress(this)">Обновить</button>
+                        ${i.progress == 100 ? `<button class="btn-primary" style="margin-top:8px" data-id="${i.id}" onclick="createWorkOrder(this)">📋 Сформировать Наряд</button>` : ''}
+                    </div>`;
+                });
+                container.innerHTML = html;
+            }
+            
+            window.updateProgress = async function(btn) {
+                const id = btn.dataset.id;
+                const slider = document.querySelector(`.progress-slider[data-id="${id}"]`);
+                const newProgress = parseInt(slider.value);
+                
+                await supabase.from('schedule_plan').update({ progress: newProgress }).eq('id', id);
+                await supabase.from('work_progress_history').insert({ schedule_id: id, progress: newProgress, created_by: userId });
+                loadGprProgress();
+                if (newProgress == 100) alert('Этап завершён! Можно формировать наряд.');
+            };
+            
+            window.createWorkOrder = async function(btn) {
+                const id = btn.dataset.id;
+                const { data: gpr } = await supabase.from('schedule_plan').select('*, axes(name), work_stages(name), brigades(*)').eq('id', id).single();
+                
+                await supabase.from('work_orders').insert({
+                    project_id: currentProjectId,
+                    schedule_id: id,
+                    brigade_id: gpr.brigade_id,
+                    axis_name: gpr.axes?.name,
+                    work_type: gpr.work_stages?.name,
+                    volume: gpr.volume,
+                    price: gpr.price_per_unit,
+                    total_amount: gpr.total_cost,
+                    created_by: userId,
+                    status: 'pending_foreman'
+                });
+                
+                alert('Наряд сформирован и отправлен на проверку!');
+                loadGprProgress();
+            };
+            
+            // Placeholders for other tabs
+            async function loadExpenses() { document.getElementById('expenses-list').innerHTML = '<p>Загрузка расходов...</p>'; }
+            async function loadMaterials() { document.getElementById('materials-list').innerHTML = '<p>Загрузка материалов...</p>'; }
+            async function loadChecklist() {
+                const { data } = await supabase.from('checklists').select('*').is('project_id', null);
+                const cust = data.filter(c => c.section === 'foreman_customer');
+                const work = data.filter(c => c.section === 'foreman_workers');
+                document.getElementById('checklist-customer').innerHTML = cust.map(c => `<div class="checklist-item"><input type="checkbox" ${c.is_completed ? 'checked' : ''}><label>${c.item_text}</label></div>`).join('');
+                document.getElementById('checklist-workers').innerHTML = work.map(c => `<div class="checklist-item"><input type="checkbox" ${c.is_completed ? 'checked' : ''}><label>${c.item_text}</label></div>`).join('');
+            }
+            async function loadIssues() { document.getElementById('issues-list').innerHTML = '<p>Проблемы появятся здесь</p>'; }
             
             init();
         })();
