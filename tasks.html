@@ -42,6 +42,7 @@
         .filter-btn.active { background: #1a2e4b; color: white; border-color: #1a2e4b; }
         .count-badge { background: #1a2e4b; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; margin-left: 6px; }
         
+        /* Модальные окна */
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .modal.hidden { display: none !important; }
         .modal-content { background: white; border-radius: 24px; padding: 24px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
@@ -52,6 +53,80 @@
         .checklist-item input { width: 22px; height: 22px; accent-color: #1a2e4b; }
         .checklist-item label { font-size: 16px; color: #1a2e4b; }
         .btn-primary { width: 100%; background: #1a2e4b; color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; cursor: pointer; margin-top: 20px; }
+        .btn-secondary { background: #f1f5f9; color: #1a2e4b; padding: 14px; border-radius: 14px; font-weight: 600; border: 1px solid #e2e8f0; cursor: pointer; text-align: center; }
+        
+        /* Стили для письма */
+        .letter-preview {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 16px 0;
+            border: 1px solid #e2e8f0;
+            font-family: 'Times New Roman', serif;
+        }
+        .letter-header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #1a2e4b;
+            padding-bottom: 15px;
+        }
+        .letter-logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1a2e4b;
+            letter-spacing: 2px;
+        }
+        .letter-subtitle {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        .letter-date {
+            text-align: right;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #475569;
+        }
+        .letter-to {
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        .letter-subject {
+            font-weight: 700;
+            margin-bottom: 16px;
+            font-size: 15px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        .letter-body {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+        .letter-signature {
+            margin-top: 24px;
+        }
+        .letter-signature div {
+            margin-top: 8px;
+        }
+        .btn-copy {
+            background: #10b981;
+            color: white;
+            padding: 14px;
+            border-radius: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        .action-buttons .btn-primary { flex: 2; margin-top: 0; }
+        .action-buttons .btn-secondary { flex: 1; margin-top: 0; }
     </style>
 </head>
 <body>
@@ -84,6 +159,7 @@
         <div id="tab-payments" class="tab-content"><div id="payments-tasks" class="tasks-list"></div></div>
     </div>
 
+    <!-- Модальное окно для отчета -->
     <div id="report-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -103,6 +179,22 @@
         </div>
     </div>
 
+    <!-- Модальное окно для письма заказчику -->
+    <div id="letter-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">📧 Письмо заказчику</span>
+                <button class="close-btn" id="close-letter-modal">&times;</button>
+            </div>
+            <div id="letter-content"></div>
+            <button class="btn-copy" id="copy-letter-btn">📋 Копировать текст письма</button>
+            <div class="action-buttons">
+                <button class="btn-primary" id="mark-letter-sent">✅ Отметить как отправленное</button>
+                <button class="btn-secondary" id="close-letter-btn-2">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         (function() {
             const tg = window.Telegram.WebApp; tg.expand(); tg.ready();
@@ -112,7 +204,7 @@
             
             let userId = tg.initDataUnsafe?.user?.id || 531738802;
             let currentUser = null, currentRole = 'worker', currentFilter = 'all', allTasks = [];
-            let currentTaskId = null;
+            let currentTaskId = null, currentLetterText = '';
             
             async function loadUser() {
                 const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
@@ -123,7 +215,7 @@
             async function loadAllTasks() {
                 document.querySelectorAll('.tasks-list').forEach(c => c.innerHTML = '<div class="loading">Загрузка...</div>');
                 
-                const { data: tasks } = await supabase.from('tasks').select('*, projects(name), object_reports(*)').order('created_at', { ascending: false });
+                const { data: tasks } = await supabase.from('tasks').select('*, projects(name), object_reports(*), schedule_plan(*, axes(name), work_stages(name))').order('created_at', { ascending: false });
                 allTasks = (tasks || []).map(t => ({
                     ...t,
                     typeName: t.type === 'report' ? '📑 Отчет' : t.type === 'letter' ? '✉️ Письмо' : t.type === 'problem' ? '⚠️ Проблема' : t.type === 'order' ? '📋 Наряд' : '💰 Платёж',
@@ -162,6 +254,9 @@
                     if (t.type === 'report' && report) {
                         title = `Отчет №${report.id?.slice(-6) || '—'}`;
                         meta = `📅 ${report.report_date ? new Date(report.report_date).toLocaleDateString('ru-RU') : '—'} | 🏗️ ${t.projects?.name || '—'} | 👤 ${report.created_by_name || '—'}`;
+                    } else if (t.type === 'letter') {
+                        title = `Письмо заказчику`;
+                        meta = `🏗️ ${t.projects?.name || '—'} | 📅 ${t.created_at ? new Date(t.created_at).toLocaleDateString('ru-RU') : '—'}`;
                     } else {
                         meta = `🏗️ ${t.projects?.name || '—'} | 📅 ${t.created_at ? new Date(t.created_at).toLocaleDateString('ru-RU') : '—'}`;
                     }
@@ -181,10 +276,12 @@
                     card.addEventListener('click', () => {
                         if (card.dataset.completed === 'true') return;
                         if (card.dataset.type === 'report') openReportModal(card.dataset.id);
+                        if (card.dataset.type === 'letter') openLetterModal(card.dataset.id);
                     });
                 });
             }
             
+            // === МОДАЛЬНОЕ ОКНО ОТЧЕТА ===
             async function openReportModal(taskId) {
                 currentTaskId = taskId;
                 const task = allTasks.find(t => t.id === taskId);
@@ -207,9 +304,115 @@
                 document.getElementById('report-modal').classList.remove('hidden');
             }
             
-            document.getElementById('close-report-modal').onclick = () => document.getElementById('report-modal').classList.add('hidden');
-            document.getElementById('report-modal').onclick = (e) => { if (e.target === document.getElementById('report-modal')) document.getElementById('report-modal').classList.add('hidden'); };
+            // === МОДАЛЬНОЕ ОКНО ПИСЬМА ===
+            function openLetterModal(taskId) {
+                currentTaskId = taskId;
+                const task = allTasks.find(t => t.id === taskId);
+                if (!task) return;
+                
+                // Получаем данные для письма
+                const projectName = task.projects?.name || 'Объект';
+                const today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+                const delayInfo = task.description || 'Сдвиг сроков производства работ';
+                
+                // Формируем текст письма
+                const letterText = `ООО «LamGroup Construction»
+г. Алматы, ул. Примерная, д. 1
+Тел: +7 (700) 123-45-67
+Email: info@lamgroup.kz
+
+Исх. № ${taskId.slice(-6)} от ${today}
+
+Генеральному директору
+ООО «Заказчик»
+_______________________
+
+Уважаемый(ая) ______________________!
+
+Уведомляем Вас о сдвиге сроков производства работ на объекте «${projectName}».
+
+${delayInfo}
+
+В связи с вышеуказанными обстоятельствами, сроки выполнения работ сдвигаются. Просим Вас принять данную информацию к сведению.
+
+С уважением,
+Руководитель проекта
+LamGroup Construction
+
+_______________________ / _____________ /
+${currentUser?.full_name || '_______________________'}`;
+
+                currentLetterText = letterText;
+                
+                document.getElementById('letter-content').innerHTML = `
+                    <div class="letter-preview">
+                        <div class="letter-header">
+                            <div class="letter-logo">LAMGROUP CONSTRUCTION</div>
+                            <div class="letter-subtitle">Фасадные работы любой сложности</div>
+                        </div>
+                        <div class="letter-date">Исх. № ${taskId.slice(-6)} от ${today}</div>
+                        <div class="letter-to">
+                            <strong>Кому:</strong> Генеральному директору ООО «Заказчик»<br>
+                            <strong>Объект:</strong> «${projectName}»
+                        </div>
+                        <div class="letter-subject">УВЕДОМЛЕНИЕ О СДВИГЕ СРОКОВ</div>
+                        <div class="letter-body">
+                            <p>Уважаемый(ая) ______________________!</p>
+                            <p>Уведомляем Вас о сдвиге сроков производства работ на объекте <strong>«${projectName}»</strong>.</p>
+                            <p>${delayInfo.replace(/\n/g, '<br>')}</p>
+                            <p>В связи с вышеуказанными обстоятельствами, сроки выполнения работ сдвигаются. Просим Вас принять данную информацию к сведению.</p>
+                        </div>
+                        <div class="letter-signature">
+                            С уважением,<br>
+                            <strong>Руководитель проекта</strong><br>
+                            LamGroup Construction<br><br>
+                            _______________________ / ${currentUser?.full_name || '_____________'} /
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('letter-modal').classList.remove('hidden');
+            }
             
+            // Копирование текста письма
+            document.getElementById('copy-letter-btn').addEventListener('click', () => {
+                navigator.clipboard?.writeText(currentLetterText).then(() => {
+                    alert('✅ Текст письма скопирован в буфер обмена!');
+                }).catch(() => {
+                    // Fallback
+                    const textarea = document.createElement('textarea');
+                    textarea.value = currentLetterText;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    alert('✅ Текст письма скопирован!');
+                });
+            });
+            
+            // Отметить письмо как отправленное
+            document.getElementById('mark-letter-sent').addEventListener('click', async () => {
+                if (!currentTaskId) return;
+                
+                await supabase.from('tasks').update({
+                    status: 'completed',
+                    letter_sent: true
+                }).eq('id', currentTaskId);
+                
+                document.getElementById('letter-modal').classList.add('hidden');
+                loadAllTasks();
+                alert('✅ Письмо отмечено как отправленное');
+            });
+            
+            // === ЗАКРЫТИЕ МОДАЛЬНЫХ ОКОН ===
+            document.getElementById('close-report-modal').onclick = () => document.getElementById('report-modal').classList.add('hidden');
+            document.getElementById('close-letter-modal').onclick = () => document.getElementById('letter-modal').classList.add('hidden');
+            document.getElementById('close-letter-btn-2').onclick = () => document.getElementById('letter-modal').classList.add('hidden');
+            
+            document.getElementById('report-modal').onclick = (e) => { if (e.target === document.getElementById('report-modal')) document.getElementById('report-modal').classList.add('hidden'); };
+            document.getElementById('letter-modal').onclick = (e) => { if (e.target === document.getElementById('letter-modal')) document.getElementById('letter-modal').classList.add('hidden'); };
+            
+            // Сохранение отчета
             document.getElementById('save-report-task').onclick = async () => {
                 const letterSent = document.getElementById('modal-letter-sent').checked;
                 const scheduleShifted = document.getElementById('modal-schedule-shifted').checked;
