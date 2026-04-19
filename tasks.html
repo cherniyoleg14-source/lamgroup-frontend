@@ -42,7 +42,6 @@
         .filter-btn.active { background: #1a2e4b; color: white; border-color: #1a2e4b; }
         .count-badge { background: #1a2e4b; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; margin-left: 6px; }
         
-        /* Модальное окно для деталей отчета */
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .modal.hidden { display: none !important; }
         .modal-content { background: white; border-radius: 24px; padding: 24px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
@@ -53,7 +52,6 @@
         .checklist-item input { width: 22px; height: 22px; accent-color: #1a2e4b; }
         .checklist-item label { font-size: 16px; color: #1a2e4b; }
         .btn-primary { width: 100%; background: #1a2e4b; color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; cursor: pointer; margin-top: 20px; }
-        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -86,7 +84,6 @@
         <div id="tab-payments" class="tab-content"><div id="payments-tasks" class="tasks-list"></div></div>
     </div>
 
-    <!-- Модальное окно для отчета -->
     <div id="report-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -220,8 +217,8 @@
                 if (!letterSent || !scheduleShifted) { alert('Отметьте обе галочки'); return; }
                 
                 await supabase.from('tasks').update({
-                    letter_sent: letterSent,
-                    schedule_shifted: scheduleShifted,
+                    letter_sent: true,
+                    schedule_shifted: true,
                     status: 'completed'
                 }).eq('id', currentTaskId);
                 
