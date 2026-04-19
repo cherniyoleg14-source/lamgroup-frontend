@@ -348,7 +348,7 @@
                 const historyDiv = document.getElementById('reports-history');
                 historyDiv.innerHTML = reports?.length ? reports.map(r => `
                     <div class="gpr-item">
-                        <div style="display:flex; justify-content:space-between"><strong>${new Date(r.report_date).toLocaleDateString('ru-RU')}</strong><span>${r.success ? '✅' : '❌ +'+r.delay_days+' дн.'}</span></div>
+                        <div style="display:flex; justify-content:space-between"><strong>${new Date(r.report_date).toLocaleDateString('ru-RU')}</strong><span>${r.success ? '✅' : '❌ +'+(r.delay_days||0)+' дн.'}</span></div>
                         <p>${r.description || '—'}</p>
                         <small>${r.created_by_name} (${r.created_by_role === 'manager' ? 'Рук.' : 'ИТР'})</small>
                     </div>
@@ -402,32 +402,45 @@
                     }
                 }
                 
-                await supabase.from('object_reports').insert({
+                // Создаём отчет
+                const { data: newReport, error: reportError } = await supabase.from('object_reports').insert({
                     project_id: currentProjectId, report_date: new Date().toISOString().split('T')[0], success, description: desc,
                     axes_selected: selected, delay_axis_id: delayAxis, delay_days: delayDays, photos,
                     created_by: currentUser?.id, created_by_name: currentUser?.full_name, created_by_role: currentRole
-                });
+                }).select('id').single();
                 
-                if (!success && delayAxis) {
+                if (reportError) { showMessage('Ошибка: ' + reportError.message, 'error'); return; }
+                
+                // Если отставание — создаём сдвиг и задачу
+                if (!success && delayAxis && delayDays > 0) {
                     const { data: gprItems } = await supabase.from('schedule_plan').select('*').eq('axis_id', delayAxis);
                     for (const gpr of gprItems || []) {
                         const d = gpr.plan_end ? new Date(gpr.plan_end) : new Date();
                         d.setDate(d.getDate() + delayDays);
                         await supabase.from('schedule_plan').update({ plan_end: d.toISOString().split('T')[0], delay_reason: 'other', delay_days: delayDays }).eq('id', gpr.id);
                     }
+                    
                     const { data: proj } = await supabase.from('projects').select('responsible_worker_id').eq('id', currentProjectId).single();
                     await supabase.from('tasks').insert({
-                        project_id: currentProjectId, type: 'task', title: `Отставание: +${delayDays} дн.`, description: desc,
-                        status: 'pending', priority: 'high', created_by: currentUser?.id,
-                        responsible_ids: proj?.responsible_worker_id ? [proj.responsible_worker_id] : []
+                        project_id: currentProjectId,
+                        report_id: newReport.id,
+                        type: 'report',
+                        title: `Отставание по отчету №${newReport.id?.slice(-6)}`,
+                        description: desc,
+                        status: 'pending',
+                        priority: 'high',
+                        created_by: currentUser?.id,
+                        responsible_ids: proj?.responsible_worker_id ? [proj.responsible_worker_id] : [],
+                        letter_sent: false,
+                        schedule_shifted: false
                     });
                 }
-                alert('Отчет отправлен!'); loadReportTab();
+                
+                showMessage('Отчет отправлен!', 'success');
+                loadReportTab();
             });
             
-            // Остальные функции (setupShiftModal, loadGprProgress, updateProgress, createWorkOrder, loadExpenses, loadMaterials, loadChecklist, loadIssues, setupForms)
-            // ... (сохрани их из предыдущей версии, они не изменились)
-            
+            // === ОСТАЛЬНЫЕ ФУНКЦИИ ===
             function setupShiftModal() {
                 const modal = document.getElementById('shift-modal');
                 document.getElementById('close-shift-modal').onclick = () => modal.classList.add('hidden');
