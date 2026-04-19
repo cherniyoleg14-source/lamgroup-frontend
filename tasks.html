@@ -138,15 +138,50 @@
             async function loadAllTasks() {
                 document.querySelectorAll('.tasks-list').forEach(c => c.innerHTML = '<div class="loading">Загрузка...</div>');
                 
+                // Загружаем задачи
                 const { data: tasks, error } = await supabase
                     .from('tasks')
-                    .select('*, projects(name), object_reports(*), work_orders(*)')
+                    .select('*')
                     .order('created_at', { ascending: false });
                 
-                if (error) { console.error('Ошибка:', error); return; }
+                if (error) { console.error('Ошибка загрузки задач:', error); return; }
                 
-                allTasks = (tasks || []).map(t => ({
+                if (!tasks || tasks.length === 0) {
+                    allTasks = [];
+                    document.getElementById('total-count').textContent = '0';
+                    renderAllLists();
+                    return;
+                }
+                
+                // Загружаем проекты
+                const projectIds = [...new Set(tasks.map(t => t.project_id).filter(Boolean))];
+                let projectsMap = {};
+                if (projectIds.length > 0) {
+                    const { data: projects } = await supabase.from('projects').select('id, name').in('id', projectIds);
+                    projects.forEach(p => { projectsMap[p.id] = p; });
+                }
+                
+                // Загружаем отчеты для задач типа report
+                const reportIds = tasks.filter(t => t.type === 'report').map(t => t.report_id).filter(Boolean);
+                let reportsMap = {};
+                if (reportIds.length > 0) {
+                    const { data: reports } = await supabase.from('object_reports').select('*').in('id', reportIds);
+                    reports.forEach(r => { reportsMap[r.id] = r; });
+                }
+                
+                // Загружаем наряды для задач типа order
+                const orderIds = tasks.filter(t => t.type === 'order').map(t => t.report_id).filter(Boolean);
+                let ordersMap = {};
+                if (orderIds.length > 0) {
+                    const { data: orders } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').in('id', orderIds);
+                    orders.forEach(o => { ordersMap[o.id] = o; });
+                }
+                
+                allTasks = tasks.map(t => ({
                     ...t,
+                    projects: projectsMap[t.project_id] || null,
+                    object_reports: reportsMap[t.report_id] || null,
+                    work_orders: ordersMap[t.report_id] || null,
                     typeName: t.type === 'report' ? '📑 Отчет' : t.type === 'letter' ? '✉️ Письмо' : t.type === 'problem' ? '⚠️ Проблема' : t.type === 'order' ? '📋 Наряд' : '💰 Платёж',
                     typeClass: t.type === 'report' ? 'type-report' : t.type === 'letter' ? 'type-letter' : t.type === 'problem' ? 'type-problem' : t.type === 'order' ? 'type-order' : 'type-payment'
                 }));
@@ -167,22 +202,29 @@
             function renderTasks(containerId, tasks) {
                 const container = document.getElementById(containerId);
                 let filtered = tasks;
+                
                 if (currentFilter === 'my') filtered = tasks.filter(t => t.responsible_ids?.includes(currentUser?.id) || t.created_by === currentUser?.id);
                 else if (currentFilter === 'pending') filtered = tasks.filter(t => t.status === 'pending');
+                
                 if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">✅ Нет задач</div>'; return; }
                 
                 container.innerHTML = filtered.map(t => {
                     const isCompleted = t.status === 'completed';
                     const report = t.object_reports;
-                    let title = t.title, meta = '';
+                    const order = t.work_orders;
+                    
+                    let title = t.title;
+                    let meta = '';
                     
                     if (t.type === 'report' && report) {
                         title = `Отчет №${report.id?.slice(-6) || '—'}`;
                         meta = `📅 ${report.report_date ? new Date(report.report_date).toLocaleDateString('ru-RU') : '—'} | 🏗️ ${t.projects?.name || '—'} | 👤 ${report.created_by_name || '—'}`;
                     } else if (t.type === 'letter') {
-                        title = `Письмо заказчику`; meta = `🏗️ ${t.projects?.name || '—'} | 📅 ${t.created_at ? new Date(t.created_at).toLocaleDateString('ru-RU') : '—'}`;
-                    } else if (t.type === 'order') {
-                        title = `Наряд: ${t.work_orders?.work_type || '—'}`; meta = `🏗️ ${t.projects?.name || '—'} | Сумма: ${t.work_orders?.total_amount?.toLocaleString() || 0} ₸`;
+                        title = `Письмо заказчику`;
+                        meta = `🏗️ ${t.projects?.name || '—'} | 📅 ${t.created_at ? new Date(t.created_at).toLocaleDateString('ru-RU') : '—'}`;
+                    } else if (t.type === 'order' && order) {
+                        title = `Наряд: ${order.work_type || '—'}`;
+                        meta = `🏗️ ${order.projects?.name || '—'} | Сумма: ${order.total_amount?.toLocaleString() || 0} ₸`;
                     } else {
                         meta = `🏗️ ${t.projects?.name || '—'} | 📅 ${t.created_at ? new Date(t.created_at).toLocaleDateString('ru-RU') : '—'}`;
                     }
@@ -192,7 +234,7 @@
                         <div class="task-title">${title}</div>
                         <div class="task-description">${t.description || ''}</div>
                         <div class="task-meta"><span>${meta}</span></div>
-                        ${t.type === 'order' && t.status === 'completed' ? `<button class="btn-avr" data-order-id="${t.work_orders?.id}" onclick="generateAVR('${t.project_id}')">📄 Сформировать АВР</button>` : ''}
+                        ${t.type === 'order' && order && t.status === 'completed' ? `<button class="btn-avr" onclick="generateAVR('${t.project_id}')">📄 Сформировать АВР</button>` : ''}
                     </div>`;
                 }).join('');
                 
@@ -215,8 +257,7 @@
                 const total = orders.reduce((s, o) => s + o.total_amount, 0);
                 data.push({ '№': '', 'Наименование': 'ИТОГО:', 'Ось': '', 'Бригада': '', 'Объём': '', 'Цена': '', 'Сумма': total });
                 
-                const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.json_to_sheet(data);
+                const wb = XLSX.utils.book_new(); const ws = XLSX.utils.json_to_sheet(data);
                 XLSX.utils.sheet_add_aoa(ws, [[`АКТ ВЫПОЛНЕННЫХ РАБОТ`], [`Объект: ${projectName}`], [`Дата: ${new Date().toLocaleDateString('ru-RU')}`], []], { origin: 'A1' });
                 XLSX.utils.book_append_sheet(wb, ws, 'АВР');
                 XLSX.writeFile(wb, `АВР_${projectName}_${new Date().toISOString().split('T')[0]}.xlsx`);
