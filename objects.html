@@ -6,613 +6,131 @@
     <title>Объекты | LamGroup</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Современный шрифт Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: #F8FAFC;
-            padding: 16px;
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: #F8FAFC; padding: 16px; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 600px; margin: 0 auto; }
         
         /* Header */
-        .app-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        
-        .header-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        h1 {
-            font-size: 28px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
-        }
-        
-        .logo-badge {
-            background: linear-gradient(135deg, #F59E0B, #F97316);
-            color: white;
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
-        }
-        
-        .role-badge {
-            background: #E2E8F0;
-            color: #0F172A;
-            padding: 8px 16px;
-            border-radius: 40px;
-            font-size: 13px;
-            font-weight: 600;
-        }
+        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 10px; }
+        .header-title { display: flex; align-items: center; gap: 10px; }
+        h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; }
+        .logo-badge { background: linear-gradient(135deg, #F59E0B, #F97316); color: white; padding: 6px 14px; border-radius: 40px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2); }
+        .role-badge { background: #E2E8F0; color: #0F172A; padding: 8px 16px; border-radius: 40px; font-size: 13px; font-weight: 600; }
         
         /* Filter Bar */
-        .filter-bar {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-            scrollbar-width: none;
-        }
-        
-        .filter-bar::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .filter-btn {
-            padding: 10px 18px;
-            border-radius: 40px;
-            font-size: 14px;
-            font-weight: 600;
-            border: 1.5px solid #E2E8F0;
-            background: white;
-            color: #64748B;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: all 0.2s ease;
-        }
-        
-        .filter-btn.active {
-            background: #0F172A;
-            color: white;
-            border-color: #0F172A;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
-        }
+        .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+        .filter-bar::-webkit-scrollbar { display: none; }
+        .filter-btn { padding: 10px 18px; border-radius: 40px; font-size: 14px; font-weight: 600; border: 1.5px solid #E2E8F0; background: white; color: #64748B; cursor: pointer; white-space: nowrap; transition: all 0.2s ease; }
+        .filter-btn.active { background: #0F172A; color: white; border-color: #0F172A; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15); }
         
         /* Objects Grid */
-        .objects-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        
-        .object-card {
-            background: white;
-            border-radius: 24px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-            cursor: pointer;
-            transition: all 0.25s ease;
-            border: 1px solid #F1F5F9;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .object-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #0F172A, #F59E0B);
-            opacity: 0;
-            transition: opacity 0.25s ease;
-        }
-        
-        .object-card:hover::before {
-            opacity: 1;
-        }
-        
-        .object-card:active {
-            transform: scale(0.99);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        }
-        
-        .object-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px;
-        }
-        
-        .object-name {
-            font-size: 18px;
-            font-weight: 700;
-            color: #0F172A;
-            line-height: 1.3;
-        }
-        
-        .object-status {
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        
+        .objects-grid { display: flex; flex-direction: column; gap: 16px; }
+        .object-card { background: white; border-radius: 24px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.25s ease; border: 1px solid #F1F5F9; position: relative; overflow: hidden; }
+        .object-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #0F172A, #F59E0B); opacity: 0; transition: opacity 0.25s ease; }
+        .object-card:hover::before { opacity: 1; }
+        .object-card:active { transform: scale(0.99); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .object-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .object-name { font-size: 18px; font-weight: 700; color: #0F172A; line-height: 1.3; }
+        .object-status { padding: 6px 14px; border-radius: 40px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
         .status-preparation { background: #FEF3C7; color: #92400E; }
         .status-mobilization { background: #DBEAFE; color: #1E40AF; }
         .status-in_progress { background: #D1FAE5; color: #065F46; }
         .status-completed { background: #E2E8F0; color: #475569; }
         .status-paused { background: #FEE2E2; color: #991B1B; }
-        
-        .object-address {
-            font-size: 14px;
-            color: #64748B;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .progress-section {
-            margin: 16px 0;
-        }
-        
-        .progress-bar {
-            height: 8px;
-            background: #F1F5F9;
-            border-radius: 40px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #0F172A, #F59E0B);
-            border-radius: 40px;
-            width: 0%;
-            transition: width 0.3s ease;
-        }
-        
-        .progress-text {
-            display: flex;
-            justify-content: space-between;
-            font-size: 13px;
-            color: #64748B;
-            font-weight: 500;
-        }
-        
-        .object-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #F1F5F9;
-        }
-        
-        .object-responsible {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            color: #64748B;
-        }
-        
-        .object-dates {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .date-badge {
-            background: #F8FAFC;
-            padding: 6px 12px;
-            border-radius: 40px;
-            font-size: 12px;
-            font-weight: 500;
-            color: #475569;
-        }
+        .object-address { font-size: 14px; color: #64748B; margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+        .progress-section { margin: 16px 0; }
+        .progress-bar { height: 8px; background: #F1F5F9; border-radius: 40px; overflow: hidden; margin-bottom: 8px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #0F172A, #F59E0B); border-radius: 40px; width: 0%; transition: width 0.3s ease; }
+        .progress-text { display: flex; justify-content: space-between; font-size: 13px; color: #64748B; font-weight: 500; }
+        .object-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #F1F5F9; }
+        .object-responsible { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+        .object-dates { display: flex; gap: 8px; }
+        .date-badge { background: #F8FAFC; padding: 6px 12px; border-radius: 40px; font-size: 12px; font-weight: 500; color: #475569; }
         
         /* Back Button */
-        .back-btn {
-            background: none;
-            border: none;
-            color: #0F172A;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            padding: 12px 0;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: opacity 0.2s;
-        }
+        .back-btn { background: none; border: none; color: #0F172A; font-size: 16px; font-weight: 600; cursor: pointer; padding: 12px 0; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; transition: opacity 0.2s; }
+        .back-btn:active { opacity: 0.7; }
         
-        .back-btn:active {
-            opacity: 0.7;
-        }
+        /* Tabs Wrapper */
+        .tabs-wrapper { position: relative; margin: 20px 0; }
+        .tabs { display: flex; gap: 4px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; padding-bottom: 8px; -webkit-overflow-scrolling: touch; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab { padding: 12px 18px; background: none; border: none; font-size: 14px; font-weight: 600; color: #64748B; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; flex-shrink: 0; }
+        .tab.active { color: #0F172A; border-bottom-color: #F59E0B; }
         
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 4px;
-            margin: 20px 0;
-            border-bottom: 2px solid #F1F5F9;
-            overflow-x: auto;
-            scrollbar-width: none;
-        }
+        /* Scroll Arrows */
+        .scroll-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: white; border: 1px solid #E2E8F0; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 10; transition: all 0.2s; }
+        .scroll-arrow:hover { background: #F8FAFC; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .scroll-arrow.left { left: -16px; }
+        .scroll-arrow.right { right: -16px; }
+        .scroll-arrow.hidden { display: none; }
         
-        .tabs::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .tab {
-            padding: 12px 18px;
-            background: none;
-            border: none;
-            font-size: 14px;
-            font-weight: 600;
-            color: #64748B;
-            cursor: pointer;
-            white-space: nowrap;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s;
-        }
-        
-        .tab.active {
-            color: #0F172A;
-            border-bottom-color: #F59E0B;
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        /* Tab Content */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         
         /* Cards */
-        .info-card {
-            background: white;
-            border-radius: 24px;
-            padding: 24px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-            border: 1px solid #F1F5F9;
-        }
-        
-        .info-card h3 {
-            font-size: 18px;
-            font-weight: 700;
-            color: #0F172A;
-            margin-bottom: 20px;
-        }
+        .info-card { background: white; border-radius: 24px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #F1F5F9; }
+        .info-card h3 { font-size: 18px; font-weight: 700; color: #0F172A; margin-bottom: 20px; }
         
         /* Form Elements */
-        .form-group {
-            margin-bottom: 18px;
-        }
-        
-        label {
-            font-weight: 600;
-            color: #475569;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            display: block;
-            margin-bottom: 8px;
-        }
-        
-        input, select, textarea {
-            width: 100%;
-            padding: 14px 16px;
-            border: 1.5px solid #E2E8F0;
-            border-radius: 16px;
-            font-size: 15px;
-            background: white;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.2s;
-        }
-        
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #F59E0B;
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
-        }
+        .form-group { margin-bottom: 18px; }
+        label { font-weight: 600; color: #475569; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 8px; }
+        input, select, textarea { width: 100%; padding: 14px 16px; border: 1.5px solid #E2E8F0; border-radius: 16px; font-size: 15px; background: white; font-family: 'Inter', sans-serif; transition: all 0.2s; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: #F59E0B; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1); }
         
         /* Buttons */
-        .btn-primary {
-            width: 100%;
-            background: linear-gradient(135deg, #0F172A, #1E293B);
-            color: white;
-            padding: 16px 20px;
-            border-radius: 16px;
-            font-size: 16px;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            margin-top: 12px;
-            transition: all 0.2s;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
-        }
-        
-        .btn-primary:active {
-            transform: scale(0.98);
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1);
-        }
-        
-        .btn-secondary {
-            background: #F8FAFC;
-            color: #0F172A;
-            padding: 12px 18px;
-            border-radius: 14px;
-            font-weight: 600;
-            border: 1.5px solid #E2E8F0;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .btn-danger {
-            background: #FEF2F2;
-            color: #DC2626;
-            padding: 10px 16px;
-            border-radius: 14px;
-            font-weight: 600;
-            border: 1.5px solid #FECACA;
-            cursor: pointer;
-        }
+        .btn-primary { width: 100%; background: linear-gradient(135deg, #0F172A, #1E293B); color: white; padding: 16px 20px; border-radius: 16px; font-size: 16px; font-weight: 700; border: none; cursor: pointer; margin-top: 12px; transition: all 0.2s; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15); }
+        .btn-primary:active { transform: scale(0.98); box-shadow: 0 2px 6px rgba(15, 23, 42, 0.1); }
+        .btn-secondary { background: #F8FAFC; color: #0F172A; padding: 12px 18px; border-radius: 14px; font-weight: 600; border: 1.5px solid #E2E8F0; cursor: pointer; transition: all 0.2s; }
+        .btn-danger { background: #FEF2F2; color: #DC2626; padding: 10px 16px; border-radius: 14px; font-weight: 600; border: 1.5px solid #FECACA; cursor: pointer; }
         
         /* GPR Item */
-        .gpr-item {
-            background: white;
-            border-radius: 20px;
-            padding: 18px;
-            margin-bottom: 12px;
-            border: 1.5px solid #F1F5F9;
-            transition: all 0.2s;
-        }
-        
-        .delay-badge {
-            background: #FEF3C7;
-            color: #92400E;
-            padding: 4px 10px;
-            border-radius: 40px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
-        
-        .gpr-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 14px;
-            flex-wrap: wrap;
-        }
+        .gpr-item { background: white; border-radius: 20px; padding: 18px; margin-bottom: 12px; border: 1.5px solid #F1F5F9; transition: all 0.2s; }
+        .delay-badge { background: #FEF3C7; color: #92400E; padding: 4px 10px; border-radius: 40px; font-size: 12px; font-weight: 600; margin-left: 8px; }
+        .gpr-actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
         
         /* Modal */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-        
-        .modal.hidden {
-            display: none !important;
-        }
-        
-        .modal-content {
-            background: white;
-            border-radius: 28px;
-            padding: 24px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            animation: slideUp 0.3s ease;
-        }
-        
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-        
-        .modal-title {
-            font-size: 22px;
-            font-weight: 800;
-            color: #0F172A;
-        }
-        
-        .close-btn {
-            background: #F1F5F9;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 40px;
-            font-size: 20px;
-            cursor: pointer;
-            color: #64748B;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        
-        .close-btn:active {
-            background: #E2E8F0;
-        }
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .modal.hidden { display: none !important; }
+        .modal-content { background: white; border-radius: 28px; padding: 24px; max-width: 500px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .modal-title { font-size: 22px; font-weight: 800; color: #0F172A; }
+        .close-btn { background: #F1F5F9; border: none; width: 40px; height: 40px; border-radius: 40px; font-size: 20px; cursor: pointer; color: #64748B; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .close-btn:active { background: #E2E8F0; }
         
         /* Grid */
-        .row-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-        }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         
         /* Messages */
-        .message {
-            padding: 16px;
-            border-radius: 16px;
-            margin: 16px 0;
-            display: none;
-            font-weight: 500;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .message.success {
-            background: #D1FAE5;
-            color: #065F46;
-            display: block;
-            border: 1.5px solid #A7F3D0;
-        }
-        
-        .message.error {
-            background: #FEE2E2;
-            color: #991B1B;
-            display: block;
-            border: 1.5px solid #FECACA;
-        }
-        
-        .message.info {
-            background: #DBEAFE;
-            color: #1E40AF;
-            display: block;
-            border: 1.5px solid #BFDBFE;
-        }
+        .message { padding: 16px; border-radius: 16px; margin: 16px 0; display: none; font-weight: 500; animation: fadeIn 0.3s ease; }
+        .message.success { background: #D1FAE5; color: #065F46; display: block; border: 1.5px solid #A7F3D0; }
+        .message.error { background: #FEE2E2; color: #991B1B; display: block; border: 1.5px solid #FECACA; }
+        .message.info { background: #DBEAFE; color: #1E40AF; display: block; border: 1.5px solid #BFDBFE; }
         
         /* Utilities */
-        .hidden {
-            display: none !important;
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            color: #64748B;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            background: white;
-            border-radius: 24px;
-            color: #64748B;
-        }
+        .hidden { display: none !important; }
+        .loading { text-align: center; padding: 60px 20px; color: #64748B; }
+        .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 24px; color: #64748B; }
         
         /* Checkbox */
-        .checklist-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 0;
-            border-bottom: 1px solid #F1F5F9;
-        }
-        
-        .checklist-item input[type="checkbox"] {
-            width: 24px;
-            height: 24px;
-            accent-color: #F59E0B;
-            border-radius: 8px;
-        }
+        .checklist-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid #F1F5F9; }
+        .checklist-item input[type="checkbox"] { width: 24px; height: 24px; accent-color: #F59E0B; border-radius: 8px; }
         
         /* Progress Slider */
-        .progress-slider {
-            width: 100%;
-            margin: 12px 0;
-            accent-color: #F59E0B;
-            height: 6px;
-        }
+        .progress-slider { width: 100%; margin: 12px 0; accent-color: #F59E0B; height: 6px; }
         
         /* Photo Upload */
-        .axis-photo-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px;
-            background: #F8FAFC;
-            border-radius: 16px;
-            margin-bottom: 10px;
-        }
-        
-        .axis-photo-item img {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 14px;
-        }
-        
-        .photo-upload-btn {
-            background: #E2E8F0;
-            padding: 12px 18px;
-            border-radius: 14px;
-            text-align: center;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            color: #475569;
-            transition: all 0.2s;
-        }
-        
-        .photo-upload-btn:active {
-            background: #CBD5E1;
-        }
+        .axis-photo-item { display: flex; align-items: center; gap: 14px; padding: 14px; background: #F8FAFC; border-radius: 16px; margin-bottom: 10px; }
+        .axis-photo-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 14px; }
+        .photo-upload-btn { background: #E2E8F0; padding: 12px 18px; border-radius: 14px; text-align: center; cursor: pointer; font-size: 13px; font-weight: 600; color: #475569; transition: all 0.2s; }
+        .photo-upload-btn:active { background: #CBD5E1; }
     </style>
 </head>
 <body>
@@ -635,9 +153,7 @@
                 <button class="filter-btn" data-filter="completed">Завершён</button>
             </div>
             
-            <div id="objects-container">
-                <div class="loading">Загрузка объектов...</div>
-            </div>
+            <div id="objects-container"><div class="loading">Загрузка объектов...</div></div>
         </div>
         
         <!-- DETAIL VIEW -->
@@ -645,27 +161,28 @@
             <button class="back-btn" id="back-btn">← Назад к объектам</button>
             
             <div class="app-header">
-                <div class="header-title">
-                    <h1 id="detail-name">Объект</h1>
-                </div>
+                <div class="header-title"><h1 id="detail-name">Объект</h1></div>
                 <span class="role-badge" id="detail-status-badge"></span>
             </div>
             
-            <div class="tabs">
-                <button class="tab active" data-tab="info">📋 Инфо</button>
-                <button class="tab" data-tab="gpr-create">➕ Создать ГПР</button>
-                <button class="tab" data-tab="gpr-fact">📊 Прогресс</button>
-                <button class="tab" data-tab="expenses">💰 Расходы</button>
-                <button class="tab" data-tab="materials">📦 Материалы</button>
-                <button class="tab" data-tab="checklist">✅ Чек-лист</button>
-                <button class="tab" data-tab="issues">⚠️ Проблемы</button>
-                <button class="tab" data-tab="report">📑 Отчет</button>
+            <!-- TABS WITH SCROLL -->
+            <div class="tabs-wrapper">
+                <div class="scroll-arrow left hidden" id="scroll-left">←</div>
+                <div class="tabs" id="tabs-container">
+                    <button class="tab active" data-tab="info">📋 Инфо</button>
+                    <button class="tab" data-tab="gpr-create">➕ Создать ГПР</button>
+                    <button class="tab" data-tab="gpr-fact">📊 Прогресс</button>
+                    <button class="tab" data-tab="expenses">💰 Расходы</button>
+                    <button class="tab" data-tab="materials">📦 Материалы</button>
+                    <button class="tab" data-tab="checklist">✅ Чек-лист</button>
+                    <button class="tab" data-tab="issues">⚠️ Проблемы</button>
+                    <button class="tab" data-tab="report">📑 Отчет</button>
+                </div>
+                <div class="scroll-arrow right" id="scroll-right">→</div>
             </div>
             
             <!-- INFO TAB -->
-            <div id="tab-info" class="tab-content active">
-                <div class="info-card" id="detail-content"></div>
-            </div>
+            <div id="tab-info" class="tab-content active"><div class="info-card" id="detail-content"></div></div>
             
             <!-- GPR CREATE TAB -->
             <div id="tab-gpr-create" class="tab-content">
@@ -674,59 +191,24 @@
                     <div class="form-group"><label>Ось *</label><select id="gpr-axis"></select></div>
                     <div class="form-group"><label>Вид работ *</label><select id="gpr-stage"></select></div>
                     <div class="form-group"><label>Бригада *</label><select id="gpr-brigade"></select></div>
-                    <div class="row-2">
-                        <div class="form-group"><label>Объём</label><input type="number" id="gpr-volume" step="0.01"></div>
-                        <div class="form-group"><label>Цена</label><input type="number" id="gpr-price" step="0.01"></div>
-                    </div>
-                    <div class="row-2">
-                        <div class="form-group"><label>Начало</label><input type="date" id="gpr-start"></div>
-                        <div class="form-group"><label>Окончание</label><input type="date" id="gpr-end"></div>
-                    </div>
+                    <div class="row-2"><div class="form-group"><label>Объём</label><input type="number" id="gpr-volume" step="0.01"></div><div class="form-group"><label>Цена</label><input type="number" id="gpr-price" step="0.01"></div></div>
+                    <div class="row-2"><div class="form-group"><label>Начало</label><input type="date" id="gpr-start"></div><div class="form-group"><label>Окончание</label><input type="date" id="gpr-end"></div></div>
                     <button class="btn-primary" id="add-gpr-btn">Добавить в план</button>
                 </div>
             </div>
             
             <!-- GPR PROGRESS TAB -->
-            <div id="tab-gpr-fact" class="tab-content">
-                <div id="gpr-progress-list"></div>
-            </div>
+            <div id="tab-gpr-fact" class="tab-content"><div id="gpr-progress-list"></div></div>
             
             <!-- EXPENSES TAB -->
             <div id="tab-expenses" class="tab-content">
                 <div class="info-card">
                     <h3>➕ Добавить расход</h3>
                     <div class="form-group"><label>Наименование *</label><input type="text" id="exp-name"></div>
-                    <div class="form-group">
-                        <label>Статья *</label>
-                        <select id="exp-category">
-                            <option value="delivery">Доставка</option>
-                            <option value="consumables">Расходники</option>
-                            <option value="cradles">Люльки</option>
-                            <option value="scaffolding">Леса</option>
-                            <option value="other">Прочее</option>
-                        </select>
-                    </div>
-                    <div class="row-2">
-                        <div class="form-group"><label>Кол-во</label><input type="number" id="exp-qty" value="1"></div>
-                        <div class="form-group"><label>Сумма *</label><input type="number" id="exp-amount" step="0.01"></div>
-                    </div>
-                    <div class="form-group">
-                        <label>Вид оплаты *</label>
-                        <select id="exp-payment">
-                            <option value="cash">Наличка</option>
-                            <option value="card_itr">Карта ИТР</option>
-                            <option value="card_volodya">Карта Володи</option>
-                            <option value="card_makha">Карта Маха</option>
-                            <option value="invoice">По счету</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Статус *</label>
-                        <select id="exp-status">
-                            <option value="pending">План оплаты</option>
-                            <option value="paid">Оплачен</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Статья *</label><select id="exp-category"><option value="delivery">Доставка</option><option value="consumables">Расходники</option><option value="cradles">Люльки</option><option value="scaffolding">Леса</option><option value="other">Прочее</option></select></div>
+                    <div class="row-2"><div class="form-group"><label>Кол-во</label><input type="number" id="exp-qty" value="1"></div><div class="form-group"><label>Сумма *</label><input type="number" id="exp-amount" step="0.01"></div></div>
+                    <div class="form-group"><label>Вид оплаты *</label><select id="exp-payment"><option value="cash">Наличка</option><option value="card_itr">Карта ИТР</option><option value="card_volodya">Карта Володи</option><option value="card_makha">Карта Маха</option><option value="invoice">По счету</option></select></div>
+                    <div class="form-group"><label>Статус *</label><select id="exp-status"><option value="pending">План оплаты</option><option value="paid">Оплачен</option></select></div>
                     <button class="btn-primary" id="add-expense-btn">Сохранить расход</button>
                 </div>
                 <div id="expenses-list"></div>
@@ -739,10 +221,7 @@
                     <div class="form-group"><label>Поставщик</label><input type="text" id="mat-supplier"></div>
                     <div class="form-group"><label>№ накладной</label><input type="text" id="mat-invoice"></div>
                     <div class="form-group"><label>Наименование *</label><input type="text" id="mat-name"></div>
-                    <div class="row-2">
-                        <div class="form-group"><label>Количество *</label><input type="number" id="mat-qty" step="0.01"></div>
-                        <div class="form-group"><label>Ед. изм.</label><input type="text" id="mat-unit" value="шт"></div>
-                    </div>
+                    <div class="row-2"><div class="form-group"><label>Количество *</label><input type="number" id="mat-qty" step="0.01"></div><div class="form-group"><label>Ед. изм.</label><input type="text" id="mat-unit" value="шт"></div></div>
                     <button class="btn-primary" id="add-material-btn">Добавить материал</button>
                 </div>
                 <div id="materials-list"></div>
@@ -750,14 +229,8 @@
             
             <!-- CHECKLIST TAB -->
             <div id="tab-checklist" class="tab-content">
-                <div class="info-card">
-                    <h3>Взаимодействие с Заказчиком</h3>
-                    <div id="checklist-customer"></div>
-                </div>
-                <div class="info-card">
-                    <h3>Взаимодействие с Монтажниками</h3>
-                    <div id="checklist-workers"></div>
-                </div>
+                <div class="info-card"><h3>Взаимодействие с Заказчиком</h3><div id="checklist-customer"></div></div>
+                <div class="info-card"><h3>Взаимодействие с Монтажниками</h3><div id="checklist-workers"></div></div>
             </div>
             
             <!-- ISSUES TAB -->
@@ -778,13 +251,7 @@
                     <h3>📑 Новый отчет</h3>
                     <div class="form-group"><label>Объект</label><input type="text" id="report-project-name" disabled></div>
                     <div class="form-group"><label>Дата отчета</label><input type="date" id="report-date" disabled></div>
-                    <div class="form-group">
-                        <label>Успеваемость *</label>
-                        <select id="report-success">
-                            <option value="yes">✅ ДА</option>
-                            <option value="no">❌ НЕТ</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Успеваемость *</label><select id="report-success"><option value="yes">✅ ДА</option><option value="no">❌ НЕТ</option></select></div>
                     <div id="delay-section" class="hidden">
                         <div class="form-group"><label>Ось с отставанием *</label><select id="delay-axis"></select></div>
                         <div class="form-group"><label>Дней отставания *</label><input type="number" id="delay-days" min="1" value="1"></div>
@@ -794,31 +261,17 @@
                     <div id="photo-section"></div>
                     <button class="btn-primary" id="submit-report-btn">📤 Отправить отчет</button>
                 </div>
-                <div class="info-card">
-                    <h3>📋 История отчетов</h3>
-                    <div id="reports-history"></div>
-                </div>
+                <div class="info-card"><h3>📋 История отчетов</h3><div id="reports-history"></div></div>
             </div>
         </div>
         
         <!-- SHIFT MODAL -->
         <div id="shift-modal" class="modal hidden">
             <div class="modal-content">
-                <div class="modal-header">
-                    <span class="modal-title">⏰ Сдвиг сроков</span>
-                    <button class="close-btn" id="close-shift-modal">&times;</button>
-                </div>
+                <div class="modal-header"><span class="modal-title">⏰ Сдвиг сроков</span><button class="close-btn" id="close-shift-modal">&times;</button></div>
                 <input type="hidden" id="shift-schedule-id">
                 <div class="form-group"><label>Количество дней *</label><input type="number" id="shift-days" min="1" value="1"></div>
-                <div class="form-group">
-                    <label>Причина *</label>
-                    <select id="shift-reason">
-                        <option value="customer">По вине Заказчика</option>
-                        <option value="contractor">По вине Монтажника</option>
-                        <option value="weather">Погодные условия</option>
-                        <option value="other">Другое</option>
-                    </select>
-                </div>
+                <div class="form-group"><label>Причина *</label><select id="shift-reason"><option value="customer">По вине Заказчика</option><option value="contractor">По вине Монтажника</option><option value="weather">Погодные условия</option><option value="other">Другое</option></select></div>
                 <div class="form-group"><label>Описание</label><textarea id="shift-description" rows="3"></textarea></div>
                 <button class="btn-primary" id="save-shift-btn">Сохранить сдвиг</button>
             </div>
@@ -850,6 +303,7 @@
                 setupTabs();
                 setupForms();
                 setupShiftModal();
+                setupTabsScroll();
             }
             
             async function loadUser() {
@@ -888,22 +342,10 @@
                     const end = p.end_date_contract ? new Date(p.end_date_contract).toLocaleDateString('ru-RU') : '—';
                     
                     html += `<div class="object-card" data-id="${p.id}">
-                        <div class="object-header">
-                            <span class="object-name">${p.name}</span>
-                            <span class="object-status ${st.class}">${st.text}</span>
-                        </div>
+                        <div class="object-header"><span class="object-name">${p.name}</span><span class="object-status ${st.class}">${st.text}</span></div>
                         <div class="object-address">📍 ${p.address}</div>
-                        <div class="progress-section">
-                            <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
-                            <div class="progress-text"><span>Готовность: 0%</span><span>План: —</span></div>
-                        </div>
-                        <div class="object-footer">
-                            <div class="object-responsible">👤 ${p.users?.full_name || '—'}</div>
-                            <div class="object-dates">
-                                <span class="date-badge">📅 ${start}</span>
-                                <span class="date-badge">🏁 ${end}</span>
-                            </div>
-                        </div>
+                        <div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div><div class="progress-text"><span>Готовность: 0%</span><span>План: —</span></div></div>
+                        <div class="object-footer"><div class="object-responsible">👤 ${p.users?.full_name || '—'}</div><div class="object-dates"><span class="date-badge">📅 ${start}</span><span class="date-badge">🏁 ${end}</span></div></div>
                     </div>`;
                 });
                 container.innerHTML = html + '</div>';
@@ -937,15 +379,34 @@
                 }));
             }
             
+            function setupTabsScroll() {
+                const tabsContainer = document.getElementById('tabs-container');
+                const scrollLeft = document.getElementById('scroll-left');
+                const scrollRight = document.getElementById('scroll-right');
+                if (!tabsContainer) return;
+                
+                function updateArrows() {
+                    if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0);
+                    if (scrollRight) {
+                        const maxScroll = tabsContainer.scrollWidth - tabsContainer.clientWidth;
+                        scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= maxScroll - 1);
+                    }
+                }
+                
+                if (scrollLeft) scrollLeft.addEventListener('click', () => tabsContainer.scrollBy({ left: -200, behavior: 'smooth' }));
+                if (scrollRight) scrollRight.addEventListener('click', () => tabsContainer.scrollBy({ left: 200, behavior: 'smooth' }));
+                tabsContainer.addEventListener('scroll', updateArrows);
+                window.addEventListener('resize', updateArrows);
+                setTimeout(updateArrows, 100);
+                setTimeout(updateArrows, 500);
+            }
+            
             async function showDetail(id) {
                 currentProjectId = id;
                 const { data: p } = await supabase.from('projects').select('*, users(full_name)').eq('id', id).single();
                 document.getElementById('detail-name').textContent = p.name;
                 
-                const statusMap = {
-                    'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация',
-                    'in_progress': '🔨 В работе', 'completed': '✅ Завершён', 'paused': '⏸️ Пауза'
-                };
+                const statusMap = { 'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация', 'in_progress': '🔨 В работе', 'completed': '✅ Завершён', 'paused': '⏸️ Пауза' };
                 document.getElementById('detail-status-badge').textContent = statusMap[p.status] || p.status;
                 
                 document.getElementById('detail-content').innerHTML = `
@@ -955,17 +416,8 @@
                     <p style="margin-bottom:12px"><strong>🏁 Дата окончания (договор):</strong> ${p.end_date_contract ? new Date(p.end_date_contract).toLocaleDateString('ru-RU') : '—'}</p>
                     <p style="margin-bottom:12px"><strong>📊 Дата окончания (ГПР):</strong> <span id="gpr-end-date">—</span></p>
                     <p style="margin-bottom:20px"><strong>👤 Ответственный:</strong> ${p.users?.full_name}</p>
-                    <div class="form-group">
-                        <label>Сменить статус</label>
-                        <select id="change-status">
-                            <option value="preparation" ${p.status === 'preparation' ? 'selected' : ''}>📋 Подготовка</option>
-                            <option value="mobilization" ${p.status === 'mobilization' ? 'selected' : ''}>🚚 Мобилизация</option>
-                            <option value="in_progress" ${p.status === 'in_progress' ? 'selected' : ''}>🔨 В работе</option>
-                            <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>✅ Завершён</option>
-                            <option value="paused" ${p.status === 'paused' ? 'selected' : ''}>⏸️ Пауза</option>
-                        </select>
-                        <button class="btn-secondary" id="update-status-btn" style="margin-top:10px">Обновить статус</button>
-                    </div>
+                    <div class="form-group"><label>Сменить статус</label><select id="change-status"><option value="preparation" ${p.status==='preparation'?'selected':''}>📋 Подготовка</option><option value="mobilization" ${p.status==='mobilization'?'selected':''}>🚚 Мобилизация</option><option value="in_progress" ${p.status==='in_progress'?'selected':''}>🔨 В работе</option><option value="completed" ${p.status==='completed'?'selected':''}>✅ Завершён</option><option value="paused" ${p.status==='paused'?'selected':''}>⏸️ Пауза</option></select>
+                    <button class="btn-secondary" id="update-status-btn" style="margin-top:10px">Обновить статус</button></div>
                 `;
                 
                 document.getElementById('update-status-btn').addEventListener('click', async () => {
@@ -1000,6 +452,14 @@
                 document.getElementById('list-view').classList.add('hidden');
                 document.getElementById('detail-view').classList.remove('hidden');
                 document.querySelector('[data-tab="info"]').click();
+                
+                setTimeout(() => {
+                    const tabsContainer = document.getElementById('tabs-container');
+                    if (tabsContainer) {
+                        const scrollRight = document.getElementById('scroll-right');
+                        if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollWidth <= tabsContainer.clientWidth);
+                    }
+                }, 200);
             }
             
             // === ОТЧЕТ ===
@@ -1028,13 +488,7 @@
                 
                 const { data: reports } = await supabase.from('object_reports').select('*').eq('project_id', currentProjectId).order('created_at', { ascending: false });
                 const historyDiv = document.getElementById('reports-history');
-                historyDiv.innerHTML = reports?.length ? reports.map(r => `
-                    <div class="gpr-item">
-                        <div style="display:flex; justify-content:space-between"><strong>${new Date(r.report_date).toLocaleDateString('ru-RU')}</strong><span>${r.success ? '✅' : '❌ +'+(r.delay_days||0)+' дн.'}</span></div>
-                        <p>${r.description || '—'}</p>
-                        <small>${r.created_by_name} (${r.created_by_role === 'manager' ? 'Рук.' : 'ИТР'})</small>
-                    </div>
-                `).join('') : '<p style="color:#64748B">Нет отчетов</p>';
+                historyDiv.innerHTML = reports?.length ? reports.map(r => `<div class="gpr-item"><div style="display:flex; justify-content:space-between"><strong>${new Date(r.report_date).toLocaleDateString('ru-RU')}</strong><span>${r.success ? '✅' : '❌ +'+(r.delay_days||0)+' дн.'}</span></div><p>${r.description||'—'}</p><small>${r.created_by_name} (${r.created_by_role==='manager'?'Рук.':'ИТР'})</small></div>`).join('') : '<p style="color:#64748B">Нет отчетов</p>';
             }
             
             function renderPhotoFields() {
@@ -1114,7 +568,7 @@
                 loadReportTab();
             });
             
-            // === ОСТАЛЬНЫЕ ФУНКЦИИ (сокращены для brevity, но должны быть из рабочей версии) ===
+            // === ОСТАЛЬНЫЕ ФУНКЦИИ ===
             function setupShiftModal() {
                 const modal = document.getElementById('shift-modal');
                 document.getElementById('close-shift-modal').onclick = () => modal.classList.add('hidden');
@@ -1166,10 +620,7 @@
                         <div style="margin:8px 0">👷 ${i.brigades?.name}</div>
                         <div>Прогресс: <strong>${i.progress||0}%</strong></div>
                         <input type="range" min="0" max="100" value="${i.progress||0}" class="progress-slider" data-id="${i.id}">
-                        <div class="gpr-actions">
-                            <button class="btn-secondary" data-id="${i.id}" onclick="updateProgress(this)">Обновить</button>
-                            <button class="btn-danger" onclick="openShiftModal('${i.id}')">⏰ Сдвиг</button>
-                        </div>
+                        <div class="gpr-actions"><button class="btn-secondary" data-id="${i.id}" onclick="updateProgress(this)">Обновить</button><button class="btn-danger" onclick="openShiftModal('${i.id}')">⏰ Сдвиг</button></div>
                         ${i.progress==100?`<button class="btn-primary" onclick="createWorkOrder(this)" data-id="${i.id}">📋 Сформировать Наряд</button>`:''}
                     </div>
                 `).join('');
