@@ -22,7 +22,8 @@
         label { font-weight: 700; color: #475569; font-size: 13px; text-transform: uppercase; display: block; margin-bottom: 6px; }
         input, select, textarea { width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 16px; font-size: 15px; background: white; }
         .btn-primary { width: 100%; background: #1a2e4b; color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; cursor: pointer; margin-top: 10px; }
-        .btn-success { background: #10b981; color: white; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; width: 100%; margin-top: 8px; }
+        .btn-success { background: #10b981; color: white; padding: 10px 14px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; }
+        .btn-warning { background: #f59e0b; color: white; padding: 10px 14px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; }
         .btn-secondary { background: #f1f5f9; color: #1a2e4b; padding: 12px; border-radius: 12px; font-weight: 600; border: 1px solid #e2e8f0; cursor: pointer; }
         .order-item { display: flex; align-items: center; gap: 10px; padding: 12px; background: #f8fafc; border-radius: 14px; margin-bottom: 10px; }
         .order-item select { flex: 2; }
@@ -41,20 +42,17 @@
         .order-number { font-weight: 700; color: #1a2e4b; }
         .order-status { padding: 4px 10px; border-radius: 30px; font-size: 12px; font-weight: 600; }
         .status-draft { background: #e2e8f0; color: #475569; }
-        .status-sent { background: #fef3c7; color: #92400e; }
         .status-approved { background: #d1fae5; color: #065f46; }
-        .status-paid { background: #dbeafe; color: #1e40af; }
+        .order-actions { display: flex; gap: 8px; margin-top: 12px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Список объектов -->
         <div id="list-view">
             <h1>📄 Документы</h1>
             <div id="projects-container"><div class="loading">Загрузка объектов...</div></div>
         </div>
         
-        <!-- Детали объекта -->
         <div id="detail-view" class="hidden">
             <button class="back-btn" id="back-btn">← Назад к объектам</button>
             <h1 id="detail-project-name"></h1>
@@ -64,7 +62,6 @@
                 <button class="tab" data-tab="docs">📑 Закрывающие</button>
             </div>
             
-            <!-- Вкладка Наряды -->
             <div id="tab-orders" class="tab-content active">
                 <div class="form-card">
                     <h3>➕ Новый наряд для заказчика</h3>
@@ -79,13 +76,13 @@
                 <div id="orders-list"></div>
             </div>
             
-            <!-- Вкладка Закрывающие документы -->
             <div id="tab-docs" class="tab-content">
                 <div class="form-card">
                     <h3>📑 Сформировать документы</h3>
-                    <button class="btn-success" id="generate-avr-btn">📊 Акт выполненных работ (АВР)</button>
-                    <button class="btn-success" style="background:#8b5cf6; margin-top:12px" id="generate-ks2-btn">📋 КС-2</button>
-                    <button class="btn-success" style="background:#ec4899; margin-top:12px" id="generate-ks3-btn">💰 КС-3</button>
+                    <p style="margin-bottom:16px; color:#64748b">Документы формируются на основе <strong>утверждённых</strong> нарядов</p>
+                    <button class="btn-success" id="generate-avr-btn" style="width:100%; margin-bottom:12px">📊 Акт выполненных работ (АВР)</button>
+                    <button class="btn-success" style="background:#8b5cf6; width:100%; margin-bottom:12px" id="generate-ks2-btn">📋 КС-2</button>
+                    <button class="btn-success" style="background:#ec4899; width:100%" id="generate-ks3-btn">💰 КС-3</button>
                 </div>
             </div>
         </div>
@@ -131,14 +128,10 @@
                 const { data: project } = await supabase.from('projects').select('*').eq('id', projectId).single();
                 document.getElementById('detail-project-name').textContent = project.name;
                 
-                // Загружаем расценки
                 const { data: prices } = await supabase.from('customer_prices').select('*, work_stages(name)').eq('project_id', projectId);
                 customerPrices = prices || [];
                 
-                // Загружаем существующие наряды
                 await loadOrders();
-                
-                // Рендерим форму
                 renderOrderForm();
                 
                 listView.classList.add('hidden');
@@ -151,8 +144,6 @@
                     container.innerHTML = '<p style="color:#64748b">Нет расценок. Добавьте расценки при создании объекта.</p>';
                     return;
                 }
-                
-                // Один элемент по умолчанию
                 container.innerHTML = createOrderItemRow();
                 updateTotal();
             }
@@ -238,25 +229,37 @@
                 if (!orders?.length) { container.innerHTML = '<div class="empty-state">Нет нарядов</div>'; return; }
                 
                 container.innerHTML = orders.map(o => {
-                    const statusMap = { 'draft': 'Черновик', 'sent': 'Отправлен', 'approved': 'Утверждён', 'paid': 'Оплачен' };
+                    const statusMap = { 'draft': 'Черновик', 'approved': '✅ Утверждён' };
+                    const isDraft = o.status === 'draft';
+                    
                     return `
                         <div class="order-card">
                             <div class="order-header">
                                 <span class="order-number">${o.order_number} от ${new Date(o.order_date).toLocaleDateString('ru-RU')}</span>
-                                <span class="order-status status-${o.status}">${statusMap[o.status]}</span>
+                                <span class="order-status ${o.status === 'draft' ? 'status-draft' : 'status-approved'}">${statusMap[o.status]}</span>
                             </div>
                             <div>📝 ${o.description || '—'}</div>
                             <div style="margin-top:8px">💰 Сумма: <strong>${o.total_amount?.toLocaleString()} ₸</strong></div>
                             <div style="margin-top:8px">📦 Позиций: ${o.customer_order_items?.length || 0}</div>
+                            ${isDraft ? `
+                                <div class="order-actions">
+                                    <button class="btn-warning" onclick="approveOrder('${o.id}')">✅ Утвердить наряд</button>
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 }).join('');
             }
             
-            // Генерация АВР
+            window.approveOrder = async (orderId) => {
+                await supabase.from('customer_orders').update({ status: 'approved' }).eq('id', orderId);
+                loadOrders();
+                alert('✅ Наряд утверждён! Теперь можно формировать АВР.');
+            };
+            
             document.getElementById('generate-avr-btn').addEventListener('click', async () => {
                 const { data: orders } = await supabase.from('customer_orders').select('*, customer_order_items(*), projects(name)').eq('project_id', currentProjectId).eq('status', 'approved');
-                if (!orders?.length) { alert('Нет утверждённых нарядов'); return; }
+                if (!orders?.length) { alert('Нет утверждённых нарядов. Сначала утвердите наряд на вкладке "Наряды".'); return; }
                 
                 const projectName = orders[0]?.projects?.name || 'Объект';
                 const allItems = orders.flatMap(o => o.customer_order_items.map(i => ({ ...i, order_number: o.order_number })));
@@ -269,12 +272,12 @@
                 XLSX.utils.sheet_add_aoa(ws, [[`АКТ ВЫПОЛНЕННЫХ РАБОТ`], [`Объект: ${projectName}`], [`Дата: ${new Date().toLocaleDateString('ru-RU')}`], []], { origin: 'A1' });
                 XLSX.utils.book_append_sheet(wb, ws, 'АВР');
                 XLSX.writeFile(wb, `АВР_${projectName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+                alert('✅ АВР сформирован!');
             });
             
             document.getElementById('generate-ks2-btn').addEventListener('click', () => alert('📋 КС-2 будет доступна в следующей версии'));
             document.getElementById('generate-ks3-btn').addEventListener('click', () => alert('💰 КС-3 будет доступна в следующей версии'));
             
-            // Табы
             document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
