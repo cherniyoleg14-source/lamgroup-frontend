@@ -15,93 +15,44 @@
         .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         h1 { font-size: 26px; font-weight: 800; color: #1a2e4b; }
         h2 { font-size: 18px; font-weight: 700; color: #1a2e4b; margin-bottom: 16px; }
-        h3 { font-size: 16px; font-weight: 700; color: #1a2e4b; margin-bottom: 12px; }
         .role-badge { background: #e2e8f0; color: #1a2e4b; padding: 6px 14px; border-radius: 30px; font-size: 14px; font-weight: 600; }
-        
-        /* KPI Cards */
         .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
         .kpi-card { background: white; border-radius: 20px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
         .kpi-label { font-size: 13px; color: #64748b; margin-bottom: 6px; }
         .kpi-value { font-size: 24px; font-weight: 800; color: #1a2e4b; }
-        .kpi-trend { font-size: 12px; margin-top: 4px; }
-        .trend-up { color: #065f46; }
-        .trend-down { color: #991b1b; }
         .kpi-card.primary { background: #1a2e4b; }
         .kpi-card.primary .kpi-label { color: #94a3b8; }
         .kpi-card.primary .kpi-value { color: white; }
-        
-        /* Tabs */
         .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; overflow-x: auto; }
         .tab { padding: 10px 14px; background: none; border: none; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; }
         .tab.active { color: #1a2e4b; border-bottom-color: #1a2e4b; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        
-        /* Cards */
         .report-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        
-        /* Export buttons */
         .export-buttons { display: flex; gap: 8px; margin-bottom: 20px; }
         .btn-export { background: #1a2e4b; color: white; padding: 12px 20px; border-radius: 14px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; flex: 1; justify-content: center; }
         .btn-export.excel { background: #10b981; }
-        .btn-export.pdf { background: #ef4444; }
-        
-        /* Tables */
         .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th { text-align: left; padding: 12px 8px; color: #64748b; font-weight: 600; border-bottom: 1px solid #e2e8f0; }
         td { padding: 12px 8px; border-bottom: 1px solid #f1f5f9; }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        
-        /* Status badges */
-        .status-badge { padding: 4px 8px; border-radius: 30px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .status-badge { padding: 4px 8px; border-radius: 30px; font-size: 11px; font-weight: 600; }
         .status-preparation { background: #fef3c7; color: #92400e; }
         .status-in_progress { background: #d1fae5; color: #065f46; }
-        .status-completed { background: #e2e8f0; color: #1a2e4b; }
-        .status-paused { background: #fee2e2; color: #991b1b; }
-        .status-pending { background: #fef3c7; color: #92400e; }
-        .status-paid { background: #d1fae5; color: #065f46; }
-        
-        /* Progress bar */
-        .progress-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; width: 100px; }
-        .progress-fill { height: 100%; background: #1a2e4b; border-radius: 3px; }
-        
-        /* Chart container */
-        .chart-container { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        
-        /* Filters */
-        .filter-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-        .filter-select { flex: 1; min-width: 120px; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 14px; font-size: 14px; background: white; }
-        
-        .loading { text-align: center; padding: 40px; }
+        .filter-row { display: flex; gap: 8px; margin-bottom: 16px; }
+        .filter-select { flex: 1; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 14px; font-size: 14px; background: white; }
         .empty-state { text-align: center; padding: 40px; background: white; border-radius: 20px; color: #64748b; }
-        
-        /* Summary stats */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .stat-item { background: #f8fafc; border-radius: 16px; padding: 14px; }
-        .stat-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
-        .stat-value { font-size: 20px; font-weight: 700; color: #1a2e4b; }
+        .chart-container { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="app-header">
-            <h1>📊 Отчеты</h1>
-            <span class="role-badge" id="role-badge">Загрузка...</span>
-        </div>
-        
-        <!-- KPI Cards -->
+        <div class="app-header"><h1>📊 Отчеты</h1><span class="role-badge" id="role-badge"></span></div>
         <div class="kpi-grid" id="kpi-container"></div>
-        
-        <!-- Export buttons -->
         <div class="export-buttons">
             <button class="btn-export excel" id="export-excel">📊 Excel</button>
-            <button class="btn-export pdf" id="export-pdf">📄 PDF</button>
+            <button class="btn-export" id="export-pdf">📄 PDF</button>
         </div>
-        
-        <!-- Tabs -->
         <div class="tabs">
             <button class="tab active" data-tab="dashboard">📈 Дашборд</button>
             <button class="tab" data-tab="objects">🏗️ Объекты</button>
@@ -109,88 +60,40 @@
             <button class="tab" data-tab="gpr">📊 ГПР</button>
             <button class="tab" data-tab="problems">⚠️ Проблемы</button>
             <button class="tab" data-tab="brigades">👷 Бригады</button>
+            <button class="tab" data-tab="object-reports">📑 Отчеты по объектам</button>
         </div>
         
-        <!-- Дашборд -->
         <div id="tab-dashboard" class="tab-content active">
-            <div class="chart-container">
-                <h3>📈 Динамика по объектам</h3>
-                <canvas id="objects-chart" style="width:100%; height:200px;"></canvas>
-            </div>
-            <div class="chart-container">
-                <h3>💰 Финансовые показатели</h3>
-                <canvas id="finance-chart" style="width:100%; height:200px;"></canvas>
-            </div>
-            <div class="stats-grid" id="dashboard-stats"></div>
+            <div class="chart-container"><h3>📈 Динамика по объектам</h3><canvas id="objects-chart" style="height:200px"></canvas></div>
+            <div class="chart-container"><h3>💰 Финансы</h3><canvas id="finance-chart" style="height:200px"></canvas></div>
         </div>
-        
-        <!-- Объекты -->
         <div id="tab-objects" class="tab-content">
             <div class="filter-row">
-                <select id="filter-object-status" class="filter-select">
-                    <option value="">Все статусы</option>
-                    <option value="preparation">Подготовка</option>
-                    <option value="mobilization">Мобилизация</option>
-                    <option value="in_progress">В работе</option>
-                    <option value="completed">Завершён</option>
-                    <option value="paused">Пауза</option>
-                </select>
-                <select id="filter-object-manager" class="filter-select">
-                    <option value="">Все ответственные</option>
-                </select>
+                <select id="filter-object-status" class="filter-select"><option value="">Все статусы</option><option value="preparation">Подготовка</option><option value="in_progress">В работе</option><option value="completed">Завершён</option></select>
+                <select id="filter-object-manager" class="filter-select"><option value="">Все ответственные</option></select>
             </div>
-            <div class="report-card">
-                <div class="table-container" id="objects-table"></div>
-            </div>
+            <div class="report-card"><div class="table-container" id="objects-table"></div></div>
         </div>
-        
-        <!-- Финансы -->
         <div id="tab-finance" class="tab-content">
-            <div class="chart-container">
-                <h3>📊 Прибыль по объектам</h3>
-                <canvas id="profit-chart" style="width:100%; height:250px;"></canvas>
-            </div>
-            <div class="report-card">
-                <h3>💵 Сводка по объектам</h3>
-                <div class="table-container" id="finance-table"></div>
-            </div>
+            <div class="chart-container"><h3>📊 Прибыль по объектам</h3><canvas id="profit-chart" style="height:250px"></canvas></div>
+            <div class="report-card"><h3>💵 Сводка</h3><div class="table-container" id="finance-table"></div></div>
         </div>
-        
-        <!-- ГПР -->
         <div id="tab-gpr" class="tab-content">
-            <div class="chart-container">
-                <h3>⏰ Причины задержек</h3>
-                <canvas id="delays-chart" style="width:100%; height:200px;"></canvas>
-            </div>
-            <div class="report-card">
-                <h3>📋 Сводка по ГПР</h3>
-                <div class="table-container" id="gpr-table"></div>
-            </div>
+            <div class="chart-container"><h3>⏰ Причины задержек</h3><canvas id="delays-chart" style="height:200px"></canvas></div>
+            <div class="report-card"><h3>📋 Отставания</h3><div class="table-container" id="gpr-table"></div></div>
         </div>
-        
-        <!-- Проблемы -->
         <div id="tab-problems" class="tab-content">
-            <div class="stats-grid" id="problems-stats"></div>
-            <div class="chart-container">
-                <h3>📊 Статистика проблем</h3>
-                <canvas id="problems-chart" style="width:100%; height:200px;"></canvas>
-            </div>
-            <div class="report-card">
-                <h3>⚠️ Список проблем</h3>
-                <div class="table-container" id="problems-table"></div>
-            </div>
+            <div class="report-card"><h3>⚠️ Проблемы</h3><div class="table-container" id="problems-table"></div></div>
         </div>
-        
-        <!-- Бригады -->
         <div id="tab-brigades" class="tab-content">
-            <div class="chart-container">
-                <h3>👷 Загрузка бригад</h3>
-                <canvas id="brigades-chart" style="width:100%; height:200px;"></canvas>
+            <div class="chart-container"><h3>👷 Выплаты бригадам</h3><canvas id="brigades-chart" style="height:200px"></canvas></div>
+            <div class="report-card"><h3>💰 Сводка</h3><div class="table-container" id="brigades-table"></div></div>
+        </div>
+        <div id="tab-object-reports" class="tab-content">
+            <div class="filter-row">
+                <select id="filter-report-project" class="filter-select"><option value="">Все объекты</option></select>
             </div>
-            <div class="report-card">
-                <h3>💰 Выплаты по бригадам</h3>
-                <div class="table-container" id="brigades-table"></div>
-            </div>
+            <div class="report-card"><div class="table-container" id="object-reports-table"></div></div>
         </div>
     </div>
 
@@ -203,14 +106,11 @@
             
             let userId = tg.initDataUnsafe?.user?.id || 531738802;
             let currentUser = null, currentRole = 'worker';
-            let allProjects = [], allIncome = [], allExpenses = [], allWorkOrders = [], allGPR = [], allProblems = [], allBrigades = [], allUsers = [];
+            let allProjects = [], allIncome = [], allExpenses = [], allWorkOrders = [], allGPR = [], allProblems = [], allBrigades = [], allUsers = [], allReports = [];
             
             async function init() {
                 await loadUser();
-                if (currentRole !== 'manager') {
-                    document.body.innerHTML = '<div class="container"><div class="empty-state"><h2>⛔ Доступ запрещён</h2><p>Этот раздел доступен только руководителям</p></div></div>';
-                    return;
-                }
+                if (currentRole !== 'manager') { document.body.innerHTML = '<div class="container"><div class="empty-state"><h2>⛔ Доступ запрещён</h2></div></div>'; return; }
                 await loadAllData();
                 setupTabs();
                 setupFilters();
@@ -220,335 +120,146 @@
             async function loadUser() {
                 const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
                 if (data) { currentUser = data; currentRole = data.role; }
-                document.getElementById('role-badge').textContent = currentRole === 'manager' ? 'Руководитель' : 'ИТР';
+                document.getElementById('role-badge').textContent = 'Руководитель';
             }
             
             async function loadAllData() {
-                const [projectsRes, incomeRes, expensesRes, ordersRes, gprRes, problemsRes, brigadesRes, usersRes] = await Promise.all([
-                    supabase.from('projects').select('*, users!projects_responsible_worker_id_fkey(full_name)').order('created_at', { ascending: false }),
+                const [p, i, e, o, g, pr, b, u, r] = await Promise.all([
+                    supabase.from('projects').select('*, users!projects_responsible_worker_id_fkey(full_name)'),
                     supabase.from('income').select('*, projects(name)'),
                     supabase.from('expenses').select('*, projects(name)'),
                     supabase.from('work_orders').select('*, projects(name), brigades(name)'),
-                    supabase.from('schedule_plan').select('*, projects(name), axes(name), work_stages(name), brigades(name)'),
+                    supabase.from('schedule_plan').select('*, projects(name), axes(name), work_stages(name)'),
                     supabase.from('project_issues').select('*, projects(name)'),
                     supabase.from('brigades').select('*'),
-                    supabase.from('users').select('*')
+                    supabase.from('users').select('*'),
+                    supabase.from('object_reports').select('*, projects(name)').order('created_at', { ascending: false })
                 ]);
-                
-                allProjects = projectsRes.data || [];
-                allIncome = incomeRes.data || [];
-                allExpenses = expensesRes.data || [];
-                allWorkOrders = ordersRes.data || [];
-                allGPR = gprRes.data || [];
-                allProblems = problemsRes.data || [];
-                allBrigades = brigadesRes.data || [];
-                allUsers = usersRes.data || [];
+                allProjects = p.data || []; allIncome = i.data || []; allExpenses = e.data || []; allWorkOrders = o.data || [];
+                allGPR = g.data || []; allProblems = pr.data || []; allBrigades = b.data || []; allUsers = u.data || []; allReports = r.data || [];
             }
             
             function renderAll() {
-                renderKPI();
-                renderDashboard();
-                renderObjectsTable();
-                renderFinanceTable();
-                renderGPRTable();
-                renderProblemsTable();
-                renderBrigadesTable();
-                renderCharts();
-                populateFilters();
+                renderKPI(); renderObjectsTable(); renderFinanceTable(); renderGPRTable(); renderProblemsTable(); renderBrigadesTable(); renderObjectReportsTable(); renderCharts(); populateFilters();
             }
             
             function renderKPI() {
-                const totalProjects = allProjects.length;
-                const activeProjects = allProjects.filter(p => p.status === 'in_progress').length;
-                const totalIncome = allIncome.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
-                const totalExpense = allExpenses.filter(e => e.payment_status === 'paid').reduce((s, e) => s + e.amount, 0);
-                const totalPayouts = allWorkOrders.filter(o => o.payment_status === 'paid').reduce((s, o) => s + o.total_amount, 0);
-                const profit = totalIncome - totalExpense - totalPayouts;
-                const delayedProjects = allGPR.filter(g => g.delay_days > 0 && g.progress < 100).length;
-                const openProblems = allProblems.filter(p => p.status === 'open' || p.status === 'in_progress').length;
-                
+                const profit = allIncome.filter(i => i.status === 'paid').reduce((s,i)=>s+i.amount,0) - allExpenses.filter(e=>e.payment_status==='paid').reduce((s,e)=>s+e.amount,0) - allWorkOrders.filter(o=>o.payment_status==='paid').reduce((s,o)=>s+o.total_amount,0);
                 document.getElementById('kpi-container').innerHTML = `
                     <div class="kpi-card primary"><div class="kpi-label">Прибыль</div><div class="kpi-value">${profit.toLocaleString()} ₸</div></div>
-                    <div class="kpi-card"><div class="kpi-label">Объектов</div><div class="kpi-value">${totalProjects}</div><div class="kpi-trend">🚀 ${activeProjects} в работе</div></div>
-                    <div class="kpi-card"><div class="kpi-label">Поступления</div><div class="kpi-value">${totalIncome.toLocaleString()} ₸</div></div>
-                    <div class="kpi-card"><div class="kpi-label">Расходы</div><div class="kpi-value">${(totalExpense + totalPayouts).toLocaleString()} ₸</div></div>
-                    <div class="kpi-card"><div class="kpi-label">Отставания</div><div class="kpi-value">${delayedProjects}</div></div>
-                    <div class="kpi-card"><div class="kpi-label">Проблем</div><div class="kpi-value">${openProblems}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Объектов</div><div class="kpi-value">${allProjects.length}</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Поступления</div><div class="kpi-value">${allIncome.filter(i=>i.status==='paid').reduce((s,i)=>s+i.amount,0).toLocaleString()} ₸</div></div>
+                    <div class="kpi-card"><div class="kpi-label">Расходы</div><div class="kpi-value">${(allExpenses.filter(e=>e.payment_status==='paid').reduce((s,e)=>s+e.amount,0)+allWorkOrders.filter(o=>o.payment_status==='paid').reduce((s,o)=>s+o.total_amount,0)).toLocaleString()} ₸</div></div>
                 `;
-            }
-            
-            function renderDashboard() {
-                const stats = [
-                    { label: 'Всего объектов', value: allProjects.length },
-                    { label: 'В работе', value: allProjects.filter(p => p.status === 'in_progress').length },
-                    { label: 'Завершено', value: allProjects.filter(p => p.status === 'completed').length },
-                    { label: 'Средний прогресс', value: Math.round(allGPR.reduce((s, g) => s + (g.progress || 0), 0) / (allGPR.length || 1)) + '%' }
-                ];
-                
-                document.getElementById('dashboard-stats').innerHTML = stats.map(s => `
-                    <div class="stat-item"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div></div>
-                `).join('');
             }
             
             function renderObjectsTable() {
-                const container = document.getElementById('objects-table');
-                const statusFilter = document.getElementById('filter-object-status')?.value || '';
-                const managerFilter = document.getElementById('filter-object-manager')?.value || '';
-                
+                const status = document.getElementById('filter-object-status')?.value || '';
+                const manager = document.getElementById('filter-object-manager')?.value || '';
                 let filtered = allProjects;
-                if (statusFilter) filtered = filtered.filter(p => p.status === statusFilter);
-                if (managerFilter) filtered = filtered.filter(p => p.responsible_worker_id === managerFilter);
+                if (status) filtered = filtered.filter(p => p.status === status);
+                if (manager) filtered = filtered.filter(p => p.responsible_worker_id === manager);
                 
-                if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">Нет объектов</div>'; return; }
-                
-                const avgProgress = {};
-                allGPR.forEach(g => {
-                    if (g.projects?.id) {
-                        if (!avgProgress[g.projects.id]) avgProgress[g.projects.id] = { sum: 0, count: 0 };
-                        avgProgress[g.projects.id].sum += g.progress || 0;
-                        avgProgress[g.projects.id].count++;
-                    }
-                });
-                
-                container.innerHTML = `
-                    <table>
-                        <thead><tr><th>Объект</th><th>Статус</th><th>Прогресс</th><th>Отставание</th><th>Ответственный</th></tr></thead>
-                        <tbody>
-                            ${filtered.map(p => {
-                                const prog = avgProgress[p.id] ? Math.round(avgProgress[p.id].sum / avgProgress[p.id].count) : 0;
-                                const delays = allGPR.filter(g => g.projects?.id === p.id && g.delay_days > 0).length;
-                                const statusMap = { 'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация', 'in_progress': '🔨 В работе', 'completed': '✅ Завершён', 'paused': '⏸️ Пауза' };
-                                return `<tr>
-                                    <td>${p.name}</td>
-                                    <td><span class="status-badge status-${p.status}">${statusMap[p.status] || p.status}</span></td>
-                                    <td><div class="progress-bar"><div class="progress-fill" style="width:${prog}%"></div></div> ${prog}%</td>
-                                    <td>${delays > 0 ? `⚠️ ${delays}` : '✅'}</td>
-                                    <td>${p.users?.full_name || '—'}</td>
-                                </tr>`;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                `;
+                const container = document.getElementById('objects-table');
+                if (!filtered.length) { container.innerHTML = '<div class="empty-state">Нет объектов</div>'; return; }
+                container.innerHTML = `<table><tr><th>Объект</th><th>Статус</th><th>Ответственный</th></tr>${filtered.map(p => `<tr><td>${p.name}</td><td><span class="status-badge status-${p.status}">${p.status}</span></td><td>${p.users?.full_name||'—'}</td></tr>`).join('')}</table>`;
             }
             
             function renderFinanceTable() {
-                const container = document.getElementById('finance-table');
-                const projectFinance = {};
-                
-                allProjects.forEach(p => { projectFinance[p.id] = { name: p.name, income: 0, expense: 0, payouts: 0, contract: p.contract_price || 0 }; });
-                allIncome.filter(i => i.status === 'paid').forEach(i => { if (i.project_id && projectFinance[i.project_id]) projectFinance[i.project_id].income += i.amount; });
-                allExpenses.filter(e => e.payment_status === 'paid').forEach(e => { if (e.project_id && projectFinance[e.project_id]) projectFinance[e.project_id].expense += e.amount; });
-                allWorkOrders.filter(o => o.payment_status === 'paid').forEach(o => { if (o.project_id && projectFinance[o.project_id]) projectFinance[o.project_id].payouts += o.total_amount; });
-                
-                const data = Object.values(projectFinance);
-                if (data.length === 0) { container.innerHTML = '<div class="empty-state">Нет данных</div>'; return; }
-                
-                container.innerHTML = `
-                    <table>
-                        <thead><tr><th>Объект</th><th>Поступления</th><th>Расходы</th><th>Выплаты</th><th>Прибыль</th><th>Маржа</th></tr></thead>
-                        <tbody>
-                            ${data.map(p => {
-                                const profit = p.income - p.expense - p.payouts;
-                                const margin = p.contract > 0 ? ((profit / p.contract) * 100).toFixed(1) : 0;
-                                return `<tr>
-                                    <td>${p.name}</td>
-                                    <td class="text-right">${p.income.toLocaleString()} ₸</td>
-                                    <td class="text-right">${p.expense.toLocaleString()} ₸</td>
-                                    <td class="text-right">${p.payouts.toLocaleString()} ₸</td>
-                                    <td class="text-right" style="color:${profit >= 0 ? '#065f46' : '#991b1b'}">${profit.toLocaleString()} ₸</td>
-                                    <td class="text-right">${margin}%</td>
-                                </tr>`;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                `;
+                const data = allProjects.map(p => {
+                    const inc = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s,i)=>s+i.amount,0);
+                    const exp = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s,e)=>s+e.amount,0);
+                    const pay = allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid').reduce((s,o)=>s+o.total_amount,0);
+                    return { name: p.name, income: inc, expense: exp, payouts: pay, profit: inc-exp-pay };
+                });
+                document.getElementById('finance-table').innerHTML = `<table><tr><th>Объект</th><th>Поступления</th><th>Расходы</th><th>Выплаты</th><th>Прибыль</th></tr>${data.map(d => `<tr><td>${d.name}</td><td>${d.income.toLocaleString()}</td><td>${d.expense.toLocaleString()}</td><td>${d.payouts.toLocaleString()}</td><td style="color:${d.profit>=0?'#065f46':'#991b1b'}">${d.profit.toLocaleString()}</td></tr>`).join('')}</table>`;
             }
             
             function renderGPRTable() {
-                const container = document.getElementById('gpr-table');
-                const delayedGPR = allGPR.filter(g => g.delay_days > 0).sort((a, b) => b.delay_days - a.delay_days);
-                
-                if (delayedGPR.length === 0) { container.innerHTML = '<div class="empty-state">Нет отставаний</div>'; return; }
-                
-                container.innerHTML = `
-                    <table>
-                        <thead><tr><th>Объект</th><th>Ось</th><th>Работа</th><th>Сдвиг</th><th>Причина</th></tr></thead>
-                        <tbody>
-                            ${delayedGPR.slice(0, 15).map(g => {
-                                const reasonMap = { 'customer': 'Заказчик', 'contractor': 'Монтажник', 'weather': 'Погода', 'other': 'Другое' };
-                                return `<tr>
-                                    <td>${g.projects?.name || '—'}</td>
-                                    <td>${g.axes?.name || '—'}</td>
-                                    <td>${g.work_stages?.name || '—'}</td>
-                                    <td>+${g.delay_days} дн.</td>
-                                    <td>${reasonMap[g.delay_reason] || g.delay_reason || '—'}</td>
-                                </tr>`;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                `;
+                const delayed = allGPR.filter(g => g.delay_days > 0).sort((a,b) => b.delay_days - a.delay_days).slice(0,15);
+                document.getElementById('gpr-table').innerHTML = delayed.length ? `<table><tr><th>Объект</th><th>Ось</th><th>Сдвиг</th></tr>${delayed.map(g => `<tr><td>${g.projects?.name}</td><td>${g.axes?.name}</td><td>+${g.delay_days} дн.</td></tr>`).join('')}</table>` : '<div class="empty-state">Нет отставаний</div>';
             }
             
             function renderProblemsTable() {
-                const container = document.getElementById('problems-table');
-                const openProblems = allProblems.filter(p => p.status !== 'closed' && p.status !== 'resolved').sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                
-                const statusMap = { 'open': 'Открыта', 'in_progress': 'В работе', 'resolved': 'Решена', 'closed': 'Закрыта' };
-                
-                if (openProblems.length === 0) { container.innerHTML = '<div class="empty-state">Нет открытых проблем</div>'; return; }
-                
-                container.innerHTML = `
-                    <table>
-                        <thead><tr><th>Объект</th><th>Проблема</th><th>Статус</th><th>Дата</th></tr></thead>
-                        <tbody>
-                            ${openProblems.map(p => `<tr>
-                                <td>${p.projects?.name || '—'}</td>
-                                <td>${p.title}</td>
-                                <td><span class="status-badge status-pending">${statusMap[p.status] || p.status}</span></td>
-                                <td>${p.created_at ? new Date(p.created_at).toLocaleDateString('ru-RU') : '—'}</td>
-                            </tr>`).join('')}
-                        </tbody>
-                    </table>
-                `;
-                
-                document.getElementById('problems-stats').innerHTML = `
-                    <div class="stat-item"><div class="stat-label">Всего проблем</div><div class="stat-value">${allProblems.length}</div></div>
-                    <div class="stat-item"><div class="stat-label">Открытых</div><div class="stat-value">${allProblems.filter(p => p.status === 'open').length}</div></div>
-                    <div class="stat-item"><div class="stat-label">В работе</div><div class="stat-value">${allProblems.filter(p => p.status === 'in_progress').length}</div></div>
-                    <div class="stat-item"><div class="stat-label">Решено</div><div class="stat-value">${allProblems.filter(p => p.status === 'resolved').length}</div></div>
-                `;
+                const open = allProblems.filter(p => p.status !== 'closed').slice(0,15);
+                document.getElementById('problems-table').innerHTML = open.length ? `<table><tr><th>Объект</th><th>Проблема</th><th>Статус</th></tr>${open.map(p => `<tr><td>${p.projects?.name}</td><td>${p.title}</td><td>${p.status}</td></tr>`).join('')}</table>` : '<div class="empty-state">Нет проблем</div>';
             }
             
             function renderBrigadesTable() {
-                const container = document.getElementById('brigades-table');
-                const brigadeStats = {};
-                
-                allBrigades.forEach(b => { brigadeStats[b.id] = { name: b.name, foreman: b.foreman_name, projects: new Set(), payouts: 0, active: 0 }; });
-                allWorkOrders.forEach(o => {
-                    if (o.brigade_id && brigadeStats[o.brigade_id]) {
-                        brigadeStats[o.brigade_id].payouts += o.total_amount || 0;
-                        if (o.projects?.id) brigadeStats[o.brigade_id].projects.add(o.projects.id);
-                    }
+                const data = allBrigades.map(b => {
+                    const pay = allWorkOrders.filter(o => o.brigade_id === b.id && o.payment_status === 'paid').reduce((s,o)=>s+o.total_amount,0);
+                    return { name: b.name, foreman: b.foreman_name, payouts: pay };
                 });
+                document.getElementById('brigades-table').innerHTML = `<table><tr><th>Бригада</th><th>Бригадир</th><th>Выплаты</th></tr>${data.map(d => `<tr><td>${d.name}</td><td>${d.foreman||'—'}</td><td>${d.payouts.toLocaleString()} ₸</td></tr>`).join('')}</table>`;
+            }
+            
+            function renderObjectReportsTable() {
+                const projectFilter = document.getElementById('filter-report-project')?.value || '';
+                let filtered = allReports;
+                if (projectFilter) filtered = filtered.filter(r => r.project_id === projectFilter);
                 
-                const data = Object.values(brigadeStats).map(b => ({ ...b, projectsCount: b.projects.size }));
-                if (data.length === 0) { container.innerHTML = '<div class="empty-state">Нет данных</div>'; return; }
-                
-                container.innerHTML = `
-                    <table>
-                        <thead><tr><th>Бригада</th><th>Бригадир</th><th>Объектов</th><th>Выплаты</th></tr></thead>
-                        <tbody>
-                            ${data.map(b => `<tr>
-                                <td>${b.name}</td><td>${b.foreman || '—'}</td><td>${b.projectsCount}</td>
-                                <td class="text-right">${b.payouts.toLocaleString()} ₸</td>
-                            </tr>`).join('')}
-                        </tbody>
-                    </table>
-                `;
+                const container = document.getElementById('object-reports-table');
+                if (!filtered.length) { container.innerHTML = '<div class="empty-state">Нет отчетов</div>'; return; }
+                container.innerHTML = `<table><tr><th>Дата</th><th>Объект</th><th>Статус</th><th>Кто подал</th></tr>${filtered.map(r => `<tr><td>${new Date(r.report_date).toLocaleDateString('ru-RU')}</td><td>${r.projects?.name}</td><td>${r.success?'✅':'❌ +'+(r.delay_days||0)+' дн.'}</td><td>${r.created_by_name} (${r.created_by_role==='manager'?'Рук.':'ИТР'})</td></tr>`).join('')}</table>`;
             }
             
             function renderCharts() {
-                // Объекты по статусам
-                const statusCounts = { preparation: 0, mobilization: 0, in_progress: 0, completed: 0, paused: 0 };
-                allProjects.forEach(p => { if (statusCounts.hasOwnProperty(p.status)) statusCounts[p.status]++; });
+                const statuses = { preparation: 0, mobilization: 0, in_progress: 0, completed: 0 };
+                allProjects.forEach(p => { if (statuses.hasOwnProperty(p.status)) statuses[p.status]++; });
+                new Chart(document.getElementById('objects-chart'), { type: 'bar', data: { labels: Object.keys(statuses), datasets: [{ label: 'Объекты', data: Object.values(statuses), backgroundColor: '#1a2e4b' }] }});
                 
-                new Chart(document.getElementById('objects-chart'), {
-                    type: 'bar', data: { labels: ['Подготовка', 'Мобилизация', 'В работе', 'Завершён', 'Пауза'], datasets: [{ label: 'Объекты', data: Object.values(statusCounts), backgroundColor: '#1a2e4b' }] },
-                    options: { responsive: true, maintainAspectRatio: false }
+                const months = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+                const incM = new Array(12).fill(0), expM = new Array(12).fill(0);
+                allIncome.filter(i=>i.status==='paid').forEach(i => incM[new Date(i.date).getMonth()] += i.amount);
+                allExpenses.filter(e=>e.payment_status==='paid').forEach(e => expM[new Date(e.date).getMonth()] += e.amount);
+                new Chart(document.getElementById('finance-chart'), { type: 'line', data: { labels: months, datasets: [{ label: 'Поступления', data: incM, borderColor: '#10b981' }, { label: 'Расходы', data: expM, borderColor: '#ef4444' }] }});
+                
+                const profitData = allProjects.slice(0,8).map(p => {
+                    const inc = allIncome.filter(i=>i.project_id===p.id&&i.status==='paid').reduce((s,i)=>s+i.amount,0);
+                    const exp = allExpenses.filter(e=>e.project_id===p.id&&e.payment_status==='paid').reduce((s,e)=>s+e.amount,0);
+                    const pay = allWorkOrders.filter(o=>o.project_id===p.id&&o.payment_status==='paid').reduce((s,o)=>s+o.total_amount,0);
+                    return { name: p.name, profit: inc-exp-pay };
                 });
+                new Chart(document.getElementById('profit-chart'), { type: 'bar', data: { labels: profitData.map(d=>d.name), datasets: [{ label: 'Прибыль', data: profitData.map(d=>d.profit), backgroundColor: profitData.map(d=>d.profit>=0?'#10b981':'#ef4444') }] }});
                 
-                // Финансы
-                const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
-                const incomeByMonth = new Array(12).fill(0), expenseByMonth = new Array(12).fill(0);
-                allIncome.filter(i => i.status === 'paid').forEach(i => incomeByMonth[new Date(i.date).getMonth()] += i.amount);
-                allExpenses.filter(e => e.payment_status === 'paid').forEach(e => expenseByMonth[new Date(e.date).getMonth()] += e.amount);
+                const reasons = { customer: 0, contractor: 0, weather: 0, other: 0 };
+                allGPR.filter(g=>g.delay_days>0).forEach(g => { if (reasons.hasOwnProperty(g.delay_reason)) reasons[g.delay_reason]++; else reasons.other++; });
+                new Chart(document.getElementById('delays-chart'), { type: 'doughnut', data: { labels: ['Заказчик','Монтажник','Погода','Другое'], datasets: [{ data: Object.values(reasons), backgroundColor: ['#ef4444','#f59e0b','#3b82f6','#64748b'] }] }});
                 
-                new Chart(document.getElementById('finance-chart'), {
-                    type: 'line', data: { labels: months, datasets: [{ label: 'Поступления', data: incomeByMonth, borderColor: '#10b981' }, { label: 'Расходы', data: expenseByMonth, borderColor: '#ef4444' }] },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-                
-                // Причины задержек
-                const delayReasons = { customer: 0, contractor: 0, weather: 0, other: 0 };
-                allGPR.filter(g => g.delay_days > 0).forEach(g => { if (delayReasons.hasOwnProperty(g.delay_reason)) delayReasons[g.delay_reason]++; else delayReasons.other++; });
-                
-                new Chart(document.getElementById('delays-chart'), {
-                    type: 'doughnut', data: { labels: ['Заказчик', 'Монтажник', 'Погода', 'Другое'], datasets: [{ data: Object.values(delayReasons), backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#64748b'] }] },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-                
-                // Проблемы по статусам
-                const problemStatus = { open: 0, in_progress: 0, resolved: 0, closed: 0 };
-                allProblems.forEach(p => { if (problemStatus.hasOwnProperty(p.status)) problemStatus[p.status]++; });
-                
-                new Chart(document.getElementById('problems-chart'), {
-                    type: 'bar', data: { labels: ['Открыта', 'В работе', 'Решена', 'Закрыта'], datasets: [{ label: 'Проблемы', data: Object.values(problemStatus), backgroundColor: '#1a2e4b' }] },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-                
-                // Бригады
-                const brigadePayouts = allBrigades.slice(0, 8).map(b => ({ name: b.name, payouts: allWorkOrders.filter(o => o.brigade_id === b.id && o.payment_status === 'paid').reduce((s, o) => s + o.total_amount, 0) }));
-                
-                new Chart(document.getElementById('brigades-chart'), {
-                    type: 'bar', data: { labels: brigadePayouts.map(b => b.name), datasets: [{ label: 'Выплаты (₸)', data: brigadePayouts.map(b => b.payouts), backgroundColor: '#1a2e4b' }] },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-                
-                // Прибыль по объектам
-                const profitData = allProjects.slice(0, 8).map(p => {
-                    const income = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s, i) => s + i.amount, 0);
-                    const expense = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s, e) => s + e.amount, 0);
-                    const payouts = allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid').reduce((s, o) => s + o.total_amount, 0);
-                    return { name: p.name, profit: income - expense - payouts };
-                });
-                
-                new Chart(document.getElementById('profit-chart'), {
-                    type: 'bar', data: { labels: profitData.map(p => p.name), datasets: [{ label: 'Прибыль (₸)', data: profitData.map(p => p.profit), backgroundColor: profitData.map(p => p.profit >= 0 ? '#10b981' : '#ef4444') }] },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
+                const brigadePayouts = allBrigades.slice(0,8).map(b => ({ name: b.name, pay: allWorkOrders.filter(o=>o.brigade_id===b.id&&o.payment_status==='paid').reduce((s,o)=>s+o.total_amount,0) }));
+                new Chart(document.getElementById('brigades-chart'), { type: 'bar', data: { labels: brigadePayouts.map(b=>b.name), datasets: [{ label: 'Выплаты', data: brigadePayouts.map(b=>b.pay), backgroundColor: '#1a2e4b' }] }});
             }
             
             function populateFilters() {
                 const managerSelect = document.getElementById('filter-object-manager');
                 managerSelect.innerHTML = '<option value="">Все ответственные</option>';
                 allUsers.filter(u => u.role === 'worker').forEach(u => managerSelect.innerHTML += `<option value="${u.id}">${u.full_name}</option>`);
+                
+                const projectSelect = document.getElementById('filter-report-project');
+                projectSelect.innerHTML = '<option value="">Все объекты</option>';
+                allProjects.forEach(p => projectSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`);
             }
             
             function setupTabs() {
-                document.querySelectorAll('.tab').forEach(t => {
-                    t.addEventListener('click', () => {
-                        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-                        document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
-                        t.classList.add('active');
-                        document.getElementById(`tab-${t.dataset.tab}`).classList.add('active');
-                    });
+                document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
+                    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+                    t.classList.add('active');
+                    document.getElementById(`tab-${t.dataset.tab}`).classList.add('active');
                 });
             }
             
             function setupFilters() {
-                document.getElementById('filter-object-status').addEventListener('change', renderObjectsTable);
-                document.getElementById('filter-object-manager').addEventListener('change', renderObjectsTable);
-                document.getElementById('export-excel').addEventListener('click', exportToExcel);
-                document.getElementById('export-pdf').addEventListener('click', () => window.print());
-            }
-            
-            function exportToExcel() {
-                const wb = XLSX.utils.book_new();
-                
-                // Объекты
-                const objectsData = allProjects.map(p => ({ Название: p.name, Адрес: p.address, Статус: p.status, 'Дата начала': p.start_date, 'Дата окончания': p.end_date_contract, Ответственный: p.users?.full_name }));
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(objectsData), 'Объекты');
-                
-                // Финансы
-                const financeData = allProjects.map(p => {
-                    const income = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s, i) => s + i.amount, 0);
-                    const expense = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s, e) => s + e.amount, 0);
-                    const payouts = allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid').reduce((s, o) => s + o.total_amount, 0);
-                    return { Объект: p.name, Поступления: income, Расходы: expense, Выплаты: payouts, Прибыль: income - expense - payouts };
-                });
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(financeData), 'Финансы');
-                
-                XLSX.writeFile(wb, `Отчет_LamGroup_${new Date().toISOString().split('T')[0]}.xlsx`);
+                document.getElementById('filter-object-status').onchange = renderObjectsTable;
+                document.getElementById('filter-object-manager').onchange = renderObjectsTable;
+                document.getElementById('filter-report-project').onchange = renderObjectReportsTable;
+                document.getElementById('export-excel').onclick = () => {
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(allProjects.map(p => ({ Название: p.name, Адрес: p.address, Статус: p.status }))), 'Объекты');
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(allReports.map(r => ({ Дата: r.report_date, Объект: r.projects?.name, Успешно: r.success?'Да':'Нет', Отставание: r.delay_days, Кто: r.created_by_name }))), 'Отчеты');
+                    XLSX.writeFile(wb, `Отчет_LamGroup_${new Date().toISOString().split('T')[0]}.xlsx`);
+                };
+                document.getElementById('export-pdf').onclick = () => window.print();
             }
             
             init();
