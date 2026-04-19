@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Документы | LamGroup</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, sans-serif; background: #f5f7fa; padding: 16px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { font-size: 26px; font-weight: 800; color: #1a2e4b; margin-bottom: 20px; }
+        .object-card { background: white; border-radius: 20px; padding: 18px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); cursor: pointer; }
+        .object-name { font-weight: 700; color: #1a2e4b; margin-bottom: 8px; }
+        .btn-primary { background: #1a2e4b; color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; cursor: pointer; width: 100%; margin-top: 10px; }
+        .btn-success { background: #10b981; color: white; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; }
+        .loading { text-align: center; padding: 40px; }
+        .empty-state { text-align: center; padding: 40px; background: white; border-radius: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 Закрывающие документы</h1>
+        <div id="projects-container"><div class="loading">Загрузка объектов...</div></div>
+    </div>
+    <script>
+        (function() {
+            const tg = window.Telegram.WebApp; tg.expand(); tg.ready();
+            const SUPABASE_URL = 'https://owagntywpiymqhbfoxye.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YWdudHl3cGl5bXFoYmZveHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTg5MDUsImV4cCI6MjA5MTg5NDkwNX0.p-3xAhbFgH5lcGnbBfkcQQFVza_Yc2qoY6VBlhmmFGg';
+            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            
+            async function loadProjects() {
+                const { data: projects } = await supabase.from('projects').select('*').order('name');
+                const container = document.getElementById('projects-container');
+                if (!projects?.length) { container.innerHTML = '<div class="empty-state">Нет объектов</div>'; return; }
+                
+                container.innerHTML = projects.map(p => `
+                    <div class="object-card">
+                        <div class="object-name">${p.name}</div>
+                        <button class="btn-success" onclick="generateAVR('${p.id}')">📊 Сформировать АВР (Excel)</button>
+                        <button class="btn-success" style="margin-top:8px; background:#8b5cf6" onclick="generateKS2('${p.id}')">📋 Сформировать КС-2</button>
+                        <button class="btn-success" style="margin-top:8px; background:#ec4899" onclick="generateKS3('${p.id}')">💰 Сформировать КС-3</button>
+                    </div>
+                `).join('');
+            }
+            
+            window.generateAVR = async (projectId) => {
+                const { data: orders } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('project_id', projectId).eq('status', 'approved');
+                if (!orders?.length) { alert('Нет утверждённых нарядов'); return; }
+                
+                const projectName = orders[0]?.projects?.name || 'Объект';
+                const data = orders.map((o, i) => ({ '№': i+1, 'Наименование': o.work_type, 'Ось': o.axis_name, 'Бригада': o.brigades?.name, 'Объём': o.volume, 'Цена': o.price, 'Сумма': o.total_amount }));
+                const total = orders.reduce((s, o) => s + o.total_amount, 0);
+                data.push({ '№': '', 'Наименование': 'ИТОГО:', 'Ось': '', 'Бригада': '', 'Объём': '', 'Цена': '', 'Сумма': total });
+                
+                const wb = XLSX.utils.book_new(); const ws = XLSX.utils.json_to_sheet(data);
+                XLSX.utils.sheet_add_aoa(ws, [[`АКТ ВЫПОЛНЕННЫХ РАБОТ №___ от ${new Date().toLocaleDateString('ru-RU')}`], [`Объект: ${projectName}`], [`Заказчик: _________________`], [`Подрядчик: ООО «LamGroup Construction»`], []], { origin: 'A1' });
+                XLSX.utils.book_append_sheet(wb, ws, 'АВР');
+                XLSX.writeFile(wb, `АВР_${projectName}_${new Date().toISOString().split('T')[0]}.xlsx`);
+            };
+            
+            window.generateKS2 = (projectId) => { alert('📋 КС-2 будет доступна в следующей версии'); };
+            window.generateKS3 = (projectId) => { alert('💰 КС-3 будет доступна в следующей версии'); };
+            
+            loadProjects();
+        })();
+    </script>
+</body>
+</html>
