@@ -10,10 +10,10 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: -apple-system, sans-serif; background: #f5f7fa; padding: 16px; }
         .container { max-width: 500px; margin: 0 auto; background: white; border-radius: 24px; padding: 24px; }
-        h1 { color: #1a2e4b; margin-bottom: 24px; }
+        h1 { color: #1a2e4b; margin-bottom: 24px; font-size: 26px; font-weight: 800; }
         .form-group { margin-bottom: 16px; }
-        label { font-weight: 600; color: #475569; font-size: 13px; text-transform: uppercase; }
-        input, select { width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 16px; font-size: 15px; }
+        label { font-weight: 600; color: #475569; font-size: 13px; text-transform: uppercase; display: block; margin-bottom: 6px; }
+        input, select { width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 16px; font-size: 15px; background: white; }
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .btn-primary { width: 100%; background: #1a2e4b; color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; margin-top: 24px; cursor: pointer; }
         .section-title { font-size: 18px; font-weight: 700; margin: 24px 0 16px; color: #1a2e4b; }
@@ -23,10 +23,12 @@
         .stage-price { width: 100px; }
         .stage-unit { width: 80px; }
         .axis-item { display: flex; gap: 10px; margin-bottom: 10px; }
-        .btn-add { background: none; border: 2px dashed #cbd5e0; padding: 12px; border-radius: 14px; width: 100%; cursor: pointer; }
+        .btn-add { background: none; border: 2px dashed #cbd5e0; padding: 12px; border-radius: 14px; width: 100%; cursor: pointer; font-weight: 600; color: #64748b; }
+        .btn-remove { background: #fee2e2; border: none; color: #dc2626; width: 44px; border-radius: 14px; font-size: 18px; cursor: pointer; }
         .message { padding: 14px; border-radius: 14px; margin-top: 16px; display: none; }
         .message.success { background: #d1fae5; color: #065f46; display: block; }
         .message.error { background: #fee2e2; color: #991b1b; display: block; }
+        .message.info { background: #dbeafe; color: #1e40af; display: block; }
     </style>
 </head>
 <body>
@@ -44,7 +46,7 @@
                 <div class="form-group"><label>Дата окончания (договор) *</label><input type="date" id="end_date_contract" required></div>
             </div>
             
-            <div class="section-title">📊 Этапы работ и цены</div>
+            <div class="section-title">📊 Расценки для Заказчика</div>
             <div id="stages-container"></div>
             
             <div class="section-title">📍 Оси объекта</div>
@@ -55,6 +57,7 @@
         </form>
         <div id="message" class="message"></div>
     </div>
+
     <script>
         (function() {
             const tg = window.Telegram.WebApp; tg.expand(); tg.ready();
@@ -89,7 +92,7 @@
             
             function createAxisInput() {
                 const div = document.createElement('div'); div.className = 'axis-item';
-                div.innerHTML = `<input type="text" name="axis_name[]" placeholder="Ось"><button type="button" onclick="this.parentElement.remove()">✕</button>`;
+                div.innerHTML = `<input type="text" name="axis_name[]" placeholder="Например: Ось А/1"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">✕</button>`;
                 return div;
             }
             
@@ -113,7 +116,7 @@
                     const end_date_contract = document.getElementById('end_date_contract').value;
                     
                     const axes = Array.from(document.querySelectorAll('input[name="axis_name[]"]')).map(i => i.value).filter(v => v);
-                    if (axes.length === 0) { showMessage('Добавьте оси', 'error'); return; }
+                    if (axes.length === 0) { showMessage('Добавьте хотя бы одну ось', 'error'); return; }
                     
                     const { data: userData } = await supabase.from('users').select('id').eq('telegram_id', userId).single();
                     if (!userData) { showMessage('Пользователь не найден', 'error'); return; }
@@ -127,17 +130,17 @@
                     const { data: block } = await supabase.from('blocks').insert({ project_id: project.id, name: 'Блок 1' }).select('id').single();
                     await supabase.from('axes').insert(axes.map(name => ({ block_id: block.id, name })));
                     
-                    // Сохраняем выбранные этапы с ценами
-                    const selectedStages = [];
-                    document.querySelectorAll('.stage-check:checked').forEach(cb => {
-                        const id = cb.dataset.id;
-                        const price = document.querySelector(`.stage-price[data-id="${id}"]`).value;
-                        const unit = document.querySelector(`.stage-unit[data-id="${id}"]`).value;
-                        if (price) selectedStages.push({ stage_id: id, price, unit });
-                    });
-                    
-                    // Здесь можно сохранить в отдельную таблицу project_stages (создадим позже)
-                    console.log('Этапы с ценами:', selectedStages);
+                    // Сохраняем расценки для заказчика
+                    for (const cb of document.querySelectorAll('.stage-check:checked')) {
+                        const stageId = cb.dataset.id;
+                        const price = parseFloat(document.querySelector(`.stage-price[data-id="${stageId}"]`).value) || 0;
+                        const unit = document.querySelector(`.stage-unit[data-id="${stageId}"]`).value;
+                        if (price > 0) {
+                            await supabase.from('customer_prices').insert({
+                                project_id: project.id, stage_id: stageId, price: price, unit: unit
+                            });
+                        }
+                    }
                     
                     showMessage(`✅ Объект "${name}" создан!`, 'success');
                     setTimeout(() => tg.close(), 1500);
