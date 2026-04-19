@@ -12,19 +12,85 @@
         body { font-family: -apple-system, sans-serif; background: #f5f7fa; padding: 16px; }
         .container { max-width: 600px; margin: 0 auto; }
         h1 { font-size: 26px; font-weight: 800; color: #1a2e4b; margin-bottom: 20px; }
+        h2 { font-size: 20px; font-weight: 700; color: #1a2e4b; margin: 20px 0 16px; }
+        h3 { font-size: 16px; font-weight: 700; color: #1a2e4b; margin-bottom: 12px; }
+        .back-btn { background: none; border: none; color: #1a2e4b; font-size: 18px; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
         .object-card { background: white; border-radius: 20px; padding: 18px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); cursor: pointer; }
         .object-name { font-weight: 700; color: #1a2e4b; margin-bottom: 8px; }
-        .btn-primary { background: #1a2e4b; color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; cursor: pointer; width: 100%; margin-top: 10px; }
-        .btn-success { background: #10b981; color: white; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; }
+        .form-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
+        label { font-weight: 700; color: #475569; font-size: 13px; text-transform: uppercase; display: block; margin-bottom: 6px; }
+        input, select, textarea { width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 16px; font-size: 15px; background: white; }
+        .btn-primary { width: 100%; background: #1a2e4b; color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; cursor: pointer; margin-top: 10px; }
+        .btn-success { background: #10b981; color: white; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; width: 100%; margin-top: 8px; }
+        .btn-secondary { background: #f1f5f9; color: #1a2e4b; padding: 12px; border-radius: 12px; font-weight: 600; border: 1px solid #e2e8f0; cursor: pointer; }
+        .order-item { display: flex; align-items: center; gap: 10px; padding: 12px; background: #f8fafc; border-radius: 14px; margin-bottom: 10px; }
+        .order-item select { flex: 2; }
+        .order-item input { flex: 1; }
+        .order-total { text-align: right; font-size: 18px; font-weight: 700; margin: 16px 0; }
+        .hidden { display: none !important; }
         .loading { text-align: center; padding: 40px; }
         .empty-state { text-align: center; padding: 40px; background: white; border-radius: 20px; }
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; }
+        .tab { padding: 10px 16px; background: none; border: none; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab.active { color: #1a2e4b; border-bottom-color: #1a2e4b; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .order-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid #e2e8f0; }
+        .order-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .order-number { font-weight: 700; color: #1a2e4b; }
+        .order-status { padding: 4px 10px; border-radius: 30px; font-size: 12px; font-weight: 600; }
+        .status-draft { background: #e2e8f0; color: #475569; }
+        .status-sent { background: #fef3c7; color: #92400e; }
+        .status-approved { background: #d1fae5; color: #065f46; }
+        .status-paid { background: #dbeafe; color: #1e40af; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📄 Закрывающие документы</h1>
-        <div id="projects-container"><div class="loading">Загрузка объектов...</div></div>
+        <!-- Список объектов -->
+        <div id="list-view">
+            <h1>📄 Документы</h1>
+            <div id="projects-container"><div class="loading">Загрузка объектов...</div></div>
+        </div>
+        
+        <!-- Детали объекта -->
+        <div id="detail-view" class="hidden">
+            <button class="back-btn" id="back-btn">← Назад к объектам</button>
+            <h1 id="detail-project-name"></h1>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="orders">📋 Наряды</button>
+                <button class="tab" data-tab="docs">📑 Закрывающие</button>
+            </div>
+            
+            <!-- Вкладка Наряды -->
+            <div id="tab-orders" class="tab-content active">
+                <div class="form-card">
+                    <h3>➕ Новый наряд для заказчика</h3>
+                    <div class="form-group"><label>Описание</label><textarea id="order-desc" rows="2" placeholder="За какие работы..."></textarea></div>
+                    <div id="order-items-container"></div>
+                    <button type="button" class="btn-secondary" id="add-order-item">+ Добавить работу</button>
+                    <div class="order-total">Итого: <span id="order-total">0</span> ₸</div>
+                    <button class="btn-primary" id="save-order-btn">Сохранить наряд</button>
+                </div>
+                
+                <h3>📋 Сохранённые наряды</h3>
+                <div id="orders-list"></div>
+            </div>
+            
+            <!-- Вкладка Закрывающие документы -->
+            <div id="tab-docs" class="tab-content">
+                <div class="form-card">
+                    <h3>📑 Сформировать документы</h3>
+                    <button class="btn-success" id="generate-avr-btn">📊 Акт выполненных работ (АВР)</button>
+                    <button class="btn-success" style="background:#8b5cf6; margin-top:12px" id="generate-ks2-btn">📋 КС-2</button>
+                    <button class="btn-success" style="background:#ec4899; margin-top:12px" id="generate-ks3-btn">💰 КС-3</button>
+                </div>
+            </div>
+        </div>
     </div>
+
     <script>
         (function() {
             const tg = window.Telegram.WebApp; tg.expand(); tg.ready();
@@ -32,40 +98,201 @@
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YWdudHl3cGl5bXFoYmZveHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTg5MDUsImV4cCI6MjA5MTg5NDkwNX0.p-3xAhbFgH5lcGnbBfkcQQFVza_Yc2qoY6VBlhmmFGg';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             
+            let userId = tg.initDataUnsafe?.user?.id || 531738802;
+            let currentUser = null, currentProjectId = null, customerPrices = [];
+            
+            const listView = document.getElementById('list-view');
+            const detailView = document.getElementById('detail-view');
+            
+            async function loadUser() {
+                const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
+                if (data) currentUser = data;
+            }
+            
             async function loadProjects() {
                 const { data: projects } = await supabase.from('projects').select('*').order('name');
                 const container = document.getElementById('projects-container');
                 if (!projects?.length) { container.innerHTML = '<div class="empty-state">Нет объектов</div>'; return; }
                 
                 container.innerHTML = projects.map(p => `
-                    <div class="object-card">
+                    <div class="object-card" data-id="${p.id}">
                         <div class="object-name">${p.name}</div>
-                        <button class="btn-success" onclick="generateAVR('${p.id}')">📊 Сформировать АВР (Excel)</button>
-                        <button class="btn-success" style="margin-top:8px; background:#8b5cf6" onclick="generateKS2('${p.id}')">📋 Сформировать КС-2</button>
-                        <button class="btn-success" style="margin-top:8px; background:#ec4899" onclick="generateKS3('${p.id}')">💰 Сформировать КС-3</button>
+                        <div>📍 ${p.address}</div>
+                        <div style="margin-top:8px">💰 Договор: ${p.contract_price?.toLocaleString() || 0} ₸</div>
                     </div>
                 `).join('');
+                
+                document.querySelectorAll('.object-card').forEach(c => c.addEventListener('click', () => showProjectDetail(c.dataset.id)));
             }
             
-            window.generateAVR = async (projectId) => {
-                const { data: orders } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('project_id', projectId).eq('status', 'approved');
+            async function showProjectDetail(projectId) {
+                currentProjectId = projectId;
+                
+                const { data: project } = await supabase.from('projects').select('*').eq('id', projectId).single();
+                document.getElementById('detail-project-name').textContent = project.name;
+                
+                // Загружаем расценки
+                const { data: prices } = await supabase.from('customer_prices').select('*, work_stages(name)').eq('project_id', projectId);
+                customerPrices = prices || [];
+                
+                // Загружаем существующие наряды
+                await loadOrders();
+                
+                // Рендерим форму
+                renderOrderForm();
+                
+                listView.classList.add('hidden');
+                detailView.classList.remove('hidden');
+            }
+            
+            function renderOrderForm() {
+                const container = document.getElementById('order-items-container');
+                if (customerPrices.length === 0) {
+                    container.innerHTML = '<p style="color:#64748b">Нет расценок. Добавьте расценки при создании объекта.</p>';
+                    return;
+                }
+                
+                // Один элемент по умолчанию
+                container.innerHTML = createOrderItemRow();
+                updateTotal();
+            }
+            
+            function createOrderItemRow(selectedStageId = '', volume = '') {
+                const options = customerPrices.map(p => 
+                    `<option value="${p.stage_id}" data-price="${p.price}" data-unit="${p.unit}" ${p.stage_id == selectedStageId ? 'selected' : ''}>${p.work_stages?.name} (${p.price} ₸/${p.unit})</option>`
+                ).join('');
+                
+                return `
+                    <div class="order-item">
+                        <select class="order-stage">${options}</select>
+                        <input type="number" class="order-volume" placeholder="Объём" value="${volume}" step="0.01" min="0">
+                        <button type="button" class="btn-remove" onclick="this.parentElement.remove(); updateTotal();" style="background:#fee2e2;border:none;color:#dc2626;width:44px;border-radius:14px;font-size:18px;cursor:pointer;">✕</button>
+                    </div>
+                `;
+            }
+            
+            window.updateTotal = function() {
+                let total = 0;
+                document.querySelectorAll('.order-item').forEach(item => {
+                    const select = item.querySelector('.order-stage');
+                    const volume = parseFloat(item.querySelector('.order-volume').value) || 0;
+                    const price = parseFloat(select.selectedOptions[0]?.dataset.price) || 0;
+                    total += volume * price;
+                });
+                document.getElementById('order-total').textContent = total.toLocaleString();
+            };
+            
+            document.addEventListener('change', updateTotal);
+            document.addEventListener('input', updateTotal);
+            
+            document.getElementById('add-order-item').addEventListener('click', () => {
+                document.getElementById('order-items-container').insertAdjacentHTML('beforeend', createOrderItemRow());
+                updateTotal();
+            });
+            
+            document.getElementById('save-order-btn').addEventListener('click', async () => {
+                const desc = document.getElementById('order-desc').value;
+                const items = [];
+                let total = 0;
+                
+                document.querySelectorAll('.order-item').forEach(item => {
+                    const select = item.querySelector('.order-stage');
+                    const volume = parseFloat(item.querySelector('.order-volume').value) || 0;
+                    if (volume <= 0) return;
+                    
+                    const stageId = select.value;
+                    const option = select.selectedOptions[0];
+                    const stageName = option.text.split(' (')[0];
+                    const price = parseFloat(option.dataset.price) || 0;
+                    const amount = volume * price;
+                    total += amount;
+                    
+                    items.push({ stage_id: stageId, stage_name: stageName, volume, unit: option.dataset.unit, price, amount });
+                });
+                
+                if (items.length === 0) { alert('Добавьте хотя бы одну работу с объёмом'); return; }
+                
+                const orderNumber = `ORD-${new Date().getTime().toString().slice(-6)}`;
+                
+                const { data: order, error } = await supabase.from('customer_orders').insert({
+                    project_id: currentProjectId, order_number: orderNumber, description: desc, total_amount: total, created_by: currentUser?.id, status: 'draft'
+                }).select('id').single();
+                
+                if (error) { alert('Ошибка: ' + error.message); return; }
+                
+                for (const item of items) {
+                    await supabase.from('customer_order_items').insert({ order_id: order.id, ...item });
+                }
+                
+                alert('✅ Наряд сохранён!');
+                document.getElementById('order-desc').value = '';
+                document.getElementById('order-items-container').innerHTML = createOrderItemRow();
+                updateTotal();
+                loadOrders();
+            });
+            
+            async function loadOrders() {
+                const { data: orders } = await supabase.from('customer_orders').select('*, customer_order_items(*)').eq('project_id', currentProjectId).order('created_at', { ascending: false });
+                const container = document.getElementById('orders-list');
+                
+                if (!orders?.length) { container.innerHTML = '<div class="empty-state">Нет нарядов</div>'; return; }
+                
+                container.innerHTML = orders.map(o => {
+                    const statusMap = { 'draft': 'Черновик', 'sent': 'Отправлен', 'approved': 'Утверждён', 'paid': 'Оплачен' };
+                    return `
+                        <div class="order-card">
+                            <div class="order-header">
+                                <span class="order-number">${o.order_number} от ${new Date(o.order_date).toLocaleDateString('ru-RU')}</span>
+                                <span class="order-status status-${o.status}">${statusMap[o.status]}</span>
+                            </div>
+                            <div>📝 ${o.description || '—'}</div>
+                            <div style="margin-top:8px">💰 Сумма: <strong>${o.total_amount?.toLocaleString()} ₸</strong></div>
+                            <div style="margin-top:8px">📦 Позиций: ${o.customer_order_items?.length || 0}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            // Генерация АВР
+            document.getElementById('generate-avr-btn').addEventListener('click', async () => {
+                const { data: orders } = await supabase.from('customer_orders').select('*, customer_order_items(*), projects(name)').eq('project_id', currentProjectId).eq('status', 'approved');
                 if (!orders?.length) { alert('Нет утверждённых нарядов'); return; }
                 
                 const projectName = orders[0]?.projects?.name || 'Объект';
-                const data = orders.map((o, i) => ({ '№': i+1, 'Наименование': o.work_type, 'Ось': o.axis_name, 'Бригада': o.brigades?.name, 'Объём': o.volume, 'Цена': o.price, 'Сумма': o.total_amount }));
-                const total = orders.reduce((s, o) => s + o.total_amount, 0);
-                data.push({ '№': '', 'Наименование': 'ИТОГО:', 'Ось': '', 'Бригада': '', 'Объём': '', 'Цена': '', 'Сумма': total });
+                const allItems = orders.flatMap(o => o.customer_order_items.map(i => ({ ...i, order_number: o.order_number })));
+                
+                const data = allItems.map((item, idx) => ({ '№': idx+1, 'Наряд': item.order_number, 'Наименование': item.stage_name, 'Объём': item.volume, 'Ед.': item.unit, 'Цена': item.price, 'Сумма': item.amount }));
+                const total = allItems.reduce((s, i) => s + i.amount, 0);
+                data.push({ '№': '', 'Наряд': '', 'Наименование': 'ИТОГО:', 'Объём': '', 'Ед.': '', 'Цена': '', 'Сумма': total });
                 
                 const wb = XLSX.utils.book_new(); const ws = XLSX.utils.json_to_sheet(data);
-                XLSX.utils.sheet_add_aoa(ws, [[`АКТ ВЫПОЛНЕННЫХ РАБОТ №___ от ${new Date().toLocaleDateString('ru-RU')}`], [`Объект: ${projectName}`], [`Заказчик: _________________`], [`Подрядчик: ООО «LamGroup Construction»`], []], { origin: 'A1' });
+                XLSX.utils.sheet_add_aoa(ws, [[`АКТ ВЫПОЛНЕННЫХ РАБОТ`], [`Объект: ${projectName}`], [`Дата: ${new Date().toLocaleDateString('ru-RU')}`], []], { origin: 'A1' });
                 XLSX.utils.book_append_sheet(wb, ws, 'АВР');
                 XLSX.writeFile(wb, `АВР_${projectName}_${new Date().toISOString().split('T')[0]}.xlsx`);
-            };
+            });
             
-            window.generateKS2 = (projectId) => { alert('📋 КС-2 будет доступна в следующей версии'); };
-            window.generateKS3 = (projectId) => { alert('💰 КС-3 будет доступна в следующей версии'); };
+            document.getElementById('generate-ks2-btn').addEventListener('click', () => alert('📋 КС-2 будет доступна в следующей версии'));
+            document.getElementById('generate-ks3-btn').addEventListener('click', () => alert('💰 КС-3 будет доступна в следующей версии'));
             
-            loadProjects();
+            // Табы
+            document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+                t.classList.add('active');
+                document.getElementById(`tab-${t.dataset.tab}`).classList.add('active');
+            }));
+            
+            document.getElementById('back-btn').addEventListener('click', () => {
+                detailView.classList.add('hidden');
+                listView.classList.remove('hidden');
+            });
+            
+            async function init() {
+                await loadUser();
+                await loadProjects();
+            }
+            
+            init();
         })();
     </script>
 </body>
