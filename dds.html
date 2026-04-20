@@ -8,82 +8,97 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, sans-serif; background: #f5f7fa; padding: 16px; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: #F8FAFC; padding: 16px; min-height: 100vh; }
         .container { max-width: 600px; margin: 0 auto; }
-        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        h1 { font-size: 26px; font-weight: 800; color: #1a2e4b; display: flex; align-items: center; gap: 8px; }
-        .role-badge { background: #e2e8f0; color: #1a2e4b; padding: 6px 14px; border-radius: 30px; font-size: 14px; font-weight: 600; }
         
-        /* Filter Bar */
-        .filter-section { background: white; border-radius: 20px; padding: 16px; margin-bottom: 16px; }
-        .filter-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-        .filter-select { flex: 1; min-width: 150px; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 14px; font-size: 14px; background: white; }
-        .btn-export { background: #1a2e4b; color: white; padding: 12px 20px; border-radius: 14px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-        .btn-export:hover { background: #2c4c7c; }
+        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #0F172A, #1E293B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .role-badge { background: #E2E8F0; color: #0F172A; padding: 8px 16px; border-radius: 40px; font-size: 13px; font-weight: 600; }
         
         /* KPI Cards */
         .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .kpi-card { background: white; border-radius: 20px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.2s; }
-        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
-        .kpi-label { font-size: 13px; color: #64748b; margin-bottom: 6px; }
-        .kpi-value { font-size: 24px; font-weight: 800; color: #1a2e4b; }
-        .kpi-trend { font-size: 12px; margin-top: 4px; }
-        .trend-up { color: #065f46; }
-        .trend-down { color: #991b1b; }
-        .kpi-card.primary { background: #1a2e4b; }
-        .kpi-card.primary .kpi-label { color: #94a3b8; }
+        .kpi-card { background: white; border-radius: 20px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .kpi-label { font-size: 13px; color: #64748B; margin-bottom: 6px; }
+        .kpi-value { font-size: 24px; font-weight: 800; color: #0F172A; }
+        .kpi-card.primary { background: linear-gradient(135deg, #0F172A, #1E293B); }
+        .kpi-card.primary .kpi-label { color: #94A3B8; }
         .kpi-card.primary .kpi-value { color: white; }
         
-        /* Tabs */
-        .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; overflow-x: auto; }
-        .tab { padding: 10px 16px; background: none; border: none; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; }
-        .tab.active { color: #1a2e4b; border-bottom-color: #1a2e4b; }
+        /* Фильтры */
+        .filter-section { background: white; border-radius: 20px; padding: 16px; margin-bottom: 16px; }
+        .filter-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .filter-select { flex: 1; min-width: 150px; padding: 12px; border: 1.5px solid #E2E8F0; border-radius: 14px; font-size: 14px; background: white; }
+        .period-selector { display: flex; gap: 4px; background: #F1F5F9; padding: 4px; border-radius: 30px; }
+        .period-btn { padding: 8px 16px; border: none; background: none; border-radius: 30px; font-size: 13px; font-weight: 600; color: #64748B; cursor: pointer; }
+        .period-btn.active { background: white; color: #0F172A; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .btn-export { background: #0F172A; color: white; padding: 12px 20px; border-radius: 14px; font-weight: 600; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        
+        /* Календарь */
+        .calendar-section { background: white; border-radius: 24px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .calendar-title { font-weight: 700; color: #0F172A; font-size: 16px; }
+        .calendar-month-nav { display: flex; gap: 8px; }
+        .month-nav-btn { background: #F1F5F9; border: none; width: 36px; height: 36px; border-radius: 12px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 8px; }
+        .weekday { font-size: 12px; font-weight: 600; color: #64748B; padding: 8px 0; }
+        .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; position: relative; background: #F8FAFC; }
+        .calendar-day:hover { background: #E2E8F0; }
+        .calendar-day.other-month { color: #94A3B8; }
+        .calendar-day.today { background: #0F172A; color: white; }
+        .calendar-day.has-income { border: 2px solid #10B981; }
+        .calendar-day.has-expense { border: 2px solid #EF4444; }
+        .calendar-day.has-both { border: 2px solid #F59E0B; }
+        .day-number { font-weight: 600; }
+        .day-amount { font-size: 9px; font-weight: 700; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding: 0 2px; }
+        .amount-income { color: #10B981; }
+        .amount-expense { color: #EF4444; }
+        
+        /* Легенда */
+        .calendar-legend { display: flex; gap: 16px; margin-top: 16px; justify-content: center; }
+        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+        .legend-color { width: 12px; height: 12px; border-radius: 4px; }
+        .legend-income { background: #10B981; }
+        .legend-expense { background: #EF4444; }
+        .legend-both { background: #F59E0B; }
+        
+        /* Табы */
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #E2E8F0; overflow-x: auto; }
+        .tab { padding: 10px 16px; background: none; border: none; font-size: 14px; font-weight: 600; color: #64748B; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; }
+        .tab.active { color: #0F172A; border-bottom-color: #F59E0B; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         
-        /* Chart Container */
-        .chart-container { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .chart-title { font-weight: 700; color: #1a2e4b; }
-        .chart-legend { display: flex; gap: 16px; }
-        .legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; }
-        .legend-color { width: 12px; height: 12px; border-radius: 4px; }
-        .legend-income { background: #10b981; }
-        .legend-expense { background: #ef4444; }
-        .legend-payout { background: #f59e0b; }
-        
-        /* Forms */
+        /* Формы */
         .form-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 20px; }
         .form-group { margin-bottom: 16px; }
-        label { font-weight: 700; color: #475569; font-size: 13px; text-transform: uppercase; display: block; margin-bottom: 6px; }
-        input, select, textarea { width: 100%; padding: 14px; border: 1.5px solid #e2e8f0; border-radius: 16px; font-size: 15px; background: white; }
-        .btn-primary { width: 100%; background: #1a2e4b; color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; cursor: pointer; margin-top: 10px; }
-        .btn-secondary { background: #f1f5f9; color: #1a2e4b; padding: 10px 16px; border-radius: 14px; font-weight: 600; border: 1px solid #e2e8f0; cursor: pointer; }
-        .btn-success { background: #d1fae5; color: #065f46; padding: 8px 14px; border-radius: 14px; font-weight: 600; border: none; cursor: pointer; }
+        label { font-weight: 600; color: #475569; font-size: 13px; text-transform: uppercase; display: block; margin-bottom: 6px; }
+        input, select, textarea { width: 100%; padding: 14px; border: 1.5px solid #E2E8F0; border-radius: 16px; font-size: 15px; background: white; }
+        .btn-primary { width: 100%; background: linear-gradient(135deg, #0F172A, #1E293B); color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; cursor: pointer; margin-top: 10px; }
+        .btn-success { background: #10B981; color: white; padding: 10px 14px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; }
         
-        /* Lists */
+        /* Списки */
         .transaction-list { display: flex; flex-direction: column; gap: 10px; }
-        .transaction-item { background: white; border-radius: 16px; padding: 16px; border: 1px solid #e2e8f0; }
+        .transaction-item { background: white; border-radius: 16px; padding: 16px; border: 1px solid #E2E8F0; }
         .transaction-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .transaction-title { font-weight: 700; color: #1a2e4b; }
+        .transaction-title { font-weight: 700; color: #0F172A; }
         .transaction-amount { font-weight: 700; font-size: 18px; }
-        .amount-income { color: #065f46; }
-        .amount-expense { color: #991b1b; }
-        .transaction-meta { display: flex; justify-content: space-between; font-size: 13px; color: #64748b; margin-top: 8px; }
+        .amount-income { color: #10B981; }
+        .amount-expense { color: #EF4444; }
+        .transaction-meta { display: flex; justify-content: space-between; font-size: 13px; color: #64748B; margin-top: 8px; }
         .status-badge { padding: 4px 10px; border-radius: 30px; font-size: 12px; font-weight: 600; }
-        .status-pending { background: #fef3c7; color: #92400e; }
-        .status-paid { background: #d1fae5; color: #065f46; }
-        
-        /* Period Selector */
-        .period-selector { display: flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 30px; }
-        .period-btn { padding: 8px 16px; border: none; background: none; border-radius: 30px; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; }
-        .period-btn.active { background: white; color: #1a2e4b; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .status-pending { background: #FEF3C7; color: #92400E; }
+        .status-paid { background: #D1FAE5; color: #065F46; }
         
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .hidden { display: none !important; }
         .loading { text-align: center; padding: 40px; }
-        .empty-state { text-align: center; padding: 40px; background: white; border-radius: 20px; color: #64748b; }
+        .empty-state { text-align: center; padding: 40px; background: white; border-radius: 20px; color: #64748B; }
     </style>
 </head>
 <body>
@@ -96,42 +111,54 @@
         <!-- Фильтры -->
         <div class="filter-section">
             <div class="filter-row">
-                <select id="filter-project" class="filter-select">
-                    <option value="">Все объекты</option>
-                </select>
+                <select id="filter-project" class="filter-select"><option value="">Все объекты</option></select>
                 <div class="period-selector">
                     <button class="period-btn active" data-period="month">Месяц</button>
                     <button class="period-btn" data-period="quarter">Квартал</button>
                     <button class="period-btn" data-period="year">Год</button>
                 </div>
-                <button class="btn-export" id="export-excel">
-                    📊 Excel
-                </button>
+                <button class="btn-export" id="export-excel">📊 Excel</button>
             </div>
         </div>
         
         <!-- KPI Cards -->
         <div class="kpi-grid">
-            <div class="kpi-card primary" id="card-balance">
-                <div class="kpi-label">Баланс</div>
-                <div class="kpi-value" id="kpi-balance">0 ₸</div>
-                <div class="kpi-trend" id="trend-balance"></div>
+            <div class="kpi-card primary"><div class="kpi-label">Баланс</div><div class="kpi-value" id="kpi-balance">0 ₸</div></div>
+            <div class="kpi-card"><div class="kpi-label">Поступления</div><div class="kpi-value" id="kpi-income">0 ₸</div></div>
+            <div class="kpi-card"><div class="kpi-label">Расходы</div><div class="kpi-value" id="kpi-expense">0 ₸</div></div>
+            <div class="kpi-card"><div class="kpi-label">Выплаты</div><div class="kpi-value" id="kpi-payouts">0 ₸</div></div>
+        </div>
+        
+        <!-- КАЛЕНДАРЬ -->
+        <div class="calendar-section">
+            <div class="calendar-header">
+                <span class="calendar-title" id="calendar-month-year">Апрель 2026</span>
+                <div class="calendar-month-nav">
+                    <button class="month-nav-btn" id="prev-month">←</button>
+                    <button class="month-nav-btn" id="next-month">→</button>
+                </div>
             </div>
-            <div class="kpi-card" id="card-income">
-                <div class="kpi-label">Поступления</div>
-                <div class="kpi-value" id="kpi-income">0 ₸</div>
+            <div class="calendar-weekdays">
+                <span class="weekday">Пн</span><span class="weekday">Вт</span><span class="weekday">Ср</span><span class="weekday">Чт</span><span class="weekday">Пт</span><span class="weekday">Сб</span><span class="weekday">Вс</span>
             </div>
-            <div class="kpi-card" id="card-expense">
-                <div class="kpi-label">Расходы</div>
-                <div class="kpi-value" id="kpi-expense">0 ₸</div>
-            </div>
-            <div class="kpi-card" id="card-payouts">
-                <div class="kpi-label">Выплаты</div>
-                <div class="kpi-value" id="kpi-payouts">0 ₸</div>
+            <div class="calendar-days" id="calendar-days"></div>
+            <div class="calendar-legend">
+                <div class="legend-item"><span class="legend-color legend-income"></span> Поступления</div>
+                <div class="legend-item"><span class="legend-color legend-expense"></span> Расходы</div>
+                <div class="legend-item"><span class="legend-color legend-both"></span> Всё вместе</div>
             </div>
         </div>
         
-        <!-- Tabs -->
+        <!-- Детали дня (скрыто по умолчанию) -->
+        <div id="day-details" class="form-card hidden">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 id="selected-day-title">Операции за день</h3>
+                <button class="month-nav-btn" onclick="document.getElementById('day-details').classList.add('hidden')">✕</button>
+            </div>
+            <div id="day-transactions"></div>
+        </div>
+        
+        <!-- Табы -->
         <div class="tabs">
             <button class="tab active" data-tab="summary">📊 Сводка</button>
             <button class="tab" data-tab="income">💰 Поступления</button>
@@ -140,69 +167,31 @@
             <button class="tab" data-tab="plan">📅 План оплат</button>
         </div>
         
-        <!-- Сводка -->
-        <div id="tab-summary" class="tab-content active">
-            <div class="chart-container">
-                <div class="chart-header">
-                    <span class="chart-title">📈 Движение денежных средств</span>
-                    <div class="chart-legend">
-                        <div class="legend-item"><span class="legend-color legend-income"></span> Поступления</div>
-                        <div class="legend-item"><span class="legend-color legend-expense"></span> Расходы</div>
-                        <div class="legend-item"><span class="legend-color legend-payout"></span> Выплаты</div>
-                    </div>
-                </div>
-                <canvas id="cashflow-chart" style="width:100%; height:220px;"></canvas>
-            </div>
-            <div class="chart-container">
-                <div class="chart-header">
-                    <span class="chart-title">🥧 Структура расходов</span>
-                </div>
-                <canvas id="expense-pie-chart" style="width:100%; height:200px;"></canvas>
-            </div>
-            <div id="summary-list" class="transaction-list"></div>
-        </div>
-        
-        <!-- Поступления -->
+        <div id="tab-summary" class="tab-content active"><div id="summary-list" class="transaction-list"></div></div>
         <div id="tab-income" class="tab-content">
             <div class="form-card">
-                <h3 style="margin-bottom: 20px;">➕ Новое поступление</h3>
+                <h3 style="margin-bottom:20px">➕ Поступление</h3>
                 <div class="form-group"><label>Объект</label><select id="income-project"></select></div>
-                <div class="form-group"><label>Описание *</label><input type="text" id="income-desc" placeholder="Оплата по договору"></div>
-                <div class="row-2">
-                    <div class="form-group"><label>Сумма *</label><input type="number" id="income-amount" step="0.01"></div>
-                    <div class="form-group"><label>Дата</label><input type="date" id="income-date"></div>
-                </div>
+                <div class="form-group"><label>Описание *</label><input type="text" id="income-desc"></div>
+                <div class="row-2"><div class="form-group"><label>Сумма *</label><input type="number" id="income-amount" step="0.01"></div><div class="form-group"><label>Дата</label><input type="date" id="income-date"></div></div>
                 <div class="form-group"><label>Статус</label><select id="income-status"><option value="pending">Ожидается</option><option value="paid">Получено</option></select></div>
-                <button class="btn-primary" id="add-income-btn">Добавить поступление</button>
+                <button class="btn-primary" id="add-income-btn">Добавить</button>
             </div>
             <div id="income-list" class="transaction-list"></div>
         </div>
-        
-        <!-- Расходы -->
         <div id="tab-expense" class="tab-content">
             <div class="form-card">
-                <h3 style="margin-bottom: 20px;">➕ Новый расход</h3>
+                <h3 style="margin-bottom:20px">➕ Расход</h3>
                 <div class="form-group"><label>Объект</label><select id="expense-project"></select></div>
-                <div class="form-group"><label>Описание *</label><input type="text" id="expense-desc" placeholder="Закупка материалов"></div>
-                <div class="row-2">
-                    <div class="form-group"><label>Сумма *</label><input type="number" id="expense-amount" step="0.01"></div>
-                    <div class="form-group"><label>Дата</label><input type="date" id="expense-date"></div>
-                </div>
+                <div class="form-group"><label>Описание *</label><input type="text" id="expense-desc"></div>
+                <div class="row-2"><div class="form-group"><label>Сумма *</label><input type="number" id="expense-amount" step="0.01"></div><div class="form-group"><label>Дата</label><input type="date" id="expense-date"></div></div>
                 <div class="form-group"><label>Статус</label><select id="expense-status"><option value="pending">План</option><option value="paid">Оплачен</option></select></div>
-                <button class="btn-primary" id="add-expense-dds-btn">Добавить расход</button>
+                <button class="btn-primary" id="add-expense-dds-btn">Добавить</button>
             </div>
             <div id="expense-list" class="transaction-list"></div>
         </div>
-        
-        <!-- Выплаты монтажникам -->
-        <div id="tab-payouts" class="tab-content">
-            <div id="payouts-list" class="transaction-list"></div>
-        </div>
-        
-        <!-- План оплат -->
-        <div id="tab-plan" class="tab-content">
-            <div id="plan-list" class="transaction-list"></div>
-        </div>
+        <div id="tab-payouts" class="tab-content"><div id="payouts-list" class="transaction-list"></div></div>
+        <div id="tab-plan" class="tab-content"><div id="plan-list" class="transaction-list"></div></div>
     </div>
 
     <script>
@@ -213,11 +202,9 @@
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             
             let userId = tg.initDataUnsafe?.user?.id || 531738802;
-            let currentUser = null, currentRole = 'worker';
+            let currentUser = null, currentRole = 'worker', currentPeriod = 'month', selectedProjectId = '';
             let allProjects = [], allIncome = [], allExpenses = [], allWorkOrders = [];
-            let currentPeriod = 'month';
-            let selectedProjectId = '';
-            let cashflowChart, pieChart;
+            let currentDisplayDate = new Date();
             
             async function init() {
                 await loadUser();
@@ -226,8 +213,7 @@
                 setupTabs();
                 setupFilters();
                 setupForms();
-                setupKpiCards();
-                renderCharts();
+                renderCalendar();
             }
             
             async function loadUser() {
@@ -242,11 +228,9 @@
                 const { data } = await query;
                 allProjects = data || [];
                 
-                const filterSelect = document.getElementById('filter-project');
-                const incomeSelect = document.getElementById('income-project');
-                const expenseSelect = document.getElementById('expense-project');
-                
-                [filterSelect, incomeSelect, expenseSelect].forEach(select => {
+                const selects = ['filter-project', 'income-project', 'expense-project'];
+                selects.forEach(id => {
+                    const select = document.getElementById(id);
                     if (select) {
                         select.innerHTML = '<option value="">Все объекты</option>';
                         allProjects.forEach(p => select.innerHTML += `<option value="${p.id}">${p.name}</option>`);
@@ -266,28 +250,13 @@
                 }
                 
                 const [incomeRes, expenseRes, orderRes] = await Promise.all([incomeQuery, expenseQuery, orderQuery]);
-                
                 allIncome = incomeRes.data || [];
                 allExpenses = expenseRes.data || [];
                 allWorkOrders = orderRes.data || [];
                 
                 updateKPI();
                 renderAllLists();
-                renderCharts();
-            }
-            
-            function filterByPeriod(data, dateField = 'date') {
-                const now = new Date();
-                return data.filter(item => {
-                    const itemDate = new Date(item[dateField] || item.created_at);
-                    if (currentPeriod === 'month') {
-                        return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
-                    } else if (currentPeriod === 'quarter') {
-                        const quarter = Math.floor(now.getMonth() / 3);
-                        return Math.floor(itemDate.getMonth() / 3) === quarter && itemDate.getFullYear() === now.getFullYear();
-                    }
-                    return itemDate.getFullYear() === now.getFullYear();
-                });
+                renderCalendar();
             }
             
             function updateKPI() {
@@ -296,9 +265,7 @@
                 const filteredOrders = filterByPeriod(allWorkOrders, 'created_at');
                 
                 const totalIncome = filteredIncome.filter(i => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
-                const pendingIncome = filteredIncome.filter(i => i.status === 'pending').reduce((s, i) => s + i.amount, 0);
                 const totalExpense = filteredExpense.filter(e => e.payment_status === 'paid').reduce((s, e) => s + e.amount, 0);
-                const pendingExpense = filteredExpense.filter(e => e.payment_status === 'pending').reduce((s, e) => s + e.amount, 0);
                 const totalPayouts = filteredOrders.filter(o => o.payment_status === 'paid').reduce((s, o) => s + o.total_amount, 0);
                 
                 document.getElementById('kpi-balance').textContent = (totalIncome - totalExpense - totalPayouts).toLocaleString() + ' ₸';
@@ -307,294 +274,229 @@
                 document.getElementById('kpi-payouts').textContent = totalPayouts.toLocaleString() + ' ₸';
             }
             
+            function filterByPeriod(data, dateField = 'date') {
+                const now = currentDisplayDate;
+                return data.filter(item => {
+                    const itemDate = new Date(item[dateField] || item.created_at);
+                    if (currentPeriod === 'month') return itemDate.getMonth() === now.getMonth() && itemDate.getFullYear() === now.getFullYear();
+                    else if (currentPeriod === 'quarter') {
+                        const quarter = Math.floor(now.getMonth() / 3);
+                        return Math.floor(itemDate.getMonth() / 3) === quarter && itemDate.getFullYear() === now.getFullYear();
+                    }
+                    return itemDate.getFullYear() === now.getFullYear();
+                });
+            }
+            
+            function renderCalendar() {
+                const year = currentDisplayDate.getFullYear();
+                const month = currentDisplayDate.getMonth();
+                
+                const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+                document.getElementById('calendar-month-year').textContent = `${monthNames[month]} ${year}`;
+                
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                let startDay = firstDay.getDay() || 7;
+                
+                const today = new Date();
+                const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
+                
+                let html = '';
+                
+                // Пустые ячейки
+                for (let i = 1; i < startDay; i++) {
+                    const prevDate = new Date(year, month, 1 - (startDay - i));
+                    html += renderCalendarDay(prevDate, true);
+                }
+                
+                // Дни месяца
+                for (let d = 1; d <= lastDay.getDate(); d++) {
+                    const date = new Date(year, month, d);
+                    html += renderCalendarDay(date, false);
+                }
+                
+                // Добиваем до 42 ячеек
+                const totalCells = Math.ceil((startDay - 1 + lastDay.getDate()) / 7) * 7;
+                for (let i = startDay + lastDay.getDate() - 1; i < totalCells; i++) {
+                    const nextDate = new Date(year, month + 1, i - (startDay + lastDay.getDate() - 1) + 1);
+                    html += renderCalendarDay(nextDate, true);
+                }
+                
+                document.getElementById('calendar-days').innerHTML = html;
+            }
+            
+            function renderCalendarDay(date, isOtherMonth) {
+                const dateStr = date.toISOString().split('T')[0];
+                const dayIncome = allIncome.filter(i => i.date === dateStr).reduce((s, i) => s + i.amount, 0);
+                const dayExpense = allExpenses.filter(e => e.date === dateStr).reduce((s, e) => s + e.amount, 0);
+                
+                const today = new Date();
+                const isToday = date.toDateString() === today.toDateString();
+                
+                let additionalClass = '';
+                if (isOtherMonth) additionalClass += ' other-month';
+                if (isToday) additionalClass += ' today';
+                if (dayIncome > 0 && dayExpense > 0) additionalClass += ' has-both';
+                else if (dayIncome > 0) additionalClass += ' has-income';
+                else if (dayExpense > 0) additionalClass += ' has-expense';
+                
+                const onClick = `showDayDetails('${dateStr}')`;
+                
+                return `
+                    <div class="calendar-day${additionalClass}" onclick="${onClick}">
+                        <span class="day-number">${date.getDate()}</span>
+                        ${dayIncome > 0 ? `<span class="day-amount amount-income">+${dayIncome.toLocaleString()}</span>` : ''}
+                        ${dayExpense > 0 ? `<span class="day-amount amount-expense">-${dayExpense.toLocaleString()}</span>` : ''}
+                    </div>
+                `;
+            }
+            
+            window.showDayDetails = function(dateStr) {
+                const income = allIncome.filter(i => i.date === dateStr);
+                const expenses = allExpenses.filter(e => e.date === dateStr);
+                
+                document.getElementById('selected-day-title').textContent = `Операции за ${new Date(dateStr).toLocaleDateString('ru-RU')}`;
+                
+                let html = '';
+                
+                if (income.length === 0 && expenses.length === 0) {
+                    html = '<p style="color:#64748B; padding:20px; text-align:center;">Нет операций</p>';
+                } else {
+                    income.forEach(i => {
+                        html += `<div class="transaction-item">
+                            <div class="transaction-header"><span class="transaction-title">💰 ${i.description}</span><span class="transaction-amount amount-income">+${i.amount.toLocaleString()} ₸</span></div>
+                            <div>🏗️ ${i.projects?.name || 'Общий'}</div>
+                            <div class="transaction-meta"><span>${i.status === 'paid' ? '✅ Получено' : '⏳ Ожидается'}</span></div>
+                        </div>`;
+                    });
+                    
+                    expenses.forEach(e => {
+                        html += `<div class="transaction-item">
+                            <div class="transaction-header"><span class="transaction-title">💸 ${e.name}</span><span class="transaction-amount amount-expense">-${e.amount.toLocaleString()} ₸</span></div>
+                            <div>🏗️ ${e.projects?.name || 'Общий'}</div>
+                            <div class="transaction-meta"><span>${e.payment_status === 'paid' ? '✅ Оплачен' : '⏳ План'}</span></div>
+                        </div>`;
+                    });
+                }
+                
+                document.getElementById('day-transactions').innerHTML = html;
+                document.getElementById('day-details').classList.remove('hidden');
+            };
+            
             function renderAllLists() {
-                renderIncomeList();
-                renderExpenseList();
-                renderPayoutsList();
-                renderPlanList();
-                renderSummaryList();
+                renderIncomeList(); renderExpenseList(); renderPayoutsList(); renderPlanList(); renderSummaryList();
             }
             
             function renderIncomeList() {
-                const container = document.getElementById('income-list');
                 const filtered = filterByPeriod(allIncome);
+                const container = document.getElementById('income-list');
                 if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">Нет поступлений</div>'; return; }
-                container.innerHTML = filtered.map(i => `
-                    <div class="transaction-item">
-                        <div class="transaction-header">
-                            <span class="transaction-title">${i.description || '—'}</span>
-                            <span class="transaction-amount amount-income">+${i.amount?.toLocaleString()} ₸</span>
-                        </div>
-                        <div>🏗️ ${i.projects?.name || 'Общий'}</div>
-                        <div class="transaction-meta">
-                            <span>📅 ${i.date ? new Date(i.date).toLocaleDateString('ru-RU') : '—'}</span>
-                            <span class="status-badge ${i.status === 'paid' ? 'status-paid' : 'status-pending'}">${i.status === 'paid' ? 'Получено' : 'Ожидается'}</span>
-                        </div>
-                    </div>
-                `).join('');
+                container.innerHTML = filtered.map(i => `<div class="transaction-item"><div class="transaction-header"><span class="transaction-title">${i.description}</span><span class="transaction-amount amount-income">+${i.amount.toLocaleString()} ₸</span></div><div>🏗️ ${i.projects?.name || 'Общий'}</div><div class="transaction-meta"><span>📅 ${i.date}</span><span class="status-badge ${i.status==='paid'?'status-paid':'status-pending'}">${i.status==='paid'?'Получено':'Ожидается'}</span></div></div>`).join('');
             }
             
             function renderExpenseList() {
-                const container = document.getElementById('expense-list');
                 const filtered = filterByPeriod(allExpenses);
+                const container = document.getElementById('expense-list');
                 if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">Нет расходов</div>'; return; }
-                container.innerHTML = filtered.map(e => `
-                    <div class="transaction-item">
-                        <div class="transaction-header">
-                            <span class="transaction-title">${e.name || '—'}</span>
-                            <span class="transaction-amount amount-expense">-${e.amount?.toLocaleString()} ₸</span>
-                        </div>
-                        <div>🏗️ ${e.projects?.name || 'Общий'} | ${e.category || ''}</div>
-                        <div class="transaction-meta">
-                            <span>📅 ${e.date ? new Date(e.date).toLocaleDateString('ru-RU') : '—'}</span>
-                            <span class="status-badge ${e.payment_status === 'paid' ? 'status-paid' : 'status-pending'}">${e.payment_status === 'paid' ? 'Оплачен' : 'План'}</span>
-                        </div>
-                    </div>
-                `).join('');
+                container.innerHTML = filtered.map(e => `<div class="transaction-item"><div class="transaction-header"><span class="transaction-title">${e.name}</span><span class="transaction-amount amount-expense">-${e.amount.toLocaleString()} ₸</span></div><div>🏗️ ${e.projects?.name || 'Общий'}</div><div class="transaction-meta"><span>📅 ${e.date}</span><span class="status-badge ${e.payment_status==='paid'?'status-paid':'status-pending'}">${e.payment_status==='paid'?'Оплачен':'План'}</span></div></div>`).join('');
             }
             
             function renderPayoutsList() {
-                const container = document.getElementById('payouts-list');
                 const filtered = filterByPeriod(allWorkOrders, 'created_at');
-                if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">Нет нарядов к выплате</div>'; return; }
-                container.innerHTML = filtered.map(o => `
-                    <div class="transaction-item">
-                        <div class="transaction-header">
-                            <span class="transaction-title">${o.work_type} — ${o.axis_name}</span>
-                            <span class="transaction-amount amount-expense">-${o.total_amount?.toLocaleString()} ₸</span>
-                        </div>
-                        <div>👷 ${o.brigades?.name || '—'} | 🏗️ ${o.projects?.name || '—'}</div>
-                        <div class="transaction-meta">
-                            <span>📅 ${o.created_at ? new Date(o.created_at).toLocaleDateString('ru-RU') : '—'}</span>
-                            <span class="status-badge ${o.payment_status === 'paid' ? 'status-paid' : 'status-pending'}">${o.payment_status === 'paid' ? 'Выплачено' : 'К выплате'}</span>
-                        </div>
-                        ${o.payment_status === 'pending' && currentRole === 'manager' ? `
-                            <button class="btn-success" style="margin-top:10px" onclick="markPayoutPaid('${o.id}')">✅ Отметить выплату</button>
-                        ` : ''}
-                    </div>
-                `).join('');
+                const container = document.getElementById('payouts-list');
+                if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">Нет выплат</div>'; return; }
+                container.innerHTML = filtered.map(o => `<div class="transaction-item"><div class="transaction-header"><span class="transaction-title">${o.work_type} — ${o.axis_name}</span><span class="transaction-amount amount-expense">-${o.total_amount.toLocaleString()} ₸</span></div><div>👷 ${o.brigades?.name} | 🏗️ ${o.projects?.name}</div><div class="transaction-meta"><span>📅 ${o.created_at?.split('T')[0]}</span><span class="status-badge ${o.payment_status==='paid'?'status-paid':'status-pending'}">${o.payment_status==='paid'?'Выплачено':'К выплате'}</span></div>${o.payment_status==='pending'&&currentRole==='manager'?`<button class="btn-success" style="margin-top:10px" onclick="markPayoutPaid('${o.id}')">✅ Отметить выплату</button>`:''}</div>`).join('');
             }
             
             function renderPlanList() {
+                const pending = [...allIncome.filter(i=>i.status==='pending'), ...allExpenses.filter(e=>e.payment_status==='pending'), ...allWorkOrders.filter(o=>o.payment_status==='pending')];
                 const container = document.getElementById('plan-list');
-                const pendingIncome = allIncome.filter(i => i.status === 'pending');
-                const pendingExpense = allExpenses.filter(e => e.payment_status === 'pending');
-                const pendingPayouts = allWorkOrders.filter(o => o.payment_status === 'pending');
-                
-                const allPending = [
-                    ...pendingIncome.map(i => ({ ...i, type: 'income', typeName: '💰 Поступление' })),
-                    ...pendingExpense.map(e => ({ ...e, type: 'expense', typeName: '💸 Расход', amount: e.amount, description: e.name })),
-                    ...pendingPayouts.map(o => ({ ...o, type: 'payout', typeName: '👷 Выплата', amount: o.total_amount, description: `${o.work_type} — ${o.axis_name}` }))
-                ].sort((a, b) => new Date(a.date || a.created_at) - new Date(b.date || b.created_at));
-                
-                if (allPending.length === 0) { container.innerHTML = '<div class="empty-state">Нет запланированных платежей</div>'; return; }
-                
-                container.innerHTML = allPending.map(p => `
-                    <div class="transaction-item">
-                        <div class="transaction-header">
-                            <span class="transaction-title">${p.typeName}</span>
-                            <span class="transaction-amount ${p.type === 'income' ? 'amount-income' : 'amount-expense'}">${p.type === 'income' ? '+' : '-'}${p.amount?.toLocaleString()} ₸</span>
-                        </div>
-                        <div>${p.description || '—'}</div>
-                        <div class="transaction-meta">
-                            <span>📅 ${p.date ? new Date(p.date).toLocaleDateString('ru-RU') : p.created_at ? new Date(p.created_at).toLocaleDateString('ru-RU') : '—'}</span>
-                            <span class="status-badge status-pending">Ожидает</span>
-                        </div>
-                    </div>
-                `).join('');
+                if (pending.length === 0) { container.innerHTML = '<div class="empty-state">Нет запланированных платежей</div>'; return; }
+                container.innerHTML = pending.map(p => `<div class="transaction-item"><div class="transaction-header"><span class="transaction-title">${p.description || p.name || p.work_type}</span><span class="transaction-amount ${p.amount>0?'amount-income':'amount-expense'}">${p.amount>0?'+':'-'}${Math.abs(p.amount||p.total_amount).toLocaleString()} ₸</span></div><div>${p.projects?.name||'—'}</div><div class="transaction-meta"><span>📅 ${p.date||p.created_at?.split('T')[0]}</span><span class="status-badge status-pending">Ожидает</span></div></div>`).join('');
             }
             
             function renderSummaryList() {
+                const recent = [...allIncome, ...allExpenses.map(e=>({...e, amount: -e.amount})), ...allWorkOrders.map(o=>({...o, amount: -o.total_amount}))].sort((a,b)=>new Date(b.date||b.created_at)-new Date(a.date||a.created_at)).slice(0,10);
                 const container = document.getElementById('summary-list');
-                const recent = [...allIncome, ...allExpenses.map(e => ({ ...e, amount: -e.amount, description: e.name })), ...allWorkOrders.map(o => ({ ...o, amount: -o.total_amount, description: `${o.work_type} — ${o.axis_name}` }))]
-                    .sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at))
-                    .slice(0, 10);
-                
                 if (recent.length === 0) { container.innerHTML = '<div class="empty-state">Нет операций</div>'; return; }
-                
-                container.innerHTML = recent.map(r => `
-                    <div class="transaction-item">
-                        <div class="transaction-header">
-                            <span class="transaction-title">${r.description || '—'}</span>
-                            <span class="transaction-amount ${r.amount > 0 ? 'amount-income' : 'amount-expense'}">${r.amount > 0 ? '+' : ''}${r.amount?.toLocaleString()} ₸</span>
-                        </div>
-                        <div>${r.projects?.name || '—'}</div>
-                        <div class="transaction-meta">
-                            <span>📅 ${r.date ? new Date(r.date).toLocaleDateString('ru-RU') : r.created_at ? new Date(r.created_at).toLocaleDateString('ru-RU') : '—'}</span>
-                        </div>
-                    </div>
-                `).join('');
-            }
-            
-            function renderCharts() {
-                const filteredIncome = filterByPeriod(allIncome);
-                const filteredExpense = filterByPeriod(allExpenses);
-                const filteredOrders = filterByPeriod(allWorkOrders, 'created_at');
-                
-                // Линейный график
-                const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
-                const incomeByMonth = new Array(12).fill(0);
-                const expenseByMonth = new Array(12).fill(0);
-                const payoutByMonth = new Array(12).fill(0);
-                
-                filteredIncome.forEach(i => { if (i.status === 'paid') incomeByMonth[new Date(i.date).getMonth()] += i.amount; });
-                filteredExpense.forEach(e => { if (e.payment_status === 'paid') expenseByMonth[new Date(e.date).getMonth()] += e.amount; });
-                filteredOrders.forEach(o => { if (o.payment_status === 'paid') payoutByMonth[new Date(o.created_at).getMonth()] += o.total_amount; });
-                
-                const ctx = document.getElementById('cashflow-chart').getContext('2d');
-                if (cashflowChart) cashflowChart.destroy();
-                cashflowChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: months,
-                        datasets: [
-                            { label: 'Поступления', data: incomeByMonth, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', tension: 0.4, fill: true },
-                            { label: 'Расходы', data: expenseByMonth, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', tension: 0.4, fill: true },
-                            { label: 'Выплаты', data: payoutByMonth, borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', tension: 0.4, fill: true }
-                        ]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-                });
-                
-                // Круговая диаграмма расходов
-                const expenseCategories = {};
-                filteredExpense.filter(e => e.payment_status === 'paid').forEach(e => {
-                    const cat = e.category || 'other';
-                    expenseCategories[cat] = (expenseCategories[cat] || 0) + e.amount;
-                });
-                
-                const pieCtx = document.getElementById('expense-pie-chart').getContext('2d');
-                if (pieChart) pieChart.destroy();
-                pieChart = new Chart(pieCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: Object.keys(expenseCategories),
-                        datasets: [{
-                            data: Object.values(expenseCategories),
-                            backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#64748b']
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-            }
-            
-            function setupFilters() {
-                document.getElementById('filter-project').addEventListener('change', (e) => {
-                    selectedProjectId = e.target.value;
-                    loadAllData();
-                });
-                
-                document.querySelectorAll('.period-btn').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-                        btn.classList.add('active');
-                        currentPeriod = btn.dataset.period;
-                        loadAllData();
-                    });
-                });
-                
-                document.getElementById('export-excel').addEventListener('click', exportToExcel);
-            }
-            
-            function exportToExcel() {
-                const wb = XLSX.utils.book_new();
-                
-                // Поступления
-                const incomeData = allIncome.map(i => ({
-                    Дата: i.date, Объект: i.projects?.name || 'Общий', Описание: i.description,
-                    Сумма: i.amount, Статус: i.status === 'paid' ? 'Получено' : 'Ожидается'
-                }));
-                const incomeSheet = XLSX.utils.json_to_sheet(incomeData);
-                XLSX.utils.book_append_sheet(wb, incomeSheet, 'Поступления');
-                
-                // Расходы
-                const expenseData = allExpenses.map(e => ({
-                    Дата: e.date, Объект: e.projects?.name || 'Общий', Описание: e.name,
-                    Категория: e.category, Сумма: e.amount, Статус: e.payment_status === 'paid' ? 'Оплачен' : 'План'
-                }));
-                const expenseSheet = XLSX.utils.json_to_sheet(expenseData);
-                XLSX.utils.book_append_sheet(wb, expenseSheet, 'Расходы');
-                
-                // Выплаты
-                const payoutData = allWorkOrders.map(o => ({
-                    Дата: o.created_at?.split('T')[0], Объект: o.projects?.name,
-                    Бригада: o.brigades?.name, Работа: `${o.work_type} — ${o.axis_name}`,
-                    Сумма: o.total_amount, Статус: o.payment_status === 'paid' ? 'Выплачено' : 'К выплате'
-                }));
-                const payoutSheet = XLSX.utils.json_to_sheet(payoutData);
-                XLSX.utils.book_append_sheet(wb, payoutSheet, 'Выплаты');
-                
-                XLSX.writeFile(wb, `ДДС_LamGroup_${new Date().toISOString().split('T')[0]}.xlsx`);
-            }
-            
-            function setupKpiCards() {
-                document.getElementById('card-income').addEventListener('click', () => {
-                    document.querySelector('[data-tab="income"]').click();
-                });
-                document.getElementById('card-expense').addEventListener('click', () => {
-                    document.querySelector('[data-tab="expense"]').click();
-                });
-                document.getElementById('card-payouts').addEventListener('click', () => {
-                    document.querySelector('[data-tab="payouts"]').click();
-                });
-                document.getElementById('card-balance').addEventListener('click', () => {
-                    document.querySelector('[data-tab="summary"]').click();
-                });
-            }
-            
-            function setupTabs() {
-                document.querySelectorAll('.tab').forEach(t => {
-                    t.addEventListener('click', () => {
-                        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-                        document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
-                        t.classList.add('active');
-                        document.getElementById(`tab-${t.dataset.tab}`).classList.add('active');
-                    });
-                });
-            }
-            
-            function setupForms() {
-                document.getElementById('add-income-btn').addEventListener('click', async () => {
-                    const project_id = document.getElementById('income-project').value || null;
-                    const description = document.getElementById('income-desc').value;
-                    const amount = parseFloat(document.getElementById('income-amount').value);
-                    const date = document.getElementById('income-date').value;
-                    const status = document.getElementById('income-status').value;
-                    
-                    if (!description || !amount) { alert('Заполните описание и сумму'); return; }
-                    
-                    await supabase.from('income').insert({ project_id, description, amount, date, status, created_by: currentUser?.id });
-                    alert('Поступление добавлено!');
-                    document.getElementById('income-desc').value = '';
-                    document.getElementById('income-amount').value = '';
-                    loadAllData();
-                });
-                
-                document.getElementById('add-expense-dds-btn').addEventListener('click', async () => {
-                    const project_id = document.getElementById('expense-project').value || null;
-                    const name = document.getElementById('expense-desc').value;
-                    const amount = parseFloat(document.getElementById('expense-amount').value);
-                    const date = document.getElementById('expense-date').value;
-                    const payment_status = document.getElementById('expense-status').value;
-                    
-                    if (!name || !amount) { alert('Заполните описание и сумму'); return; }
-                    
-                    await supabase.from('expenses').insert({ project_id, name, amount, date, payment_status, category: 'other', payment_type: 'invoice', created_by: currentUser?.id });
-                    alert('Расход добавлен!');
-                    document.getElementById('expense-desc').value = '';
-                    document.getElementById('expense-amount').value = '';
-                    loadAllData();
-                });
-                
-                const today = new Date().toISOString().split('T')[0];
-                document.getElementById('income-date').value = today;
-                document.getElementById('expense-date').value = today;
+                container.innerHTML = recent.map(r => `<div class="transaction-item"><div class="transaction-header"><span class="transaction-title">${r.description || r.name || r.work_type}</span><span class="transaction-amount ${r.amount>0?'amount-income':'amount-expense'}">${r.amount>0?'+':''}${r.amount.toLocaleString()} ₸</span></div><div>${r.projects?.name||'—'}</div><div class="transaction-meta"><span>📅 ${r.date||r.created_at?.split('T')[0]}</span></div></div>`).join('');
             }
             
             window.markPayoutPaid = async (id) => {
                 await supabase.from('work_orders').update({ payment_status: 'paid', payment_date: new Date().toISOString().split('T')[0] }).eq('id', id);
                 loadAllData();
             };
+            
+            function setupTabs() {
+                document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+                    t.classList.add('active');
+                    document.getElementById(`tab-${t.dataset.tab}`).classList.add('active');
+                }));
+            }
+            
+            function setupFilters() {
+                document.getElementById('filter-project').addEventListener('change', e => { selectedProjectId = e.target.value; loadAllData(); });
+                document.querySelectorAll('.period-btn').forEach(btn => btn.addEventListener('click', () => {
+                    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentPeriod = btn.dataset.period;
+                    loadAllData();
+                }));
+                document.getElementById('export-excel').addEventListener('click', () => {
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(allIncome), 'Поступления');
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(allExpenses), 'Расходы');
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(allWorkOrders), 'Выплаты');
+                    XLSX.writeFile(wb, `ДДС_${new Date().toISOString().split('T')[0]}.xlsx`);
+                });
+                
+                document.getElementById('prev-month').addEventListener('click', () => {
+                    currentDisplayDate.setMonth(currentDisplayDate.getMonth() - 1);
+                    loadAllData();
+                });
+                
+                document.getElementById('next-month').addEventListener('click', () => {
+                    currentDisplayDate.setMonth(currentDisplayDate.getMonth() + 1);
+                    loadAllData();
+                });
+            }
+            
+            function setupForms() {
+                document.getElementById('add-income-btn').addEventListener('click', async () => {
+                    const desc = document.getElementById('income-desc').value;
+                    const amount = parseFloat(document.getElementById('income-amount').value);
+                    if (!desc || !amount) { alert('Заполните поля'); return; }
+                    await supabase.from('income').insert({
+                        project_id: document.getElementById('income-project').value || null,
+                        description: desc, amount, date: document.getElementById('income-date').value,
+                        status: document.getElementById('income-status').value, created_by: currentUser?.id
+                    });
+                    loadAllData();
+                    document.getElementById('income-desc').value = '';
+                    document.getElementById('income-amount').value = '';
+                });
+                
+                document.getElementById('add-expense-dds-btn').addEventListener('click', async () => {
+                    const name = document.getElementById('expense-desc').value;
+                    const amount = parseFloat(document.getElementById('expense-amount').value);
+                    if (!name || !amount) { alert('Заполните поля'); return; }
+                    await supabase.from('expenses').insert({
+                        project_id: document.getElementById('expense-project').value || null,
+                        name, amount, date: document.getElementById('expense-date').value,
+                        payment_status: document.getElementById('expense-status').value,
+                        category: 'other', payment_type: 'invoice', created_by: currentUser?.id
+                    });
+                    loadAllData();
+                    document.getElementById('expense-desc').value = '';
+                    document.getElementById('expense-amount').value = '';
+                });
+                
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('income-date').value = today;
+                document.getElementById('expense-date').value = today;
+            }
             
             init();
         })();
