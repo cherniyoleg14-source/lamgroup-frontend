@@ -30,55 +30,55 @@
         .object-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
         .object-name { font-size: 18px; font-weight: 700; color: #0F172A; }
         .object-status { padding: 6px 14px; border-radius: 40px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
-        .status-preparation { background: #FEF3C7; color: #92400E; }
-        .status-mobilization { background: #DBEAFE; color: #1E40AF; }
-        .status-in_progress { background: #D1FAE5; color: #065F46; }
-        .status-completed { background: #E2E8F0; color: #475569; }
-        .status-paused { background: #FEE2E2; color: #991B1B; }
+        .status-preparation { background: #FEF3C7; color: #92400E; } .status-mobilization { background: #DBEAFE; color: #1E40AF; } .status-in_progress { background: #D1FAE5; color: #065F46; } .status-completed { background: #E2E8F0; color: #475569; } .status-paused { background: #FEE2E2; color: #991B1B; }
         .object-address { font-size: 14px; color: #64748B; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
-        .progress-section { margin: 16px 0; }
-        .progress-bar { height: 8px; background: #F1F5F9; border-radius: 40px; overflow: hidden; margin-bottom: 8px; }
-        .progress-fill { height: 100%; background: linear-gradient(90deg, #0F172A, #F59E0B); border-radius: 40px; width: 0%; transition: width 0.3s ease; }
-        .progress-text { display: flex; justify-content: space-between; font-size: 13px; color: #64748B; font-weight: 500; }
-        .object-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #F1F5F9; }
-        .object-dates { display: flex; gap: 8px; }
-        .date-badge { background: #F8FAFC; padding: 6px 12px; border-radius: 40px; font-size: 12px; font-weight: 500; color: #475569; }
-
+        .progress-section { margin: 16px 0; } .progress-bar { height: 8px; background: #F1F5F9; border-radius: 40px; overflow: hidden; margin-bottom: 8px; } .progress-fill { height: 100%; background: linear-gradient(90deg, #0F172A, #F59E0B); border-radius: 40px; width: 0%; transition: width 0.3s ease; }
+        .object-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #F1F5F9; } .object-dates { display: flex; gap: 8px; } .date-badge { background: #F8FAFC; padding: 6px 12px; border-radius: 40px; font-size: 12px; font-weight: 500; color: #475569; }
         .back-btn { background: none; border: none; color: #0F172A; font-size: 16px; font-weight: 600; cursor: pointer; padding: 12px 0; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-
-        .tabs-wrapper { position: relative; margin: 20px 0; }
-        .tabs { display: flex; gap: 4px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; padding-bottom: 8px; }
-        .tabs::-webkit-scrollbar { display: none; }
-        .tab { padding: 10px 14px; background: none; border: none; font-weight: 600; color: #64748B; cursor: pointer; white-space: nowrap; font-size: 13px; }
-        .tab.active { color: #0F172A; border-bottom: 3px solid #F59E0B; }
-        .scroll-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; background: white; border: 1px solid #E2E8F0; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 10; font-size: 14px; }
-        .scroll-arrow.left { left: -14px; } .scroll-arrow.right { right: -14px; } .scroll-arrow.hidden { display: none; }
-
-        .tab-content { display: none; } .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .tabs-wrapper { position: relative; margin: 20px 0; } .tabs { display: flex; gap: 4px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; padding-bottom: 8px; } .tabs::-webkit-scrollbar { display: none; }
+        .tab { padding: 10px 14px; background: none; border: none; font-weight: 600; color: #64748B; cursor: pointer; white-space: nowrap; font-size: 13px; } .tab.active { color: #0F172A; border-bottom: 3px solid #F59E0B; }
+        .scroll-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; background: white; border: 1px solid #E2E8F0; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 10; font-size: 14px; } .scroll-arrow.left { left: -14px; } .scroll-arrow.right { right: -14px; } .scroll-arrow.hidden { display: none; }
+        .tab-content { display: none; } .tab-content.active { display: block; animation: fadeIn 0.3s ease; } @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
         .info-card { background: white; border-radius: 24px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #F1F5F9; }
-        .form-group { margin-bottom: 16px; }
-        label { font-weight: 600; color: #475569; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 6px; }
+        .form-group { margin-bottom: 16px; } label { font-weight: 600; color: #475569; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 6px; }
         input, select, textarea { width: 100%; padding: 14px 16px; border: 1.5px solid #E2E8F0; border-radius: 16px; font-size: 15px; background: white; font-family: 'Inter', sans-serif; }
         input:focus, select:focus, textarea:focus { outline: none; border-color: #F59E0B; box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
         .btn-primary { width: 100%; background: linear-gradient(135deg, #0F172A, #1E293B); color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; cursor: pointer; margin-top: 12px; }
-        .btn-secondary { background: #F8FAFC; color: #0F172A; padding: 12px 18px; border-radius: 14px; font-weight: 600; border: 1.5px solid #E2E8F0; cursor: pointer; }
-        .btn-danger { background: #FEF2F2; color: #DC2626; padding: 10px 16px; border-radius: 14px; font-weight: 600; border: 1.5px solid #FECACA; cursor: pointer; }
+        .btn-secondary { background: #F8FAFC; color: #0F172A; padding: 10px 16px; border-radius: 14px; font-weight: 600; border: 1.5px solid #E2E8F0; cursor: pointer; font-size: 13px; }
+        .btn-danger { background: #FEF2F2; color: #DC2626; padding: 8px 14px; border-radius: 14px; font-weight: 600; border: 1.5px solid #FECACA; cursor: pointer; font-size: 13px; }
         .btn-small { padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
-        .btn-edit { background: #FEF3C7; color: #92400E; }
-        .btn-delete { background: #FEE2E2; color: #991B1B; }
-        .btn-add { background: #DBEAFE; color: #1E40AF; }
+        .btn-edit { background: #FEF3C7; color: #92400E; } .btn-delete { background: #FEE2E2; color: #991B1B; } .btn-add { background: #DBEAFE; color: #1E40AF; }
 
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .hidden { display: none !important; }
         .loading { text-align: center; padding: 60px 20px; color: #64748B; }
         .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 24px; color: #64748B; }
         .message { padding: 16px; border-radius: 16px; margin: 16px 0; display: none; font-weight: 500; }
-        .message.success { background: #D1FAE5; color: #065F46; display: block; border: 1.5px solid #A7F3D0; }
-        .message.error { background: #FEE2E2; color: #991B1B; display: block; border: 1.5px solid #FECACA; }
-        .message.info { background: #DBEAFE; color: #1E40AF; display: block; border: 1.5px solid #BFDBFE; }
+        .message.success { background: #D1FAE5; color: #065F46; display: block; border: 1.5px solid #A7F3D0; } .message.error { background: #FEE2E2; color: #991B1B; display: block; border: 1.5px solid #FECACA; } .message.info { background: #DBEAFE; color: #1E40AF; display: block; border: 1.5px solid #BFDBFE; }
         .gpr-item { background: white; border-radius: 20px; padding: 18px; margin-bottom: 12px; border: 1.5px solid #F1F5F9; }
+
+        /* Progress Axis Card */
+        .axis-card { background: white; border-radius: 20px; padding: 16px; margin-bottom: 16px; border: 1.5px solid #E2E8F0; }
+        .axis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .axis-name { font-weight: 700; color: #0F172A; font-size: 16px; }
+        .axis-dates { font-size: 13px; color: #64748B; margin-bottom: 12px; }
+        .subaxis-item { background: #F8FAFC; border-radius: 14px; padding: 14px; margin: 10px 0; border: 1px solid #E2E8F0; }
+        .subaxis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .subaxis-name { font-weight: 600; color: #0F172A; }
+        .subaxis-brigade { font-size: 13px; color: #64748B; }
+        .subaxis-progress { margin-top: 8px; }
+        .subaxis-progress-bar { height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden; }
+        .subaxis-progress-fill { height: 100%; background: #10B981; border-radius: 3px; }
+        .subaxis-meta { display: flex; justify-content: space-between; font-size: 12px; color: #64748B; margin-top: 6px; }
+
+        /* Action Menu */
+        .action-menu { background: white; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 8px 0; }
+        .action-item { padding: 14px 20px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; transition: background 0.2s; }
+        .action-item:hover { background: #F8FAFC; }
+        .action-item.danger { color: #DC2626; }
+
+        /* Modal */
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .modal.hidden { display: none !important; }
         .modal-content { background: white; border-radius: 28px; padding: 24px; max-width: 500px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
@@ -89,6 +89,11 @@
         .stage-name { flex: 1; font-weight: 500; font-size: 14px; }
         .axis-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
         .axis-item input { flex: 1; }
+        .action-menu-modal { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 24px 24px 0 0; padding: 20px; z-index: 10000; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .action-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 9999; }
+        .file-upload-area { border: 2px dashed #CBD5E1; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; margin: 10px 0; transition: all 0.2s; }
+        .file-upload-area:hover { border-color: #F59E0B; background: #FFFBEB; }
     </style>
 </head>
 <body>
@@ -128,15 +133,27 @@
             <!-- ИНФО -->
             <div id="tab-info" class="tab-content active"><div class="info-card" id="detail-content"></div></div>
 
-            <!-- ПРОГРЕСС (заглушка) -->
-            <div id="tab-progress" class="tab-content"><div class="info-card"><h3>📊 Прогресс</h3><div id="progress-content"></div></div></div>
+            <!-- ПРОГРЕСС -->
+            <div id="tab-progress" class="tab-content"><div id="progress-container"></div></div>
 
-            <!-- ОСТАЛЬНЫЕ ВКЛАДКИ (заглушки) -->
+            <!-- ОСТАЛЬНЫЕ ВКЛАДКИ -->
             <div id="tab-expenses" class="tab-content"><div class="info-card"><h3>💰 Расходы</h3><p>Загрузка...</p></div></div>
             <div id="tab-materials" class="tab-content"><div class="info-card"><h3>📦 Материалы</h3><p>Загрузка...</p></div></div>
             <div id="tab-checklist" class="tab-content"><div class="info-card"><h3>✅ Чек-лист</h3><p>Загрузка...</p></div></div>
             <div id="tab-issues" class="tab-content"><div class="info-card"><h3>⚠️ Проблемы</h3><p>Загрузка...</p></div></div>
             <div id="tab-report" class="tab-content"><div class="info-card"><h3>📑 Отчет</h3><p>Загрузка...</p></div></div>
+        </div>
+
+        <!-- МОДАЛЬНОЕ ОКНО ДЕЙСТВИЙ -->
+        <div id="action-overlay" class="action-overlay hidden"></div>
+        <div id="action-menu" class="action-menu-modal hidden"></div>
+
+        <!-- МОДАЛЬНОЕ ОКНО ФОРМ -->
+        <div id="form-modal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header"><span class="modal-title" id="form-modal-title">Форма</span><button class="close-btn" id="close-form-modal">&times;</button></div>
+                <div id="form-modal-content"></div>
+            </div>
         </div>
 
         <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
@@ -169,6 +186,7 @@
             let userId = tg.initDataUnsafe?.user?.id;
             if (!userId) { alert('Ошибка авторизации'); return; }
             let currentUser = null, currentRole = 'worker', currentProjectId = null, currentFilter = 'all', allProjects = [];
+            let currentAxisId = null, currentSubAxisId = null, allBrigades = [];
 
             function showMessage(text, type) {
                 const msg = document.getElementById('message');
@@ -178,6 +196,7 @@
 
             async function init() {
                 await loadUser();
+                await loadBrigades();
                 await loadProjects();
                 setupFilters();
                 setupTabs();
@@ -189,6 +208,11 @@
                 const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
                 if (data) { currentUser = data; currentRole = data.role; }
                 document.getElementById('role-badge').textContent = currentRole === 'manager' ? 'Руководитель' : currentRole === 'worker' ? 'ИТР' : 'Монтажник';
+            }
+
+            async function loadBrigades() {
+                const { data } = await supabase.from('brigades').select('*').eq('status', 'active').order('name');
+                allBrigades = data || [];
             }
 
             async function loadProjects() {
@@ -208,12 +232,7 @@
                 let html = '<div class="objects-grid">';
                 filtered.forEach(p => {
                     const st = { 'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация', 'in_progress': '🔨 В работе', 'completed': '✅ Завершён' }[p.status] || p.status;
-                    html += `<div class="object-card" data-id="${p.id}">
-                        <div class="object-header"><span class="object-name">${p.name}</span><span class="object-status status-${p.status}">${st}</span></div>
-                        <div class="object-address">📍 ${p.address}</div>
-                        <div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div></div>
-                        <div class="object-footer"><div>👤 ${p.users?.full_name || '—'}</div><div class="object-dates"><span class="date-badge">📅 ${p.start_date || '—'}</span></div></div>
-                    </div>`;
+                    html += `<div class="object-card" data-id="${p.id}"><div class="object-header"><span class="object-name">${p.name}</span><span class="object-status status-${p.status}">${st}</span></div><div class="object-address">📍 ${p.address}</div><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div></div><div class="object-footer"><div>👤 ${p.users?.full_name || '—'}</div><div class="object-dates"><span class="date-badge">📅 ${p.start_date || '—'}</span></div></div></div>`;
                 });
                 container.innerHTML = html + '</div>';
                 document.querySelectorAll('.object-card').forEach(c => c.addEventListener('click', () => showDetail(c.dataset.id)));
@@ -254,13 +273,16 @@
             }
 
             function setupModals() {
+                document.getElementById('close-form-modal').onclick = () => document.getElementById('form-modal').classList.add('hidden');
                 document.getElementById('close-edit-modal').onclick = () => document.getElementById('edit-modal').classList.add('hidden');
                 document.getElementById('close-full-info-modal').onclick = () => document.getElementById('full-info-modal').classList.add('hidden');
+                document.getElementById('form-modal').onclick = (e) => { if (e.target === document.getElementById('form-modal')) document.getElementById('form-modal').classList.add('hidden'); };
                 document.getElementById('edit-modal').onclick = (e) => { if (e.target === document.getElementById('edit-modal')) document.getElementById('edit-modal').classList.add('hidden'); };
                 document.getElementById('full-info-modal').onclick = (e) => { if (e.target === document.getElementById('full-info-modal')) document.getElementById('full-info-modal').classList.add('hidden'); };
+                document.getElementById('action-overlay').onclick = closeActionMenu;
             }
 
-            // ========== ПОКАЗ ДЕТАЛЕЙ ОБЪЕКТА ==========
+            // ========== ДЕТАЛИ ОБЪЕКТА ==========
             async function showDetail(id) {
                 currentProjectId = id;
                 const { data: p } = await supabase.from('projects').select('*, users(full_name)').eq('id', id).single();
@@ -269,179 +291,483 @@
                 const statusMap = { 'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация', 'in_progress': '🔨 В работе', 'completed': '✅ Завершён' };
                 document.getElementById('detail-status-badge').textContent = statusMap[p.status] || p.status;
                 
-                // Вкладка Инфо
                 document.getElementById('detail-content').innerHTML = `
-                    <div style="margin-bottom:20px">
-                        <p style="margin-bottom:10px"><strong>📍 Адрес:</strong> ${p.address} <button class="btn-small btn-edit" onclick="openEditModal('address', '${escapeHtml(p.address)}')">✏️</button></p>
-                        <p style="margin-bottom:10px"><strong>💰 Цена договора:</strong> ${p.contract_price?.toLocaleString() || 0} ₸ <button class="btn-small btn-edit" onclick="openEditModal('contract_price', '${p.contract_price || 0}')">✏️</button></p>
-                        <p style="margin-bottom:10px"><strong>📐 Проектная площадь:</strong> ${p.project_area || 0} м² <button class="btn-small btn-edit" onclick="openEditModal('project_area', '${p.project_area || 0}')">✏️</button></p>
-                        <p style="margin-bottom:10px"><strong>📅 Дата начала:</strong> ${p.start_date || '—'} <button class="btn-small btn-edit" onclick="openEditModal('start_date', '${p.start_date || ''}')">✏️</button></p>
-                        <p style="margin-bottom:10px"><strong>🏁 Дата окончания:</strong> ${p.end_date_contract || '—'} <button class="btn-small btn-edit" onclick="openEditModal('end_date_contract', '${p.end_date_contract || ''}')">✏️</button></p>
-                        <p style="margin-bottom:10px"><strong>👤 ИТР:</strong> ${p.users?.full_name || '—'}</p>
-                        <p style="margin-bottom:10px"><strong>📋 Менеджер:</strong> ${p.manager_name || '—'} · ${p.manager_phone || '—'} <button class="btn-small btn-edit" onclick="openEditModal('manager', '${escapeHtml(p.manager_name || '')}', '${p.manager_phone || ''}')">✏️</button></p>
-                        <p style="margin-bottom:10px"><strong>📊 Статус:</strong> 
-                            <select id="change-status" style="display:inline;width:auto;padding:8px 12px">
-                                <option value="preparation" ${p.status==='preparation'?'selected':''}>📋 Подготовка</option>
-                                <option value="mobilization" ${p.status==='mobilization'?'selected':''}>🚚 Мобилизация</option>
-                                <option value="in_progress" ${p.status==='in_progress'?'selected':''}>🔨 В работе</option>
-                                <option value="completed" ${p.status==='completed'?'selected':''}>✅ Завершён</option>
-                                <option value="paused" ${p.status==='paused'?'selected':''}>⏸️ Пауза</option>
-                            </select>
-                            <button class="btn-small btn-edit" onclick="updateStatus()">Обновить</button>
-                        </p>
-                    </div>
-                    <button class="btn-secondary" onclick="openFullInfo()" style="width:100%;margin-bottom:16px">📄 Полная информация по объекту</button>
-                    
-                    <!-- Расценки -->
-                    <h3 style="margin-top:24px">📊 Расценки для Заказчика</h3>
-                    <div id="prices-list"></div>
-                    <button class="btn-add" id="add-price-btn" style="margin-top:10px">+ Добавить расценку</button>
-
-                    <!-- Оси -->
-                    <h3 style="margin-top:24px">📍 Оси объекта</h3>
-                    <div id="axes-list"></div>
-                    <button class="btn-add" id="add-axis-btn" style="margin-top:10px">+ Добавить ось</button>
+                    <p style="margin-bottom:10px"><strong>📍 Адрес:</strong> ${p.address} <button class="btn-small btn-edit" onclick="openEditField('address', '${escapeHtml(p.address)}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>💰 Цена договора:</strong> ${p.contract_price?.toLocaleString() || 0} ₸ <button class="btn-small btn-edit" onclick="openEditField('contract_price', '${p.contract_price || 0}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>📐 Проектная площадь:</strong> ${p.project_area || 0} м² <button class="btn-small btn-edit" onclick="openEditField('project_area', '${p.project_area || 0}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>📅 Начало:</strong> ${p.start_date || '—'} <button class="btn-small btn-edit" onclick="openEditField('start_date', '${p.start_date || ''}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>🏁 Окончание:</strong> ${p.end_date_contract || '—'} <button class="btn-small btn-edit" onclick="openEditField('end_date_contract', '${p.end_date_contract || ''}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>👤 ИТР:</strong> ${p.users?.full_name || '—'}</p>
+                    <p style="margin-bottom:10px"><strong>📋 Менеджер:</strong> ${p.manager_name || '—'} · ${p.manager_phone || '—'} <button class="btn-small btn-edit" onclick="openEditManager()">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>📊 Статус:</strong> <select id="change-status" style="display:inline;width:auto;padding:8px">${['preparation','mobilization','in_progress','completed','paused'].map(s => `<option value="${s}" ${p.status===s?'selected':''}>${statusMap[s]||s}</option>`).join('')}</select> <button class="btn-small btn-edit" onclick="updateStatus()">Обновить</button></p>
+                    <button class="btn-secondary" onclick="openFullInfo()" style="width:100%;margin:16px 0">📄 Полная информация</button>
                 `;
 
                 document.getElementById('back-btn').onclick = () => { document.getElementById('detail-view').classList.add('hidden'); document.getElementById('list-view').classList.remove('hidden'); loadProjects(); };
                 document.getElementById('list-view').classList.add('hidden');
                 document.getElementById('detail-view').classList.remove('hidden');
                 document.querySelector('[data-tab="info"]').click();
-                
-                loadPrices();
-                loadAxes();
             }
 
-            // ========== РЕДАКТИРОВАНИЕ ПОЛЕЙ ==========
-            window.openEditModal = function(field, value1, value2) {
-                const modal = document.getElementById('edit-modal');
-                const content = document.getElementById('edit-modal-content');
+            window.openEditField = function(field, value) {
                 document.getElementById('edit-modal-title').textContent = '✏️ Редактировать';
-                
-                if (field === 'manager') {
-                    content.innerHTML = `
-                        <div class="form-group"><label>Имя менеджера</label><input type="text" id="edit-manager-name" value="${value1}"></div>
-                        <div class="form-group"><label>Телефон менеджера</label><input type="tel" id="edit-manager-phone" value="${value2}"></div>
-                    `;
-                    document.getElementById('save-edit-btn').onclick = async () => {
-                        const name = document.getElementById('edit-manager-name').value;
-                        const phone = document.getElementById('edit-manager-phone').value;
-                        await supabase.from('projects').update({ manager_name: name, manager_phone: phone }).eq('id', currentProjectId);
-                        modal.classList.add('hidden'); showDetail(currentProjectId);
-                    };
-                } else {
-                    content.innerHTML = `
-                        <div class="form-group"><label>${field}</label><input type="${field.includes('date') ? 'date' : field.includes('price') || field.includes('area') ? 'number' : 'text'}" id="edit-value" value="${value1}"></div>
-                    `;
-                    document.getElementById('save-edit-btn').onclick = async () => {
-                        const val = document.getElementById('edit-value').value;
-                        const update = {}; update[field] = field.includes('price') || field.includes('area') ? parseFloat(val) || 0 : val;
-                        await supabase.from('projects').update(update).eq('id', currentProjectId);
-                        modal.classList.add('hidden'); showDetail(currentProjectId);
-                    };
-                }
-                modal.classList.remove('hidden');
+                document.getElementById('edit-modal-content').innerHTML = `<div class="form-group"><label>${field}</label><input type="${field.includes('date')?'date':'text'}" id="edit-value" value="${value}"></div>`;
+                document.getElementById('save-edit-btn').onclick = async () => {
+                    const val = document.getElementById('edit-value').value;
+                    await supabase.from('projects').update({ [field]: field.includes('price')||field.includes('area') ? parseFloat(val)||0 : val }).eq('id', currentProjectId);
+                    document.getElementById('edit-modal').classList.add('hidden'); showDetail(currentProjectId);
+                };
+                document.getElementById('edit-modal').classList.remove('hidden');
             };
 
-            // ========== ПОЛНАЯ ИНФОРМАЦИЯ ==========
+            window.openEditManager = function() {
+                document.getElementById('edit-modal-title').textContent = '✏️ Менеджер';
+                document.getElementById('edit-modal-content').innerHTML = `<div class="form-group"><label>Имя</label><input type="text" id="edit-mgr-name"><div class="form-group"><label>Телефон</label><input type="tel" id="edit-mgr-phone">`;
+                document.getElementById('save-edit-btn').onclick = async () => {
+                    await supabase.from('projects').update({ manager_name: document.getElementById('edit-mgr-name').value, manager_phone: document.getElementById('edit-mgr-phone').value }).eq('id', currentProjectId);
+                    document.getElementById('edit-modal').classList.add('hidden'); showDetail(currentProjectId);
+                };
+                document.getElementById('edit-modal').classList.remove('hidden');
+            };
+
+            window.updateStatus = async function() {
+                await supabase.from('projects').update({ status: document.getElementById('change-status').value }).eq('id', currentProjectId);
+                showDetail(currentProjectId); loadProjects();
+            };
+
             window.openFullInfo = async function() {
                 const { data: p } = await supabase.from('projects').select('*, users(full_name)').eq('id', currentProjectId).single();
                 const { data: prices } = await supabase.from('customer_prices').select('*, work_stages(name)').eq('project_id', currentProjectId);
                 const { data: axes } = await supabase.from('axes').select('*').eq('block_id.project_id', currentProjectId);
-                
-                let html = `
-                    <p><strong>🏗️ Название:</strong> ${p.name}</p>
-                    <p><strong>📍 Адрес:</strong> ${p.address}</p>
-                    <p><strong>💰 Цена договора:</strong> ${p.contract_price?.toLocaleString() || 0} ₸</p>
-                    <p><strong>📐 Проектная площадь:</strong> ${p.project_area || 0} м²</p>
-                    <p><strong>📅 Начало:</strong> ${p.start_date || '—'} | <strong>🏁 Окончание:</strong> ${p.end_date_contract || '—'}</p>
-                    <p><strong>👤 ИТР:</strong> ${p.users?.full_name || '—'}</p>
-                    <p><strong>📋 Менеджер:</strong> ${p.manager_name || '—'} · ${p.manager_phone || '—'}</p>
-                    <p><strong>📊 Статус:</strong> ${p.status}</p>
-                    <hr style="margin:16px 0">
-                    <h4>📊 Расценки для заказчика</h4>
-                    ${prices?.length ? prices.map(pr => `<p>• ${pr.work_stages?.name}: ${pr.price} ₸/${pr.unit}</p>`).join('') : '<p>Нет расценок</p>'}
-                    <hr style="margin:16px 0">
-                    <h4>📍 Оси</h4>
-                    ${axes?.length ? axes.map(a => `<p>• ${a.name}</p>`).join('') : '<p>Нет осей</p>'}
-                `;
-                document.getElementById('full-info-content').innerHTML = html;
+                document.getElementById('full-info-content').innerHTML = `<p><strong>🏗️ ${p.name}</strong></p><p>📍 ${p.address}</p><p>💰 ${p.contract_price?.toLocaleString()} ₸</p><p>📐 ${p.project_area} м²</p><p>📅 ${p.start_date} — ${p.end_date_contract}</p><p>👤 ${p.users?.full_name}</p><p>📋 ${p.manager_name} · ${p.manager_phone}</p><hr><h4>Расценки</h4>${prices?.length ? prices.map(pr => `<p>• ${pr.work_stages?.name}: ${pr.price} ₸/${pr.unit}</p>`).join('') : '<p>Нет</p>'}<hr><h4>Оси</h4>${axes?.length ? axes.map(a => `<p>• ${a.name}</p>`).join('') : '<p>Нет</p>'}`;
                 document.getElementById('full-info-modal').classList.remove('hidden');
             };
 
-            // ========== РАСЦЕНКИ ==========
-            async function loadPrices() {
-                const { data } = await supabase.from('customer_prices').select('*, work_stages(name)').eq('project_id', currentProjectId);
-                const container = document.getElementById('prices-list');
-                if (!container) return;
-                container.innerHTML = data?.length ? data.map(p => `
-                    <div class="stage-item">
-                        <span class="stage-name">${p.work_stages?.name}</span>
-                        <span>${p.price} ₸/${p.unit}</span>
-                        <button class="btn-small btn-delete" onclick="deletePrice('${p.id}')">🗑️</button>
-                    </div>
-                `).join('') : '<p style="color:#64748B">Нет расценок</p>';
-                document.getElementById('add-price-btn').onclick = openAddPrice;
-            }
-
-            function openAddPrice() {
-                const modal = document.getElementById('edit-modal');
-                supabase.from('work_stages').select('*').order('id').then(({ data }) => {
-                    document.getElementById('edit-modal-title').textContent = '➕ Добавить расценку';
-                    document.getElementById('edit-modal-content').innerHTML = `
-                        <div class="form-group"><label>Вид работ</label><select id="new-price-stage">${data.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
-                        <div class="row-2"><div class="form-group"><label>Цена</label><input type="number" id="new-price-value" step="0.01"></div><div class="form-group"><label>Ед.изм</label><select id="new-price-unit"><option value="м²">м²</option><option value="п.м.">п.м.</option></select></div></div>
-                    `;
-                    document.getElementById('save-edit-btn').onclick = async () => {
-                        await supabase.from('customer_prices').insert({ project_id: currentProjectId, stage_id: parseInt(document.getElementById('new-price-stage').value), price: parseFloat(document.getElementById('new-price-value').value)||0, unit: document.getElementById('new-price-unit').value });
-                        modal.classList.add('hidden'); loadPrices();
-                    };
-                    modal.classList.remove('hidden');
-                });
-            }
-
-            window.deletePrice = async (id) => { await supabase.from('customer_prices').delete().eq('id', id); loadPrices(); };
-
-            // ========== ОСИ ==========
-            async function loadAxes() {
+            // ========== ВКЛАДКА ПРОГРЕСС ==========
+            async function loadProgressTab() {
+                const container = document.getElementById('progress-container');
+                container.innerHTML = '<div class="loading">Загрузка осей...</div>';
+                
                 const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
-                if (!blocks?.length) return;
-                const { data: axes } = await supabase.from('axes').select('*').in('block_id', blocks.map(b => b.id));
-                const container = document.getElementById('axes-list');
-                if (!container) return;
-                container.innerHTML = axes?.length ? axes.map(a => `
-                    <div class="axis-item"><input value="${a.name}" disabled style="flex:1"><button class="btn-small btn-delete" onclick="deleteAxis('${a.id}')">🗑️</button></div>
-                `).join('') : '<p style="color:#64748B">Нет осей</p>';
-                document.getElementById('add-axis-btn').onclick = openAddAxis;
+                if (!blocks?.length) { container.innerHTML = '<div class="empty-state">Нет блоков</div>'; return; }
+                
+                const { data: axes } = await supabase.from('axes').select('*').in('block_id', blocks.map(b => b.id)).order('name');
+                if (!axes?.length) { container.innerHTML = '<div class="info-card"><p>Нет осей. <button class="btn-small btn-add" onclick="openAddAxis()">Добавить ось</button></p></div>'; return; }
+                
+                let html = '';
+                for (const axis of axes) {
+                    const { data: subAxes } = await supabase.from('sub_axes').select('*, brigades(name, foreman_name)').eq('axis_id', axis.id).order('name');
+                    html += `<div class="axis-card">
+                        <div class="axis-header">
+                            <span class="axis-name">🔵 Ось ${axis.name}</span>
+                            <div>
+                                <button class="btn-secondary" onclick="openAxisActions('${axis.id}')" style="font-size:14px">⋯</button>
+                                <button class="btn-small btn-add" onclick="openAddSubAxis('${axis.id}')">+ Подось</button>
+                            </div>
+                        </div>
+                        <div class="axis-dates">📅 ${axis.plan_start || '—'} — ${axis.plan_end || '—'}</div>
+                        ${subAxes?.length ? subAxes.map(sa => `
+                            <div class="subaxis-item">
+                                <div class="subaxis-header">
+                                    <span class="subaxis-name">Подось ${sa.name}</span>
+                                    <div>
+                                        <span class="subaxis-brigade">👷 ${sa.brigades?.name || 'Не назначена'}</span>
+                                        <button class="btn-secondary" onclick="openSubAxisActions('${sa.id}')" style="font-size:12px;margin-left:8px">⋯</button>
+                                    </div>
+                                </div>
+                                <div class="subaxis-meta">Объём: ${sa.volume || 0} ${sa.unit || 'м²'} | ${sa.price_per_unit || 0} ₸/${sa.unit || 'м²'} | Сумма: ${sa.total_cost?.toLocaleString() || 0} ₸</div>
+                                <div class="subaxis-meta">📅 ${sa.plan_start || '—'} — ${sa.plan_end || '—'}</div>
+                                <div class="subaxis-progress"><div class="subaxis-progress-bar"><div class="subaxis-progress-fill" style="width:${sa.progress || 0}%"></div></div><span style="font-size:12px">${sa.progress || 0}%</span></div>
+                            </div>
+                        `).join('') : '<p style="color:#64748B;font-size:13px;padding:8px 0">Нет подосей</p>'}
+                    </div>`;
+                }
+                html += `<button class="btn-add" onclick="openAddAxis()" style="margin-top:10px">+ Добавить ось</button>`;
+                container.innerHTML = html;
             }
 
-            function openAddAxis() {
-                const modal = document.getElementById('edit-modal');
-                document.getElementById('edit-modal-title').textContent = '➕ Добавить ось';
-                document.getElementById('edit-modal-content').innerHTML = `<div class="form-group"><label>Название оси</label><input type="text" id="new-axis-name" placeholder="Например: Ось 1-10"></div>`;
-                document.getElementById('save-edit-btn').onclick = async () => {
-                    const name = document.getElementById('new-axis-name').value;
-                    if (!name) return;
-                    const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
-                    if (blocks?.length) await supabase.from('axes').insert({ block_id: blocks[0].id, name });
-                    modal.classList.add('hidden'); loadAxes();
-                };
-                modal.classList.remove('hidden');
-            }
-
-            window.deleteAxis = async (id) => { await supabase.from('axes').delete().eq('id', id); loadAxes(); };
-
-            // ========== СТАТУС ==========
-            window.updateStatus = async function() {
-                const status = document.getElementById('change-status').value;
-                await supabase.from('projects').update({ status }).eq('id', currentProjectId);
-                showDetail(currentProjectId); loadProjects();
+            // ========== МЕНЮ ДЕЙСТВИЙ ==========
+            window.openAxisActions = function(axisId) {
+                currentAxisId = axisId; currentSubAxisId = null;
+                showActionMenu([
+                    { label: '⏰ Изменить срок ГПР', action: () => openShiftForm('axis', axisId) },
+                    { label: '✉️ Написать письмо заказчику', action: () => openLetterForm('axis', axisId) },
+                    { label: '📝 Поставить задачу', action: () => openTaskForm('axis', axisId) },
+                    { label: '📜 История изменений', action: () => viewHistory('axis', axisId) },
+                    { label: '🗑️ Удалить ось', action: () => deleteAxis(axisId), danger: true },
+                ]);
             };
 
-            // ========== ПРОГРЕСС (заглушка) ==========
-            function loadProgressTab() {
-                document.getElementById('progress-content').innerHTML = '<p style="color:#64748B">Загрузка прогресса... (будет доработано в следующем этапе)</p>';
+            window.openSubAxisActions = function(subAxisId) {
+                currentSubAxisId = subAxisId;
+                showActionMenu([
+                    { label: '⏰ Изменить срок ГПР', action: () => openShiftForm('subaxis', subAxisId) },
+                    { label: '📋 Сдать Наряд', action: () => openWorkOrderForm(subAxisId) },
+                    { label: '👷 Заменить бригаду', action: () => openChangeBrigadeForm(subAxisId) },
+                    { label: '✉️ Написать письмо заказчику', action: () => openLetterForm('subaxis', subAxisId) },
+                    { label: '💰 Подать на Аванс', action: () => openAdvanceForm(subAxisId) },
+                    { label: '📜 История изменений', action: () => viewHistory('subaxis', subAxisId) },
+                ]);
+            };
+
+            function showActionMenu(items) {
+                const menu = document.getElementById('action-menu');
+                const overlay = document.getElementById('action-overlay');
+                menu.innerHTML = items.map(i => `<div class="action-item${i.danger ? ' danger' : ''}" onclick="(${i.action.toString()})()">${i.label}</div>`).join('');
+                overlay.classList.remove('hidden');
+                menu.classList.remove('hidden');
             }
+
+            function closeActionMenu() {
+                document.getElementById('action-menu').classList.add('hidden');
+                document.getElementById('action-overlay').classList.add('hidden');
+            }
+
+            // ========== ФОРМЫ ==========
+            function openFormModal(title, content, onSave) {
+                document.getElementById('form-modal-title').textContent = title;
+                document.getElementById('form-modal-content').innerHTML = content;
+                document.getElementById('form-modal').classList.remove('hidden');
+                // Добавляем кнопку сохранения
+                const saveBtn = document.createElement('button');
+                saveBtn.className = 'btn-primary';
+                saveBtn.textContent = 'Сохранить';
+                saveBtn.onclick = async () => { await onSave(); document.getElementById('form-modal').classList.add('hidden'); };
+                document.getElementById('form-modal-content').appendChild(saveBtn);
+            }
+
+            // --- СДВИГ ГПР ---
+            window.openShiftForm = async function(type, id) {
+                closeActionMenu();
+                const entity = type === 'axis' ? 
+                    await supabase.from('axes').select('*').eq('id', id).single() :
+                    await supabase.from('sub_axes').select('*, axes(name)').eq('id', id).single();
+                if (!entity.data) return;
+                const e = entity.data;
+                const title = type === 'axis' ? `⏰ Сдвиг ГПР — Ось ${e.name}` : `⏰ Сдвиг ГПР — Подось ${e.name} (Ось ${e.axes?.name})`;
+                
+                openFormModal(title, `
+                    <div class="form-group"><label>Текущая дата окончания</label><input value="${e.plan_end || ''}" disabled></div>
+                    <div class="form-group"><label>Новая дата окончания *</label><input type="date" id="shift-new-date" value="${e.plan_end || ''}"></div>
+                    <div class="form-group"><label>Причина *</label><select id="shift-reason"><option value="customer">По вине Заказчика</option><option value="lamgroup">По вине LamGroup</option><option value="contractor">По вине Монтажника</option></select></div>
+                    <div class="form-group"><label>Описание задержки</label><textarea id="shift-desc" rows="3"></textarea></div>
+                `, async () => {
+                    const newDate = document.getElementById('shift-new-date').value;
+                    const reason = document.getElementById('shift-reason').value;
+                    const desc = document.getElementById('shift-desc').value;
+                    const table = type === 'axis' ? 'axes' : 'sub_axes';
+                    await supabase.from(table).update({ plan_end: newDate, updated_at: new Date() }).eq('id', id);
+                    await supabase.from('axes_history').insert({ axis_id: type === 'axis' ? id : null, sub_axis_id: type === 'subaxis' ? id : null, action: 'shift', new_value: { plan_end: newDate, reason }, comment: desc, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
+                    
+                    // Если заказчик — создаём письмо
+                    if (reason === 'customer') {
+                        const { data: letter } = await supabase.from('letters').insert({
+                            project_id: currentProjectId,
+                            axis_id: type === 'axis' ? id : e.axis_id || null,
+                            sub_axis_id: type === 'subaxis' ? id : null,
+                            delay_reason: 'customer',
+                            delay_description: desc,
+                            new_end_date: newDate,
+                            status: 'draft',
+                            created_by: currentUser?.id,
+                            created_by_name: currentUser?.full_name
+                        }).select('id').single();
+                        
+                        if (letter) {
+                            await supabase.from('tasks').insert({
+                                project_id: currentProjectId,
+                                type: 'letter',
+                                title: `Письмо заказчику: сдвиг сроков`,
+                                description: desc,
+                                status: 'pending',
+                                priority: 'high',
+                                created_by: currentUser?.id,
+                                responsible_ids: currentRole === 'manager' ? [currentUser?.id] : []
+                            });
+                            alert('✅ Срок сдвинут. Письмо заказчику создано и отправлено в задачи.');
+                        }
+                    } else {
+                        alert('✅ Срок ГПР изменён');
+                    }
+                    loadProgressTab();
+                });
+            };
+
+            // --- СДАТЬ НАРЯД ---
+            window.openWorkOrderForm = async function(subAxisId) {
+                closeActionMenu();
+                const { data: sa } = await supabase.from('sub_axes').select('*, brigades(name, foreman_name)').eq('id', subAxisId).single();
+                if (!sa) return;
+                
+                openFormModal(`📋 Сдать Наряд — ${sa.brigades?.name || 'Бригада'}`, `
+                    <div class="form-group"><label>Бригада</label><input value="${sa.brigades?.name || ''}" disabled></div>
+                    <div class="form-group"><label>Ось</label><input value="${sa.name}" disabled></div>
+                    <div class="row-2"><div class="form-group"><label>Проектная м²</label><input value="${sa.volume || 0}" disabled></div><div class="form-group"><label>Фактическая м² *</label><input type="number" id="narad-fact" step="0.01"></div></div>
+                    <div class="row-2"><div class="form-group"><label>Цена за работу</label><input type="number" id="narad-price" value="${sa.price_per_unit || 0}" step="0.01"></div><div class="form-group"><label>Сумма</label><input id="narad-sum" disabled></div></div>
+                    <div class="row-2"><div class="form-group"><label>Сумма авансов</label><input type="number" id="narad-advance" step="0.01"></div><div class="form-group"><label>Предыдущие наряды</label><input type="number" id="narad-prev" step="0.01"></div></div>
+                    <div class="form-group"><label>Ответственный (Махабат)</label><select id="narad-responsible"></select></div>
+                    <div class="form-group"><label>📎 Счет на оплату</label><input type="file" id="narad-bill" accept=".pdf,.jpg,.png"></div>
+                    <div class="form-group"><label>📎 АВР</label><input type="file" id="narad-avr" accept=".pdf,.jpg,.png"></div>
+                    <div class="form-group"><label>📎 Счет-фактура</label><input type="file" id="narad-sf" accept=".pdf,.jpg,.png"></div>
+                    <div class="form-group"><label><input type="checkbox" id="narad-confirm"> Подтверждаю корректность данных</label></div>
+                `, async () => {
+                    if (!document.getElementById('narad-confirm').checked) { alert('Подтвердите данные'); return; }
+                    const fact = parseFloat(document.getElementById('narad-fact').value) || 0;
+                    const price = parseFloat(document.getElementById('narad-price').value) || 0;
+                    
+                    // Загружаем файлы
+                    const files = {};
+                    for (const id of ['narad-bill', 'narad-avr', 'narad-sf']) {
+                        const input = document.getElementById(id);
+                        if (input?.files[0]) {
+                            const file = input.files[0];
+                            const fileName = `orders/${currentProjectId}/${subAxisId}/${Date.now()}_${file.name}`;
+                            const { error } = await supabase.storage.from('reports').upload(fileName, file);
+                            if (!error) {
+                                const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+                                files[id.replace('narad-', '')] = urlData.publicUrl;
+                            }
+                        }
+                    }
+                    
+                    const { data: order } = await supabase.from('work_orders').insert({
+                        project_id: currentProjectId,
+                        sub_axis_id: subAxisId,
+                        axis_name: sa.name,
+                        brigade_id: sa.brigade_id,
+                        work_type: 'Работы по подоси',
+                        volume: sa.volume,
+                        actual_volume: fact,
+                        price: price,
+                        total_amount: fact * price,
+                        advance_amount: parseFloat(document.getElementById('narad-advance').value) || 0,
+                        previous_amount: parseFloat(document.getElementById('narad-prev').value) || 0,
+                        attachments: JSON.stringify(files),
+                        created_by: currentUser?.id,
+                        status: 'pending_foreman'
+                    }).select('id').single();
+                    
+                    // Задача
+                    await supabase.from('tasks').insert({
+                        project_id: currentProjectId,
+                        type: 'order',
+                        title: `Наряд: ${sa.brigades?.name} — ${sa.name}`,
+                        description: `Сумма: ${(fact * price).toLocaleString()} ₸`,
+                        status: 'pending',
+                        priority: 'high',
+                        created_by: currentUser?.id
+                    });
+                    
+                    alert('✅ Наряд сформирован и отправлен в задачи');
+                    loadProgressTab();
+                });
+            };
+
+            // --- ЗАМЕНИТЬ БРИГАДУ ---
+            window.openChangeBrigadeForm = async function(subAxisId) {
+                closeActionMenu();
+                const { data: sa } = await supabase.from('sub_axes').select('*, brigades(name)').eq('id', subAxisId).single();
+                if (!sa) return;
+                
+                openFormModal('👷 Заменить бригаду', `
+                    <div class="form-group"><label>Текущая бригада</label><input value="${sa.brigades?.name || 'Не назначена'}" disabled></div>
+                    <div class="form-group"><label>Новая бригада *</label><select id="change-brigade">${allBrigades.map(b => `<option value="${b.id}">${b.name} (${b.foreman_name || ''})</option>`).join('')}</select></div>
+                    <div class="form-group"><label>Выполнено</label><input value="${sa.progress || 0}% (${(sa.volume * (sa.progress || 0) / 100).toFixed(1)} из ${sa.volume} ${sa.unit})" disabled></div>
+                    <div class="form-group"><label>Дата начала новой бригады *</label><input type="date" id="change-brigade-date"></div>
+                    <div class="form-group"><label>Комментарий</label><textarea id="change-brigade-comment" rows="2"></textarea></div>
+                `, async () => {
+                    const newBrigadeId = document.getElementById('change-brigade').value;
+                    await supabase.from('sub_axes').update({ brigade_id: newBrigadeId, updated_at: new Date() }).eq('id', subAxisId);
+                    await supabase.from('axes_history').insert({ sub_axis_id: subAxisId, action: 'change_brigade', old_value: { brigade_id: sa.brigade_id }, new_value: { brigade_id: newBrigadeId }, comment: document.getElementById('change-brigade-comment').value, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
+                    alert('✅ Бригада заменена');
+                    loadProgressTab();
+                });
+            };
+
+            // --- ПИСЬМО ЗАКАЗЧИКУ ---
+            window.openLetterForm = async function(type, id) {
+                closeActionMenu();
+                const entity = type === 'axis' ? 
+                    await supabase.from('axes').select('*').eq('id', id).single() :
+                    await supabase.from('sub_axes').select('*, axes(name), brigades(name)').eq('id', id).single();
+                if (!entity.data) return;
+                const e = entity.data;
+                
+                openFormModal('✉️ Письмо заказчику', `
+                    <div class="form-group"><label>Ось</label><input value="${type === 'axis' ? e.name : `${e.axes?.name} → ${e.name}`}" disabled></div>
+                    <div class="form-group"><label>Бригада</label><input value="${e.brigades?.name || '—'}" disabled></div>
+                    <div class="form-group"><label>Причина задержки</label><textarea id="letter-reason" rows="3"></textarea></div>
+                    <div class="form-group"><label>Срок сдвига ГПР (дней) *</label><input type="number" id="letter-days" value="1" min="1"></div>
+                    <p style="color:#64748B;font-size:13px;margin:12px 0">📧 Письмо будет отправлено офис-менеджеру и появится в задачах. ГПР автоматически сдвинется.</p>
+                `, async () => {
+                    const days = parseInt(document.getElementById('letter-days').value) || 0;
+                    const reason = document.getElementById('letter-reason').value;
+                    const currentEnd = type === 'axis' ? e.plan_end : e.plan_end;
+                    const newEnd = currentEnd ? new Date(currentEnd) : new Date();
+                    newEnd.setDate(newEnd.getDate() + days);
+                    
+                    await supabase.from('letters').insert({
+                        project_id: currentProjectId,
+                        axis_id: type === 'axis' ? id : e.axis_id || null,
+                        sub_axis_id: type === 'subaxis' ? id : null,
+                        delay_reason: 'customer',
+                        delay_description: reason,
+                        delay_days: days,
+                        new_end_date: newEnd.toISOString().split('T')[0],
+                        status: 'sent_to_office',
+                        sent_to_office: true,
+                        created_by: currentUser?.id,
+                        created_by_name: currentUser?.full_name
+                    });
+                    
+                    const table = type === 'axis' ? 'axes' : 'sub_axes';
+                    await supabase.from(table).update({ plan_end: newEnd.toISOString().split('T')[0] }).eq('id', id);
+                    
+                    await supabase.from('tasks').insert({
+                        project_id: currentProjectId,
+                        type: 'letter',
+                        title: `Письмо заказчику: сдвиг +${days} дн.`,
+                        description: reason,
+                        status: 'pending',
+                        priority: 'high',
+                        created_by: currentUser?.id
+                    });
+                    
+                    alert('✅ Письмо отправлено офис-менеджеру. ГПР сдвинут.');
+                    loadProgressTab();
+                });
+            };
+
+            // --- ПОДАТЬ НА АВАНС ---
+            window.openAdvanceForm = async function(subAxisId) {
+                closeActionMenu();
+                const { data: sa } = await supabase.from('sub_axes').select('*, brigades(name)').eq('id', subAxisId).single();
+                if (!sa) return;
+                
+                // Предыдущие выплаты
+                const { data: prevAdvances } = await supabase.from('advances').select('*').eq('sub_axis_id', subAxisId);
+                const { data: prevOrders } = await supabase.from('work_orders').select('*').eq('sub_axis_id', subAxisId);
+                const totalPaid = (prevAdvances || []).reduce((s, a) => s + (a.amount || 0), 0) + (prevOrders || []).reduce((s, o) => s + (o.total_amount || 0), 0);
+                const remaining = (sa.total_cost || 0) - totalPaid;
+                
+                openFormModal('💰 Подать на Аванс', `
+                    <div class="form-group"><label>Бригада</label><input value="${sa.brigades?.name || ''}" disabled></div>
+                    <div class="form-group"><label>Ось</label><input value="${sa.name}" disabled></div>
+                    <div class="form-group"><label>История выплат</label><p>Всего выплачено: ${totalPaid.toLocaleString()} ₸</p></div>
+                    <div class="form-group"><label>Общая сумма договора</label><input value="${(sa.total_cost || 0).toLocaleString()} ₸" disabled></div>
+                    <div class="form-group"><label>Остаток к выплате</label><input value="${remaining.toLocaleString()} ₸" disabled></div>
+                    <div class="form-group"><label>Сумма запроса *</label><input type="number" id="advance-amount" step="0.01" max="${remaining}"></div>
+                    <div class="form-group"><label>📎 Счет на оплату</label><input type="file" id="advance-bill" accept=".pdf,.jpg,.png"></div>
+                    <div class="form-group"><label>📎 АВР</label><input type="file" id="advance-avr" accept=".pdf,.jpg,.png"></div>
+                    <div class="form-group"><label>📎 Счет-фактура</label><input type="file" id="advance-sf" accept=".pdf,.jpg,.png"></div>
+                    <div class="form-group"><label><input type="checkbox" id="advance-confirm"> Подтверждаю корректность данных</label></div>
+                `, async () => {
+                    if (!document.getElementById('advance-confirm').checked) { alert('Подтвердите данные'); return; }
+                    const amount = parseFloat(document.getElementById('advance-amount').value) || 0;
+                    if (amount <= 0 || amount > remaining) { alert('Некорректная сумма'); return; }
+                    
+                    // Загружаем файлы
+                    const files = {};
+                    for (const id of ['advance-bill', 'advance-avr', 'advance-sf']) {
+                        const input = document.getElementById(id);
+                        if (input?.files[0]) {
+                            const file = input.files[0];
+                            const fileName = `advances/${currentProjectId}/${subAxisId}/${Date.now()}_${file.name}`;
+                            const { error } = await supabase.storage.from('reports').upload(fileName, file);
+                            if (!error) {
+                                const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+                                files[id.replace('advance-', '')] = urlData.publicUrl;
+                            }
+                        }
+                    }
+                    
+                    await supabase.from('advances').insert({
+                        project_id: currentProjectId,
+                        sub_axis_id: subAxisId,
+                        brigade_id: sa.brigade_id,
+                        amount,
+                        previous_payments: totalPaid,
+                        total_contract: sa.total_cost || 0,
+                        remaining: remaining - amount,
+                        attachments: JSON.stringify(files),
+                        created_by: currentUser?.id,
+                        created_by_name: currentUser?.full_name,
+                        status: 'pending'
+                    });
+                    
+                    await supabase.from('payment_plan').insert({
+                        project_id: currentProjectId,
+                        brigade_id: sa.brigade_id,
+                        type: 'advance',
+                        amount,
+                        status: 'pending'
+                    });
+                    
+                    alert('✅ Аванс сформирован и отправлен в план оплат');
+                    loadProgressTab();
+                });
+            };
+
+            // --- ДОБАВИТЬ ОСЬ / ПОДОСЬ ---
+            window.openAddAxis = function() {
+                document.getElementById('edit-modal-title').textContent = '➕ Добавить ось';
+                document.getElementById('edit-modal-content').innerHTML = `<div class="form-group"><label>Название оси</label><input type="text" id="new-axis-name"><div class="form-group"><label>Дата начала</label><input type="date" id="new-axis-start"><div class="form-group"><label>Дата окончания</label><input type="date" id="new-axis-end">`;
+                document.getElementById('save-edit-btn').onclick = async () => {
+                    const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
+                    if (blocks?.length) {
+                        await supabase.from('axes').insert({ block_id: blocks[0].id, name: document.getElementById('new-axis-name').value, plan_start: document.getElementById('new-axis-start').value, plan_end: document.getElementById('new-axis-end').value });
+                    }
+                    document.getElementById('edit-modal').classList.add('hidden'); loadProgressTab();
+                };
+                document.getElementById('edit-modal').classList.remove('hidden');
+            };
+
+            window.openAddSubAxis = function(axisId) {
+                document.getElementById('edit-modal-title').textContent = '➕ Добавить подось';
+                document.getElementById('edit-modal-content').innerHTML = `
+                    <div class="form-group"><label>Название подоси</label><input type="text" id="new-sa-name" placeholder="1-4">
+                    <div class="form-group"><label>Бригада</label><select id="new-sa-brigade">${allBrigades.map(b => `<option value="${b.id}">${b.name}</option>`).join('')}</select>
+                    <div class="row-2"><div class="form-group"><label>Начало</label><input type="date" id="new-sa-start"><div class="form-group"><label>Окончание</label><input type="date" id="new-sa-end"></div></div>
+                    <div class="row-2"><div class="form-group"><label>Объём</label><input type="number" id="new-sa-volume" step="0.01"><div class="form-group"><label>Ед.изм</label><select id="new-sa-unit"><option value="м²">м²</option><option value="п.м.">п.м.</option></select></div></div>
+                    <div class="form-group"><label>Цена за единицу</label><input type="number" id="new-sa-price" step="0.01">
+                </div>`;
+                document.getElementById('save-edit-btn').onclick = async () => {
+                    const vol = parseFloat(document.getElementById('new-sa-volume').value) || 0;
+                    const price = parseFloat(document.getElementById('new-sa-price').value) || 0;
+                    await supabase.from('sub_axes').insert({
+                        axis_id: axisId,
+                        name: document.getElementById('new-sa-name').value,
+                        brigade_id: document.getElementById('new-sa-brigade').value,
+                        plan_start: document.getElementById('new-sa-start').value,
+                        plan_end: document.getElementById('new-sa-end').value,
+                        volume: vol,
+                        unit: document.getElementById('new-sa-unit').value,
+                        price_per_unit: price,
+                        total_cost: vol * price,
+                        created_by: currentUser?.id
+                    });
+                    document.getElementById('edit-modal').classList.add('hidden'); loadProgressTab();
+                };
+                document.getElementById('edit-modal').classList.remove('hidden');
+            };
+
+            // --- ИСТОРИЯ ---
+            window.viewHistory = async function(type, id) {
+                closeActionMenu();
+                const { data } = await supabase.from('axes_history').select('*').or(`${type === 'axis' ? 'axis_id' : 'sub_axis_id'}.eq.${id}`).order('changed_at', { ascending: false });
+                document.getElementById('form-modal-title').textContent = '📜 История изменений';
+                document.getElementById('form-modal-content').innerHTML = data?.length ? data.map(h => `<div class="gpr-item"><strong>${h.action}</strong><br><small>${h.comment || ''}</small><br><small>${h.changed_by_name} · ${new Date(h.changed_at).toLocaleString('ru-RU')}</small></div>`).join('') : '<p>Нет изменений</p>';
+                document.getElementById('form-modal').classList.remove('hidden');
+            };
+
+            // --- УДАЛИТЬ ОСЬ ---
+            window.deleteAxis = async function(axisId) {
+                closeActionMenu();
+                if (confirm('Удалить ось и все подоси?')) {
+                    await supabase.from('axes').delete().eq('id', axisId);
+                    loadProgressTab();
+                }
+            };
 
             function escapeHtml(text) { if (!text) return ''; return String(text).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' })[c] || c); }
 
