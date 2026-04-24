@@ -6,6 +6,8 @@
     <title>Объекты | LamGroup</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,17 +15,14 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', -apple-system, sans-serif; background: #F8FAFC; padding: 16px; min-height: 100vh; -webkit-font-smoothing: antialiased; }
         .container { max-width: 600px; margin: 0 auto; }
-
         .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 10px; }
         h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; }
         .logo-badge { background: linear-gradient(135deg, #F59E0B, #F97316); color: white; padding: 6px 14px; border-radius: 40px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2); }
         .role-badge { background: #E2E8F0; color: #0F172A; padding: 8px 16px; border-radius: 40px; font-size: 13px; font-weight: 600; }
-
         .filter-bar { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
         .filter-bar::-webkit-scrollbar { display: none; }
         .filter-btn { padding: 10px 18px; border-radius: 40px; font-size: 14px; font-weight: 600; border: 1.5px solid #E2E8F0; background: white; color: #64748B; cursor: pointer; white-space: nowrap; transition: all 0.2s ease; }
         .filter-btn.active { background: #0F172A; color: white; border-color: #0F172A; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15); }
-
         .objects-grid { display: flex; flex-direction: column; gap: 16px; }
         .object-card { background: white; border-radius: 24px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.25s ease; border: 1px solid #F1F5F9; position: relative; overflow: hidden; }
         .object-card:active { transform: scale(0.99); }
@@ -39,7 +38,6 @@
         .tab { padding: 10px 14px; background: none; border: none; font-weight: 600; color: #64748B; cursor: pointer; white-space: nowrap; font-size: 13px; } .tab.active { color: #0F172A; border-bottom: 3px solid #F59E0B; }
         .scroll-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; background: white; border: 1px solid #E2E8F0; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 10; font-size: 14px; } .scroll-arrow.left { left: -14px; } .scroll-arrow.right { right: -14px; } .scroll-arrow.hidden { display: none; }
         .tab-content { display: none; } .tab-content.active { display: block; animation: fadeIn 0.3s ease; } @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
         .info-card { background: white; border-radius: 24px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #F1F5F9; }
         .form-group { margin-bottom: 16px; } label { font-weight: 600; color: #475569; font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 6px; }
         input, select, textarea { width: 100%; padding: 14px 16px; border: 1.5px solid #E2E8F0; border-radius: 16px; font-size: 15px; background: white; font-family: 'Inter', sans-serif; }
@@ -49,73 +47,53 @@
         .btn-danger { background: #FEF2F2; color: #DC2626; padding: 8px 14px; border-radius: 14px; font-weight: 600; border: 1.5px solid #FECACA; cursor: pointer; font-size: 13px; }
         .btn-small { padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
         .btn-edit { background: #FEF3C7; color: #92400E; } .btn-delete { background: #FEE2E2; color: #991B1B; } .btn-add { background: #DBEAFE; color: #1E40AF; }
-
-        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .btn-pdf { background: #F3E8FF; color: #6B21A8; padding: 8px 14px; border-radius: 12px; font-weight: 600; border: 1px solid #D8B4FE; cursor: pointer; font-size: 13px; }
+        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
         .hidden { display: none !important; }
         .loading { text-align: center; padding: 60px 20px; color: #64748B; }
         .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 24px; color: #64748B; }
         .message { padding: 16px; border-radius: 16px; margin: 16px 0; display: none; font-weight: 500; }
         .message.success { background: #D1FAE5; color: #065F46; display: block; border: 1.5px solid #A7F3D0; } .message.error { background: #FEE2E2; color: #991B1B; display: block; border: 1.5px solid #FECACA; } .message.info { background: #DBEAFE; color: #1E40AF; display: block; border: 1.5px solid #BFDBFE; }
         .gpr-item { background: white; border-radius: 20px; padding: 18px; margin-bottom: 12px; border: 1.5px solid #F1F5F9; }
-
-        /* Progress Axis Card */
         .axis-card { background: white; border-radius: 20px; padding: 16px; margin-bottom: 16px; border: 1.5px solid #E2E8F0; }
         .axis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .axis-name { font-weight: 700; color: #0F172A; font-size: 16px; }
         .axis-dates { font-size: 13px; color: #64748B; margin-bottom: 12px; }
-        .subaxis-item { background: #F8FAFC; border-radius: 14px; padding: 14px; margin: 10px 0; border: 1px solid #E2E8F0; }
-        .subaxis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .subaxis-name { font-weight: 600; color: #0F172A; }
-        .subaxis-brigade { font-size: 13px; color: #64748B; }
-        .subaxis-progress { margin-top: 8px; }
-        .subaxis-progress-bar { height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden; }
-        .subaxis-progress-fill { height: 100%; background: #10B981; border-radius: 3px; }
-        .subaxis-meta { display: flex; justify-content: space-between; font-size: 12px; color: #64748B; margin-top: 6px; }
-
-        /* Action Menu */
-        .action-menu { background: white; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); padding: 8px 0; }
-        .action-item { padding: 14px 20px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; transition: background 0.2s; }
-        .action-item:hover { background: #F8FAFC; }
-        .action-item.danger { color: #DC2626; }
-
-        /* Modal */
+        .brigade-section { background: #F8FAFC; border-radius: 16px; padding: 16px; margin: 12px 0; border: 1px solid #E2E8F0; }
+        .brigade-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .brigade-name { font-weight: 600; color: #0F172A; }
+        .work-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+        .work-table th { text-align: left; padding: 8px; background: #F1F5F9; color: #475569; font-weight: 600; font-size: 11px; }
+        .work-table td { padding: 8px; border-bottom: 1px solid #F1F5F9; }
+        .work-table .text-right { text-align: right; }
+        .progress-input { width: 60px; padding: 6px 8px; border-radius: 8px; border: 1px solid #E2E8F0; text-align: center; font-size: 13px; }
+        .status-badge-sm { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .status-in_progress-sm { background: #D1FAE5; color: #065F46; } .status-pending-sm { background: #FEF3C7; color: #92400E; } .status-completed-sm { background: #E2E8F0; color: #475569; } .status-delayed-sm { background: #FEE2E2; color: #991B1B; }
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; }
         .modal.hidden { display: none !important; }
         .modal-content { background: white; border-radius: 28px; padding: 24px; max-width: 500px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .modal-title { font-size: 22px; font-weight: 800; color: #0F172A; }
         .close-btn { background: #F1F5F9; border: none; width: 40px; height: 40px; border-radius: 40px; font-size: 20px; cursor: pointer; color: #64748B; display: flex; align-items: center; justify-content: center; }
-        .stage-item { display: flex; align-items: center; gap: 10px; padding: 12px; background: #F8FAFC; border-radius: 14px; margin-bottom: 10px; }
-        .stage-name { flex: 1; font-weight: 500; font-size: 14px; }
-        .axis-item { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
-        .axis-item input { flex: 1; }
         .action-menu-modal { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 24px 24px 0 0; padding: 20px; z-index: 10000; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); animation: slideUp 0.3s ease; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .action-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 9999; }
-        .file-upload-area { border: 2px dashed #CBD5E1; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; margin: 10px 0; transition: all 0.2s; }
-        .file-upload-area:hover { border-color: #F59E0B; background: #FFFBEB; }
+        .action-item { padding: 14px 20px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; transition: background 0.2s; }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- LIST VIEW -->
         <div id="list-view">
             <div class="app-header"><h1>LamGroup <span class="logo-badge">Construction</span></h1><span class="role-badge" id="role-badge"></span></div>
             <div class="filter-bar">
-                <button class="filter-btn active" data-filter="all">Все</button>
-                <button class="filter-btn" data-filter="my">Мои</button>
-                <button class="filter-btn" data-filter="preparation">Подготовка</button>
-                <button class="filter-btn" data-filter="in_progress">В работе</button>
-                <button class="filter-btn" data-filter="completed">Завершён</button>
+                <button class="filter-btn active" data-filter="all">Все</button><button class="filter-btn" data-filter="my">Мои</button>
+                <button class="filter-btn" data-filter="preparation">Подготовка</button><button class="filter-btn" data-filter="in_progress">В работе</button><button class="filter-btn" data-filter="completed">Завершён</button>
             </div>
             <div id="objects-container"><div class="loading">Загрузка объектов...</div></div>
         </div>
-
-        <!-- DETAIL VIEW -->
         <div id="detail-view" class="hidden">
             <button class="back-btn" id="back-btn">← Назад</button>
             <div class="app-header"><h1 id="detail-name"></h1><span class="role-badge" id="detail-status-badge"></span></div>
-
             <div class="tabs-wrapper">
                 <div class="scroll-arrow left hidden" id="scroll-left">←</div>
                 <div class="tabs" id="tabs-container">
@@ -129,50 +107,34 @@
                 </div>
                 <div class="scroll-arrow right" id="scroll-right">→</div>
             </div>
-
-            <!-- ИНФО -->
             <div id="tab-info" class="tab-content active"><div class="info-card" id="detail-content"></div></div>
-
-            <!-- ПРОГРЕСС -->
             <div id="tab-progress" class="tab-content"><div id="progress-container"></div></div>
-
-            <!-- ОСТАЛЬНЫЕ ВКЛАДКИ -->
             <div id="tab-expenses" class="tab-content"><div class="info-card"><h3>💰 Расходы</h3><p>Загрузка...</p></div></div>
             <div id="tab-materials" class="tab-content"><div class="info-card"><h3>📦 Материалы</h3><p>Загрузка...</p></div></div>
             <div id="tab-checklist" class="tab-content"><div class="info-card"><h3>✅ Чек-лист</h3><p>Загрузка...</p></div></div>
             <div id="tab-issues" class="tab-content"><div class="info-card"><h3>⚠️ Проблемы</h3><p>Загрузка...</p></div></div>
             <div id="tab-report" class="tab-content"><div class="info-card"><h3>📑 Отчет</h3><p>Загрузка...</p></div></div>
         </div>
-
-        <!-- МОДАЛЬНОЕ ОКНО ДЕЙСТВИЙ -->
         <div id="action-overlay" class="action-overlay hidden"></div>
         <div id="action-menu" class="action-menu-modal hidden"></div>
-
-        <!-- МОДАЛЬНОЕ ОКНО ФОРМ -->
         <div id="form-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header"><span class="modal-title" id="form-modal-title">Форма</span><button class="close-btn" id="close-form-modal">&times;</button></div>
                 <div id="form-modal-content"></div>
             </div>
         </div>
-
-        <!-- МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ -->
         <div id="edit-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header"><span class="modal-title" id="edit-modal-title">Редактировать</span><button class="close-btn" id="close-edit-modal">&times;</button></div>
-                <div id="edit-modal-content"></div>
-                <button class="btn-primary" id="save-edit-btn">Сохранить</button>
+                <div id="edit-modal-content"></div><button class="btn-primary" id="save-edit-btn">Сохранить</button>
             </div>
         </div>
-
-        <!-- МОДАЛЬНОЕ ОКНО ПОЛНОЙ ИНФОРМАЦИИ -->
         <div id="full-info-modal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header"><span class="modal-title">📄 Полная информация</span><button class="close-btn" id="close-full-info-modal">&times;</button></div>
                 <div id="full-info-content"></div>
             </div>
         </div>
-
         <div id="message" class="message"></div>
     </div>
 
@@ -182,594 +144,243 @@
             const SUPABASE_URL = 'https://owagntywpiymqhbfoxye.supabase.co';
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YWdudHl3cGl5bXFoYmZveHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTg5MDUsImV4cCI6MjA5MTg5NDkwNX0.p-3xAhbFgH5lcGnbBfkcQQFVza_Yc2qoY6VBlhmmFGg';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            
-            let userId = tg.initDataUnsafe?.user?.id;
-            if (!userId) { alert('Ошибка авторизации'); return; }
-            let currentUser = null, currentRole = 'worker', currentProjectId = null, currentFilter = 'all', allProjects = [];
-            let currentAxisId = null, currentSubAxisId = null, allBrigades = [];
+            let userId = tg.initDataUnsafe?.user?.id; if (!userId) { alert('Ошибка авторизации'); return; }
+            let currentUser = null, currentRole = 'worker', currentProjectId = null, currentFilter = 'all', allProjects = [], allBrigades = [], allWorkStages = [];
+            let currentAxisId = null;
 
-            function showMessage(text, type) {
-                const msg = document.getElementById('message');
-                msg.textContent = text; msg.className = `message ${type}`;
-                setTimeout(() => msg.className = 'message', 3000);
-            }
+            function showMessage(text, type) { const msg = document.getElementById('message'); msg.textContent = text; msg.className = `message ${type}`; setTimeout(() => msg.className = 'message', 3000); }
+            function closeActionMenu() { document.getElementById('action-menu').classList.add('hidden'); document.getElementById('action-overlay').classList.add('hidden'); }
+            function escapeHtml(text) { if (!text) return ''; return String(text).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' })[c] || c); }
 
             async function init() {
-                await loadUser();
-                await loadBrigades();
-                await loadProjects();
-                setupFilters();
-                setupTabs();
-                setupTabsScroll();
-                setupModals();
+                await loadUser(); await loadBrigades(); await loadWorkStages(); await loadProjects();
+                setupFilters(); setupTabs(); setupTabsScroll(); setupModals();
             }
 
-            async function loadUser() {
-                const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
-                if (data) { currentUser = data; currentRole = data.role; }
-                document.getElementById('role-badge').textContent = currentRole === 'manager' ? 'Руководитель' : currentRole === 'worker' ? 'ИТР' : 'Монтажник';
-            }
+            async function loadUser() { const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single(); if (data) { currentUser = data; currentRole = data.role; } document.getElementById('role-badge').textContent = currentRole === 'manager' ? 'Руководитель' : currentRole === 'worker' ? 'ИТР' : 'Монтажник'; }
+            async function loadBrigades() { const { data } = await supabase.from('brigades').select('*').eq('status', 'active').order('name'); allBrigades = data || []; }
+            async function loadWorkStages() { const { data } = await supabase.from('work_stages').select('*').order('id'); allWorkStages = data || []; }
+            async function loadProjects() { let query = supabase.from('projects').select('*, users!projects_responsible_worker_id_fkey(full_name)').order('created_at', { ascending: false }); if (currentRole === 'worker') query = query.eq('responsible_worker_id', currentUser?.id); const { data } = await query; allProjects = data || []; renderProjects(); }
+            function renderProjects() { let filtered = allProjects; if (currentFilter === 'my') filtered = allProjects.filter(p => p.responsible_worker_id === currentUser?.id); else if (currentFilter !== 'all') filtered = allProjects.filter(p => p.status === currentFilter); const container = document.getElementById('objects-container'); if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">🏗️ Нет объектов</div>'; return; } let html = '<div class="objects-grid">'; filtered.forEach(p => { const st = { 'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация', 'in_progress': '🔨 В работе', 'completed': '✅ Завершён' }[p.status] || p.status; html += `<div class="object-card" data-id="${p.id}"><div class="object-header"><span class="object-name">${p.name}</span><span class="object-status status-${p.status}">${st}</span></div><div class="object-address">📍 ${p.address}</div><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div></div><div class="object-footer"><div>👤 ${p.users?.full_name || '—'}</div><div class="object-dates"><span class="date-badge">📅 ${p.start_date || '—'}</span></div></div></div>`; }); container.innerHTML = html + '</div>'; document.querySelectorAll('.object-card').forEach(c => c.addEventListener('click', () => showDetail(c.dataset.id))); }
+            function setupFilters() { document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentFilter = btn.dataset.filter; renderProjects(); })); }
+            function setupTabs() { document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { document.querySelectorAll('.tab').forEach(x => x.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active')); t.classList.add('active'); document.getElementById(`tab-${t.dataset.tab}`).classList.add('active'); if (t.dataset.tab === 'progress') loadProgressTab(); })); }
+            function setupTabsScroll() { const tabsContainer = document.getElementById('tabs-container'); const scrollLeft = document.getElementById('scroll-left'); const scrollRight = document.getElementById('scroll-right'); if (!tabsContainer) return; function updateArrows() { if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0); if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1); } if (scrollLeft) scrollLeft.addEventListener('click', () => tabsContainer.scrollBy({ left: -200, behavior: 'smooth' })); if (scrollRight) scrollRight.addEventListener('click', () => tabsContainer.scrollBy({ left: 200, behavior: 'smooth' })); tabsContainer.addEventListener('scroll', updateArrows); setTimeout(updateArrows, 200); }
+            function setupModals() { document.getElementById('close-form-modal').onclick = () => document.getElementById('form-modal').classList.add('hidden'); document.getElementById('close-edit-modal').onclick = () => document.getElementById('edit-modal').classList.add('hidden'); document.getElementById('close-full-info-modal').onclick = () => document.getElementById('full-info-modal').classList.add('hidden'); document.getElementById('action-overlay').onclick = closeActionMenu; }
 
-            async function loadBrigades() {
-                const { data } = await supabase.from('brigades').select('*').eq('status', 'active').order('name');
-                allBrigades = data || [];
-            }
-
-            async function loadProjects() {
-                let query = supabase.from('projects').select('*, users!projects_responsible_worker_id_fkey(full_name)').order('created_at', { ascending: false });
-                if (currentRole === 'worker') query = query.eq('responsible_worker_id', currentUser?.id);
-                const { data } = await query;
-                allProjects = data || [];
-                renderProjects();
-            }
-
-            function renderProjects() {
-                let filtered = allProjects;
-                if (currentFilter === 'my') filtered = allProjects.filter(p => p.responsible_worker_id === currentUser?.id);
-                else if (currentFilter !== 'all') filtered = allProjects.filter(p => p.status === currentFilter);
-                const container = document.getElementById('objects-container');
-                if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">🏗️ Нет объектов</div>'; return; }
-                let html = '<div class="objects-grid">';
-                filtered.forEach(p => {
-                    const st = { 'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация', 'in_progress': '🔨 В работе', 'completed': '✅ Завершён' }[p.status] || p.status;
-                    html += `<div class="object-card" data-id="${p.id}"><div class="object-header"><span class="object-name">${p.name}</span><span class="object-status status-${p.status}">${st}</span></div><div class="object-address">📍 ${p.address}</div><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div></div><div class="object-footer"><div>👤 ${p.users?.full_name || '—'}</div><div class="object-dates"><span class="date-badge">📅 ${p.start_date || '—'}</span></div></div></div>`;
-                });
-                container.innerHTML = html + '</div>';
-                document.querySelectorAll('.object-card').forEach(c => c.addEventListener('click', () => showDetail(c.dataset.id)));
-            }
-
-            function setupFilters() {
-                document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => {
-                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentFilter = btn.dataset.filter;
-                    renderProjects();
-                }));
-            }
-
-            function setupTabs() {
-                document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
-                    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-                    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
-                    t.classList.add('active');
-                    document.getElementById(`tab-${t.dataset.tab}`).classList.add('active');
-                    if (t.dataset.tab === 'progress') loadProgressTab();
-                }));
-            }
-
-            function setupTabsScroll() {
-                const tabsContainer = document.getElementById('tabs-container');
-                const scrollLeft = document.getElementById('scroll-left');
-                const scrollRight = document.getElementById('scroll-right');
-                if (!tabsContainer) return;
-                function updateArrows() {
-                    if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0);
-                    if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1);
-                }
-                if (scrollLeft) scrollLeft.addEventListener('click', () => tabsContainer.scrollBy({ left: -200, behavior: 'smooth' }));
-                if (scrollRight) scrollRight.addEventListener('click', () => tabsContainer.scrollBy({ left: 200, behavior: 'smooth' }));
-                tabsContainer.addEventListener('scroll', updateArrows);
-                setTimeout(updateArrows, 200);
-            }
-
-            function setupModals() {
-                document.getElementById('close-form-modal').onclick = () => document.getElementById('form-modal').classList.add('hidden');
-                document.getElementById('close-edit-modal').onclick = () => document.getElementById('edit-modal').classList.add('hidden');
-                document.getElementById('close-full-info-modal').onclick = () => document.getElementById('full-info-modal').classList.add('hidden');
-                document.getElementById('form-modal').onclick = (e) => { if (e.target === document.getElementById('form-modal')) document.getElementById('form-modal').classList.add('hidden'); };
-                document.getElementById('edit-modal').onclick = (e) => { if (e.target === document.getElementById('edit-modal')) document.getElementById('edit-modal').classList.add('hidden'); };
-                document.getElementById('full-info-modal').onclick = (e) => { if (e.target === document.getElementById('full-info-modal')) document.getElementById('full-info-modal').classList.add('hidden'); };
-                document.getElementById('action-overlay').onclick = closeActionMenu;
-            }
-
-            // ========== ДЕТАЛИ ОБЪЕКТА ==========
             async function showDetail(id) {
                 currentProjectId = id;
                 const { data: p } = await supabase.from('projects').select('*, users(full_name)').eq('id', id).single();
                 if (!p) return;
                 document.getElementById('detail-name').textContent = p.name;
-                const statusMap = { 'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация', 'in_progress': '🔨 В работе', 'completed': '✅ Завершён' };
-                document.getElementById('detail-status-badge').textContent = statusMap[p.status] || p.status;
-                
+                document.getElementById('detail-status-badge').textContent = { 'preparation':'📋 Подготовка','mobilization':'🚚 Мобилизация','in_progress':'🔨 В работе','completed':'✅ Завершён' }[p.status]||p.status;
                 document.getElementById('detail-content').innerHTML = `
-                    <p style="margin-bottom:10px"><strong>📍 Адрес:</strong> ${p.address} <button class="btn-small btn-edit" onclick="openEditField('address', '${escapeHtml(p.address)}')">✏️</button></p>
-                    <p style="margin-bottom:10px"><strong>💰 Цена договора:</strong> ${p.contract_price?.toLocaleString() || 0} ₸ <button class="btn-small btn-edit" onclick="openEditField('contract_price', '${p.contract_price || 0}')">✏️</button></p>
-                    <p style="margin-bottom:10px"><strong>📐 Проектная площадь:</strong> ${p.project_area || 0} м² <button class="btn-small btn-edit" onclick="openEditField('project_area', '${p.project_area || 0}')">✏️</button></p>
-                    <p style="margin-bottom:10px"><strong>📅 Начало:</strong> ${p.start_date || '—'} <button class="btn-small btn-edit" onclick="openEditField('start_date', '${p.start_date || ''}')">✏️</button></p>
-                    <p style="margin-bottom:10px"><strong>🏁 Окончание:</strong> ${p.end_date_contract || '—'} <button class="btn-small btn-edit" onclick="openEditField('end_date_contract', '${p.end_date_contract || ''}')">✏️</button></p>
-                    <p style="margin-bottom:10px"><strong>👤 ИТР:</strong> ${p.users?.full_name || '—'}</p>
-                    <p style="margin-bottom:10px"><strong>📋 Менеджер:</strong> ${p.manager_name || '—'} · ${p.manager_phone || '—'} <button class="btn-small btn-edit" onclick="openEditManager()">✏️</button></p>
-                    <p style="margin-bottom:10px"><strong>📊 Статус:</strong> <select id="change-status" style="display:inline;width:auto;padding:8px">${['preparation','mobilization','in_progress','completed','paused'].map(s => `<option value="${s}" ${p.status===s?'selected':''}>${statusMap[s]||s}</option>`).join('')}</select> <button class="btn-small btn-edit" onclick="updateStatus()">Обновить</button></p>
+                    <p style="margin-bottom:10px"><strong>📍 Адрес:</strong> ${p.address} <button class="btn-small btn-edit" onclick="openEditField('address','${escapeHtml(p.address)}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>💰 Цена договора:</strong> ${p.contract_price?.toLocaleString()||0} ₸ <button class="btn-small btn-edit" onclick="openEditField('contract_price','${p.contract_price||0}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>📐 Проектная площадь:</strong> ${p.project_area||0} м² <button class="btn-small btn-edit" onclick="openEditField('project_area','${p.project_area||0}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>📅 Начало:</strong> ${p.start_date||'—'} <button class="btn-small btn-edit" onclick="openEditField('start_date','${p.start_date||''}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>🏁 Окончание:</strong> ${p.end_date_contract||'—'} <button class="btn-small btn-edit" onclick="openEditField('end_date_contract','${p.end_date_contract||''}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>👤 ИТР:</strong> ${p.users?.full_name||'—'}</p>
+                    <p style="margin-bottom:10px"><strong>📋 Менеджер:</strong> ${p.manager_name||'—'} · ${p.manager_phone||'—'} <button class="btn-small btn-edit" onclick="openEditManager()">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>📊 Статус:</strong> <select id="change-status" style="display:inline;width:auto;padding:8px">${['preparation','mobilization','in_progress','completed','paused'].map(s=>`<option value="${s}" ${p.status===s?'selected':''}>${{'preparation':'📋 Подготовка','mobilization':'🚚 Мобилизация','in_progress':'🔨 В работе','completed':'✅ Завершён','paused':'⏸️ Пауза'}[s]||s}</option>`).join('')}</select> <button class="btn-small btn-edit" onclick="updateStatus()">Обновить</button></p>
                     <button class="btn-secondary" onclick="openFullInfo()" style="width:100%;margin:16px 0">📄 Полная информация</button>
                 `;
-
                 document.getElementById('back-btn').onclick = () => { document.getElementById('detail-view').classList.add('hidden'); document.getElementById('list-view').classList.remove('hidden'); loadProjects(); };
-                document.getElementById('list-view').classList.add('hidden');
-                document.getElementById('detail-view').classList.remove('hidden');
+                document.getElementById('list-view').classList.add('hidden'); document.getElementById('detail-view').classList.remove('hidden');
                 document.querySelector('[data-tab="info"]').click();
             }
 
             window.openEditField = function(field, value) {
                 document.getElementById('edit-modal-title').textContent = '✏️ Редактировать';
                 document.getElementById('edit-modal-content').innerHTML = `<div class="form-group"><label>${field}</label><input type="${field.includes('date')?'date':'text'}" id="edit-value" value="${value}"></div>`;
-                document.getElementById('save-edit-btn').onclick = async () => {
-                    const val = document.getElementById('edit-value').value;
-                    await supabase.from('projects').update({ [field]: field.includes('price')||field.includes('area') ? parseFloat(val)||0 : val }).eq('id', currentProjectId);
-                    document.getElementById('edit-modal').classList.add('hidden'); showDetail(currentProjectId);
-                };
+                document.getElementById('save-edit-btn').onclick = async () => { await supabase.from('projects').update({[field]: document.getElementById('edit-value').value}).eq('id',currentProjectId); document.getElementById('edit-modal').classList.add('hidden'); showDetail(currentProjectId); };
                 document.getElementById('edit-modal').classList.remove('hidden');
             };
-
             window.openEditManager = function() {
                 document.getElementById('edit-modal-title').textContent = '✏️ Менеджер';
-                document.getElementById('edit-modal-content').innerHTML = `<div class="form-group"><label>Имя</label><input type="text" id="edit-mgr-name"><div class="form-group"><label>Телефон</label><input type="tel" id="edit-mgr-phone">`;
-                document.getElementById('save-edit-btn').onclick = async () => {
-                    await supabase.from('projects').update({ manager_name: document.getElementById('edit-mgr-name').value, manager_phone: document.getElementById('edit-mgr-phone').value }).eq('id', currentProjectId);
-                    document.getElementById('edit-modal').classList.add('hidden'); showDetail(currentProjectId);
-                };
+                document.getElementById('edit-modal-content').innerHTML = `<div class="form-group"><label>Имя</label><input id="edit-mgr-name"><div class="form-group"><label>Телефон</label><input id="edit-mgr-phone">`;
+                document.getElementById('save-edit-btn').onclick = async () => { await supabase.from('projects').update({manager_name:document.getElementById('edit-mgr-name').value,manager_phone:document.getElementById('edit-mgr-phone').value}).eq('id',currentProjectId); document.getElementById('edit-modal').classList.add('hidden'); showDetail(currentProjectId); };
                 document.getElementById('edit-modal').classList.remove('hidden');
             };
-
-            window.updateStatus = async function() {
-                await supabase.from('projects').update({ status: document.getElementById('change-status').value }).eq('id', currentProjectId);
-                showDetail(currentProjectId); loadProjects();
-            };
-
+            window.updateStatus = async function() { await supabase.from('projects').update({status:document.getElementById('change-status').value}).eq('id',currentProjectId); showDetail(currentProjectId); loadProjects(); };
             window.openFullInfo = async function() {
-                const { data: p } = await supabase.from('projects').select('*, users(full_name)').eq('id', currentProjectId).single();
-                const { data: prices } = await supabase.from('customer_prices').select('*, work_stages(name)').eq('project_id', currentProjectId);
-                const { data: axes } = await supabase.from('axes').select('*').eq('block_id.project_id', currentProjectId);
-                document.getElementById('full-info-content').innerHTML = `<p><strong>🏗️ ${p.name}</strong></p><p>📍 ${p.address}</p><p>💰 ${p.contract_price?.toLocaleString()} ₸</p><p>📐 ${p.project_area} м²</p><p>📅 ${p.start_date} — ${p.end_date_contract}</p><p>👤 ${p.users?.full_name}</p><p>📋 ${p.manager_name} · ${p.manager_phone}</p><hr><h4>Расценки</h4>${prices?.length ? prices.map(pr => `<p>• ${pr.work_stages?.name}: ${pr.price} ₸/${pr.unit}</p>`).join('') : '<p>Нет</p>'}<hr><h4>Оси</h4>${axes?.length ? axes.map(a => `<p>• ${a.name}</p>`).join('') : '<p>Нет</p>'}`;
+                const { data: p } = await supabase.from('projects').select('*, users(full_name)').eq('id',currentProjectId).single();
+                document.getElementById('full-info-content').innerHTML = `<p><strong>🏗️ ${p.name}</strong></p><p>📍 ${p.address}</p><p>💰 ${p.contract_price?.toLocaleString()} ₸</p><p>📐 ${p.project_area} м²</p><p>📅 ${p.start_date} — ${p.end_date_contract}</p><p>👤 ${p.users?.full_name}</p><p>📋 ${p.manager_name} · ${p.manager_phone}</p>`;
                 document.getElementById('full-info-modal').classList.remove('hidden');
             };
 
-            // ========== ВКЛАДКА ПРОГРЕСС ==========
+            // ==================== ПРОГРЕСС ====================
             async function loadProgressTab() {
                 const container = document.getElementById('progress-container');
                 container.innerHTML = '<div class="loading">Загрузка осей...</div>';
-                
                 const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
                 if (!blocks?.length) { container.innerHTML = '<div class="empty-state">Нет блоков</div>'; return; }
-                
                 const { data: axes } = await supabase.from('axes').select('*').in('block_id', blocks.map(b => b.id)).order('name');
-                if (!axes?.length) { container.innerHTML = '<div class="info-card"><p>Нет осей. <button class="btn-small btn-add" onclick="openAddAxis()">Добавить ось</button></p></div>'; return; }
-                
+                if (!axes?.length) { container.innerHTML = `<div class="info-card"><p>Нет осей.</p><button class="btn-primary" onclick="openCreateAxis()">➕ Создать ось</button></div>`; return; }
                 let html = '';
                 for (const axis of axes) {
-                    const { data: subAxes } = await supabase.from('sub_axes').select('*, brigades(name, foreman_name)').eq('axis_id', axis.id).order('name');
+                    const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name, foreman_name), work_stages(name)').eq('axis_id', axis.id).order('plan_start');
+                    const brigades = [...new Set((stages||[]).map(s => s.brigade_id).filter(Boolean))];
+                    const totalProgress = stages?.length ? Math.round(stages.reduce((s,st) => s + (st.progress||0), 0) / stages.length) : 0;
+                    const minStart = stages?.length ? stages.reduce((min,st) => st.plan_start && (!min || st.plan_start < min) ? st.plan_start : min, null) : null;
+                    const maxEnd = stages?.length ? stages.reduce((max,st) => st.plan_end && (!max || st.plan_end > max) ? st.plan_end : max, null) : null;
                     html += `<div class="axis-card">
                         <div class="axis-header">
                             <span class="axis-name">🔵 Ось ${axis.name}</span>
-                            <div>
-                                <button class="btn-secondary" onclick="openAxisActions('${axis.id}')" style="font-size:14px">⋯</button>
-                                <button class="btn-small btn-add" onclick="openAddSubAxis('${axis.id}')">+ Подось</button>
-                            </div>
+                            <span class="status-badge-sm status-${axis.status||'no_brigade'}-sm">${ {in_progress:'🔨 В работе',no_readiness:'⏳ Нет стройготовности',no_brigade:'👷 Нет бригады',completed:'✅ Завершена',paused:'⏸️ Пауза'}[axis.status] || axis.status }</span>
                         </div>
-                        <div class="axis-dates">📅 ${axis.plan_start || '—'} — ${axis.plan_end || '—'}</div>
-                        ${subAxes?.length ? subAxes.map(sa => `
-                            <div class="subaxis-item">
-                                <div class="subaxis-header">
-                                    <span class="subaxis-name">Подось ${sa.name}</span>
-                                    <div>
-                                        <span class="subaxis-brigade">👷 ${sa.brigades?.name || 'Не назначена'}</span>
-                                        <button class="btn-secondary" onclick="openSubAxisActions('${sa.id}')" style="font-size:12px;margin-left:8px">⋯</button>
-                                    </div>
-                                </div>
-                                <div class="subaxis-meta">Объём: ${sa.volume || 0} ${sa.unit || 'м²'} | ${sa.price_per_unit || 0} ₸/${sa.unit || 'м²'} | Сумма: ${sa.total_cost?.toLocaleString() || 0} ₸</div>
-                                <div class="subaxis-meta">📅 ${sa.plan_start || '—'} — ${sa.plan_end || '—'}</div>
-                                <div class="subaxis-progress"><div class="subaxis-progress-bar"><div class="subaxis-progress-fill" style="width:${sa.progress || 0}%"></div></div><span style="font-size:12px">${sa.progress || 0}%</span></div>
-                            </div>
-                        `).join('') : '<p style="color:#64748B;font-size:13px;padding:8px 0">Нет подосей</p>'}
-                    </div>`;
-                }
-                html += `<button class="btn-add" onclick="openAddAxis()" style="margin-top:10px">+ Добавить ось</button>`;
+                        <div class="axis-dates">📅 ${minStart || '—'} — ${maxEnd || '—'} | 📐 ${axis.total_area || 0} м² | 👷 Бригад: ${brigades.length}</div>
+                        <div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:${totalProgress}%"></div></div><span style="font-size:12px">${totalProgress}%</span></div>
+                        <button class="btn-secondary" onclick="openAxisDetail('${axis.id}')" style="width:100%;margin-top:8px">👁️ Открыть ГПР оси</button>
+                        <button class="btn-pdf" onclick="downloadAxisPDF('${axis.id}')" style="width:100%;margin-top:8px">📥 Скачать ГПР (PDF)</button>
+                    </div>`;}
+                html += `<button class="btn-primary" onclick="openCreateAxis()" style="margin-top:10px">➕ Добавить ось</button>`;
                 container.innerHTML = html;
             }
 
-            // ========== МЕНЮ ДЕЙСТВИЙ ==========
-            window.openAxisActions = function(axisId) {
-                currentAxisId = axisId; currentSubAxisId = null;
-                showActionMenu([
-                    { label: '⏰ Изменить срок ГПР', action: () => openShiftForm('axis', axisId) },
-                    { label: '✉️ Написать письмо заказчику', action: () => openLetterForm('axis', axisId) },
-                    { label: '📝 Поставить задачу', action: () => openTaskForm('axis', axisId) },
-                    { label: '📜 История изменений', action: () => viewHistory('axis', axisId) },
-                    { label: '🗑️ Удалить ось', action: () => deleteAxis(axisId), danger: true },
-                ]);
-            };
-
-            window.openSubAxisActions = function(subAxisId) {
-                currentSubAxisId = subAxisId;
-                showActionMenu([
-                    { label: '⏰ Изменить срок ГПР', action: () => openShiftForm('subaxis', subAxisId) },
-                    { label: '📋 Сдать Наряд', action: () => openWorkOrderForm(subAxisId) },
-                    { label: '👷 Заменить бригаду', action: () => openChangeBrigadeForm(subAxisId) },
-                    { label: '✉️ Написать письмо заказчику', action: () => openLetterForm('subaxis', subAxisId) },
-                    { label: '💰 Подать на Аванс', action: () => openAdvanceForm(subAxisId) },
-                    { label: '📜 История изменений', action: () => viewHistory('subaxis', subAxisId) },
-                ]);
-            };
-
-            function showActionMenu(items) {
-                const menu = document.getElementById('action-menu');
-                const overlay = document.getElementById('action-overlay');
-                menu.innerHTML = items.map(i => `<div class="action-item${i.danger ? ' danger' : ''}" onclick="(${i.action.toString()})()">${i.label}</div>`).join('');
-                overlay.classList.remove('hidden');
-                menu.classList.remove('hidden');
-            }
-
-            function closeActionMenu() {
-                document.getElementById('action-menu').classList.add('hidden');
-                document.getElementById('action-overlay').classList.add('hidden');
-            }
-
-            // ========== ФОРМЫ ==========
-            function openFormModal(title, content, onSave) {
-                document.getElementById('form-modal-title').textContent = title;
-                document.getElementById('form-modal-content').innerHTML = content;
+            // СОЗДАНИЕ ОСИ
+            window.openCreateAxis = function() {
+                let html = `<div class="form-group"><label>Название оси *</label><input type="text" id="new-axis-name" placeholder="1-10"></div>
+                <div class="row-2"><div class="form-group"><label>Общая площадь (м²)</label><input type="number" id="new-axis-area" step="0.01"></div><div class="form-group"><label>Статус</label><select id="new-axis-status"><option value="no_brigade">👷 Нет бригады</option><option value="no_readiness">⏳ Нет стройготовности</option><option value="in_progress">🔨 В работе</option></select></div></div>
+                <div id="brigades-container"></div>
+                <button class="btn-secondary" onclick="addBrigadeBlock()" style="width:100%;margin:12px 0">➕ Добавить бригаду</button>`;
+                document.getElementById('form-modal-title').textContent = '➕ Создать ось';
+                document.getElementById('form-modal-content').innerHTML = html;
                 document.getElementById('form-modal').classList.remove('hidden');
-                // Добавляем кнопку сохранения
-                const saveBtn = document.createElement('button');
-                saveBtn.className = 'btn-primary';
-                saveBtn.textContent = 'Сохранить';
-                saveBtn.onclick = async () => { await onSave(); document.getElementById('form-modal').classList.add('hidden'); };
-                document.getElementById('form-modal-content').appendChild(saveBtn);
-            }
-
-            // --- СДВИГ ГПР ---
-            window.openShiftForm = async function(type, id) {
-                closeActionMenu();
-                const entity = type === 'axis' ? 
-                    await supabase.from('axes').select('*').eq('id', id).single() :
-                    await supabase.from('sub_axes').select('*, axes(name)').eq('id', id).single();
-                if (!entity.data) return;
-                const e = entity.data;
-                const title = type === 'axis' ? `⏰ Сдвиг ГПР — Ось ${e.name}` : `⏰ Сдвиг ГПР — Подось ${e.name} (Ось ${e.axes?.name})`;
-                
-                openFormModal(title, `
-                    <div class="form-group"><label>Текущая дата окончания</label><input value="${e.plan_end || ''}" disabled></div>
-                    <div class="form-group"><label>Новая дата окончания *</label><input type="date" id="shift-new-date" value="${e.plan_end || ''}"></div>
-                    <div class="form-group"><label>Причина *</label><select id="shift-reason"><option value="customer">По вине Заказчика</option><option value="lamgroup">По вине LamGroup</option><option value="contractor">По вине Монтажника</option></select></div>
-                    <div class="form-group"><label>Описание задержки</label><textarea id="shift-desc" rows="3"></textarea></div>
-                `, async () => {
-                    const newDate = document.getElementById('shift-new-date').value;
-                    const reason = document.getElementById('shift-reason').value;
-                    const desc = document.getElementById('shift-desc').value;
-                    const table = type === 'axis' ? 'axes' : 'sub_axes';
-                    await supabase.from(table).update({ plan_end: newDate, updated_at: new Date() }).eq('id', id);
-                    await supabase.from('axes_history').insert({ axis_id: type === 'axis' ? id : null, sub_axis_id: type === 'subaxis' ? id : null, action: 'shift', new_value: { plan_end: newDate, reason }, comment: desc, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
-                    
-                    // Если заказчик — создаём письмо
-                    if (reason === 'customer') {
-                        const { data: letter } = await supabase.from('letters').insert({
-                            project_id: currentProjectId,
-                            axis_id: type === 'axis' ? id : e.axis_id || null,
-                            sub_axis_id: type === 'subaxis' ? id : null,
-                            delay_reason: 'customer',
-                            delay_description: desc,
-                            new_end_date: newDate,
-                            status: 'draft',
-                            created_by: currentUser?.id,
-                            created_by_name: currentUser?.full_name
-                        }).select('id').single();
-                        
-                        if (letter) {
-                            await supabase.from('tasks').insert({
-                                project_id: currentProjectId,
-                                type: 'letter',
-                                title: `Письмо заказчику: сдвиг сроков`,
-                                description: desc,
-                                status: 'pending',
-                                priority: 'high',
-                                created_by: currentUser?.id,
-                                responsible_ids: currentRole === 'manager' ? [currentUser?.id] : []
-                            });
-                            alert('✅ Срок сдвинут. Письмо заказчику создано и отправлено в задачи.');
-                        }
-                    } else {
-                        alert('✅ Срок ГПР изменён');
-                    }
-                    loadProgressTab();
-                });
-            };
-
-            // --- СДАТЬ НАРЯД ---
-            window.openWorkOrderForm = async function(subAxisId) {
-                closeActionMenu();
-                const { data: sa } = await supabase.from('sub_axes').select('*, brigades(name, foreman_name)').eq('id', subAxisId).single();
-                if (!sa) return;
-                
-                openFormModal(`📋 Сдать Наряд — ${sa.brigades?.name || 'Бригада'}`, `
-                    <div class="form-group"><label>Бригада</label><input value="${sa.brigades?.name || ''}" disabled></div>
-                    <div class="form-group"><label>Ось</label><input value="${sa.name}" disabled></div>
-                    <div class="row-2"><div class="form-group"><label>Проектная м²</label><input value="${sa.volume || 0}" disabled></div><div class="form-group"><label>Фактическая м² *</label><input type="number" id="narad-fact" step="0.01"></div></div>
-                    <div class="row-2"><div class="form-group"><label>Цена за работу</label><input type="number" id="narad-price" value="${sa.price_per_unit || 0}" step="0.01"></div><div class="form-group"><label>Сумма</label><input id="narad-sum" disabled></div></div>
-                    <div class="row-2"><div class="form-group"><label>Сумма авансов</label><input type="number" id="narad-advance" step="0.01"></div><div class="form-group"><label>Предыдущие наряды</label><input type="number" id="narad-prev" step="0.01"></div></div>
-                    <div class="form-group"><label>Ответственный (Махабат)</label><select id="narad-responsible"></select></div>
-                    <div class="form-group"><label>📎 Счет на оплату</label><input type="file" id="narad-bill" accept=".pdf,.jpg,.png"></div>
-                    <div class="form-group"><label>📎 АВР</label><input type="file" id="narad-avr" accept=".pdf,.jpg,.png"></div>
-                    <div class="form-group"><label>📎 Счет-фактура</label><input type="file" id="narad-sf" accept=".pdf,.jpg,.png"></div>
-                    <div class="form-group"><label><input type="checkbox" id="narad-confirm"> Подтверждаю корректность данных</label></div>
-                `, async () => {
-                    if (!document.getElementById('narad-confirm').checked) { alert('Подтвердите данные'); return; }
-                    const fact = parseFloat(document.getElementById('narad-fact').value) || 0;
-                    const price = parseFloat(document.getElementById('narad-price').value) || 0;
-                    
-                    // Загружаем файлы
-                    const files = {};
-                    for (const id of ['narad-bill', 'narad-avr', 'narad-sf']) {
-                        const input = document.getElementById(id);
-                        if (input?.files[0]) {
-                            const file = input.files[0];
-                            const fileName = `orders/${currentProjectId}/${subAxisId}/${Date.now()}_${file.name}`;
-                            const { error } = await supabase.storage.from('reports').upload(fileName, file);
-                            if (!error) {
-                                const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-                                files[id.replace('narad-', '')] = urlData.publicUrl;
-                            }
-                        }
-                    }
-                    
-                    const { data: order } = await supabase.from('work_orders').insert({
-                        project_id: currentProjectId,
-                        sub_axis_id: subAxisId,
-                        axis_name: sa.name,
-                        brigade_id: sa.brigade_id,
-                        work_type: 'Работы по подоси',
-                        volume: sa.volume,
-                        actual_volume: fact,
-                        price: price,
-                        total_amount: fact * price,
-                        advance_amount: parseFloat(document.getElementById('narad-advance').value) || 0,
-                        previous_amount: parseFloat(document.getElementById('narad-prev').value) || 0,
-                        attachments: JSON.stringify(files),
-                        created_by: currentUser?.id,
-                        status: 'pending_foreman'
-                    }).select('id').single();
-                    
-                    // Задача
-                    await supabase.from('tasks').insert({
-                        project_id: currentProjectId,
-                        type: 'order',
-                        title: `Наряд: ${sa.brigades?.name} — ${sa.name}`,
-                        description: `Сумма: ${(fact * price).toLocaleString()} ₸`,
-                        status: 'pending',
-                        priority: 'high',
-                        created_by: currentUser?.id
-                    });
-                    
-                    alert('✅ Наряд сформирован и отправлен в задачи');
-                    loadProgressTab();
-                });
-            };
-
-            // --- ЗАМЕНИТЬ БРИГАДУ ---
-            window.openChangeBrigadeForm = async function(subAxisId) {
-                closeActionMenu();
-                const { data: sa } = await supabase.from('sub_axes').select('*, brigades(name)').eq('id', subAxisId).single();
-                if (!sa) return;
-                
-                openFormModal('👷 Заменить бригаду', `
-                    <div class="form-group"><label>Текущая бригада</label><input value="${sa.brigades?.name || 'Не назначена'}" disabled></div>
-                    <div class="form-group"><label>Новая бригада *</label><select id="change-brigade">${allBrigades.map(b => `<option value="${b.id}">${b.name} (${b.foreman_name || ''})</option>`).join('')}</select></div>
-                    <div class="form-group"><label>Выполнено</label><input value="${sa.progress || 0}% (${(sa.volume * (sa.progress || 0) / 100).toFixed(1)} из ${sa.volume} ${sa.unit})" disabled></div>
-                    <div class="form-group"><label>Дата начала новой бригады *</label><input type="date" id="change-brigade-date"></div>
-                    <div class="form-group"><label>Комментарий</label><textarea id="change-brigade-comment" rows="2"></textarea></div>
-                `, async () => {
-                    const newBrigadeId = document.getElementById('change-brigade').value;
-                    await supabase.from('sub_axes').update({ brigade_id: newBrigadeId, updated_at: new Date() }).eq('id', subAxisId);
-                    await supabase.from('axes_history').insert({ sub_axis_id: subAxisId, action: 'change_brigade', old_value: { brigade_id: sa.brigade_id }, new_value: { brigade_id: newBrigadeId }, comment: document.getElementById('change-brigade-comment').value, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
-                    alert('✅ Бригада заменена');
-                    loadProgressTab();
-                });
-            };
-
-            // --- ПИСЬМО ЗАКАЗЧИКУ ---
-            window.openLetterForm = async function(type, id) {
-                closeActionMenu();
-                const entity = type === 'axis' ? 
-                    await supabase.from('axes').select('*').eq('id', id).single() :
-                    await supabase.from('sub_axes').select('*, axes(name), brigades(name)').eq('id', id).single();
-                if (!entity.data) return;
-                const e = entity.data;
-                
-                openFormModal('✉️ Письмо заказчику', `
-                    <div class="form-group"><label>Ось</label><input value="${type === 'axis' ? e.name : `${e.axes?.name} → ${e.name}`}" disabled></div>
-                    <div class="form-group"><label>Бригада</label><input value="${e.brigades?.name || '—'}" disabled></div>
-                    <div class="form-group"><label>Причина задержки</label><textarea id="letter-reason" rows="3"></textarea></div>
-                    <div class="form-group"><label>Срок сдвига ГПР (дней) *</label><input type="number" id="letter-days" value="1" min="1"></div>
-                    <p style="color:#64748B;font-size:13px;margin:12px 0">📧 Письмо будет отправлено офис-менеджеру и появится в задачах. ГПР автоматически сдвинется.</p>
-                `, async () => {
-                    const days = parseInt(document.getElementById('letter-days').value) || 0;
-                    const reason = document.getElementById('letter-reason').value;
-                    const currentEnd = type === 'axis' ? e.plan_end : e.plan_end;
-                    const newEnd = currentEnd ? new Date(currentEnd) : new Date();
-                    newEnd.setDate(newEnd.getDate() + days);
-                    
-                    await supabase.from('letters').insert({
-                        project_id: currentProjectId,
-                        axis_id: type === 'axis' ? id : e.axis_id || null,
-                        sub_axis_id: type === 'subaxis' ? id : null,
-                        delay_reason: 'customer',
-                        delay_description: reason,
-                        delay_days: days,
-                        new_end_date: newEnd.toISOString().split('T')[0],
-                        status: 'sent_to_office',
-                        sent_to_office: true,
-                        created_by: currentUser?.id,
-                        created_by_name: currentUser?.full_name
-                    });
-                    
-                    const table = type === 'axis' ? 'axes' : 'sub_axes';
-                    await supabase.from(table).update({ plan_end: newEnd.toISOString().split('T')[0] }).eq('id', id);
-                    
-                    await supabase.from('tasks').insert({
-                        project_id: currentProjectId,
-                        type: 'letter',
-                        title: `Письмо заказчику: сдвиг +${days} дн.`,
-                        description: reason,
-                        status: 'pending',
-                        priority: 'high',
-                        created_by: currentUser?.id
-                    });
-                    
-                    alert('✅ Письмо отправлено офис-менеджеру. ГПР сдвинут.');
-                    loadProgressTab();
-                });
-            };
-
-            // --- ПОДАТЬ НА АВАНС ---
-            window.openAdvanceForm = async function(subAxisId) {
-                closeActionMenu();
-                const { data: sa } = await supabase.from('sub_axes').select('*, brigades(name)').eq('id', subAxisId).single();
-                if (!sa) return;
-                
-                // Предыдущие выплаты
-                const { data: prevAdvances } = await supabase.from('advances').select('*').eq('sub_axis_id', subAxisId);
-                const { data: prevOrders } = await supabase.from('work_orders').select('*').eq('sub_axis_id', subAxisId);
-                const totalPaid = (prevAdvances || []).reduce((s, a) => s + (a.amount || 0), 0) + (prevOrders || []).reduce((s, o) => s + (o.total_amount || 0), 0);
-                const remaining = (sa.total_cost || 0) - totalPaid;
-                
-                openFormModal('💰 Подать на Аванс', `
-                    <div class="form-group"><label>Бригада</label><input value="${sa.brigades?.name || ''}" disabled></div>
-                    <div class="form-group"><label>Ось</label><input value="${sa.name}" disabled></div>
-                    <div class="form-group"><label>История выплат</label><p>Всего выплачено: ${totalPaid.toLocaleString()} ₸</p></div>
-                    <div class="form-group"><label>Общая сумма договора</label><input value="${(sa.total_cost || 0).toLocaleString()} ₸" disabled></div>
-                    <div class="form-group"><label>Остаток к выплате</label><input value="${remaining.toLocaleString()} ₸" disabled></div>
-                    <div class="form-group"><label>Сумма запроса *</label><input type="number" id="advance-amount" step="0.01" max="${remaining}"></div>
-                    <div class="form-group"><label>📎 Счет на оплату</label><input type="file" id="advance-bill" accept=".pdf,.jpg,.png"></div>
-                    <div class="form-group"><label>📎 АВР</label><input type="file" id="advance-avr" accept=".pdf,.jpg,.png"></div>
-                    <div class="form-group"><label>📎 Счет-фактура</label><input type="file" id="advance-sf" accept=".pdf,.jpg,.png"></div>
-                    <div class="form-group"><label><input type="checkbox" id="advance-confirm"> Подтверждаю корректность данных</label></div>
-                `, async () => {
-                    if (!document.getElementById('advance-confirm').checked) { alert('Подтвердите данные'); return; }
-                    const amount = parseFloat(document.getElementById('advance-amount').value) || 0;
-                    if (amount <= 0 || amount > remaining) { alert('Некорректная сумма'); return; }
-                    
-                    // Загружаем файлы
-                    const files = {};
-                    for (const id of ['advance-bill', 'advance-avr', 'advance-sf']) {
-                        const input = document.getElementById(id);
-                        if (input?.files[0]) {
-                            const file = input.files[0];
-                            const fileName = `advances/${currentProjectId}/${subAxisId}/${Date.now()}_${file.name}`;
-                            const { error } = await supabase.storage.from('reports').upload(fileName, file);
-                            if (!error) {
-                                const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-                                files[id.replace('advance-', '')] = urlData.publicUrl;
-                            }
-                        }
-                    }
-                    
-                    await supabase.from('advances').insert({
-                        project_id: currentProjectId,
-                        sub_axis_id: subAxisId,
-                        brigade_id: sa.brigade_id,
-                        amount,
-                        previous_payments: totalPaid,
-                        total_contract: sa.total_cost || 0,
-                        remaining: remaining - amount,
-                        attachments: JSON.stringify(files),
-                        created_by: currentUser?.id,
-                        created_by_name: currentUser?.full_name,
-                        status: 'pending'
-                    });
-                    
-                    await supabase.from('payment_plan').insert({
-                        project_id: currentProjectId,
-                        brigade_id: sa.brigade_id,
-                        type: 'advance',
-                        amount,
-                        status: 'pending'
-                    });
-                    
-                    alert('✅ Аванс сформирован и отправлен в план оплат');
-                    loadProgressTab();
-                });
-            };
-
-            // --- ДОБАВИТЬ ОСЬ / ПОДОСЬ ---
-            window.openAddAxis = function() {
-                document.getElementById('edit-modal-title').textContent = '➕ Добавить ось';
-                document.getElementById('edit-modal-content').innerHTML = `<div class="form-group"><label>Название оси</label><input type="text" id="new-axis-name"><div class="form-group"><label>Дата начала</label><input type="date" id="new-axis-start"><div class="form-group"><label>Дата окончания</label><input type="date" id="new-axis-end">`;
-                document.getElementById('save-edit-btn').onclick = async () => {
+                addBrigadeBlock();
+                // Кнопка сохранения
+                const saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Создать ось с ГПР';
+                saveBtn.onclick = async () => {
+                    const name = document.getElementById('new-axis-name').value;
+                    const area = parseFloat(document.getElementById('new-axis-area').value) || 0;
+                    const status = document.getElementById('new-axis-status').value;
+                    if (!name) { alert('Введите название оси'); return; }
                     const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
-                    if (blocks?.length) {
-                        await supabase.from('axes').insert({ block_id: blocks[0].id, name: document.getElementById('new-axis-name').value, plan_start: document.getElementById('new-axis-start').value, plan_end: document.getElementById('new-axis-end').value });
+                    if (!blocks?.length) { alert('Нет блоков'); return; }
+                    const { data: axis, error } = await supabase.from('axes').insert({ block_id: blocks[0].id, name, total_area: area, status, plan_start: null, plan_end: null }).select('id').single();
+                    if (error) { alert('Ошибка: ' + error.message); return; }
+                    // Сохраняем этапы работ для каждой бригады
+                    const brigadeBlocks = document.querySelectorAll('.brigade-block');
+                    let minStart = null, maxEnd = null;
+                    for (const block of brigadeBlocks) {
+                        const brigadeId = block.querySelector('.brigade-select').value;
+                        const subAxisName = block.querySelector('.subaxis-name-input').value || '';
+                        const stageRows = block.querySelectorAll('.stage-row');
+                        for (const row of stageRows) {
+                            const stageId = row.querySelector('.stage-select').value;
+                            const vol = parseFloat(row.querySelector('.stage-volume').value) || 0;
+                            const price = parseFloat(row.querySelector('.stage-price').value) || 0;
+                            const start = row.querySelector('.stage-start').value;
+                            const end = row.querySelector('.stage-end').value;
+                            if (stageId && vol > 0) {
+                                if (start && (!minStart || start < minStart)) minStart = start;
+                                if (end && (!maxEnd || end > maxEnd)) maxEnd = end;
+                                await supabase.from('axis_work_stages').insert({ axis_id: axis.id, brigade_id: brigadeId || null, sub_axis_name: subAxisName, stage_id: parseInt(stageId), volume: vol, unit: 'м²', price_per_unit: price, total_cost: vol * price, plan_start: start || null, plan_end: end || null, progress: 0, status: 'pending', created_by: currentUser?.id });
+                            }
+                        }
                     }
-                    document.getElementById('edit-modal').classList.add('hidden'); loadProgressTab();
+                    if (minStart || maxEnd) await supabase.from('axes').update({ plan_start: minStart, plan_end: maxEnd }).eq('id', axis.id);
+                    document.getElementById('form-modal').classList.add('hidden'); loadProgressTab(); alert('✅ Ось создана!');
                 };
-                document.getElementById('edit-modal').classList.remove('hidden');
+                document.getElementById('form-modal-content').appendChild(saveBtn);
             };
 
-            window.openAddSubAxis = function(axisId) {
-                document.getElementById('edit-modal-title').textContent = '➕ Добавить подось';
-                document.getElementById('edit-modal-content').innerHTML = `
-                    <div class="form-group"><label>Название подоси</label><input type="text" id="new-sa-name" placeholder="1-4">
-                    <div class="form-group"><label>Бригада</label><select id="new-sa-brigade">${allBrigades.map(b => `<option value="${b.id}">${b.name}</option>`).join('')}</select>
-                    <div class="row-2"><div class="form-group"><label>Начало</label><input type="date" id="new-sa-start"><div class="form-group"><label>Окончание</label><input type="date" id="new-sa-end"></div></div>
-                    <div class="row-2"><div class="form-group"><label>Объём</label><input type="number" id="new-sa-volume" step="0.01"><div class="form-group"><label>Ед.изм</label><select id="new-sa-unit"><option value="м²">м²</option><option value="п.м.">п.м.</option></select></div></div>
-                    <div class="form-group"><label>Цена за единицу</label><input type="number" id="new-sa-price" step="0.01">
+            window.addBrigadeBlock = function() {
+                const container = document.getElementById('brigades-container');
+                const idx = container.querySelectorAll('.brigade-block').length;
+                const block = document.createElement('div'); block.className = 'brigade-block';
+                block.style.cssText = 'background:#F8FAFC;border-radius:16px;padding:16px;margin:12px 0;border:1px solid #E2E8F0';
+                block.innerHTML = `
+                    <div class="form-group"><label>👷 Бригада ${idx+1}</label><select class="brigade-select">${allBrigades.map(b=>`<option value="${b.id}">${b.name} (${b.foreman_name||''})</option>`).join('')}</select></div>
+                    <div class="form-group"><label>📍 Подось (зона работы)</label><input type="text" class="subaxis-name-input" placeholder="1-5"></div>
+                    <div class="stages-rows"></div>
+                    <button class="btn-add" onclick="addStageRow(this.previousElementSibling)" style="margin-top:8px">+ Добавить этап работы</button>
+                `;
+                container.appendChild(block);
+                addStageRow(block.querySelector('.stages-rows'));
+            };
+
+            window.addStageRow = function(container) {
+                const row = document.createElement('div'); row.className = 'stage-row';
+                row.style.cssText = 'display:flex;gap:8px;margin:8px 0;align-items:center;flex-wrap:wrap';
+                row.innerHTML = `
+                    <select class="stage-select" style="flex:2;min-width:120px">${allWorkStages.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select>
+                    <input type="number" class="stage-volume" placeholder="м²" style="width:70px" step="0.01">
+                    <input type="number" class="stage-price" placeholder="₸/м²" style="width:80px" step="0.01">
+                    <input type="date" class="stage-start" style="width:130px">
+                    <input type="date" class="stage-end" style="width:130px">
+                    <button class="btn-delete" onclick="this.parentElement.remove()" style="width:30px;height:30px">✕</button>
+                `;
+                container.appendChild(row);
+            };
+
+            // КАРТОЧКА ОСИ (ДЕТАЛЬНЫЙ ГПР)
+            window.openAxisDetail = async function(axisId) {
+                currentAxisId = axisId;
+                const { data: axis } = await supabase.from('axes').select('*').eq('id', axisId).single();
+                const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name, foreman_name), work_stages(name)').eq('axis_id', axisId).order('plan_start');
+                if (!axis) return;
+                const brigades = [...new Set((stages||[]).map(s => s.brigade_id).filter(Boolean))];
+                const totalProgress = stages?.length ? Math.round(stages.reduce((s,st) => s + (st.progress||0), 0) / stages.length) : 0;
+                let html = `<div class="info-card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                        <h3>📊 ГПР — Ось ${axis.name}</h3>
+                        <span class="status-badge-sm status-${axis.status||'no_brigade'}-sm">${ {in_progress:'🔨 В работе',no_readiness:'⏳ Нет стройготовности',no_brigade:'👷 Нет бригады',completed:'✅ Завершена',paused:'⏸️ Пауза'}[axis.status] || axis.status }</span>
+                    </div>
+                    <p>📅 ${axis.plan_start || '—'} — ${axis.plan_end || '—'} | 📐 ${axis.total_area || 0} м²</p>
+                    <div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:${totalProgress}%"></div></div><span>${totalProgress}%</span></div>
+                    <button class="btn-pdf" onclick="downloadBrigadePDF('${axisId}')" style="margin:8px 0">📥 Скачать ГПР бригады (PDF)</button>
+                    <button class="btn-secondary" onclick="openEditAxis('${axisId}')" style="width:100%;margin-top:8px">✏️ Редактировать ось</button>
                 </div>`;
-                document.getElementById('save-edit-btn').onclick = async () => {
-                    const vol = parseFloat(document.getElementById('new-sa-volume').value) || 0;
-                    const price = parseFloat(document.getElementById('new-sa-price').value) || 0;
-                    await supabase.from('sub_axes').insert({
-                        axis_id: axisId,
-                        name: document.getElementById('new-sa-name').value,
-                        brigade_id: document.getElementById('new-sa-brigade').value,
-                        plan_start: document.getElementById('new-sa-start').value,
-                        plan_end: document.getElementById('new-sa-end').value,
-                        volume: vol,
-                        unit: document.getElementById('new-sa-unit').value,
-                        price_per_unit: price,
-                        total_cost: vol * price,
-                        created_by: currentUser?.id
-                    });
-                    document.getElementById('edit-modal').classList.add('hidden'); loadProgressTab();
-                };
-                document.getElementById('edit-modal').classList.remove('hidden');
-            };
-
-            // --- ИСТОРИЯ ---
-            window.viewHistory = async function(type, id) {
-                closeActionMenu();
-                const { data } = await supabase.from('axes_history').select('*').or(`${type === 'axis' ? 'axis_id' : 'sub_axis_id'}.eq.${id}`).order('changed_at', { ascending: false });
-                document.getElementById('form-modal-title').textContent = '📜 История изменений';
-                document.getElementById('form-modal-content').innerHTML = data?.length ? data.map(h => `<div class="gpr-item"><strong>${h.action}</strong><br><small>${h.comment || ''}</small><br><small>${h.changed_by_name} · ${new Date(h.changed_at).toLocaleString('ru-RU')}</small></div>`).join('') : '<p>Нет изменений</p>';
+                for (const brigadeId of brigades) {
+                    const brigadeStages = (stages||[]).filter(s => s.brigade_id === brigadeId);
+                    const brigade = brigadeStages[0]?.brigades;
+                    const subAxisName = brigadeStages[0]?.sub_axis_name || '';
+                    const brProgress = Math.round(brigadeStages.reduce((s,st) => s + (st.progress||0), 0) / brigadeStages.length);
+                    html += `<div class="brigade-section">
+                        <div class="brigade-header"><span class="brigade-name">👷 ${brigade?.name || 'Бригада'} (${brigade?.foreman_name || ''})</span><span class="status-badge-sm status-in_progress-sm">${brProgress}%</span></div>
+                        ${subAxisName ? `<p style="font-size:13px;color:#64748B;margin-bottom:8px">📍 Подось: ${subAxisName}</p>` : ''}
+                        <table class="work-table">
+                            <thead><tr><th>Этап</th><th>м²</th><th>Цена/м²</th><th>Сумма</th><th>%</th><th>📅</th><th></th></tr></thead>
+                            <tbody>${brigadeStages.map(ws => `
+                                <tr>
+                                    <td>${ws.work_stages?.name||'—'}</td>
+                                    <td class="text-right">${ws.volume||0}</td>
+                                    <td class="text-right">${ws.price_per_unit||0} ₸</td>
+                                    <td class="text-right">${(ws.total_cost||0).toLocaleString()} ₸</td>
+                                    <td><input type="number" class="progress-input" value="${ws.progress||0}" min="0" max="100" onchange="updateStageProgress('${ws.id}', this.value)">%</td>
+                                    <td style="font-size:11px">${ws.plan_start||'—'}<br>${ws.plan_end||'—'}</td>
+                                    <td><span class="status-badge-sm status-${ws.status||'pending'}-sm">${ {pending:'⏳',in_progress:'⚙️',completed:'✅',delayed:'⚠️'}[ws.status]||ws.status }</span></td>
+                                </tr>
+                            `).join('')}</tbody>
+                        </table>
+                        <div style="display:flex;gap:8px;margin-top:8px">
+                            <button class="btn-secondary" onclick="openWorkOrderFormBrigade('${axisId}','${brigadeId}')">📋 Сдать Наряд</button>
+                            <button class="btn-add" onclick="openAdvanceFormBrigade('${axisId}','${brigadeId}')">💰 Аванс</button>
+                            <button class="btn-pdf" onclick="downloadBrigadePDF('${axisId}','${brigadeId}')">📥 PDF</button>
+                        </div>
+                    </div>`;}
+                document.getElementById('form-modal-title').textContent = `📊 ГПР — Ось ${axis.name}`;
+                document.getElementById('form-modal-content').innerHTML = html;
                 document.getElementById('form-modal').classList.remove('hidden');
             };
 
-            // --- УДАЛИТЬ ОСЬ ---
-            window.deleteAxis = async function(axisId) {
-                closeActionMenu();
-                if (confirm('Удалить ось и все подоси?')) {
-                    await supabase.from('axes').delete().eq('id', axisId);
-                    loadProgressTab();
-                }
+            // Обновление прогресса этапа
+            window.updateStageProgress = async function(stageId, value) {
+                const progress = Math.max(0, Math.min(100, parseInt(value) || 0));
+                const status = progress >= 100 ? 'completed' : progress > 0 ? 'in_progress' : 'pending';
+                await supabase.from('axis_work_stages').update({ progress, status }).eq('id', stageId);
+                await supabase.from('axes_history').insert({ axis_id: currentAxisId, action: 'update_progress', new_value: { stage_id: stageId, progress }, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
+                openAxisDetail(currentAxisId);
             };
 
-            function escapeHtml(text) { if (!text) return ''; return String(text).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' })[c] || c); }
+            // Скачать PDF (ось)
+            window.downloadAxisPDF = async function(axisId) { alert('📥 PDF будет сформирован (функция в разработке)'); };
+            window.downloadBrigadePDF = async function(axisId, brigadeId) { alert('📥 PDF бригады будет сформирован (функция в разработке)'); };
+
+            // Заглушки для форм
+            window.openWorkOrderFormBrigade = function(axisId, brigadeId) { alert('📋 Форма сдачи наряда (будет доработана)'); };
+            window.openAdvanceFormBrigade = function(axisId, brigadeId) { alert('💰 Форма аванса (будет доработана)'); };
+            window.openEditAxis = function(axisId) { alert('✏️ Редактирование оси (будет доработано)'); };
 
             init();
         })();
