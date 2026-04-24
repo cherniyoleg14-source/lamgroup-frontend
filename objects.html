@@ -69,21 +69,19 @@
         .progress-input { width: 60px; padding: 6px 8px; border-radius: 8px; border: 1px solid #E2E8F0; text-align: center; font-size: 13px; }
         .status-badge-sm { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         .status-in_progress-sm { background: #D1FAE5; color: #065F46; } .status-pending-sm { background: #FEF3C7; color: #92400E; } .status-completed-sm { background: #E2E8F0; color: #475569; } .status-delayed-sm { background: #FEE2E2; color: #991B1B; }
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        
+        /* ИСПРАВЛЕННЫЕ Z-INDEX */
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10002; }
         .modal.hidden { display: none !important; }
         .modal-content { background: white; border-radius: 28px; padding: 24px; max-width: 500px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
         .modal-title { font-size: 22px; font-weight: 800; color: #0F172A; }
         .close-btn { background: #F1F5F9; border: none; width: 40px; height: 40px; border-radius: 40px; font-size: 20px; cursor: pointer; color: #64748B; display: flex; align-items: center; justify-content: center; }
-        .action-menu-modal { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 24px 24px 0 0; padding: 20px; z-index: 10000; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); animation: slideUp 0.3s ease; }
+        .action-menu-modal { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 24px 24px 0 0; padding: 20px; z-index: 10003; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); animation: slideUp 0.3s ease; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .action-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 9999; }
+        .action-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 10002; }
         .action-item { padding: 14px 20px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; transition: background 0.2s; }
         .fullscreen-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #F8FAFC; z-index: 10001; overflow-y: auto; padding: 16px; }
-        .pdf-preview { background: white; border-radius: 16px; padding: 20px; font-family: 'Times New Roman', serif; font-size: 12px; line-height: 1.4; border: 1px solid #E2E8F0; }
-        .pdf-preview table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        .pdf-preview th, .pdf-preview td { border: 1px solid #000; padding: 4px 6px; }
-        .pdf-preview .text-right { text-align: right; }
     </style>
 </head>
 <body>
@@ -170,7 +168,6 @@
             function setupTabsScroll() { const tabsContainer = document.getElementById('tabs-container'); const scrollLeft = document.getElementById('scroll-left'); const scrollRight = document.getElementById('scroll-right'); if (!tabsContainer) return; function updateArrows() { if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0); if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1); } if (scrollLeft) scrollLeft.addEventListener('click', () => tabsContainer.scrollBy({ left: -200, behavior: 'smooth' })); if (scrollRight) scrollRight.addEventListener('click', () => tabsContainer.scrollBy({ left: 200, behavior: 'smooth' })); tabsContainer.addEventListener('scroll', updateArrows); setTimeout(updateArrows, 200); }
             function setupModals() { document.getElementById('close-form-modal').onclick = () => document.getElementById('form-modal').classList.add('hidden'); document.getElementById('close-edit-modal').onclick = () => document.getElementById('edit-modal').classList.add('hidden'); document.getElementById('close-full-info-modal').onclick = () => document.getElementById('full-info-modal').classList.add('hidden'); document.getElementById('action-overlay').onclick = closeActionMenu; }
 
-            // ========== ДЕТАЛИ ОБЪЕКТА ==========
             async function showDetail(id) {
                 currentProjectId = id;
                 const { data: p } = await supabase.from('projects').select('*, users(full_name)').eq('id', id).single();
@@ -342,7 +339,6 @@
                     </div></div>
                     <div id="axis-tab-overview" class="axis-tab-content">`;
 
-                // Вкладка ОБЗОР
                 for (const brigadeId of brigades) {
                     const bs = (stages||[]).filter(s => s.brigade_id === brigadeId);
                     const brigade = bs[0]?.brigades;
@@ -364,7 +360,7 @@
                     <button class="btn-secondary" onclick="openEditAxis('${axisId}')" style="width:100%;margin-top:8px">✏️ Редактировать ось</button>
                     </div>
                     <div id="axis-tab-history" class="axis-tab-content hidden"></div>
-                    <div id="axis-tab-pdf" class="axis-tab-content hidden"><div class="info-card"><h3>📥 Скачать ГПР в PDF</h3><p>Выберите бригаду для скачивания:</p><select id="pdf-brigade-select" style="margin:10px 0">${brigades.map(bId=>{const b=stages.find(s=>s.brigade_id===bId);return `<option value="${bId}">${b?.brigades?.name||'Бригада'}</option>`;}).join('')}</select><button class="btn-primary" onclick="downloadBrigadePDF('${axisId}',document.getElementById('pdf-brigade-select').value)">📥 Скачать PDF</button></div></div>
+                    <div id="axis-tab-pdf" class="axis-tab-content hidden"><div class="info-card"><h3>📥 Скачать ГПР в PDF</h3><p>Выберите бригаду для скачивания:</p><select id="pdf-brigade-select" style="margin:10px 0">${brigades.map(bId=>{const b=stages.find(s=>s.brigade_id===bId);return `<option value="${bId}">${b?.brigades?.name||'Бригада'}</option>`;}).join('')}</select><button class="btn-pdf" onclick="downloadBrigadePDF('${axisId}',document.getElementById('pdf-brigade-select').value)">📥 Скачать PDF</button></div></div>
                     </div>`;
                 
                 const page = document.getElementById('axis-detail-page');
@@ -376,19 +372,20 @@
             window.switchAxisTab = function(tabName) {
                 document.querySelectorAll('#axis-detail-page .tab').forEach(t => t.classList.remove('active'));
                 document.querySelectorAll('#axis-detail-page .axis-tab-content').forEach(c => c.classList.add('hidden'));
-                document.querySelector(`#axis-detail-page [onclick="switchAxisTab('${tabName}')"]`).classList.add('active');
-                document.getElementById(`axis-tab-${tabName}`).classList.remove('hidden');
+                const tabBtn = document.querySelector(`#axis-detail-page [onclick*="${tabName}"]`);
+                if (tabBtn) tabBtn.classList.add('active');
+                const tabContent = document.getElementById(`axis-tab-${tabName}`);
+                if (tabContent) tabContent.classList.remove('hidden');
                 if (tabName === 'history') loadAxisHistory();
             };
 
-            // ===== ИСТОРИЯ ОСИ =====
             async function loadAxisHistory() {
                 const container = document.getElementById('axis-tab-history');
+                if (!container) return;
                 const { data } = await supabase.from('axes_history').select('*').eq('axis_id', currentAxisId).order('changed_at', { ascending: false });
                 container.innerHTML = data?.length ? data.map(h => `<div class="gpr-item"><strong>${h.action}</strong><br><small>${h.comment||''}</small><br><small>${h.changed_by_name} · ${new Date(h.changed_at).toLocaleString('ru-RU')}</small></div>`).join('') : '<div class="info-card"><p>Нет изменений</p></div>';
             }
 
-            // ===== ОБНОВЛЕНИЕ ПРОГРЕССА =====
             window.updateStageProgress = async function(stageId, value) {
                 const progress = Math.max(0, Math.min(100, parseInt(value) || 0));
                 const status = progress >= 100 ? 'completed' : progress > 0 ? 'in_progress' : 'pending';
@@ -397,7 +394,6 @@
                 openAxisDetailPage(currentAxisId);
             };
 
-            // ===== ДЕЙСТВИЯ =====
             window.openActionMenu = function(axisId, brigadeId, subAxisName) {
                 showActionMenu([
                     { label: '⏰ Изменить срок ГПР', action: () => { closeActionMenu(); alert('⏰ Форма сдвига ГПР (будет доработана)'); } },
@@ -416,7 +412,6 @@
                 overlay.classList.remove('hidden'); menu.classList.remove('hidden');
             }
 
-            // ===== ДОБАВЛЕНИЕ БРИГАДЫ К СУЩЕСТВУЮЩЕЙ ОСИ =====
             window.addBrigadeToAxis = function(axisId) {
                 let html = `<div class="form-group"><label>👷 Бригада</label><select id="add-brigade-select">${allBrigades.map(b=>`<option value="${b.id}">${b.name} (${b.foreman_name||''})</option>`).join('')}</select></div>
                 <div class="form-group"><label>📍 Подось (зона работы)</label><input type="text" id="add-subaxis-name" placeholder="1-5"></div>
@@ -449,7 +444,6 @@
                 document.getElementById('form-modal-content').appendChild(saveBtn);
             };
 
-            // ===== РЕДАКТИРОВАНИЕ ПОДОСИ =====
             window.editSubAxis = async function(axisId, brigadeId) {
                 const { data: stages } = await supabase.from('axis_work_stages').select('*').eq('axis_id', axisId).eq('brigade_id', brigadeId);
                 if (!stages?.length) return;
@@ -491,7 +485,6 @@
                 document.getElementById('form-modal-content').appendChild(saveBtn);
             };
 
-            // ===== УДАЛЕНИЕ ПОДОСИ (БРИГАДЫ) =====
             window.deleteSubAxisConfirm = function(axisId, brigadeId, brigadeName) {
                 if (confirm(`⚠️ Удалить бригаду ${brigadeName} с оси?\n\nЭто действие удалит все этапы работ данной бригады.\n\nЭто действие НЕОБРАТИМО!`)) {
                     supabase.from('axis_work_stages').delete().eq('axis_id', axisId).eq('brigade_id', brigadeId).then(() => {
@@ -500,7 +493,6 @@
                 }
             };
 
-            // ===== УДАЛЕНИЕ ЭТАПА =====
             window.deleteStageConfirm = function(stageId) {
                 if (confirm('Удалить этот этап работы?')) {
                     supabase.from('axis_work_stages').delete().eq('id', stageId).then(() => {
@@ -509,7 +501,6 @@
                 }
             };
 
-            // ===== ДОБАВЛЕНИЕ ЭТАПА К СУЩЕСТВУЮЩЕЙ БРИГАДЕ =====
             window.addStageToBrigade = function(axisId, brigadeId, subAxisName) {
                 let html = `<div id="single-stage-row"></div>`;
                 document.getElementById('form-modal-title').textContent = '➕ Добавить этап';
@@ -533,7 +524,6 @@
                 document.getElementById('form-modal-content').appendChild(saveBtn);
             };
 
-            // ===== PDF =====
             window.downloadBrigadePDF = async function(axisId, brigadeId) {
                 const { data: axis } = await supabase.from('axes').select('*').eq('id', axisId).single();
                 const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name, foreman_name), work_stages(name)').eq('axis_id', axisId).eq('brigade_id', brigadeId).order('plan_start');
