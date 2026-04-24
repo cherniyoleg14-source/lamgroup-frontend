@@ -33,6 +33,7 @@
         .object-address { font-size: 14px; color: #64748B; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
         .progress-section { margin: 16px 0; } .progress-bar { height: 8px; background: #F1F5F9; border-radius: 40px; overflow: hidden; margin-bottom: 8px; } .progress-fill { height: 100%; background: linear-gradient(90deg, #0F172A, #F59E0B); border-radius: 40px; width: 0%; transition: width 0.3s ease; }
         .object-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid #F1F5F9; } .object-dates { display: flex; gap: 8px; } .date-badge { background: #F8FAFC; padding: 6px 12px; border-radius: 40px; font-size: 12px; font-weight: 500; color: #475569; }
+        .object-sum { font-size: 14px; font-weight: 600; color: #0F172A; margin-top: 8px; }
         .back-btn { background: none; border: none; color: #0F172A; font-size: 16px; font-weight: 600; cursor: pointer; padding: 12px 0; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
         .tabs-wrapper { position: relative; margin: 20px 0; } .tabs { display: flex; gap: 4px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; padding-bottom: 8px; } .tabs::-webkit-scrollbar { display: none; }
         .tab { padding: 10px 14px; background: none; border: none; font-weight: 600; color: #64748B; cursor: pointer; white-space: nowrap; font-size: 13px; } .tab.active { color: #0F172A; border-bottom: 3px solid #F59E0B; }
@@ -98,13 +99,9 @@
             <div class="tabs-wrapper">
                 <div class="scroll-arrow left hidden" id="scroll-left">←</div>
                 <div class="tabs" id="tabs-container">
-                    <button class="tab active" data-tab="info">📋 Инфо</button>
-                    <button class="tab" data-tab="progress">📊 Прогресс</button>
-                    <button class="tab" data-tab="expenses">💰 Расходы</button>
-                    <button class="tab" data-tab="materials">📦 Материалы</button>
-                    <button class="tab" data-tab="checklist">✅ Чек-лист</button>
-                    <button class="tab" data-tab="issues">⚠️ Проблемы</button>
-                    <button class="tab" data-tab="report">📑 Отчет</button>
+                    <button class="tab active" data-tab="info">📋 Инфо</button><button class="tab" data-tab="progress">📊 Прогресс</button>
+                    <button class="tab" data-tab="expenses">💰 Расходы</button><button class="tab" data-tab="materials">📦 Материалы</button>
+                    <button class="tab" data-tab="checklist">✅ Чек-лист</button><button class="tab" data-tab="issues">⚠️ Проблемы</button><button class="tab" data-tab="report">📑 Отчет</button>
                 </div>
                 <div class="scroll-arrow right" id="scroll-right">→</div>
             </div>
@@ -120,22 +117,13 @@
         <div id="action-overlay" class="action-overlay hidden"></div>
         <div id="action-menu" class="action-menu-modal hidden"></div>
         <div id="form-modal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header"><span class="modal-title" id="form-modal-title"></span><button class="close-btn" id="close-form-modal">&times;</button></div>
-                <div id="form-modal-content"></div>
-            </div>
+            <div class="modal-content"><div class="modal-header"><span class="modal-title" id="form-modal-title"></span><button class="close-btn" id="close-form-modal">&times;</button></div><div id="form-modal-content"></div></div>
         </div>
         <div id="edit-modal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header"><span class="modal-title" id="edit-modal-title"></span><button class="close-btn" id="close-edit-modal">&times;</button></div>
-                <div id="edit-modal-content"></div><button class="btn-primary" id="save-edit-btn">Сохранить</button>
-            </div>
+            <div class="modal-content"><div class="modal-header"><span class="modal-title" id="edit-modal-title"></span><button class="close-btn" id="close-edit-modal">&times;</button></div><div id="edit-modal-content"></div><button class="btn-primary" id="save-edit-btn">Сохранить</button></div>
         </div>
         <div id="full-info-modal" class="modal hidden">
-            <div class="modal-content">
-                <div class="modal-header"><span class="modal-title">📄 Полная информация</span><button class="close-btn" id="close-full-info-modal">&times;</button></div>
-                <div id="full-info-content"></div>
-            </div>
+            <div class="modal-content"><div class="modal-header"><span class="modal-title">📄 Полная информация</span><button class="close-btn" id="close-full-info-modal">&times;</button></div><div id="full-info-content"></div></div>
         </div>
         <div id="message" class="message"></div>
     </div>
@@ -151,15 +139,57 @@
             let currentAxisId = null;
 
             function showMessage(text, type) { const msg = document.getElementById('message'); msg.textContent = text; msg.className = `message ${type}`; setTimeout(() => msg.className = 'message', 3000); }
-            function closeActionMenu() { document.getElementById('action-menu').classList.add('hidden'); document.getElementById('action-overlay').classList.add('hidden'); }
             function escapeHtml(text) { if (!text) return ''; return String(text).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' })[c] || c); }
+
+            // ГЛОБАЛЬНЫЕ ФУНКЦИИ (исправление ошибки closeActionMenu)
+            window.closeActionMenu = function() { document.getElementById('action-menu').classList.add('hidden'); document.getElementById('action-overlay').classList.add('hidden'); };
+            window.closeAxisDetailPage = function() { document.getElementById('axis-detail-page').classList.add('hidden'); loadProgressTab(); };
 
             async function init() { await loadUser(); await loadBrigades(); await loadWorkStages(); await loadProjects(); setupFilters(); setupTabs(); setupTabsScroll(); setupModals(); }
             async function loadUser() { const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single(); if (data) { currentUser = data; currentRole = data.role; } document.getElementById('role-badge').textContent = currentRole === 'manager' ? 'Руководитель' : currentRole === 'worker' ? 'ИТР' : 'Монтажник'; }
             async function loadBrigades() { const { data } = await supabase.from('brigades').select('*').eq('status', 'active').order('name'); allBrigades = data || []; }
             async function loadWorkStages() { const { data } = await supabase.from('work_stages').select('*').order('id'); allWorkStages = data || []; }
             async function loadProjects() { let query = supabase.from('projects').select('*, users!projects_responsible_worker_id_fkey(full_name)').order('created_at', { ascending: false }); if (currentRole === 'worker') query = query.eq('responsible_worker_id', currentUser?.id); const { data } = await query; allProjects = data || []; renderProjects(); }
-            function renderProjects() { let filtered = allProjects; if (currentFilter === 'my') filtered = allProjects.filter(p => p.responsible_worker_id === currentUser?.id); else if (currentFilter !== 'all') filtered = allProjects.filter(p => p.status === currentFilter); const container = document.getElementById('objects-container'); if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">🏗️ Нет объектов</div>'; return; } let html = '<div class="objects-grid">'; filtered.forEach(p => { const st = { 'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация', 'in_progress': '🔨 В работе', 'completed': '✅ Завершён' }[p.status] || p.status; html += `<div class="object-card" data-id="${p.id}"><div class="object-header"><span class="object-name">${p.name}</span><span class="object-status status-${p.status}">${st}</span></div><div class="object-address">📍 ${p.address}</div><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div></div><div class="object-footer"><div>👤 ${p.users?.full_name || '—'}</div><div class="object-dates"><span class="date-badge">📅 ${p.start_date || '—'}</span></div></div></div>`; }); container.innerHTML = html + '</div>'; document.querySelectorAll('.object-card').forEach(c => c.addEventListener('click', () => showDetail(c.dataset.id))); }
+
+            async function getMountingSum(projectId) {
+                const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', projectId);
+                if (!blocks?.length) return 0;
+                const axisIds = [];
+                for (const block of blocks) {
+                    const { data: axes } = await supabase.from('axes').select('id').eq('block_id', block.id);
+                    if (axes) axes.forEach(a => axisIds.push(a.id));
+                }
+                if (!axisIds.length) return 0;
+                const { data: stages } = await supabase.from('axis_work_stages').select('total_cost').in('axis_id', axisIds);
+                return (stages || []).reduce((s, st) => s + (st.total_cost || 0), 0);
+            }
+
+            function renderProjects() {
+                let filtered = allProjects;
+                if (currentFilter === 'my') filtered = allProjects.filter(p => p.responsible_worker_id === currentUser?.id);
+                else if (currentFilter !== 'all') filtered = allProjects.filter(p => p.status === currentFilter);
+                const container = document.getElementById('objects-container');
+                if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">🏗️ Нет объектов</div>'; return; }
+                let html = '<div class="objects-grid">';
+                filtered.forEach(p => {
+                    const st = { 'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация', 'in_progress': '🔨 В работе', 'completed': '✅ Завершён' }[p.status] || p.status;
+                    html += `<div class="object-card" data-id="${p.id}"><div class="object-header"><span class="object-name">${p.name}</span><span class="object-status status-${p.status}">${st}</span></div><div class="object-address">📍 ${p.address}</div><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div></div><div class="object-footer"><div>👤 ${p.users?.full_name || '—'}</div><div class="object-dates"><span class="date-badge">📅 ${p.start_date || '—'}</span></div></div></div>`;
+                });
+                container.innerHTML = html + '</div>';
+                document.querySelectorAll('.object-card').forEach(c => c.addEventListener('click', () => showDetail(c.dataset.id)));
+                // Обновляем суммы монтажа асинхронно
+                filtered.forEach(async (p) => {
+                    const sum = await getMountingSum(p.id);
+                    const card = document.querySelector(`.object-card[data-id="${p.id}"]`);
+                    if (card && sum > 0) {
+                        const sumDiv = document.createElement('div');
+                        sumDiv.className = 'object-sum';
+                        sumDiv.textContent = `👷 Сумма монтажа: ${sum.toLocaleString()} ₸`;
+                        card.querySelector('.progress-section').after(sumDiv);
+                    }
+                });
+            }
+
             function setupFilters() { document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentFilter = btn.dataset.filter; renderProjects(); })); }
             function setupTabs() { document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { document.querySelectorAll('.tab').forEach(x => x.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active')); t.classList.add('active'); document.getElementById(`tab-${t.dataset.tab}`).classList.add('active'); if (t.dataset.tab === 'progress') loadProgressTab(); })); }
             function setupTabsScroll() { const tabsContainer = document.getElementById('tabs-container'); const scrollLeft = document.getElementById('scroll-left'); const scrollRight = document.getElementById('scroll-right'); if (!tabsContainer) return; function updateArrows() { if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0); if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1); } if (scrollLeft) scrollLeft.addEventListener('click', () => tabsContainer.scrollBy({ left: -200, behavior: 'smooth' })); if (scrollRight) scrollRight.addEventListener('click', () => tabsContainer.scrollBy({ left: 200, behavior: 'smooth' })); tabsContainer.addEventListener('scroll', updateArrows); setTimeout(updateArrows, 200); }
@@ -169,9 +199,50 @@
                 currentProjectId = id;
                 const { data: p } = await supabase.from('projects').select('*, users(full_name)').eq('id', id).single();
                 if (!p) return;
+                const mountingSum = await getMountingSum(id);
+                const margin = (p.contract_price || 0) - mountingSum;
+                
                 document.getElementById('detail-name').textContent = p.name;
                 document.getElementById('detail-status-badge').textContent = { 'preparation':'📋 Подготовка','mobilization':'🚚 Мобилизация','in_progress':'🔨 В работе','completed':'✅ Завершён' }[p.status]||p.status;
-                document.getElementById('detail-content').innerHTML = `<p style="margin-bottom:10px"><strong>📍 Адрес:</strong> ${p.address} <button class="btn-small btn-edit" onclick="openEditField('address','${escapeHtml(p.address)}')">✏️</button></p><p style="margin-bottom:10px"><strong>💰 Цена договора:</strong> ${p.contract_price?.toLocaleString()||0} ₸ <button class="btn-small btn-edit" onclick="openEditField('contract_price','${p.contract_price||0}')">✏️</button></p><p style="margin-bottom:10px"><strong>📐 Проектная площадь:</strong> ${p.project_area||0} м² <button class="btn-small btn-edit" onclick="openEditField('project_area','${p.project_area||0}')">✏️</button></p><p style="margin-bottom:10px"><strong>📅 Начало:</strong> ${p.start_date||'—'} <button class="btn-small btn-edit" onclick="openEditField('start_date','${p.start_date||''}')">✏️</button></p><p style="margin-bottom:10px"><strong>🏁 Окончание:</strong> ${p.end_date_contract||'—'} <button class="btn-small btn-edit" onclick="openEditField('end_date_contract','${p.end_date_contract||''}')">✏️</button></p><p style="margin-bottom:10px"><strong>👤 ИТР:</strong> ${p.users?.full_name||'—'}</p><p style="margin-bottom:10px"><strong>📋 Менеджер:</strong> ${p.manager_name||'—'} · ${p.manager_phone||'—'} <button class="btn-small btn-edit" onclick="openEditManager()">✏️</button></p><p style="margin-bottom:10px"><strong>📊 Статус:</strong> <select id="change-status" style="display:inline;width:auto;padding:8px">${['preparation','mobilization','in_progress','completed','paused'].map(s=>`<option value="${s}" ${p.status===s?'selected':''}>${{'preparation':'📋 Подготовка','mobilization':'🚚 Мобилизация','in_progress':'🔨 В работе','completed':'✅ Завершён','paused':'⏸️ Пауза'}[s]||s}</option>`).join('')}</select> <button class="btn-small btn-edit" onclick="updateStatus()">Обновить</button></p><button class="btn-secondary" onclick="openFullInfo()" style="width:100%;margin:16px 0">📄 Полная информация</button>`;
+                
+                // Получаем детализацию по осям
+                let axisDetailHtml = '';
+                const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', id);
+                if (blocks?.length) {
+                    for (const block of blocks) {
+                        const { data: axes } = await supabase.from('axes').select('*').eq('block_id', block.id).order('name');
+                        if (axes) {
+                            for (const axis of axes) {
+                                const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id', axis.id);
+                                if (stages?.length) {
+                                    const axisSum = stages.reduce((s, st) => s + (st.total_cost || 0), 0);
+                                    const brigades = [...new Set(stages.map(s => s.brigade_id).filter(Boolean))];
+                                    axisDetailHtml += `<p style="margin:6px 0;font-size:13px"><strong>Ось ${axis.name}</strong> (${axis.total_area || 0} м²): ${axisSum.toLocaleString()} ₸</p>`;
+                                    for (const bId of brigades) {
+                                        const bs = stages.filter(s => s.brigade_id === bId);
+                                        const bSum = bs.reduce((s, st) => s + (st.total_cost || 0), 0);
+                                        axisDetailHtml += `<p style="margin:4px 0 4px 16px;font-size:12px;color:#64748B">• ${bs[0]?.brigades?.name || 'Бригада'}: ${bSum.toLocaleString()} ₸</p>`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                document.getElementById('detail-content').innerHTML = `
+                    <p style="margin-bottom:10px"><strong>📍 Адрес:</strong> ${p.address} <button class="btn-small btn-edit" onclick="openEditField('address','${escapeHtml(p.address)}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>💰 Цена договора:</strong> ${p.contract_price?.toLocaleString()||0} ₸ <button class="btn-small btn-edit" onclick="openEditField('contract_price','${p.contract_price||0}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>👷 Сумма монтажа:</strong> ${mountingSum.toLocaleString()} ₸ <span style="color:#64748B;font-size:12px">(${p.contract_price ? ((mountingSum/p.contract_price)*100).toFixed(1) : 0}% от договора)</span></p>
+                    <p style="margin-bottom:10px"><strong>📊 Маржа:</strong> <span style="color:${margin>=0?'#10B981':'#EF4444'}">${margin.toLocaleString()} ₸</span> <span style="color:#64748B;font-size:12px">(${p.contract_price ? ((margin/p.contract_price)*100).toFixed(1) : 0}% от договора)</span></p>
+                    <p style="margin-bottom:10px"><strong>📐 Проектная площадь:</strong> ${p.project_area||0} м² <button class="btn-small btn-edit" onclick="openEditField('project_area','${p.project_area||0}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>📅 Начало:</strong> ${p.start_date||'—'} <button class="btn-small btn-edit" onclick="openEditField('start_date','${p.start_date||''}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>🏁 Окончание:</strong> ${p.end_date_contract||'—'} <button class="btn-small btn-edit" onclick="openEditField('end_date_contract','${p.end_date_contract||''}')">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>👤 ИТР:</strong> ${p.users?.full_name||'—'}</p>
+                    <p style="margin-bottom:10px"><strong>📋 Менеджер:</strong> ${p.manager_name||'—'} · ${p.manager_phone||'—'} <button class="btn-small btn-edit" onclick="openEditManager()">✏️</button></p>
+                    <p style="margin-bottom:10px"><strong>📊 Статус:</strong> <select id="change-status" style="display:inline;width:auto;padding:8px">${['preparation','mobilization','in_progress','completed','paused'].map(s=>`<option value="${s}" ${p.status===s?'selected':''}>${{'preparation':'📋 Подготовка','mobilization':'🚚 Мобилизация','in_progress':'🔨 В работе','completed':'✅ Завершён','paused':'⏸️ Пауза'}[s]||s}</option>`).join('')}</select> <button class="btn-small btn-edit" onclick="updateStatus()">Обновить</button></p>
+                    ${axisDetailHtml ? `<hr style="margin:16px 0"><h4 style="margin-bottom:12px">📊 ДЕТАЛИЗАЦИЯ ПО ОСЯМ:</h4>${axisDetailHtml}<p style="margin-top:8px;font-weight:700">ВСЕГО МОНТАЖ: ${mountingSum.toLocaleString()} ₸</p>` : ''}
+                    <button class="btn-secondary" onclick="openFullInfo()" style="width:100%;margin:16px 0">📄 Полная информация</button>
+                `;
                 document.getElementById('back-btn').onclick = () => { document.getElementById('detail-view').classList.add('hidden'); document.getElementById('list-view').classList.remove('hidden'); loadProjects(); };
                 document.getElementById('list-view').classList.add('hidden'); document.getElementById('detail-view').classList.remove('hidden');
                 document.querySelector('[data-tab="info"]').click();
@@ -198,98 +269,40 @@
                     const minStart = stages?.length ? stages.reduce((min,st) => st.plan_start && (!min || st.plan_start < min) ? st.plan_start : min, null) : null;
                     const maxEnd = stages?.length ? stages.reduce((max,st) => st.plan_end && (!max || st.plan_end > max) ? st.plan_end : max, null) : null;
                     const statusMap = { in_progress:'🔨 В работе', no_readiness:'⏳ Нет стройготовности', no_brigade:'👷 Нет бригады', completed:'✅ Завершена', paused:'⏸️ Пауза' };
-                    html += `<div class="axis-card">
-                        <div class="axis-header"><span class="axis-name">🔵 Ось ${axis.name}</span><span class="status-badge-sm status-${axis.status||'no_brigade'}-sm">${statusMap[axis.status]||axis.status}</span></div>
-                        <div class="axis-dates">📅 ${minStart||'—'} — ${maxEnd||'—'} | 📐 ${axis.total_area||0} м² | 👷 Бригад: ${brigades.length}</div>
-                        <div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:${totalProgress}%"></div></div><span style="font-size:12px">${totalProgress}%</span></div>
-                        <div style="display:flex;gap:8px;flex-wrap:wrap">
-                            <button class="btn-secondary" onclick="openAxisDetailPage('${axis.id}')">👁️ Открыть ГПР</button>
-                            <button class="btn-small btn-edit" onclick="openEditAxis('${axis.id}')">✏️</button>
-                            <button class="btn-small btn-delete" onclick="deleteAxisConfirm('${axis.id}','${axis.name}')">🗑️</button>
-                        </div>
-                    </div>`;}
+                    html += `<div class="axis-card"><div class="axis-header"><span class="axis-name">🔵 Ось ${axis.name}</span><span class="status-badge-sm status-${axis.status||'no_brigade'}-sm">${statusMap[axis.status]||axis.status}</span></div><div class="axis-dates">📅 ${minStart||'—'} — ${maxEnd||'—'} | 📐 ${axis.total_area||0} м² | 👷 Бригад: ${brigades.length}</div><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:${totalProgress}%"></div></div><span style="font-size:12px">${totalProgress}%</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn-secondary" onclick="openAxisDetailPage('${axis.id}')">👁️ Открыть ГПР</button><button class="btn-small btn-edit" onclick="openEditAxis('${axis.id}')">✏️</button><button class="btn-small btn-delete" onclick="deleteAxisConfirm('${axis.id}','${axis.name}')">🗑️</button></div></div>`;}
                 html += `<button class="btn-primary" onclick="openCreateAxis()" style="margin-top:10px">➕ Добавить ось</button>`;
                 container.innerHTML = html;
             }
 
             window.openCreateAxis = function() {
-                let html = `<div class="form-group"><label>Название оси *</label><input type="text" id="new-axis-name" placeholder="1-10"></div>
-                <div class="row-2"><div class="form-group"><label>Общая площадь (м²)</label><input type="number" id="new-axis-area" step="0.01"></div><div class="form-group"><label>Статус</label><select id="new-axis-status"><option value="no_brigade">👷 Нет бригады</option><option value="no_readiness">⏳ Нет стройготовности</option><option value="in_progress">🔨 В работе</option></select></div></div>
-                <div id="brigades-container"></div><button class="btn-secondary" onclick="addBrigadeBlock()" style="width:100%;margin:12px 0">➕ Добавить бригаду</button>`;
+                let html = `<div class="form-group"><label>Название оси *</label><input type="text" id="new-axis-name" placeholder="1-10"></div><div class="row-2"><div class="form-group"><label>Общая площадь (м²)</label><input type="number" id="new-axis-area" step="0.01"></div><div class="form-group"><label>Статус</label><select id="new-axis-status"><option value="no_brigade">👷 Нет бригады</option><option value="no_readiness">⏳ Нет стройготовности</option><option value="in_progress">🔨 В работе</option></select></div></div><div id="brigades-container"></div><button class="btn-secondary" onclick="addBrigadeBlock()" style="width:100%;margin:12px 0">➕ Добавить бригаду</button>`;
                 document.getElementById('form-modal-title').textContent = '➕ Создать ось';
                 document.getElementById('form-modal-content').innerHTML = html;
                 document.getElementById('form-modal').classList.remove('hidden');
                 addBrigadeBlock();
                 const saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Создать ось с ГПР';
                 saveBtn.onclick = async () => {
-                    const name = document.getElementById('new-axis-name').value;
-                    const area = parseFloat(document.getElementById('new-axis-area').value) || 0;
-                    const status = document.getElementById('new-axis-status').value;
+                    const name = document.getElementById('new-axis-name').value; const area = parseFloat(document.getElementById('new-axis-area').value)||0; const status = document.getElementById('new-axis-status').value;
                     if (!name) { alert('Введите название оси'); return; }
                     const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
                     if (!blocks?.length) { alert('Нет блоков'); return; }
                     const { data: axis } = await supabase.from('axes').insert({ block_id: blocks[0].id, name, total_area: area, status }).select('id').single();
-                    const brigadeBlocks = document.querySelectorAll('.brigade-block');
-                    let minStart = null, maxEnd = null;
-                    for (const block of brigadeBlocks) {
-                        const brigadeId = block.querySelector('.brigade-select').value;
-                        const subAxisName = block.querySelector('.subaxis-name-input').value || '';
-                        const stageRows = block.querySelectorAll('.stage-row');
-                        for (const row of stageRows) {
-                            const stageId = row.querySelector('.stage-select').value;
-                            const vol = parseFloat(row.querySelector('.stage-volume').value) || 0;
-                            const price = parseFloat(row.querySelector('.stage-price').value) || 0;
-                            const start = row.querySelector('.stage-start').value;
-                            const end = row.querySelector('.stage-end').value;
-                            if (stageId && vol > 0) {
-                                if (start && (!minStart || start < minStart)) minStart = start;
-                                if (end && (!maxEnd || end > maxEnd)) maxEnd = end;
-                                await supabase.from('axis_work_stages').insert({ axis_id: axis.id, brigade_id: brigadeId || null, sub_axis_name: subAxisName, stage_id: parseInt(stageId), volume: vol, unit: 'м²', price_per_unit: price, total_cost: vol * price, plan_start: start || null, plan_end: end || null, progress: 0, status: 'pending', created_by: currentUser?.id });
-                            }
-                        }
-                    }
-                    if (minStart || maxEnd) await supabase.from('axes').update({ plan_start: minStart, plan_end: maxEnd }).eq('id', axis.id);
-                    await supabase.from('axes_history').insert({ axis_id: axis.id, action: 'create', comment: 'Ось создана', changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
+                    const brigadeBlocks = document.querySelectorAll('.brigade-block'); let minStart=null, maxEnd=null;
+                    for (const block of brigadeBlocks) { const brigadeId=block.querySelector('.brigade-select').value; const subAxisName=block.querySelector('.subaxis-name-input').value||''; const stageRows=block.querySelectorAll('.stage-row');
+                        for (const row of stageRows) { const stageId=row.querySelector('.stage-select').value; const vol=parseFloat(row.querySelector('.stage-volume').value)||0; const price=parseFloat(row.querySelector('.stage-price').value)||0; const start=row.querySelector('.stage-start').value; const end=row.querySelector('.stage-end').value;
+                            if (stageId&&vol>0) { if(start&&(!minStart||start<minStart))minStart=start; if(end&&(!maxEnd||end>maxEnd))maxEnd=end; await supabase.from('axis_work_stages').insert({axis_id:axis.id,brigade_id:brigadeId||null,sub_axis_name:subAxisName,stage_id:parseInt(stageId),volume:vol,unit:'м²',price_per_unit:price,total_cost:vol*price,plan_start:start||null,plan_end:end||null,progress:0,status:'pending',created_by:currentUser?.id}); } } }
+                    if (minStart||maxEnd) await supabase.from('axes').update({plan_start:minStart,plan_end:maxEnd}).eq('id',axis.id);
+                    await supabase.from('axes_history').insert({axis_id:axis.id,action:'create',comment:'Ось создана',changed_by:currentUser?.id,changed_by_name:currentUser?.full_name});
                     document.getElementById('form-modal').classList.add('hidden'); loadProgressTab(); alert('✅ Ось создана!');
                 };
                 document.getElementById('form-modal-content').appendChild(saveBtn);
             };
 
-            window.addBrigadeBlock = function() {
-                const container = document.getElementById('brigades-container');
-                const idx = container.querySelectorAll('.brigade-block').length;
-                const block = document.createElement('div'); block.className = 'brigade-block';
-                block.style.cssText = 'background:#F8FAFC;border-radius:16px;padding:16px;margin:12px 0;border:1px solid #E2E8F0';
-                block.innerHTML = `<div class="form-group"><label>👷 Бригада ${idx+1}</label><select class="brigade-select">${allBrigades.map(b=>`<option value="${b.id}">${b.name} (${b.foreman_name||''})</option>`).join('')}</select></div><div class="form-group"><label>📍 Подось (зона работы)</label><input type="text" class="subaxis-name-input" placeholder="1-5"></div><div class="stages-rows"></div><button class="btn-add" onclick="addStageRow(this.previousElementSibling)" style="margin-top:8px">+ Добавить этап работы</button>`;
-                container.appendChild(block);
-                addStageRow(block.querySelector('.stages-rows'));
-            };
+            window.addBrigadeBlock = function() { const container = document.getElementById('brigades-container'); const idx = container.querySelectorAll('.brigade-block').length; const block = document.createElement('div'); block.className = 'brigade-block'; block.style.cssText = 'background:#F8FAFC;border-radius:16px;padding:16px;margin:12px 0;border:1px solid #E2E8F0'; block.innerHTML = `<div class="form-group"><label>👷 Бригада ${idx+1}</label><select class="brigade-select">${allBrigades.map(b=>`<option value="${b.id}">${b.name} (${b.foreman_name||''})</option>`).join('')}</select></div><div class="form-group"><label>📍 Подось (зона работы)</label><input type="text" class="subaxis-name-input" placeholder="1-5"></div><div class="stages-rows"></div><button class="btn-add" onclick="addStageRow(this.previousElementSibling)" style="margin-top:8px">+ Добавить этап работы</button>`; container.appendChild(block); addStageRow(block.querySelector('.stages-rows')); };
+            window.addStageRow = function(container) { const row = document.createElement('div'); row.className = 'stage-row'; row.style.cssText = 'display:flex;gap:8px;margin:8px 0;align-items:center;flex-wrap:wrap'; row.innerHTML = `<select class="stage-select" style="flex:2;min-width:120px">${allWorkStages.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select><input type="number" class="stage-volume" placeholder="м²" style="width:70px" step="0.01"><input type="number" class="stage-price" placeholder="₸/м²" style="width:80px" step="0.01"><input type="date" class="stage-start" style="width:130px"><input type="date" class="stage-end" style="width:130px"><button class="btn-delete" onclick="this.parentElement.remove()" style="width:30px;height:30px">✕</button>`; container.appendChild(row); };
 
-            window.addStageRow = function(container) {
-                const row = document.createElement('div'); row.className = 'stage-row';
-                row.style.cssText = 'display:flex;gap:8px;margin:8px 0;align-items:center;flex-wrap:wrap';
-                row.innerHTML = `<select class="stage-select" style="flex:2;min-width:120px">${allWorkStages.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select><input type="number" class="stage-volume" placeholder="м²" style="width:70px" step="0.01"><input type="number" class="stage-price" placeholder="₸/м²" style="width:80px" step="0.01"><input type="date" class="stage-start" style="width:130px"><input type="date" class="stage-end" style="width:130px"><button class="btn-delete" onclick="this.parentElement.remove()" style="width:30px;height:30px">✕</button>`;
-                container.appendChild(row);
-            };
-
-            window.openEditAxis = async function(axisId) {
-                const { data: axis } = await supabase.from('axes').select('*').eq('id', axisId).single();
-                if (!axis) return;
-                document.getElementById('edit-modal-title').textContent = `✏️ Редактировать ось ${axis.name}`;
-                document.getElementById('edit-modal-content').innerHTML = `<div class="form-group"><label>Название оси</label><input type="text" id="edit-axis-name" value="${axis.name}"></div><div class="form-group"><label>Общая площадь (м²)</label><input type="number" id="edit-axis-area" value="${axis.total_area||0}" step="0.01"></div><div class="form-group"><label>Статус</label><select id="edit-axis-status"><option value="in_progress" ${axis.status==='in_progress'?'selected':''}>🔨 В работе</option><option value="no_readiness" ${axis.status==='no_readiness'?'selected':''}>⏳ Нет стройготовности</option><option value="no_brigade" ${axis.status==='no_brigade'?'selected':''}>👷 Нет бригады</option><option value="completed" ${axis.status==='completed'?'selected':''}>✅ Завершена</option><option value="paused" ${axis.status==='paused'?'selected':''}>⏸️ Пауза</option></select></div>`;
-                document.getElementById('save-edit-btn').onclick = async () => { await supabase.from('axes').update({ name: document.getElementById('edit-axis-name').value, total_area: parseFloat(document.getElementById('edit-axis-area').value)||0, status: document.getElementById('edit-axis-status').value }).eq('id', axisId); document.getElementById('edit-modal').classList.add('hidden'); loadProgressTab(); };
-                document.getElementById('edit-modal').classList.remove('hidden');
-            };
-
-            window.deleteAxisConfirm = function(axisId, axisName) {
-                if (confirm(`⚠️ Удалить ось ${axisName}?\n\nЭто действие удалит все этапы, подоси и историю.\n\nЭто действие НЕОБРАТИМО!`)) {
-                    supabase.from('axis_work_stages').delete().eq('axis_id', axisId).then(() => {
-                        supabase.from('axes_history').delete().eq('axis_id', axisId).then(() => {
-                            supabase.from('axes').delete().eq('id', axisId).then(() => { loadProgressTab(); alert('✅ Ось удалена'); });
-                        });
-                    });
-                }
-            };
+            window.openEditAxis = async function(axisId) { const { data: axis } = await supabase.from('axes').select('*').eq('id',axisId).single(); if(!axis) return; document.getElementById('edit-modal-title').textContent = `✏️ Редактировать ось ${axis.name}`; document.getElementById('edit-modal-content').innerHTML = `<div class="form-group"><label>Название оси</label><input type="text" id="edit-axis-name" value="${axis.name}"></div><div class="form-group"><label>Общая площадь (м²)</label><input type="number" id="edit-axis-area" value="${axis.total_area||0}" step="0.01"></div><div class="form-group"><label>Статус</label><select id="edit-axis-status"><option value="in_progress" ${axis.status==='in_progress'?'selected':''}>🔨 В работе</option><option value="no_readiness" ${axis.status==='no_readiness'?'selected':''}>⏳ Нет стройготовности</option><option value="no_brigade" ${axis.status==='no_brigade'?'selected':''}>👷 Нет бригады</option><option value="completed" ${axis.status==='completed'?'selected':''}>✅ Завершена</option><option value="paused" ${axis.status==='paused'?'selected':''}>⏸️ Пауза</option></select></div>`; document.getElementById('save-edit-btn').onclick = async () => { await supabase.from('axes').update({name:document.getElementById('edit-axis-name').value,total_area:parseFloat(document.getElementById('edit-axis-area').value)||0,status:document.getElementById('edit-axis-status').value}).eq('id',axisId); document.getElementById('edit-modal').classList.add('hidden'); loadProgressTab(); }; document.getElementById('edit-modal').classList.remove('hidden'); };
+            window.deleteAxisConfirm = function(axisId, axisName) { if(confirm(`⚠️ Удалить ось ${axisName}?\n\nЭто действие удалит все этапы, подоси и историю.\n\nЭто действие НЕОБРАТИМО!`)){ supabase.from('axis_work_stages').delete().eq('axis_id',axisId).then(()=>{supabase.from('axes_history').delete().eq('axis_id',axisId).then(()=>{supabase.from('axes').delete().eq('id',axisId).then(()=>{loadProgressTab(); alert('✅ Ось удалена');});});}); } };
 
             // ===== СТРАНИЦА ГПР ОСИ =====
             window.openAxisDetailPage = async function(axisId) {
@@ -300,308 +313,70 @@
                 const brigades = [...new Set((stages||[]).map(s => s.brigade_id).filter(Boolean))];
                 const totalProgress = stages?.length ? Math.round(stages.reduce((s,st) => s + (st.progress||0), 0) / stages.length) : 0;
                 const statusMap = { in_progress:'🔨 В работе', no_readiness:'⏳ Нет стройготовности', no_brigade:'👷 Нет бригады', completed:'✅ Завершена', paused:'⏸️ Пауза' };
-                let pageHtml = `<div style="max-width:600px;margin:0 auto">
-                    <button class="back-btn" onclick="closeAxisDetailPage()">← Назад к объекту</button>
-                    <div class="info-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3>📊 ГПР — Ось ${axis.name}</h3><span class="status-badge-sm status-${axis.status||'no_brigade'}-sm">${statusMap[axis.status]||axis.status}</span></div><p>📅 ${axis.plan_start||'—'} — ${axis.plan_end||'—'} | 📐 ${axis.total_area||0} м²</p><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:${totalProgress}%"></div></div><span>${totalProgress}%</span></div></div>
-                    <div class="tabs-wrapper"><div class="tabs" style="gap:4px"><button class="tab active" onclick="switchAxisTab('overview')">📋 Обзор</button><button class="tab" onclick="switchAxisTab('history')">📜 История</button><button class="tab" onclick="switchAxisTab('pdf')">📥 PDF</button></div></div>
-                    <div id="axis-tab-overview" class="axis-tab-content">`;
+                let pageHtml = `<div style="max-width:600px;margin:0 auto"><button class="back-btn" onclick="closeAxisDetailPage()">← Назад к объекту</button><div class="info-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3>📊 ГПР — Ось ${axis.name}</h3><span class="status-badge-sm status-${axis.status||'no_brigade'}-sm">${statusMap[axis.status]||axis.status}</span></div><p>📅 ${axis.plan_start||'—'} — ${axis.plan_end||'—'} | 📐 ${axis.total_area||0} м²</p><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:${totalProgress}%"></div></div><span>${totalProgress}%</span></div></div><div class="tabs-wrapper"><div class="tabs" style="gap:4px"><button class="tab active" onclick="switchAxisTab('overview')">📋 Обзор</button><button class="tab" onclick="switchAxisTab('history')">📜 История</button><button class="tab" onclick="switchAxisTab('pdf')">📥 PDF</button></div></div><div id="axis-tab-overview" class="axis-tab-content">`;
                 for (const brigadeId of brigades) {
                     const bs = (stages||[]).filter(s => s.brigade_id === brigadeId);
                     const brigade = bs[0]?.brigades;
                     const subAxisName = bs[0]?.sub_axis_name || '';
                     const brProgress = Math.round(bs.reduce((s,st) => s + (st.progress||0), 0) / bs.length);
-                    pageHtml += `<div class="brigade-section"><div class="brigade-header"><span class="brigade-name">👷 ${brigade?.name||'Бригада'} (${brigade?.foreman_name||''})</span><span class="status-badge-sm status-in_progress-sm">${brProgress}%</span></div>${subAxisName?`<p style="font-size:13px;color:#64748B;margin-bottom:8px">📍 Подось: ${subAxisName}</p>`:''}<table class="work-table"><thead><tr><th>Этап</th><th>м²</th><th>Цена</th><th>Сумма</th><th>%</th><th>📅</th></tr></thead><tbody>${bs.map(ws => `<tr><td>${ws.work_stages?.name||'—'}</td><td class="text-right">${ws.volume||0}</td><td class="text-right">${ws.price_per_unit||0} ₸</td><td class="text-right">${(ws.total_cost||0).toLocaleString()} ₸</td><td><input type="number" class="progress-input" value="${ws.progress||0}" min="0" max="100" onchange="updateStageProgress('${ws.id}',this.value)">%</td><td style="font-size:10px">${ws.plan_start||'—'}<br>${ws.plan_end||'—'}</td></tr>`).join('')}</tbody></table><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn-secondary" onclick="openActionMenu('${axisId}','${brigadeId}','${subAxisName}')">⋯ Действия</button><button class="btn-small btn-edit" onclick="editSubAxis('${axisId}','${brigadeId}')">✏️ Подось</button><button class="btn-small btn-delete" onclick="deleteSubAxisConfirm('${axisId}','${brigadeId}','${brigade?.name||'бригаду'}')">🗑️</button><button class="btn-small btn-add" onclick="addStageToBrigade('${axisId}','${brigadeId}','${subAxisName}')">+ Этап</button></div></div>`;}
+                    const allCompleted = bs.every(s => (s.progress||0) >= 100);
+                    const subStatus = allCompleted ? '✅ Завершена' : '⚙️ В работе';
+                    pageHtml += `<div class="brigade-section"><div class="brigade-header"><span class="brigade-name">👷 ${brigade?.name||'Бригада'} (${brigade?.foreman_name||''})</span><span class="status-badge-sm ${allCompleted?'status-completed-sm':'status-in_progress-sm'}">${subStatus} ${brProgress}%</span></div>${subAxisName?`<p style="font-size:13px;color:#64748B;margin-bottom:8px">📍 Подось: ${subAxisName}</p>`:''}<table class="work-table"><thead><tr><th>Этап</th><th>м²</th><th>Цена</th><th>Сумма</th><th>%</th><th>📅</th></tr></thead><tbody>${bs.map(ws => `<tr><td>${ws.work_stages?.name||'—'}</td><td class="text-right">${ws.volume||0}</td><td class="text-right">${ws.price_per_unit||0} ₸</td><td class="text-right">${(ws.total_cost||0).toLocaleString()} ₸</td><td><input type="number" class="progress-input" value="${ws.progress||0}" min="0" max="100" onchange="updateStageProgress('${ws.id}',this.value,'${axisId}')">%</td><td style="font-size:10px">${ws.plan_start||'—'}<br>${ws.plan_end||'—'}</td></tr>`).join('')}</tbody></table><div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn-secondary" onclick="openActionMenu('${axisId}','${brigadeId}','${subAxisName}')">⋯ Действия</button><button class="btn-small btn-edit" onclick="editSubAxis('${axisId}','${brigadeId}')">✏️ Подось</button><button class="btn-small btn-delete" onclick="deleteSubAxisConfirm('${axisId}','${brigadeId}','${brigade?.name||'бригаду'}')">🗑️</button><button class="btn-small btn-add" onclick="addStageToBrigade('${axisId}','${brigadeId}','${subAxisName}')">+ Этап</button></div></div>`;}
                 pageHtml += `<button class="btn-primary" onclick="addBrigadeToAxis('${axisId}')" style="margin-top:10px">➕ Добавить бригаду</button><button class="btn-secondary" onclick="openEditAxis('${axisId}')" style="width:100%;margin-top:8px">✏️ Редактировать ось</button></div><div id="axis-tab-history" class="axis-tab-content hidden"></div><div id="axis-tab-pdf" class="axis-tab-content hidden"><div class="info-card"><h3>📥 Скачать ГПР в PDF</h3><p>Выберите бригаду:</p><select id="pdf-brigade-select" style="margin:10px 0">${brigades.map(bId=>{const b=stages.find(s=>s.brigade_id===bId);return `<option value="${bId}">${b?.brigades?.name||'Бригада'}</option>`;}).join('')}</select><button class="btn-pdf" onclick="downloadBrigadePDF('${axisId}',document.getElementById('pdf-brigade-select').value)">📥 Скачать PDF</button></div></div></div>`;
                 document.getElementById('axis-detail-page').innerHTML = pageHtml;
                 document.getElementById('axis-detail-page').classList.remove('hidden');
             };
 
-            window.closeAxisDetailPage = function() { document.getElementById('axis-detail-page').classList.add('hidden'); loadProgressTab(); };
-            window.switchAxisTab = function(tabName) {
-                document.querySelectorAll('#axis-detail-page .tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('#axis-detail-page .axis-tab-content').forEach(c => c.classList.add('hidden'));
-                const tabBtn = document.querySelector(`#axis-detail-page [onclick*="${tabName}"]`);
-                if (tabBtn) tabBtn.classList.add('active');
-                const tabContent = document.getElementById(`axis-tab-${tabName}`);
-                if (tabContent) tabContent.classList.remove('hidden');
-                if (tabName === 'history') loadAxisHistory();
-            };
+            window.switchAxisTab = function(tabName) { document.querySelectorAll('#axis-detail-page .tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('#axis-detail-page .axis-tab-content').forEach(c => c.classList.add('hidden')); const tabBtn = document.querySelector(`#axis-detail-page [onclick*="${tabName}"]`); if(tabBtn) tabBtn.classList.add('active'); const tabContent = document.getElementById(`axis-tab-${tabName}`); if(tabContent) tabContent.classList.remove('hidden'); if(tabName==='history') loadAxisHistory(); };
+            async function loadAxisHistory() { const container = document.getElementById('axis-tab-history'); if(!container) return; const { data } = await supabase.from('axes_history').select('*').eq('axis_id',currentAxisId).order('changed_at',{ascending:false}); container.innerHTML = data?.length ? data.map(h => `<div class="gpr-item"><strong>${h.action}</strong><br><small>${h.comment||''}</small><br><small>${h.changed_by_name} · ${new Date(h.changed_at).toLocaleString('ru-RU')}</small></div>`).join('') : '<div class="info-card"><p>Нет изменений</p></div>'; }
 
-            async function loadAxisHistory() {
-                const container = document.getElementById('axis-tab-history');
-                if (!container) return;
-                const { data } = await supabase.from('axes_history').select('*').eq('axis_id', currentAxisId).order('changed_at', { ascending: false });
-                container.innerHTML = data?.length ? data.map(h => `<div class="gpr-item"><strong>${h.action}</strong><br><small>${h.comment||''}</small><br><small>${h.changed_by_name} · ${new Date(h.changed_at).toLocaleString('ru-RU')}</small></div>`).join('') : '<div class="info-card"><p>Нет изменений</p></div>';
-            }
-
-            window.updateStageProgress = async function(stageId, value) {
+            window.updateStageProgress = async function(stageId, value, axisId) {
                 const progress = Math.max(0, Math.min(100, parseInt(value) || 0));
                 const status = progress >= 100 ? 'completed' : progress > 0 ? 'in_progress' : 'pending';
                 await supabase.from('axis_work_stages').update({ progress, status }).eq('id', stageId);
-                await supabase.from('axes_history').insert({ axis_id: currentAxisId, action: 'update_progress', new_value: { stage_id: stageId, progress }, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
-                openAxisDetailPage(currentAxisId);
+                await supabase.from('axes_history').insert({ axis_id: axisId, action: 'update_progress', new_value: { stage_id: stageId, progress }, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
+                openAxisDetailPage(axisId);
             };
 
             // ===== МЕНЮ ДЕЙСТВИЙ =====
             window.openActionMenu = function(axisId, brigadeId, subAxisName) {
                 showActionMenu([
-            { label: '⏰ Изменить срок ГПР', action: () => { closeActionMenu(); openShiftGPRForm(axisId, brigadeId); } },
-            { label: '📋 Сдать Наряд', action: () => { closeActionMenu(); openWorkOrderForm(axisId, brigadeId); } },
-            { label: '👷 Заменить бригаду', action: () => { closeActionMenu(); openChangeBrigadeForm(axisId, brigadeId); } },
-            { label: '✉️ Написать письмо заказчику', action: () => { closeActionMenu(); openLetterForm(axisId, brigadeId); } },
-            { label: '💰 Подать на Аванс', action: () => { closeActionMenu(); openAdvanceForm(axisId, brigadeId); } },
-            { label: '📝 Поставить задачу', action: () => { closeActionMenu(); openTaskForm(axisId, brigadeId); } },
-        ]);
-    };
+                    { label: '⏰ Изменить срок ГПР', action: () => { closeActionMenu(); openShiftGPRForm(axisId, brigadeId); } },
+                    { label: '📋 Сдать Наряд', action: () => { closeActionMenu(); openWorkOrderForm(axisId, brigadeId); } },
+                    { label: '👷 Заменить бригаду', action: () => { closeActionMenu(); openChangeBrigadeForm(axisId, brigadeId); } },
+                    { label: '✉️ Написать письмо заказчику', action: () => { closeActionMenu(); openLetterForm(axisId, brigadeId); } },
+                    { label: '💰 Подать на Аванс', action: () => { closeActionMenu(); openAdvanceForm(axisId, brigadeId); } },
+                    { label: '📝 Поставить задачу', action: () => { closeActionMenu(); openTaskForm(axisId, brigadeId); } },
+                ]);
+            };
 
-    function showActionMenu(items) {
-        const menu = document.getElementById('action-menu');
-        const overlay = document.getElementById('action-overlay');
-        menu.innerHTML = items.map(i => `<div class="action-item${i.danger?' danger':''}" onclick="(${i.action.toString()})()">${i.label}</div>`).join('');
-        overlay.classList.remove('hidden'); menu.classList.remove('hidden');
-    }
+            function showActionMenu(items) { const menu = document.getElementById('action-menu'); const overlay = document.getElementById('action-overlay'); menu.innerHTML = items.map(i => `<div class="action-item${i.danger?' danger':''}" onclick="(${i.action.toString()})()">${i.label}</div>`).join(''); overlay.classList.remove('hidden'); menu.classList.remove('hidden'); }
 
-    // ===== ФОРМЫ ДЕЙСТВИЙ =====
+            // ===== ФОРМЫ ДЕЙСТВИЙ =====
+            window.openShiftGPRForm = async function(axisId, brigadeId) { const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id',axisId).eq('brigade_id',brigadeId); if(!stages?.length){alert('Нет этапов');return;} const brigade=stages[0]?.brigades?.name||'Бригада'; const currentEnd=stages.reduce((max,s)=>s.plan_end&&(!max||s.plan_end>max)?s.plan_end:max,null); let html=`<div class="form-group"><label>Бригада</label><input value="${brigade}" disabled></div><div class="form-group"><label>Текущая дата окончания</label><input value="${currentEnd||'—'}" disabled></div><div class="form-group"><label>Новая дата окончания *</label><input type="date" id="shift-new-date" value="${currentEnd||''}"></div><div class="form-group"><label>Причина *</label><select id="shift-reason"><option value="customer">По вине Заказчика</option><option value="lamgroup">По вине LamGroup</option><option value="contractor">По вине Монтажника</option></select></div><div class="form-group"><label>Описание</label><textarea id="shift-desc" rows="3"></textarea></div>`; document.getElementById('form-modal-title').textContent='⏰ Изменить срок ГПР'; document.getElementById('form-modal-content').innerHTML=html; document.getElementById('form-modal').classList.remove('hidden'); const saveBtn=document.createElement('button'); saveBtn.className='btn-primary'; saveBtn.textContent='Сохранить'; saveBtn.onclick=async()=>{const newDate=document.getElementById('shift-new-date').value; const reason=document.getElementById('shift-reason').value; const desc=document.getElementById('shift-desc').value; if(!newDate){alert('Укажите новую дату');return;} for(const s of stages){await supabase.from('axis_work_stages').update({plan_end:newDate}).eq('id',s.id);} await supabase.from('axes').update({plan_end:newDate}).eq('id',axisId); await supabase.from('axes_history').insert({axis_id:axisId,action:'shift_gpr',comment:`Сдвиг: ${reason}. ${desc}`,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name}); if(reason==='customer'){await supabase.from('letters').insert({project_id:currentProjectId,axis_id:axisId,delay_reason:'customer',delay_description:desc,new_end_date:newDate,status:'draft',created_by:currentUser?.id,created_by_name:currentUser?.full_name}); await supabase.from('tasks').insert({project_id:currentProjectId,type:'letter',title:'Письмо заказчику: сдвиг ГПР',description:desc,status:'pending',priority:'high',created_by:currentUser?.id}); alert('✅ Срок сдвинут. Письмо заказчику создано.');}else{alert('✅ Срок ГПР изменён');} document.getElementById('form-modal').classList.add('hidden'); if(document.getElementById('axis-detail-page').classList.contains('hidden'))loadProgressTab();else openAxisDetailPage(currentAxisId);}; document.getElementById('form-modal-content').appendChild(saveBtn); };
 
-    // 1. ИЗМЕНИТЬ СРОК ГПР
-    window.openShiftGPRForm = async function(axisId, brigadeId) {
-        const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id', axisId).eq('brigade_id', brigadeId);
-        if (!stages?.length) { alert('Нет этапов'); return; }
-        const brigade = stages[0]?.brigades?.name || 'Бригада';
-        const currentEnd = stages.reduce((max, s) => s.plan_end && (!max || s.plan_end > max) ? s.plan_end : max, null);
-        let html = `<div class="form-group"><label>Бригада</label><input value="${brigade}" disabled></div><div class="form-group"><label>Текущая дата окончания</label><input value="${currentEnd||'—'}" disabled></div><div class="form-group"><label>Новая дата окончания *</label><input type="date" id="shift-new-date" value="${currentEnd||''}"></div><div class="form-group"><label>Причина *</label><select id="shift-reason"><option value="customer">По вине Заказчика</option><option value="lamgroup">По вине LamGroup</option><option value="contractor">По вине Монтажника</option></select></div><div class="form-group"><label>Описание</label><textarea id="shift-desc" rows="3"></textarea></div>`;
-        document.getElementById('form-modal-title').textContent = '⏰ Изменить срок ГПР';
-        document.getElementById('form-modal-content').innerHTML = html;
-        document.getElementById('form-modal').classList.remove('hidden');
-        const saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Сохранить';
-        saveBtn.onclick = async () => {
-            const newDate = document.getElementById('shift-new-date').value;
-            const reason = document.getElementById('shift-reason').value;
-            const desc = document.getElementById('shift-desc').value;
-            if (!newDate) { alert('Укажите новую дату'); return; }
-            for (const s of stages) { await supabase.from('axis_work_stages').update({ plan_end: newDate }).eq('id', s.id); }
-            await supabase.from('axes').update({ plan_end: newDate }).eq('id', axisId);
-            await supabase.from('axes_history').insert({ axis_id: axisId, action: 'shift_gpr', comment: `Сдвиг: ${reason}. ${desc}`, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
-            if (reason === 'customer') { const { data: letter } = await supabase.from('letters').insert({ project_id: currentProjectId, axis_id: axisId, delay_reason: 'customer', delay_description: desc, new_end_date: newDate, status: 'draft', created_by: currentUser?.id, created_by_name: currentUser?.full_name }).select('id').single(); if (letter) { await supabase.from('tasks').insert({ project_id: currentProjectId, type: 'letter', title: `Письмо заказчику: сдвиг ГПР`, description: desc, status: 'pending', priority: 'high', created_by: currentUser?.id }); } alert('✅ Срок сдвинут. Письмо заказчику создано.'); }
-            else { alert('✅ Срок ГПР изменён'); }
-            document.getElementById('form-modal').classList.add('hidden');
-            if (document.getElementById('axis-detail-page').classList.contains('hidden')) loadProgressTab(); else openAxisDetailPage(currentAxisId);
-        };
-        document.getElementById('form-modal-content').appendChild(saveBtn);
-    };
+            window.openWorkOrderForm = async function(axisId, brigadeId) { const { data: axis } = await supabase.from('axes').select('*').eq('id',axisId).single(); const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name, foreman_name)').eq('axis_id',axisId).eq('brigade_id',brigadeId); if(!stages?.length){alert('Нет этапов');return;} const brigade=stages[0]?.brigades; const totalVolume=stages.reduce((s,st)=>s+(st.volume||0),0); const totalCost=stages.reduce((s,st)=>s+(st.total_cost||0),0); const subName=stages[0]?.sub_axis_name||''; let html=`<div class="form-group"><label>Бригада</label><input value="${brigade?.name||''} (${brigade?.foreman_name||''})" disabled></div><div class="form-group"><label>Ось / Подось</label><input value="${axis?.name||''} / ${subName}" disabled></div><div class="row-2"><div class="form-group"><label>Общий объём (м²)</label><input value="${totalVolume}" disabled></div><div class="form-group"><label>Общая стоимость</label><input value="${totalCost.toLocaleString()} ₸" disabled></div></div><div class="row-2"><div class="form-group"><label>Фактический объём *</label><input type="number" id="narad-fact" step="0.01" value="${totalVolume}"></div><div class="form-group"><label>Цена за м²</label><input type="number" id="narad-price" step="0.01" value="${stages[0]?.price_per_unit||0}"></div></div><div class="row-2"><div class="form-group"><label>Сумма авансов</label><input type="number" id="narad-advance" step="0.01" value="0"></div><div class="form-group"><label>Предыдущие наряды</label><input type="number" id="narad-prev" step="0.01" value="0"></div></div><div class="form-group"><label>📎 Счет на оплату</label><input type="file" id="narad-bill" accept=".pdf,.jpg,.png"></div><div class="form-group"><label>📎 АВР</label><input type="file" id="narad-avr" accept=".pdf,.jpg,.png"></div><div class="form-group"><label>📎 Счет-фактура</label><input type="file" id="narad-sf" accept=".pdf,.jpg,.png"></div><div class="form-group"><label><input type="checkbox" id="narad-confirm"> ✅ Подтверждаю корректность</label></div>`; document.getElementById('form-modal-title').textContent='📋 Сдать Наряд'; document.getElementById('form-modal-content').innerHTML=html; document.getElementById('form-modal').classList.remove('hidden'); const saveBtn=document.createElement('button'); saveBtn.className='btn-primary'; saveBtn.textContent='Сформировать Наряд'; saveBtn.onclick=async()=>{if(!document.getElementById('narad-confirm').checked){alert('Подтвердите данные');return;} const fact=parseFloat(document.getElementById('narad-fact').value)||0; const price=parseFloat(document.getElementById('narad-price').value)||0; const advance=parseFloat(document.getElementById('narad-advance').value)||0; const prev=parseFloat(document.getElementById('narad-prev').value)||0; const files={}; for(const id of['narad-bill','narad-avr','narad-sf']){const input=document.getElementById(id); if(input?.files[0]){const file=input.files[0]; const fileName=`orders/${currentProjectId}/${axisId}/${Date.now()}_${file.name}`; const{error}=await supabase.storage.from('reports').upload(fileName,file); if(!error){const{data:urlData}=supabase.storage.from('reports').getPublicUrl(fileName); files[id.replace('narad-','')]=urlData.publicUrl;}}} await supabase.from('work_orders').insert({project_id:currentProjectId,axis_name:`${axis?.name||''} / ${subName}`,brigade_id:brigadeId,work_type:'Работы по подоси',volume:totalVolume,actual_volume:fact,price:price,total_amount:fact*price,advance_amount:advance,previous_amount:prev,attachments:JSON.stringify(files),created_by:currentUser?.id,status:'pending_foreman'}); await supabase.from('tasks').insert({project_id:currentProjectId,type:'order',title:`Наряд: ${brigade?.name} — ${subName}`,description:`Сумма: ${(fact*price).toLocaleString()} ₸`,status:'pending',priority:'high',created_by:currentUser?.id}); await supabase.from('axes_history').insert({axis_id:axisId,action:'work_order',comment:`Наряд сдан: ${(fact*price).toLocaleString()} ₸`,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name}); alert('✅ Наряд сформирован и отправлен в задачи'); document.getElementById('form-modal').classList.add('hidden');}; document.getElementById('form-modal-content').appendChild(saveBtn); };
 
-    // 2. СДАТЬ НАРЯД
-    window.openWorkOrderForm = async function(axisId, brigadeId) {
-        const { data: axis } = await supabase.from('axes').select('*').eq('id', axisId).single();
-        const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name, foreman_name)').eq('axis_id', axisId).eq('brigade_id', brigadeId);
-        if (!stages?.length) { alert('Нет этапов'); return; }
-        const brigade = stages[0]?.brigades;
-        const totalVolume = stages.reduce((s, st) => s + (st.volume || 0), 0);
-        const totalCost = stages.reduce((s, st) => s + (st.total_cost || 0), 0);
-        const subName = stages[0]?.sub_axis_name || '';
-        let html = `<div class="form-group"><label>Бригада</label><input value="${brigade?.name||''} (${brigade?.foreman_name||''})" disabled></div><div class="form-group"><label>Ось / Подось</label><input value="${axis?.name||''} / ${subName}" disabled></div><div class="row-2"><div class="form-group"><label>Общий объём (м²)</label><input value="${totalVolume}" disabled></div><div class="form-group"><label>Общая стоимость</label><input value="${totalCost.toLocaleString()} ₸" disabled></div></div><div class="row-2"><div class="form-group"><label>Фактический объём *</label><input type="number" id="narad-fact" step="0.01" value="${totalVolume}"></div><div class="form-group"><label>Цена за м²</label><input type="number" id="narad-price" step="0.01" value="${stages[0]?.price_per_unit||0}"></div></div><div class="row-2"><div class="form-group"><label>Сумма авансов</label><input type="number" id="narad-advance" step="0.01" value="0"></div><div class="form-group"><label>Предыдущие наряды</label><input type="number" id="narad-prev" step="0.01" value="0"></div></div><div class="form-group"><label>📎 Счет на оплату</label><input type="file" id="narad-bill" accept=".pdf,.jpg,.png"></div><div class="form-group"><label>📎 АВР</label><input type="file" id="narad-avr" accept=".pdf,.jpg,.png"></div><div class="form-group"><label>📎 Счет-фактура</label><input type="file" id="narad-sf" accept=".pdf,.jpg,.png"></div><div class="form-group"><label><input type="checkbox" id="narad-confirm"> ✅ Подтверждаю корректность</label></div>`;
-        document.getElementById('form-modal-title').textContent = '📋 Сдать Наряд';
-        document.getElementById('form-modal-content').innerHTML = html;
-        document.getElementById('form-modal').classList.remove('hidden');
-        const saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Сформировать Наряд';
-        saveBtn.onclick = async () => {
-            if (!document.getElementById('narad-confirm').checked) { alert('Подтвердите данные'); return; }
-            const fact = parseFloat(document.getElementById('narad-fact').value) || 0;
-            const price = parseFloat(document.getElementById('narad-price').value) || 0;
-            const advance = parseFloat(document.getElementById('narad-advance').value) || 0;
-            const prev = parseFloat(document.getElementById('narad-prev').value) || 0;
-            const files = {};
-            for (const id of ['narad-bill','narad-avr','narad-sf']) { const input = document.getElementById(id); if (input?.files[0]) { const file = input.files[0]; const fileName = `orders/${currentProjectId}/${axisId}/${Date.now()}_${file.name}`; const { error } = await supabase.storage.from('reports').upload(fileName, file); if (!error) { const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName); files[id.replace('narad-','')] = urlData.publicUrl; } } }
-            const { data: order } = await supabase.from('work_orders').insert({ project_id: currentProjectId, axis_name: `${axis?.name||''} / ${subName}`, brigade_id: brigadeId, work_type: 'Работы по подоси', volume: totalVolume, actual_volume: fact, price: price, total_amount: fact*price, advance_amount: advance, previous_amount: prev, attachments: JSON.stringify(files), created_by: currentUser?.id, status: 'pending_foreman' }).select('id').single();
-            await supabase.from('tasks').insert({ project_id: currentProjectId, type: 'order', title: `Наряд: ${brigade?.name} — ${subName}`, description: `Сумма: ${(fact*price).toLocaleString()} ₸`, status: 'pending', priority: 'high', created_by: currentUser?.id });
-            await supabase.from('axes_history').insert({ axis_id: axisId, action: 'work_order', comment: `Наряд сдан: ${(fact*price).toLocaleString()} ₸`, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
-            alert('✅ Наряд сформирован и отправлен в задачи'); document.getElementById('form-modal').classList.add('hidden');
-        };
-        document.getElementById('form-modal-content').appendChild(saveBtn);
-    };
+            window.openChangeBrigadeForm = async function(axisId, brigadeId) { const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id',axisId).eq('brigade_id',brigadeId); if(!stages?.length){alert('Нет этапов');return;} const oldBrigade=stages[0]?.brigades?.name||'Бригада'; const totalProgress=Math.round(stages.reduce((s,st)=>s+(st.progress||0),0)/stages.length); let html=`<div class="form-group"><label>Текущая бригада</label><input value="${oldBrigade}" disabled></div><div class="form-group"><label>Выполнено</label><input value="${totalProgress}%" disabled></div><div class="form-group"><label>Новая бригада *</label><select id="change-brigade-select">${allBrigades.filter(b=>b.id!==brigadeId).map(b=>`<option value="${b.id}">${b.name} (${b.foreman_name||''})</option>`).join('')}</select></div><div class="form-group"><label>Дата начала новой бригады *</label><input type="date" id="change-brigade-date"></div><div class="form-group"><label>Комментарий</label><textarea id="change-brigade-comment" rows="2"></textarea></div>`; document.getElementById('form-modal-title').textContent='👷 Заменить бригаду'; document.getElementById('form-modal-content').innerHTML=html; document.getElementById('form-modal').classList.remove('hidden'); const saveBtn=document.createElement('button'); saveBtn.className='btn-primary'; saveBtn.textContent='Заменить'; saveBtn.onclick=async()=>{const newBrigadeId=document.getElementById('change-brigade-select').value; const newDate=document.getElementById('change-brigade-date').value; const comment=document.getElementById('change-brigade-comment').value; if(!newBrigadeId){alert('Выберите бригаду');return;} for(const s of stages){await supabase.from('axis_work_stages').update({brigade_id:newBrigadeId,updated_at:new Date()}).eq('id',s.id);} await supabase.from('axes_history').insert({axis_id:axisId,action:'change_brigade',old_value:{brigade_id:brigadeId},new_value:{brigade_id:newBrigadeId},comment,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name}); alert('✅ Бригада заменена'); document.getElementById('form-modal').classList.add('hidden'); if(document.getElementById('axis-detail-page').classList.contains('hidden'))loadProgressTab();else openAxisDetailPage(currentAxisId);}; document.getElementById('form-modal-content').appendChild(saveBtn); };
 
-    // 3. ЗАМЕНИТЬ БРИГАДУ
-    window.openChangeBrigadeForm = async function(axisId, brigadeId) {
-        const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id', axisId).eq('brigade_id', brigadeId);
-        if (!stages?.length) { alert('Нет этапов'); return; }
-        const oldBrigade = stages[0]?.brigades?.name || 'Бригада';
-        const totalProgress = Math.round(stages.reduce((s, st) => s + (st.progress || 0), 0) / stages.length);
-        let html = `<div class="form-group"><label>Текущая бригада</label><input value="${oldBrigade}" disabled></div><div class="form-group"><label>Выполнено</label><input value="${totalProgress}%" disabled></div><div class="form-group"><label>Новая бригада *</label><select id="change-brigade-select">${allBrigades.filter(b=>b.id!==brigadeId).map(b=>`<option value="${b.id}">${b.name} (${b.foreman_name||''})</option>`).join('')}</select></div><div class="form-group"><label>Дата начала новой бригады *</label><input type="date" id="change-brigade-date"></div><div class="form-group"><label>Комментарий</label><textarea id="change-brigade-comment" rows="2"></textarea></div>`;
-        document.getElementById('form-modal-title').textContent = '👷 Заменить бригаду';
-        document.getElementById('form-modal-content').innerHTML = html;
-        document.getElementById('form-modal').classList.remove('hidden');
-        const saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Заменить';
-        saveBtn.onclick = async () => {
-            const newBrigadeId = document.getElementById('change-brigade-select').value;
-            const newDate = document.getElementById('change-brigade-date').value;
-            const comment = document.getElementById('change-brigade-comment').value;
-            if (!newBrigadeId) { alert('Выберите бригаду'); return; }
-            for (const s of stages) { await supabase.from('axis_work_stages').update({ brigade_id: newBrigadeId, updated_at: new Date() }).eq('id', s.id); }
-            await supabase.from('axes_history').insert({ axis_id: axisId, action: 'change_brigade', old_value: { brigade_id: brigadeId }, new_value: { brigade_id: newBrigadeId }, comment, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
-            alert('✅ Бригада заменена'); document.getElementById('form-modal').classList.add('hidden');
-            if (document.getElementById('axis-detail-page').classList.contains('hidden')) loadProgressTab(); else openAxisDetailPage(currentAxisId);
-        };
-        document.getElementById('form-modal-content').appendChild(saveBtn);
-    };
+            window.openLetterForm = async function(axisId, brigadeId) { const { data: axis } = await supabase.from('axes').select('*').eq('id',axisId).single(); const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id',axisId).eq('brigade_id',brigadeId); if(!stages?.length){alert('Нет этапов');return;} const brigade=stages[0]?.brigades?.name||'Бригада'; const subName=stages[0]?.sub_axis_name||''; let html=`<div class="form-group"><label>Ось</label><input value="${axis?.name||''} / ${subName}" disabled></div><div class="form-group"><label>Бригада</label><input value="${brigade}" disabled></div><div class="form-group"><label>Причина задержки *</label><textarea id="letter-reason" rows="3"></textarea></div><div class="form-group"><label>Срок сдвига (дней) *</label><input type="number" id="letter-days" value="1" min="1"></div><p style="color:#64748B;font-size:13px">📧 Письмо уйдёт офис-менеджеру. ГПР сдвинется.</p>`; document.getElementById('form-modal-title').textContent='✉️ Письмо заказчику'; document.getElementById('form-modal-content').innerHTML=html; document.getElementById('form-modal').classList.remove('hidden'); const saveBtn=document.createElement('button'); saveBtn.className='btn-primary'; saveBtn.textContent='Отправить'; saveBtn.onclick=async()=>{const days=parseInt(document.getElementById('letter-days').value)||0; const reason=document.getElementById('letter-reason').value; if(!reason){alert('Укажите причину');return;} const currentEnd=stages.reduce((max,s)=>s.plan_end&&(!max||s.plan_end>max)?s.plan_end:max,null); const newEnd=currentEnd?new Date(currentEnd):new Date(); newEnd.setDate(newEnd.getDate()+days); const newDateStr=newEnd.toISOString().split('T')[0]; await supabase.from('letters').insert({project_id:currentProjectId,axis_id:axisId,delay_reason:'customer',delay_description:reason,delay_days:days,new_end_date:newDateStr,status:'sent_to_office',sent_to_office:true,created_by:currentUser?.id,created_by_name:currentUser?.full_name}); for(const s of stages){const sEnd=s.plan_end?new Date(s.plan_end):new Date(); sEnd.setDate(sEnd.getDate()+days); await supabase.from('axis_work_stages').update({plan_end:sEnd.toISOString().split('T')[0]}).eq('id',s.id);} await supabase.from('axes').update({plan_end:newDateStr}).eq('id',axisId); await supabase.from('tasks').insert({project_id:currentProjectId,type:'letter',title:`Письмо заказчику: сдвиг +${days} дн.`,description:reason,status:'pending',priority:'high',created_by:currentUser?.id}); await supabase.from('axes_history').insert({axis_id:axisId,action:'letter',comment:`Письмо заказчику: +${days} дн.`,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name}); alert('✅ Письмо отправлено. ГПР сдвинут.'); document.getElementById('form-modal').classList.add('hidden'); if(document.getElementById('axis-detail-page').classList.contains('hidden'))loadProgressTab();else openAxisDetailPage(currentAxisId);}; document.getElementById('form-modal-content').appendChild(saveBtn); };
 
-    // 4. НАПИСАТЬ ПИСЬМО ЗАКАЗЧИКУ
-    window.openLetterForm = async function(axisId, brigadeId) {
-        const { data: axis } = await supabase.from('axes').select('*').eq('id', axisId).single();
-        const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id', axisId).eq('brigade_id', brigadeId);
-        if (!stages?.length) { alert('Нет этапов'); return; }
-        const brigade = stages[0]?.brigades?.name || 'Бригада';
-        const subName = stages[0]?.sub_axis_name || '';
-        let html = `<div class="form-group"><label>Ось</label><input value="${axis?.name||''} / ${subName}" disabled></div><div class="form-group"><label>Бригада</label><input value="${brigade}" disabled></div><div class="form-group"><label>Причина задержки *</label><textarea id="letter-reason" rows="3"></textarea></div><div class="form-group"><label>Срок сдвига (дней) *</label><input type="number" id="letter-days" value="1" min="1"></div><p style="color:#64748B;font-size:13px">📧 Письмо уйдёт офис-менеджеру. ГПР сдвинется.</p>`;
-        document.getElementById('form-modal-title').textContent = '✉️ Письмо заказчику';
-        document.getElementById('form-modal-content').innerHTML = html;
-        document.getElementById('form-modal').classList.remove('hidden');
-        const saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Отправить';
-        saveBtn.onclick = async () => {
-            const days = parseInt(document.getElementById('letter-days').value) || 0;
-            const reason = document.getElementById('letter-reason').value;
-            if (!reason) { alert('Укажите причину'); return; }
-            const currentEnd = stages.reduce((max, s) => s.plan_end && (!max || s.plan_end > max) ? s.plan_end : max, null);
-            const newEnd = currentEnd ? new Date(currentEnd) : new Date(); newEnd.setDate(newEnd.getDate() + days);
-            const newDateStr = newEnd.toISOString().split('T')[0];
-            await supabase.from('letters').insert({ project_id: currentProjectId, axis_id: axisId, delay_reason: 'customer', delay_description: reason, delay_days: days, new_end_date: newDateStr, status: 'sent_to_office', sent_to_office: true, created_by: currentUser?.id, created_by_name: currentUser?.full_name });
-            for (const s of stages) { const sEnd = s.plan_end ? new Date(s.plan_end) : new Date(); sEnd.setDate(sEnd.getDate() + days); await supabase.from('axis_work_stages').update({ plan_end: sEnd.toISOString().split('T')[0] }).eq('id', s.id); }
-            await supabase.from('axes').update({ plan_end: newDateStr }).eq('id', axisId);
-            await supabase.from('tasks').insert({ project_id: currentProjectId, type: 'letter', title: `Письмо заказчику: сдвиг +${days} дн.`, description: reason, status: 'pending', priority: 'high', created_by: currentUser?.id });
-            await supabase.from('axes_history').insert({ axis_id: axisId, action: 'letter', comment: `Письмо заказчику: +${days} дн.`, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
-            alert('✅ Письмо отправлено. ГПР сдвинут.'); document.getElementById('form-modal').classList.add('hidden');
-            if (document.getElementById('axis-detail-page').classList.contains('hidden')) loadProgressTab(); else openAxisDetailPage(currentAxisId);
-        };
-        document.getElementById('form-modal-content').appendChild(saveBtn);
-    };
+            window.openAdvanceForm = async function(axisId, brigadeId) { const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id',axisId).eq('brigade_id',brigadeId); if(!stages?.length){alert('Нет этапов');return;} const brigade=stages[0]?.brigades; const totalCost=stages.reduce((s,st)=>s+(st.total_cost||0),0); const subName=stages[0]?.sub_axis_name||''; const { data: prevAdvances } = await supabase.from('advances').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId); const { data: prevOrders } = await supabase.from('work_orders').select('*').eq('brigade_id',brigadeId); const totalPaid=(prevAdvances||[]).reduce((s,a)=>s+(a.amount||0),0)+(prevOrders||[]).reduce((s,o)=>s+(o.total_amount||0),0); const remaining=totalCost-totalPaid; let html=`<div class="form-group"><label>Бригада</label><input value="${brigade?.name||''}" disabled></div><div class="form-group"><label>Подось</label><input value="${subName}" disabled></div><div class="form-group"><label>Общая сумма договора</label><input value="${totalCost.toLocaleString()} ₸" disabled></div><div class="form-group"><label>Всего выплачено</label><input value="${totalPaid.toLocaleString()} ₸" disabled></div><div class="form-group"><label>Остаток</label><input value="${Math.max(0,remaining).toLocaleString()} ₸" disabled></div><div class="form-group"><label>Сумма запроса *</label><input type="number" id="advance-amount" step="0.01" max="${Math.max(0,remaining)}"></div><div class="form-group"><label>📎 Счет на оплату</label><input type="file" id="advance-bill" accept=".pdf,.jpg,.png"></div><div class="form-group"><label>📎 АВР</label><input type="file" id="advance-avr" accept=".pdf,.jpg,.png"></div><div class="form-group"><label>📎 Счет-фактура</label><input type="file" id="advance-sf" accept=".pdf,.jpg,.png"></div><div class="form-group"><label><input type="checkbox" id="advance-confirm"> ✅ Подтверждаю данные</label></div>`; document.getElementById('form-modal-title').textContent='💰 Подать на Аванс'; document.getElementById('form-modal-content').innerHTML=html; document.getElementById('form-modal').classList.remove('hidden'); const saveBtn=document.createElement('button'); saveBtn.className='btn-primary'; saveBtn.textContent='Сформировать Аванс'; saveBtn.onclick=async()=>{if(!document.getElementById('advance-confirm').checked){alert('Подтвердите данные');return;} const amount=parseFloat(document.getElementById('advance-amount').value)||0; if(amount<=0||amount>remaining){alert('Некорректная сумма');return;} const files={}; for(const id of['advance-bill','advance-avr','advance-sf']){const input=document.getElementById(id); if(input?.files[0]){const file=input.files[0]; const fileName=`advances/${currentProjectId}/${axisId}/${Date.now()}_${file.name}`; const{error}=await supabase.storage.from('reports').upload(fileName,file); if(!error){const{data:urlData}=supabase.storage.from('reports').getPublicUrl(fileName); files[id.replace('advance-','')]=urlData.publicUrl;}}} await supabase.from('advances').insert({project_id:currentProjectId,axis_id:axisId,brigade_id:brigadeId,amount,previous_payments:totalPaid,total_contract:totalCost,remaining:remaining-amount,attachments:JSON.stringify(files),created_by:currentUser?.id,created_by_name:currentUser?.full_name,status:'pending'}); await supabase.from('payment_plan').insert({project_id:currentProjectId,brigade_id:brigadeId,type:'advance',amount,status:'pending'}); await supabase.from('axes_history').insert({axis_id:axisId,action:'advance',comment:`Аванс: ${amount.toLocaleString()} ₸`,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name}); alert('✅ Аванс сформирован и отправлен в план оплат'); document.getElementById('form-modal').classList.add('hidden');}; document.getElementById('form-modal-content').appendChild(saveBtn); };
 
-    // 5. ПОДАТЬ НА АВАНС
-    window.openAdvanceForm = async function(axisId, brigadeId) {
-        const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id', axisId).eq('brigade_id', brigadeId);
-        if (!stages?.length) { alert('Нет этапов'); return; }
-        const brigade = stages[0]?.brigades; const totalCost = stages.reduce((s, st) => s + (st.total_cost || 0), 0); const subName = stages[0]?.sub_axis_name || '';
-        const { data: prevAdvances } = await supabase.from('advances').select('*').eq('axis_id', axisId).eq('brigade_id', brigadeId);
-        const { data: prevOrders } = await supabase.from('work_orders').select('*').eq('brigade_id', brigadeId);
-        const totalPaid = (prevAdvances||[]).reduce((s,a)=>s+(a.amount||0),0)+(prevOrders||[]).reduce((s,o)=>s+(o.total_amount||0),0);
-        const remaining = totalCost - totalPaid;
-        let html = `<div class="form-group"><label>Бригада</label><input value="${brigade?.name||''}" disabled></div><div class="form-group"><label>Подось</label><input value="${subName}" disabled></div><div class="form-group"><label>Общая сумма договора</label><input value="${totalCost.toLocaleString()} ₸" disabled></div><div class="form-group"><label>Всего выплачено</label><input value="${totalPaid.toLocaleString()} ₸" disabled></div><div class="form-group"><label>Остаток</label><input value="${Math.max(0,remaining).toLocaleString()} ₸" disabled></div><div class="form-group"><label>Сумма запроса *</label><input type="number" id="advance-amount" step="0.01" max="${Math.max(0,remaining)}"></div><div class="form-group"><label>📎 Счет на оплату</label><input type="file" id="advance-bill" accept=".pdf,.jpg,.png"></div><div class="form-group"><label>📎 АВР</label><input type="file" id="advance-avr" accept=".pdf,.jpg,.png"></div><div class="form-group"><label>📎 Счет-фактура</label><input type="file" id="advance-sf" accept=".pdf,.jpg,.png"></div><div class="form-group"><label><input type="checkbox" id="advance-confirm"> ✅ Подтверждаю данные</label></div>`;
-        document.getElementById('form-modal-title').textContent = '💰 Подать на Аванс';
-        document.getElementById('form-modal-content').innerHTML = html;
-        document.getElementById('form-modal').classList.remove('hidden');
-        const saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Сформировать Аванс';
-        saveBtn.onclick = async () => {
-            if (!document.getElementById('advance-confirm').checked) { alert('Подтвердите данные'); return; }
-            const amount = parseFloat(document.getElementById('advance-amount').value)||0;
-            if (amount<=0||amount>remaining) { alert('Некорректная сумма'); return; }
-            const files = {}; for (const id of ['advance-bill','advance-avr','advance-sf']) { const input = document.getElementById(id); if (input?.files[0]) { const file = input.files[0]; const fileName = `advances/${currentProjectId}/${axisId}/${Date.now()}_${file.name}`; const { error } = await supabase.storage.from('reports').upload(fileName, file); if (!error) { const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName); files[id.replace('advance-','')] = urlData.publicUrl; } } }
-            await supabase.from('advances').insert({ project_id: currentProjectId, axis_id: axisId, brigade_id: brigadeId, amount, previous_payments: totalPaid, total_contract: totalCost, remaining: remaining-amount, attachments: JSON.stringify(files), created_by: currentUser?.id, created_by_name: currentUser?.full_name, status: 'pending' });
-            await supabase.from('payment_plan').insert({ project_id: currentProjectId, brigade_id: brigadeId, type: 'advance', amount, status: 'pending' });
-            await supabase.from('axes_history').insert({ axis_id: axisId, action: 'advance', comment: `Аванс: ${amount.toLocaleString()} ₸`, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
-            alert('✅ Аванс сформирован и отправлен в план оплат'); document.getElementById('form-modal').classList.add('hidden');
-        };
-        document.getElementById('form-modal-content').appendChild(saveBtn);
-    };
+            window.openTaskForm = async function(axisId, brigadeId) { const { data: axis } = await supabase.from('axes').select('*').eq('id',axisId).single(); const { data: users } = await supabase.from('users').select('id, full_name').in('role',['manager','worker']); let html=`<div class="form-group"><label>Ось</label><input value="${axis?.name||''}" disabled></div><div class="form-group"><label>Тема задачи *</label><input type="text" id="task-title"></div><div class="form-group"><label>Описание</label><textarea id="task-desc" rows="3"></textarea></div><div class="form-group"><label>Срок выполнения</label><input type="date" id="task-deadline"></div><div class="form-group"><label>Ответственный *</label><select id="task-responsible">${(users||[]).map(u=>`<option value="${u.id}">${u.full_name}</option>`).join('')}</select></div>`; document.getElementById('form-modal-title').textContent='📝 Поставить задачу'; document.getElementById('form-modal-content').innerHTML=html; document.getElementById('form-modal').classList.remove('hidden'); const saveBtn=document.createElement('button'); saveBtn.className='btn-primary'; saveBtn.textContent='Создать задачу'; saveBtn.onclick=async()=>{const title=document.getElementById('task-title').value; const desc=document.getElementById('task-desc').value; const deadline=document.getElementById('task-deadline').value; const responsibleId=document.getElementById('task-responsible').value; const responsibleName=document.getElementById('task-responsible').selectedOptions[0]?.text||''; if(!title||!responsibleId){alert('Заполните обязательные поля');return;} await supabase.from('custom_tasks').insert({project_id:currentProjectId,title,description:desc,deadline:deadline||null,created_by:currentUser?.id,created_by_name:currentUser?.full_name,responsible_ids:[responsibleId],responsible_names:[responsibleName],status:'pending'}); await supabase.from('tasks').insert({project_id:currentProjectId,type:'task',title,description:desc,status:'pending',priority:'medium',created_by:currentUser?.id,responsible_ids:[responsibleId]}); await supabase.from('axes_history').insert({axis_id:axisId,action:'task',comment:`Задача: ${title}`,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name}); alert('✅ Задача создана'); document.getElementById('form-modal').classList.add('hidden');}; document.getElementById('form-modal-content').appendChild(saveBtn); };
 
-    // 6. ПОСТАВИТЬ ЗАДАЧУ
-    window.openTaskForm = async function(axisId, brigadeId) {
-        const { data: axis } = await supabase.from('axes').select('*').eq('id', axisId).single();
-        const { data: users } = await supabase.from('users').select('id, full_name').in('role', ['manager', 'worker']);
-        let html = `<div class="form-group"><label>Ось</label><input value="${axis?.name||''}" disabled></div><div class="form-group"><label>Тема задачи *</label><input type="text" id="task-title"></div><div class="form-group"><label>Описание</label><textarea id="task-desc" rows="3"></textarea></div><div class="form-group"><label>Срок выполнения</label><input type="date" id="task-deadline"></div><div class="form-group"><label>Ответственный *</label><select id="task-responsible">${(users||[]).map(u=>`<option value="${u.id}">${u.full_name}</option>`).join('')}</select></div>`;
-        document.getElementById('form-modal-title').textContent = '📝 Поставить задачу';
-        document.getElementById('form-modal-content').innerHTML = html;
-        document.getElementById('form-modal').classList.remove('hidden');
-        const saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Создать задачу';
-        saveBtn.onclick = async () => {
-            const title = document.getElementById('task-title').value;
-            const desc = document.getElementById('task-desc').value;
-            const deadline = document.getElementById('task-deadline').value;
-            const responsibleId = document.getElementById('task-responsible').value;
-            const responsibleName = document.getElementById('task-responsible').selectedOptions[0]?.text||'';
-            if (!title||!responsibleId) { alert('Заполните обязательные поля'); return; }
-            await supabase.from('custom_tasks').insert({ project_id: currentProjectId, title, description: desc, deadline: deadline||null, created_by: currentUser?.id, created_by_name: currentUser?.full_name, responsible_ids: [responsibleId], responsible_names: [responsibleName], status: 'pending' });
-            await supabase.from('tasks').insert({ project_id: currentProjectId, type: 'task', title, description: desc, status: 'pending', priority: 'medium', created_by: currentUser?.id, responsible_ids: [responsibleId] });
-            await supabase.from('axes_history').insert({ axis_id: axisId, action: 'task', comment: `Задача: ${title}`, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
-            alert('✅ Задача создана'); document.getElementById('form-modal').classList.add('hidden');
-        };
-        document.getElementById('form-modal-content').appendChild(saveBtn);
-    };
+            window.addBrigadeToAxis = function(axisId) { let html=`<div class="form-group"><label>👷 Бригада</label><select id="add-brigade-select">${allBrigades.map(b=>`<option value="${b.id}">${b.name} (${b.foreman_name||''})</option>`).join('')}</select></div><div class="form-group"><label>📍 Подось</label><input type="text" id="add-subaxis-name" placeholder="1-5"></div><div id="add-stages-rows"></div><button class="btn-add" onclick="addStageRow(document.getElementById('add-stages-rows'))" style="margin-top:8px">+ Добавить этап</button>`; document.getElementById('form-modal-title').textContent='➕ Добавить бригаду'; document.getElementById('form-modal-content').innerHTML=html; document.getElementById('form-modal').classList.remove('hidden'); addStageRow(document.getElementById('add-stages-rows')); const saveBtn=document.createElement('button'); saveBtn.className='btn-primary'; saveBtn.textContent='Добавить'; saveBtn.onclick=async()=>{const brigadeId=document.getElementById('add-brigade-select').value; const subAxisName=document.getElementById('add-subaxis-name').value; const rows=document.querySelectorAll('#add-stages-rows .stage-row'); let minStart=null,maxEnd=null; for(const row of rows){const stageId=row.querySelector('.stage-select').value; const vol=parseFloat(row.querySelector('.stage-volume').value)||0; const price=parseFloat(row.querySelector('.stage-price').value)||0; const start=row.querySelector('.stage-start').value; const end=row.querySelector('.stage-end').value; if(stageId&&vol>0){if(start&&(!minStart||start<minStart))minStart=start; if(end&&(!maxEnd||end>maxEnd))maxEnd=end; await supabase.from('axis_work_stages').insert({axis_id:axisId,brigade_id:brigadeId,sub_axis_name:subAxisName,stage_id:parseInt(stageId),volume:vol,unit:'м²',price_per_unit:price,total_cost:vol*price,plan_start:start||null,plan_end:end||null,progress:0,status:'pending',created_by:currentUser?.id});}} if(minStart||maxEnd){const{data:axis}=await supabase.from('axes').select('plan_start,plan_end').eq('id',axisId).single(); const ns=!axis.plan_start||(minStart&&minStart<axis.plan_start)?minStart:axis.plan_start; const ne=!axis.plan_end||(maxEnd&&maxEnd>axis.plan_end)?maxEnd:axis.plan_end; await supabase.from('axes').update({plan_start:ns,plan_end:ne}).eq('id',axisId);} document.getElementById('form-modal').classList.add('hidden'); openAxisDetailPage(axisId);}; document.getElementById('form-modal-content').appendChild(saveBtn); };
 
-    // ===== ДОБАВЛЕНИЕ БРИГАДЫ К ОСИ =====
-    window.addBrigadeToAxis = function(axisId) {
-        let html = `<div class="form-group"><label>👷 Бригада</label><select id="add-brigade-select">${allBrigades.map(b=>`<option value="${b.id}">${b.name} (${b.foreman_name||''})</option>`).join('')}</select></div><div class="form-group"><label>📍 Подось</label><input type="text" id="add-subaxis-name" placeholder="1-5"></div><div id="add-stages-rows"></div><button class="btn-add" onclick="addStageRow(document.getElementById('add-stages-rows'))" style="margin-top:8px">+ Добавить этап</button>`;
-        document.getElementById('form-modal-title').textContent = '➕ Добавить бригаду';
-        document.getElementById('form-modal-content').innerHTML = html;
-        document.getElementById('form-modal').classList.remove('hidden');
-        addStageRow(document.getElementById('add-stages-rows'));
-        const saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Добавить';
-        saveBtn.onclick = async () => {
-            const brigadeId = document.getElementById('add-brigade-select').value;
-            const subAxisName = document.getElementById('add-subaxis-name').value;
-            const rows = document.querySelectorAll('#add-stages-rows .stage-row');
-            let minStart=null, maxEnd=null;
-            for (const row of rows) { const stageId=row.querySelector('.stage-select').value; const vol=parseFloat(row.querySelector('.stage-volume').value)||0; const price=parseFloat(row.querySelector('.stage-price').value)||0; const start=row.querySelector('.stage-start').value; const end=row.querySelector('.stage-end').value; if(stageId&&vol>0){if(start&&(!minStart||start<minStart))minStart=start; if(end&&(!maxEnd||end>maxEnd))maxEnd=end; await supabase.from('axis_work_stages').insert({axis_id:axisId,brigade_id:brigadeId,sub_axis_name:subAxisName,stage_id:parseInt(stageId),volume:vol,unit:'м²',price_per_unit:price,total_cost:vol*price,plan_start:start||null,plan_end:end||null,progress:0,status:'pending',created_by:currentUser?.id}); } }
-            if(minStart||maxEnd){const{data:axis}=await supabase.from('axes').select('plan_start,plan_end').eq('id',axisId).single(); const ns=!axis.plan_start||(minStart&&minStart<axis.plan_start)?minStart:axis.plan_start; const ne=!axis.plan_end||(maxEnd&&maxEnd>axis.plan_end)?maxEnd:axis.plan_end; await supabase.from('axes').update({plan_start:ns,plan_end:ne}).eq('id',axisId);}
-            document.getElementById('form-modal').classList.add('hidden'); openAxisDetailPage(axisId);
-        };
-        document.getElementById('form-modal-content').appendChild(saveBtn);
-    };
+            window.editSubAxis = async function(axisId, brigadeId) { const { data: stages } = await supabase.from('axis_work_stages').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId); if(!stages?.length)return; const subName=stages[0].sub_axis_name||''; let html=`<div class="form-group"><label>📍 Подось</label><input type="text" id="edit-subaxis-name" value="${subName}"></div><div class="form-group"><label>👷 Бригада</label><select id="edit-subaxis-brigade">${allBrigades.map(b=>`<option value="${b.id}" ${b.id===brigadeId?'selected':''}>${b.name} (${b.foreman_name||''})</option>`).join('')}</select></div><div id="edit-stages-rows">${stages.map(s=>`<div class="stage-row" style="display:flex;gap:8px;margin:8px 0;align-items:center;flex-wrap:wrap" data-id="${s.id}"><select class="stage-select" style="flex:2;min-width:120px">${allWorkStages.map(ws=>`<option value="${ws.id}" ${ws.id===s.stage_id?'selected':''}>${ws.name}</option>`).join('')}</select><input type="number" class="stage-volume" value="${s.volume||0}" style="width:70px" step="0.01"><input type="number" class="stage-price" value="${s.price_per_unit||0}" style="width:80px" step="0.01"><input type="date" class="stage-start" value="${s.plan_start||''}" style="width:130px"><input type="date" class="stage-end" value="${s.plan_end||''}" style="width:130px"><button class="btn-delete" onclick="deleteStageConfirm('${s.id}')" style="width:30px;height:30px">✕</button></div>`).join('')}</div><button class="btn-add" onclick="addStageRow(document.getElementById('edit-stages-rows'))" style="margin-top:8px">+ Добавить этап</button>`; document.getElementById('form-modal-title').textContent='✏️ Изменить подось'; document.getElementById('form-modal-content').innerHTML=html; document.getElementById('form-modal').classList.remove('hidden'); const saveBtn=document.createElement('button'); saveBtn.className='btn-primary'; saveBtn.textContent='Сохранить'; saveBtn.onclick=async()=>{const newSubName=document.getElementById('edit-subaxis-name').value; const newBrigadeId=document.getElementById('edit-subaxis-brigade').value; const rows=document.querySelectorAll('#edit-stages-rows .stage-row'); let minStart=null,maxEnd=null; for(const row of rows){const stageId=row.querySelector('.stage-select').value; const vol=parseFloat(row.querySelector('.stage-volume').value)||0; const price=parseFloat(row.querySelector('.stage-price').value)||0; const start=row.querySelector('.stage-start').value; const end=row.querySelector('.stage-end').value; const existingId=row.dataset.id; if(start&&(!minStart||start<minStart))minStart=start; if(end&&(!maxEnd||end>maxEnd))maxEnd=end; await supabase.from('axis_work_stages').update({brigade_id:newBrigadeId,sub_axis_name:newSubName,stage_id:parseInt(stageId),volume:vol,price_per_unit:price,total_cost:vol*price,plan_start:start||null,plan_end:end||null}).eq('id',existingId);} if(minStart||maxEnd){const{data:axis}=await supabase.from('axes').select('plan_start,plan_end').eq('id',axisId).single(); const ns=!axis.plan_start||(minStart&&minStart<axis.plan_start)?minStart:axis.plan_start; const ne=!axis.plan_end||(maxEnd&&maxEnd>axis.plan_end)?maxEnd:axis.plan_end; await supabase.from('axes').update({plan_start:ns,plan_end:ne}).eq('id',axisId);} document.getElementById('form-modal').classList.add('hidden'); openAxisDetailPage(axisId);}; document.getElementById('form-modal-content').appendChild(saveBtn); };
 
-    // ===== РЕДАКТИРОВАНИЕ ПОДОСИ =====
-    window.editSubAxis = async function(axisId, brigadeId) {
-        const { data: stages } = await supabase.from('axis_work_stages').select('*').eq('axis_id', axisId).eq('brigade_id', brigadeId);
-        if (!stages?.length) return;
-        const subName = stages[0].sub_axis_name||'';
-        let html = `<div class="form-group"><label>📍 Подось</label><input type="text" id="edit-subaxis-name" value="${subName}"></div><div class="form-group"><label>👷 Бригада</label><select id="edit-subaxis-brigade">${allBrigades.map(b=>`<option value="${b.id}" ${b.id===brigadeId?'selected':''}>${b.name} (${b.foreman_name||''})</option>`).join('')}</select></div><div id="edit-stages-rows">${stages.map(s=>`<div class="stage-row" style="display:flex;gap:8px;margin:8px 0;align-items:center;flex-wrap:wrap" data-id="${s.id}"><select class="stage-select" style="flex:2;min-width:120px">${allWorkStages.map(ws=>`<option value="${ws.id}" ${ws.id===s.stage_id?'selected':''}>${ws.name}</option>`).join('')}</select><input type="number" class="stage-volume" value="${s.volume||0}" style="width:70px" step="0.01"><input type="number" class="stage-price" value="${s.price_per_unit||0}" style="width:80px" step="0.01"><input type="date" class="stage-start" value="${s.plan_start||''}" style="width:130px"><input type="date" class="stage-end" value="${s.plan_end||''}" style="width:130px"><button class="btn-delete" onclick="deleteStageConfirm('${s.id}')" style="width:30px;height:30px">✕</button></div>`).join('')}</div><button class="btn-add" onclick="addStageRow(document.getElementById('edit-stages-rows'))" style="margin-top:8px">+ Добавить этап</button>`;
-        document.getElementById('form-modal-title').textContent = '✏️ Изменить подось';
-        document.getElementById('form-modal-content').innerHTML = html;
-        document.getElementById('form-modal').classList.remove('hidden');
-        const saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Сохранить';
-        saveBtn.onclick = async () => {
-            const newSubName=document.getElementById('edit-subaxis-name').value; const newBrigadeId=document.getElementById('edit-subaxis-brigade').value;
-            const rows=document.querySelectorAll('#edit-stages-rows .stage-row'); let minStart=null,maxEnd=null;
-            for(const row of rows){const stageId=row.querySelector('.stage-select').value; const vol=parseFloat(row.querySelector('.stage-volume').value)||0; const price=parseFloat(row.querySelector('.stage-price').value)||0; const start=row.querySelector('.stage-start').value; const end=row.querySelector('.stage-end').value; const existingId=row.dataset.id; if(start&&(!minStart||start<minStart))minStart=start; if(end&&(!maxEnd||end>maxEnd))maxEnd=end; await supabase.from('axis_work_stages').update({brigade_id:newBrigadeId,sub_axis_name:newSubName,stage_id:parseInt(stageId),volume:vol,price_per_unit:price,total_cost:vol*price,plan_start:start||null,plan_end:end||null}).eq('id',existingId);}
-            if(minStart||maxEnd){const{data:axis}=await supabase.from('axes').select('plan_start,plan_end').eq('id',axisId).single(); const ns=!axis.plan_start||(minStart&&minStart<axis.plan_start)?minStart:axis.plan_start; const ne=!axis.plan_end||(maxEnd&&maxEnd>axis.plan_end)?maxEnd:axis.plan_end; await supabase.from('axes').update({plan_start:ns,plan_end:ne}).eq('id',axisId);}
-            document.getElementById('form-modal').classList.add('hidden'); openAxisDetailPage(axisId);
-        };
-        document.getElementById('form-modal-content').appendChild(saveBtn);
-    };
+            window.deleteSubAxisConfirm = function(axisId, brigadeId, brigadeName) { if(confirm(`⚠️ Удалить бригаду ${brigadeName} с оси?\n\nВсе этапы будут удалены.\nЭто действие НЕОБРАТИМО!`)){ supabase.from('axis_work_stages').delete().eq('axis_id',axisId).eq('brigade_id',brigadeId).then(()=>{openAxisDetailPage(axisId); alert('✅ Бригада удалена');}); } };
+            window.deleteStageConfirm = function(stageId) { if(confirm('Удалить этот этап?')){ supabase.from('axis_work_stages').delete().eq('id',stageId).then(()=>{openAxisDetailPage(currentAxisId);}); } };
+            window.addStageToBrigade = function(axisId, brigadeId, subAxisName) { let html=`<div id="single-stage-row"></div>`; document.getElementById('form-modal-title').textContent='➕ Добавить этап'; document.getElementById('form-modal-content').innerHTML=html; document.getElementById('form-modal').classList.remove('hidden'); addStageRow(document.getElementById('single-stage-row')); const saveBtn=document.createElement('button'); saveBtn.className='btn-primary'; saveBtn.textContent='Добавить'; saveBtn.onclick=async()=>{const row=document.querySelector('#single-stage-row .stage-row'); const stageId=row.querySelector('.stage-select').value; const vol=parseFloat(row.querySelector('.stage-volume').value)||0; const price=parseFloat(row.querySelector('.stage-price').value)||0; const start=row.querySelector('.stage-start').value; const end=row.querySelector('.stage-end').value; if(stageId&&vol>0){await supabase.from('axis_work_stages').insert({axis_id:axisId,brigade_id:brigadeId,sub_axis_name:subAxisName,stage_id:parseInt(stageId),volume:vol,unit:'м²',price_per_unit:price,total_cost:vol*price,plan_start:start||null,plan_end:end||null,progress:0,status:'pending',created_by:currentUser?.id}); if(start||end){const{data:axis}=await supabase.from('axes').select('plan_start,plan_end').eq('id',axisId).single(); const ns=!axis.plan_start||(start&&start<axis.plan_start)?start:axis.plan_start; const ne=!axis.plan_end||(end&&end>axis.plan_end)?end:axis.plan_end; await supabase.from('axes').update({plan_start:ns,plan_end:ne}).eq('id',axisId);}} document.getElementById('form-modal').classList.add('hidden'); openAxisDetailPage(axisId);}; document.getElementById('form-modal-content').appendChild(saveBtn); };
 
-    window.deleteSubAxisConfirm = function(axisId, brigadeId, brigadeName) { if(confirm(`⚠️ Удалить бригаду ${brigadeName} с оси?\n\nВсе этапы будут удалены.\nЭто действие НЕОБРАТИМО!`)){ supabase.from('axis_work_stages').delete().eq('axis_id',axisId).eq('brigade_id',brigadeId).then(()=>{openAxisDetailPage(axisId); alert('✅ Бригада удалена');}); } };
-    window.deleteStageConfirm = function(stageId) { if(confirm('Удалить этот этап?')){ supabase.from('axis_work_stages').delete().eq('id',stageId).then(()=>{openAxisDetailPage(currentAxisId);}); } };
-    window.addStageToBrigade = function(axisId, brigadeId, subAxisName) {
-        let html = `<div id="single-stage-row"></div>`;
-        document.getElementById('form-modal-title').textContent = '➕ Добавить этап';
-        document.getElementById('form-modal-content').innerHTML = html;
-        document.getElementById('form-modal').classList.remove('hidden');
-        addStageRow(document.getElementById('single-stage-row'));
-        const saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Добавить';
-        saveBtn.onclick = async () => {
-            const row = document.querySelector('#single-stage-row .stage-row');
-            const stageId=row.querySelector('.stage-select').value; const vol=parseFloat(row.querySelector('.stage-volume').value)||0; const price=parseFloat(row.querySelector('.stage-price').value)||0; const start=row.querySelector('.stage-start').value; const end=row.querySelector('.stage-end').value;
-            if(stageId&&vol>0){await supabase.from('axis_work_stages').insert({axis_id:axisId,brigade_id:brigadeId,sub_axis_name:subAxisName,stage_id:parseInt(stageId),volume:vol,unit:'м²',price_per_unit:price,total_cost:vol*price,plan_start:start||null,plan_end:end||null,progress:0,status:'pending',created_by:currentUser?.id}); if(start||end){const{data:axis}=await supabase.from('axes').select('plan_start,plan_end').eq('id',axisId).single(); const ns=!axis.plan_start||(start&&start<axis.plan_start)?start:axis.plan_start; const ne=!axis.plan_end||(end&&end>axis.plan_end)?end:axis.plan_end; await supabase.from('axes').update({plan_start:ns,plan_end:ne}).eq('id',axisId);}}
-            document.getElementById('form-modal').classList.add('hidden'); openAxisDetailPage(axisId);
-        };
-        document.getElementById('form-modal-content').appendChild(saveBtn);
-    };
+            window.downloadBrigadePDF = async function(axisId, brigadeId) { const { data: axis } = await supabase.from('axes').select('*').eq('id',axisId).single(); const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name, foreman_name), work_stages(name)').eq('axis_id',axisId).eq('brigade_id',brigadeId).order('plan_start'); const { data: project } = await supabase.from('projects').select('name').eq('id',currentProjectId).single(); if(!stages?.length){alert('Нет данных для PDF');return;} const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.setFontSize(14); doc.text('ООО «LamGroup Construction»',14,20); doc.setFontSize(12); doc.text('ГРАФИК ПРОИЗВОДСТВА РАБОТ',14,30); doc.setFontSize(10); doc.text(`Объект: ${project?.name||'—'}`,14,42); doc.text(`Ось: ${axis.name}`,14,50); doc.text(`Бригада: ${stages[0]?.brigades?.name||'—'} (${stages[0]?.brigades?.foreman_name||''})`,14,58); doc.text(`Сроки: ${axis.plan_start||'—'} — ${axis.plan_end||'—'}`,14,66); const body = stages.map((s,i) => [i+1, s.work_stages?.name||'', `${s.volume} м²`, `${s.price_per_unit} ₸`, `${(s.total_cost||0).toLocaleString()} ₸`, `${s.plan_start||''} — ${s.plan_end||''}`]); const total = stages.reduce((s,st)=>s+(st.total_cost||0),0); body.push(['','ИТОГО','','',`${total.toLocaleString()} ₸`,'']); doc.autoTable({ startY:72, head:[['№','Наименование','Объём','Цена/м²','Сумма','Сроки']], body, theme:'grid' }); doc.save(`ГПР_Ось${axis.name}_${stages[0]?.brigades?.name||'бригада'}.pdf`); };
 
-    window.downloadBrigadePDF = async function(axisId, brigadeId) {
-        const { data: axis } = await supabase.from('axes').select('*').eq('id', axisId).single();
-        const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name, foreman_name), work_stages(name)').eq('axis_id', axisId).eq('brigade_id', brigadeId).order('plan_start');
-        const { data: project } = await supabase.from('projects').select('name').eq('id', currentProjectId).single();
-        if (!stages?.length) { alert('Нет данных для PDF'); return; }
-        const { jsPDF } = window.jspdf; const doc = new jsPDF();
-        doc.setFontSize(14); doc.text('ООО «LamGroup Construction»', 14, 20);
-        doc.setFontSize(12); doc.text('ГРАФИК ПРОИЗВОДСТВА РАБОТ', 14, 30);
-        doc.setFontSize(10); doc.text(`Объект: ${project?.name||'—'}`, 14, 42); doc.text(`Ось: ${axis.name}`, 14, 50);
-        doc.text(`Бригада: ${stages[0]?.brigades?.name||'—'} (${stages[0]?.brigades?.foreman_name||''})`, 14, 58);
-        doc.text(`Сроки: ${axis.plan_start||'—'} — ${axis.plan_end||'—'}`, 14, 66);
-        const body = stages.map((s,i) => [i+1, s.work_stages?.name||'', `${s.volume} м²`, `${s.price_per_unit} ₸`, `${(s.total_cost||0).toLocaleString()} ₸`, `${s.plan_start||''} — ${s.plan_end||''}`]);
-        const total = stages.reduce((s,st)=>s+(st.total_cost||0),0); body.push(['','ИТОГО','','',`${total.toLocaleString()} ₸`,'']);
-        doc.autoTable({ startY: 72, head: [['№','Наименование','Объём','Цена/м²','Сумма','Сроки']], body, theme: 'grid' });
-        doc.save(`ГПР_Ось${axis.name}_${stages[0]?.brigades?.name||'бригада'}.pdf`);
-    };
-
-    init();
-})();
-</script>
+            init();
+        })();
+    </script>
 </body>
 </html>
