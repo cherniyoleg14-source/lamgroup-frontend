@@ -24,14 +24,9 @@
         .task-card.completed { opacity: 0.7; background: #f8fafc; cursor: default; }
         .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .task-type { padding: 4px 10px; border-radius: 30px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-        .type-report { background: #f3e8ff; color: #6b21a8; }
-        .type-letter { background: #fef3c7; color: #92400e; }
-        .type-problem { background: #fee2e2; color: #991b1b; }
-        .type-order { background: #dbeafe; color: #1e40af; }
-        .type-payment { background: #d1fae5; color: #065f46; }
+        .type-report { background: #f3e8ff; color: #6b21a8; } .type-letter { background: #fef3c7; color: #92400e; } .type-problem { background: #fee2e2; color: #991b1b; } .type-order { background: #dbeafe; color: #1e40af; } .type-payment { background: #d1fae5; color: #065f46; }
         .task-status { padding: 4px 10px; border-radius: 30px; font-size: 11px; font-weight: 600; }
-        .status-pending { background: #fef3c7; color: #92400e; }
-        .status-completed { background: #e2e8f0; color: #475569; }
+        .status-pending { background: #fef3c7; color: #92400e; } .status-completed { background: #e2e8f0; color: #475569; }
         .task-title { font-size: 16px; font-weight: 700; color: #1a2e4b; margin-bottom: 8px; }
         .task-description { font-size: 14px; color: #64748b; margin-bottom: 12px; }
         .task-meta { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #94a3b8; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
@@ -50,15 +45,14 @@
         .checklist-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f1f5f9; }
         .checklist-item input { width: 22px; height: 22px; accent-color: #1a2e4b; }
         .btn-primary { width: 100%; background: #1a2e4b; color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; cursor: pointer; margin-top: 20px; }
-        .btn-avr { background: #10b981; color: white; padding: 10px 14px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; width: 100%; margin-top: 10px; }
         .btn-copy { background: #10b981; color: white; padding: 14px; border-radius: 14px; font-weight: 600; border: none; cursor: pointer; width: 100%; margin-bottom: 10px; }
         .action-buttons { display: flex; gap: 10px; margin-top: 16px; }
         .action-buttons .btn-primary { flex: 2; margin-top: 0; }
         .action-buttons .btn-secondary { flex: 1; margin-top: 0; background: #f1f5f9; color: #1a2e4b; padding: 14px; border-radius: 14px; font-weight: 600; border: 1px solid #e2e8f0; cursor: pointer; text-align: center; }
         .letter-preview { background: #f8fafc; border-radius: 16px; padding: 20px; margin: 16px 0; border: 1px solid #e2e8f0; font-family: 'Times New Roman', serif; }
         .letter-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1a2e4b; padding-bottom: 15px; }
-        .letter-logo { font-size: 22px; font-weight: 800; color: #1a2e4b; letter-spacing: 2px; }
-        .letter-subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
+        .letter-logo { font-size: 28px; font-weight: 800; color: #1a2e4b; letter-spacing: 6px; text-align: center; margin-bottom: 5px; }
+        .letter-subtitle { font-size: 12px; letter-spacing: 8px; text-align: center; color: #F59E0B; font-weight: 600; margin-bottom: 10px; }
         .letter-date { text-align: right; margin-bottom: 16px; font-size: 13px; color: #475569; }
         .letter-to { margin-bottom: 16px; font-size: 14px; }
         .letter-subject { font-weight: 700; margin-bottom: 16px; font-size: 15px; text-align: center; text-transform: uppercase; }
@@ -107,10 +101,11 @@
     </div>
 
     <div id="letter-modal" class="modal hidden">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width:800px">
             <div class="modal-header"><span class="modal-title">📧 Письмо заказчику</span><button class="close-btn" id="close-letter-modal">&times;</button></div>
             <div id="letter-content"></div>
             <button class="btn-copy" id="copy-letter-btn">📋 Копировать текст письма</button>
+            <button class="btn-copy" id="print-letter-btn" style="background:#8b5cf6;margin-top:8px">🖨️ Распечатать</button>
             <div class="action-buttons">
                 <button class="btn-primary" id="mark-letter-sent">✅ Отметить как отправленное</button>
                 <button class="btn-secondary" id="close-letter-btn-2">Закрыть</button>
@@ -138,50 +133,35 @@
             async function loadAllTasks() {
                 document.querySelectorAll('.tasks-list').forEach(c => c.innerHTML = '<div class="loading">Загрузка...</div>');
                 
-                // Загружаем задачи
                 const { data: tasks, error } = await supabase
                     .from('tasks')
-                    .select('*')
+                    .select('*, projects(name), object_reports(*)')
                     .order('created_at', { ascending: false });
                 
                 if (error) { console.error('Ошибка загрузки задач:', error); return; }
                 
-                if (!tasks || tasks.length === 0) {
-                    allTasks = [];
-                    document.getElementById('total-count').textContent = '0';
-                    renderAllLists();
-                    return;
-                }
-                
-                // Загружаем проекты
-                const projectIds = [...new Set(tasks.map(t => t.project_id).filter(Boolean))];
+                const projectIds = [...new Set((tasks || []).map(t => t.project_id).filter(Boolean))];
                 let projectsMap = {};
-                if (projectIds.length > 0) {
-                    const { data: projects } = await supabase.from('projects').select('id, name').in('id', projectIds);
-                    projects.forEach(p => { projectsMap[p.id] = p; });
-                }
-                
-                // Загружаем отчеты для задач типа report
-                const reportIds = tasks.filter(t => t.type === 'report').map(t => t.report_id).filter(Boolean);
+                const reportIds = (tasks || []).filter(t => t.type === 'report').map(t => t.report_id).filter(Boolean);
                 let reportsMap = {};
+                
                 if (reportIds.length > 0) {
                     const { data: reports } = await supabase.from('object_reports').select('*').in('id', reportIds);
-                    reports.forEach(r => { reportsMap[r.id] = r; });
+                    (reports || []).forEach(r => { reportsMap[r.id] = r; });
+                }
+
+                const letterTaskIds = (tasks || []).filter(t => t.type === 'letter').map(t => t.id);
+                let lettersMap = {};
+                if (letterTaskIds.length > 0) {
+                    const { data: letters } = await supabase.from('letters').select('*, projects(customer_company_name, customer_director_name, customer_bin, customer_legal_address, name)');
+                    (letters || []).forEach(l => { lettersMap[l.id] = l; });
                 }
                 
-                // Загружаем наряды для задач типа order
-                const orderIds = tasks.filter(t => t.type === 'order').map(t => t.report_id).filter(Boolean);
-                let ordersMap = {};
-                if (orderIds.length > 0) {
-                    const { data: orders } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').in('id', orderIds);
-                    orders.forEach(o => { ordersMap[o.id] = o; });
-                }
-                
-                allTasks = tasks.map(t => ({
+                allTasks = (tasks || []).map(t => ({
                     ...t,
                     projects: projectsMap[t.project_id] || null,
                     object_reports: reportsMap[t.report_id] || null,
-                    work_orders: ordersMap[t.report_id] || null,
+                    letters: lettersMap[t.id] || null,
                     typeName: t.type === 'report' ? '📑 Отчет' : t.type === 'letter' ? '✉️ Письмо' : t.type === 'problem' ? '⚠️ Проблема' : t.type === 'order' ? '📋 Наряд' : '💰 Платёж',
                     typeClass: t.type === 'report' ? 'type-report' : t.type === 'letter' ? 'type-letter' : t.type === 'problem' ? 'type-problem' : t.type === 'order' ? 'type-order' : 'type-payment'
                 }));
@@ -202,29 +182,24 @@
             function renderTasks(containerId, tasks) {
                 const container = document.getElementById(containerId);
                 let filtered = tasks;
-                
                 if (currentFilter === 'my') filtered = tasks.filter(t => t.responsible_ids?.includes(currentUser?.id) || t.created_by === currentUser?.id);
                 else if (currentFilter === 'pending') filtered = tasks.filter(t => t.status === 'pending');
-                
                 if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">✅ Нет задач</div>'; return; }
                 
                 container.innerHTML = filtered.map(t => {
                     const isCompleted = t.status === 'completed';
                     const report = t.object_reports;
-                    const order = t.work_orders;
-                    
-                    let title = t.title;
-                    let meta = '';
+                    let title = t.title, meta = '';
                     
                     if (t.type === 'report' && report) {
                         title = `Отчет №${report.id?.slice(-6) || '—'}`;
                         meta = `📅 ${report.report_date ? new Date(report.report_date).toLocaleDateString('ru-RU') : '—'} | 🏗️ ${t.projects?.name || '—'} | 👤 ${report.created_by_name || '—'}`;
                     } else if (t.type === 'letter') {
-                        title = `Письмо заказчику`;
+                        title = t.title;
                         meta = `🏗️ ${t.projects?.name || '—'} | 📅 ${t.created_at ? new Date(t.created_at).toLocaleDateString('ru-RU') : '—'}`;
-                    } else if (t.type === 'order' && order) {
-                        title = `Наряд: ${order.work_type || '—'}`;
-                        meta = `🏗️ ${order.projects?.name || '—'} | Сумма: ${order.total_amount?.toLocaleString() || 0} ₸`;
+                    } else if (t.type === 'order') {
+                        title = `Наряд: ${t.title}`;
+                        meta = `🏗️ ${t.projects?.name || '—'} | 📅 ${t.created_at ? new Date(t.created_at).toLocaleDateString('ru-RU') : '—'}`;
                     } else {
                         meta = `🏗️ ${t.projects?.name || '—'} | 📅 ${t.created_at ? new Date(t.created_at).toLocaleDateString('ru-RU') : '—'}`;
                     }
@@ -234,7 +209,6 @@
                         <div class="task-title">${title}</div>
                         <div class="task-description">${t.description || ''}</div>
                         <div class="task-meta"><span>${meta}</span></div>
-                        ${t.type === 'order' && order && t.status === 'completed' ? `<button class="btn-avr" onclick="generateAVR('${t.project_id}')">📄 Сформировать АВР</button>` : ''}
                     </div>`;
                 }).join('');
                 
@@ -248,22 +222,6 @@
                 });
             }
             
-            window.generateAVR = async (projectId) => {
-                const { data: orders } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('project_id', projectId).eq('status', 'approved');
-                if (!orders || orders.length === 0) { alert('Нет утверждённых нарядов'); return; }
-                
-                const projectName = orders[0]?.projects?.name || 'Объект';
-                const data = orders.map((o, i) => ({ '№': i+1, 'Наименование': o.work_type, 'Ось': o.axis_name, 'Бригада': o.brigades?.name, 'Объём': o.volume, 'Цена': o.price, 'Сумма': o.total_amount }));
-                const total = orders.reduce((s, o) => s + o.total_amount, 0);
-                data.push({ '№': '', 'Наименование': 'ИТОГО:', 'Ось': '', 'Бригада': '', 'Объём': '', 'Цена': '', 'Сумма': total });
-                
-                const wb = XLSX.utils.book_new(); const ws = XLSX.utils.json_to_sheet(data);
-                XLSX.utils.sheet_add_aoa(ws, [[`АКТ ВЫПОЛНЕННЫХ РАБОТ`], [`Объект: ${projectName}`], [`Дата: ${new Date().toLocaleDateString('ru-RU')}`], []], { origin: 'A1' });
-                XLSX.utils.book_append_sheet(wb, ws, 'АВР');
-                XLSX.writeFile(wb, `АВР_${projectName}_${new Date().toISOString().split('T')[0]}.xlsx`);
-                alert('✅ АВР сформирован!');
-            };
-            
             async function openReportModal(taskId) {
                 currentTaskId = taskId; const task = allTasks.find(t => t.id === taskId); if (!task?.object_reports) return; const report = task.object_reports;
                 document.getElementById('modal-report-info').innerHTML = `<p><strong>№ отчета:</strong> ${report.id?.slice(-6)}</p><p><strong>Дата:</strong> ${report.report_date ? new Date(report.report_date).toLocaleDateString('ru-RU') : '—'}</p><p><strong>Объект:</strong> ${task.projects?.name}</p><p><strong>Подал:</strong> ${report.created_by_name} (${report.created_by_role==='manager'?'Рук.':'ИТР'})</p><p><strong>Отставание:</strong> +${report.delay_days} дн.</p><p><strong>Описание:</strong> ${report.description}</p>`;
@@ -272,23 +230,97 @@
             }
             
             function openLetterModal(taskId) {
-                currentTaskId = taskId; const task = allTasks.find(t => t.id === taskId); if (!task) return;
-                const projectName = task.projects?.name || 'Объект'; const today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-                const delayInfo = task.description || 'Сдвиг сроков';
-                currentLetterText = `ООО «LamGroup Construction»\nг. Алматы\nИсх. № ${taskId.slice(-6)} от ${today}\n\nГенеральному директору ООО «Заказчик»\n\nУважаемый(ая) ________________!\n\nУведомляем Вас о сдвиге сроков на объекте «${projectName}».\n\n${delayInfo}\n\nС уважением,\nРуководитель проекта\n________________ / ${currentUser?.full_name || ''}`;
-                document.getElementById('letter-content').innerHTML = `<div class="letter-preview"><div class="letter-header"><div class="letter-logo">LAMGROUP CONSTRUCTION</div></div><div class="letter-date">Исх. № ${taskId.slice(-6)} от ${today}</div><div class="letter-to"><strong>Кому:</strong> Генеральному директору<br><strong>Объект:</strong> «${projectName}»</div><div class="letter-subject">УВЕДОМЛЕНИЕ О СДВИГЕ СРОКОВ</div><div class="letter-body"><p>Уважаемый(ая) ________________!</p><p>${delayInfo}</p></div><div class="letter-signature">С уважением,<br>Руководитель проекта<br>________________ / ${currentUser?.full_name || ''}</div></div>`;
-                document.getElementById('letter-modal').classList.remove('hidden');
+                currentTaskId = taskId;
+                var task = allTasks.find(function(t) { return t.id === taskId; });
+                if (!task) return;
+                
+                var projectName = task.projects?.name || 'Объект';
+                var today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+                var delayInfo = task.description || 'Сдвиг сроков производства работ';
+                var letterNumber = task.title.match(/№(.*?):/) ? task.title.match(/№(.*?):/)[1] : (taskId.slice(-6) + '-Р');
+                
+                var companyName = 'ТОО «Lamgroup Construction»';
+                var companyBIN = '100740008625';
+                var companyAddress = 'г. Алматы, ул. Сатпаева, 90/1, офис 301';
+                var directorName = 'Ким В.Г.';
+                
+                supabase.from('letters').select('*, projects!inner(customer_company_name, customer_director_name, customer_bin, customer_legal_address, name)').eq('project_id', task.project_id).order('created_at', {ascending: false}).limit(1).then(function(res) {
+                    var letter = res.data && res.data.length > 0 ? res.data[0] : null;
+                    var customerCompany = letter?.projects?.customer_company_name || '_______________________';
+                    var customerDirector = letter?.projects?.customer_director_name || '_______________________';
+                    var customerBIN = letter?.projects?.customer_bin || '';
+                    var customerAddress = letter?.projects?.customer_legal_address || '';
+                    
+                    if (letter) {
+                        letterNumber = letter.letter_number_full || letterNumber;
+                        delayInfo = letter.delay_description || delayInfo;
+                    }
+                    
+                    var letterHtml = '<div class="letter-preview">';
+                    letterHtml += '<div class="letter-logo">LAMGROUP</div>';
+                    letterHtml += '<div class="letter-subtitle">CONSTRUCTION</div>';
+                    letterHtml += '<div style="text-align:center;margin-bottom:10px"><strong>'+companyName+'</strong><br><small>БИН: '+companyBIN+' • '+companyAddress+'</small></div>';
+                    letterHtml += '<div style="text-align:right;margin:15px 0">Исх. № '+letterNumber+' от '+today+'</div>';
+                    letterHtml += '<div style="margin:10px 0"><strong>Кому:</strong> '+customerDirector+'<br>Директору '+customerCompany;
+                    if (customerBIN) letterHtml += '<br>БИН: '+customerBIN;
+                    if (customerAddress) letterHtml += '<br>'+customerAddress;
+                    letterHtml += '</div>';
+                    letterHtml += '<div style="text-align:center;font-weight:700;margin:15px 0;text-transform:uppercase">УВЕДОМЛЕНИЕ о переносе сроков работ</div>';
+                    letterHtml += '<div style="margin:15px 0"><p>Уважаемый(ая) '+customerDirector+'.</p><p>Настоящим уведомляем Вас о переносе сроков выполнения работ по объекту: <strong>'+projectName+'</strong></p>';
+                    letterHtml += '<p>В связи с: '+delayInfo+'</p>';
+                    if (letter && letter.delay_days) {
+                        letterHtml += '<p>Сроки выполнения работ переносятся на <strong>+'+letter.delay_days+' дней</strong>.</p>';
+                    }
+                    letterHtml += '<p>Просим принять данную информацию к сведению.</p></div>';
+                    letterHtml += '<div style="margin-top:30px"><p>С уважением,</p><p>Директор '+companyName+'</p><p><br></p><p>_______________________ '+directorName+'</p></div>';
+                    letterHtml += '</div>';
+                    
+                    currentLetterText = letterHtml.replace(/<[^>]*>/g, '');
+                    document.getElementById('letter-content').innerHTML = letterHtml;
+                    document.getElementById('letter-modal').classList.remove('hidden');
+                });
             }
             
-            document.getElementById('copy-letter-btn').onclick = () => navigator.clipboard?.writeText(currentLetterText).then(() => alert('✅ Скопировано!')).catch(() => alert('❌ Ошибка'));
-            document.getElementById('mark-letter-sent').onclick = async () => { await supabase.from('tasks').update({ status: 'completed', letter_sent: true }).eq('id', currentTaskId); document.getElementById('letter-modal').classList.add('hidden'); loadAllTasks(); };
-            document.getElementById('close-report-modal').onclick = () => document.getElementById('report-modal').classList.add('hidden');
-            document.getElementById('close-letter-modal').onclick = () => document.getElementById('letter-modal').classList.add('hidden');
-            document.getElementById('close-letter-btn-2').onclick = () => document.getElementById('letter-modal').classList.add('hidden');
-            document.getElementById('save-report-task').onclick = async () => { if (!document.getElementById('modal-letter-sent').checked || !document.getElementById('modal-schedule-shifted').checked) { alert('Отметьте обе галочки'); return; } await supabase.from('tasks').update({ letter_sent: true, schedule_shifted: true, status: 'completed' }).eq('id', currentTaskId); document.getElementById('report-modal').classList.add('hidden'); loadAllTasks(); };
+            document.getElementById('copy-letter-btn').onclick = function() {
+                navigator.clipboard?.writeText(currentLetterText).then(function() { alert('✅ Текст письма скопирован!'); }).catch(function() { alert('❌ Не удалось скопировать'); });
+            };
             
-            function setupTabs() { document.querySelectorAll('.tab').forEach(t => t.onclick = () => { document.querySelectorAll('.tab').forEach(x => x.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active')); t.classList.add('active'); document.getElementById(`tab-${t.dataset.tab}`).classList.add('active'); }); }
-            function setupFilters() { document.querySelectorAll('.filter-btn').forEach(btn => btn.onclick = () => { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentFilter = btn.dataset.filter; renderAllLists(); }); }
+            document.getElementById('print-letter-btn').onclick = function() {
+                var printWindow = window.open('', '_blank', 'width=800,height=600');
+                var letterContent = document.getElementById('letter-content').innerHTML;
+                printWindow.document.write('<html><head><meta charset="UTF-8"><title>Письмо</title>');
+                printWindow.document.write('<style>');
+                printWindow.document.write('body { font-family: "Times New Roman", serif; padding: 30px; max-width: 800px; margin: 0 auto; }');
+                printWindow.document.write('.letter-logo { font-size: 28px; font-weight: 800; color: #1a2e4b; letter-spacing: 6px; text-align: center; margin-bottom: 5px; }');
+                printWindow.document.write('.letter-subtitle { font-size: 12px; letter-spacing: 8px; text-align: center; color: #F59E0B; font-weight: 600; margin-bottom: 10px; }');
+                printWindow.document.write('</style></head><body>');
+                printWindow.document.write(letterContent);
+                printWindow.document.write('</body></html>');
+                printWindow.document.close();
+                setTimeout(function() { printWindow.print(); }, 500);
+            };
+            
+            document.getElementById('mark-letter-sent').onclick = async function() {
+                if (!currentTaskId) return;
+                await supabase.from('tasks').update({ status: 'completed', letter_sent: true }).eq('id', currentTaskId);
+                document.getElementById('letter-modal').classList.add('hidden');
+                loadAllTasks();
+                alert('✅ Письмо отмечено как отправленное');
+            };
+            
+            document.getElementById('close-report-modal').onclick = function() { document.getElementById('report-modal').classList.add('hidden'); };
+            document.getElementById('close-letter-modal').onclick = function() { document.getElementById('letter-modal').classList.add('hidden'); };
+            document.getElementById('close-letter-btn-2').onclick = function() { document.getElementById('letter-modal').classList.add('hidden'); };
+            
+            document.getElementById('save-report-task').onclick = async function() {
+                if (!document.getElementById('modal-letter-sent').checked || !document.getElementById('modal-schedule-shifted').checked) { alert('Отметьте обе галочки'); return; }
+                await supabase.from('tasks').update({ letter_sent: true, schedule_shifted: true, status: 'completed' }).eq('id', currentTaskId);
+                document.getElementById('report-modal').classList.add('hidden');
+                loadAllTasks();
+            };
+            
+            function setupTabs() { document.querySelectorAll('.tab').forEach(function(t) { t.onclick = function() { document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); }); document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); }); t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active'); }; }); }
+            function setupFilters() { document.querySelectorAll('.filter-btn').forEach(function(btn) { btn.onclick = function() { document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); currentFilter = btn.dataset.filter; renderAllLists(); }; }); }
             
             async function init() { await loadUser(); await loadAllTasks(); setupTabs(); setupFilters(); }
             init();
