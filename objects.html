@@ -133,7 +133,8 @@
             <div id="tab-info" class="tab-content active"><div class="info-card" id="detail-content"></div></div>
             <div id="tab-progress" class="tab-content"><div id="progress-container"></div></div>
             <div id="tab-history" class="tab-content"><div id="history-container"></div></div>
-            <div id="tab-expenses" class="tab-content"><div class="info-card"><h3>💰 Расходы</h3><p>Загрузка...</p></div></div>
+            <!-- TAB: EXPENSES -->
+<div id="tab-expenses" class="tab-content"></div>
             <div id="tab-materials" class="tab-content"><div id="materials-container"></div></div>
             <div id="tab-checklist" class="tab-content"></div>
             <div id="tab-issues" class="tab-content"><div class="info-card"><h3>⚠️ Проблемы</h3><p>Загрузка...</p></div></div>
@@ -185,7 +186,7 @@
             }
 
             function setupFilters() { document.querySelectorAll('.filter-btn').forEach(function(btn) { btn.addEventListener('click', function() { document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); currentFilter = btn.dataset.filter; renderProjects(); }); }); }
-            function setupTabs() { document.querySelectorAll('.tab').forEach(function(t) { t.addEventListener('click', function() { document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); }); document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); }); t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active'); if (t.dataset.tab === 'progress') loadProgressTab(); if (t.dataset.tab === 'history') loadHistoryTab(); if (t.dataset.tab === 'materials') loadMaterialsTab(); if (t.dataset.tab === 'checklist') loadChecklist(); }); }); }
+            function setupTabs() { document.querySelectorAll('.tab').forEach(function(t) { t.addEventListener('click', function() { document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); }); document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); }); t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active'); if (t.dataset.tab === 'progress') loadProgressTab(); if (t.dataset.tab === 'history') loadHistoryTab(); if (t.dataset.tab === 'materials') loadMaterialsTab(); if (t.dataset.tab === 'checklist') loadChecklist();if (t.dataset.tab === 'expenses') loadExpenses(); }); }); }
             function setupTabsScroll() { const tabsContainer = document.getElementById('tabs-container'); const scrollLeft = document.getElementById('scroll-left'); const scrollRight = document.getElementById('scroll-right'); if (!tabsContainer) return; function updateArrows() { if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0); if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1); } if (scrollLeft) scrollLeft.addEventListener('click', function() { tabsContainer.scrollBy({ left: -200, behavior: 'smooth' }); }); if (scrollRight) scrollRight.addEventListener('click', function() { tabsContainer.scrollBy({ left: 200, behavior: 'smooth' }); }); tabsContainer.addEventListener('scroll', updateArrows); window.addEventListener('resize', updateArrows); setTimeout(updateArrows, 300); setTimeout(updateArrows, 600); }
             function setupModals() { document.getElementById('close-form-modal').onclick = function() { document.getElementById('form-modal').classList.add('hidden'); }; document.getElementById('close-edit-modal').onclick = function() { document.getElementById('edit-modal').classList.add('hidden'); }; document.getElementById('action-overlay').onclick = closeActionMenu; }
 
@@ -1298,7 +1299,255 @@ function printWaybill(waybillId) {
 }
 // ===== КОНЕЦ РАЗДЕЛА МАТЕРИАЛЫ =====
 
-           
+           // ============================================================
+// ===== РАСХОДЫ (ПОЛНАЯ ВЕРСИЯ) =====
+// ============================================================
+
+async function loadExpenses() {
+    const container = document.getElementById('tab-expenses');
+    container.innerHTML = '<div class="loading">Загрузка расходов...</div>';
+    
+    // Загружаем расходы для текущего объекта
+    const { data, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .order('date', { ascending: false });
+    
+    if (error) {
+        container.innerHTML = `<div class="info-card"><p class="error">Ошибка: ${error.message}</p></div>`;
+        return;
+    }
+    
+    const expenses = data || [];
+    
+    // Статистика
+    const paidTotal = expenses.filter(e => e.payment_status === 'paid').reduce((s, e) => s + Number(e.amount), 0);
+    const pendingTotal = expenses.filter(e => e.payment_status === 'pending').reduce((s, e) => s + Number(e.amount), 0);
+    
+    const categoryMap = {
+        'delivery': '🚛 Доставка', 'consumables': '🔧 Расходники',
+        'cradles': '🏗️ Люльки', 'scaffolding': '🪜 Леса',
+        'rent': '🏢 Аренда', 'other': '📄 Прочее'
+    };
+    
+    let html = `
+        <div class="info-card">
+            <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
+                <div style="flex: 1; background: #D1FAE5; border-radius: 20px; padding: 16px; text-align: center;">
+                    <div style="font-size: 28px; font-weight: 800; color: #065F46;">${paidTotal.toLocaleString()} ₸</div>
+                    <div style="font-size: 12px; color: #065F46;">✅ Оплачено</div>
+                </div>
+                <div style="flex: 1; background: #FEF3C7; border-radius: 20px; padding: 16px; text-align: center;">
+                    <div style="font-size: 28px; font-weight: 800; color: #92400E;">${pendingTotal.toLocaleString()} ₸</div>
+                    <div style="font-size: 12px; color: #92400E;">⏳ План оплат</div>
+                </div>
+            </div>
+            
+            <button class="btn-primary" id="add-expense-btn" style="margin-bottom: 20px;">➕ Добавить расход</button>
+    `;
+    
+    // Список расходов
+    if (expenses.length === 0) {
+        html += '<p style="color: #64748B; text-align: center; padding: 20px;">Нет расходов</p>';
+    } else {
+        expenses.forEach(exp => {
+            const isPaid = exp.payment_status === 'paid';
+            const isUrgent = exp.is_urgent === true;
+            const borderColor = isUrgent ? '#EF4444' : (isPaid ? '#10B981' : '#F59E0B');
+            
+            html += `
+                <div class="gpr-item" style="border-left: 4px solid ${borderColor}; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <strong>${escapeHtml(exp.name)}</strong>
+                            ${isUrgent ? '<span style="background:#FEE2E2; color:#991B1B; padding:2px 8px; border-radius:20px; font-size:10px; margin-left:8px;">🚨 СРОЧНО</span>' : ''}
+                            <br>
+                            <span style="font-size: 11px; color: #64748B;">${categoryMap[exp.category] || exp.category}</span>
+                        </div>
+                        <div style="font-size: 18px; font-weight: 700; color: ${isPaid ? '#065F46' : '#92400E'};">${Number(exp.amount).toLocaleString()} ₸</div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: #64748B;">
+                        <span>📅 ${exp.date ? new Date(exp.date).toLocaleDateString('ru-RU') : '—'}</span>
+                        <span>💳 ${exp.payment_method === 'cash' ? 'Наличка' : exp.payment_method === 'non_cash' ? 'Безнал' : (exp.payment_type === 'cash' ? 'Наличка' : 'Безнал')}</span>
+                        <span class="status-badge" style="padding: 2px 8px; border-radius: 20px; background: ${isPaid ? '#D1FAE5' : '#FEF3C7'}; color: ${isPaid ? '#065F46' : '#92400E'};">${isPaid ? '✅ Оплачен' : '⏳ План оплат'}</span>
+                    </div>
+                    ${exp.supplier ? `<div style="font-size: 12px; margin-top: 6px;">🏢 ${escapeHtml(exp.supplier)}</div>` : ''}
+                    ${exp.invoice_name ? `<div style="font-size: 12px; margin-top: 4px;">📎 <a href="${exp.invoice_url}" target="_blank" style="color: #3B82F6;">${escapeHtml(exp.invoice_name)}</a></div>` : ''}
+                    ${exp.planned_payment_date ? `<div style="font-size: 12px; margin-top: 4px;">📅 План оплаты: ${new Date(exp.planned_payment_date).toLocaleDateString('ru-RU')}</div>` : ''}
+                    ${!isPaid && currentRole === 'manager' ? `
+                        <button class="btn-small" style="margin-top: 10px; background: #DBEAFE; color: #1E40AF; padding: 6px 12px; border-radius: 10px; border: none; cursor: pointer;" onclick="markExpensePaid('${exp.id}')">✅ Отметить оплаченным</button>
+                    ` : ''}
+                </div>
+            `;
+        });
+    }
+    
+    html += `</div>`;
+    container.innerHTML = html;
+    
+    document.getElementById('add-expense-btn')?.addEventListener('click', openAddExpenseForm);
+}
+
+function openAddExpenseForm() {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const modalHtml = `
+        <div class="form-group">
+            <label>Дата расхода *</label>
+            <input type="date" id="expense-date" value="${today}">
+        </div>
+        <div class="form-group">
+            <label>Статья расхода *</label>
+            <select id="expense-category">
+                <option value="delivery">🚛 Доставка</option>
+                <option value="consumables">🔧 Расходники</option>
+                <option value="cradles">🏗️ Люльки</option>
+                <option value="scaffolding">🪜 Леса</option>
+                <option value="rent">🏢 Аренда</option>
+                <option value="other">📄 Прочее</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Наименование расхода *</label>
+            <input type="text" id="expense-name" placeholder="Например: Доставка материалов">
+        </div>
+        <div class="form-group">
+            <label>Поставщик / Получатель</label>
+            <input type="text" id="expense-supplier" placeholder="ТОО «СтройМатериалы»">
+        </div>
+        <div class="row-2">
+            <div class="form-group">
+                <label>Количество</label>
+                <input type="number" id="expense-quantity" step="0.01" value="1">
+            </div>
+            <div class="form-group">
+                <label>Сумма *</label>
+                <input type="number" id="expense-amount" step="0.01" placeholder="Сумма в ₸">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Метод оплаты *</label>
+            <select id="expense-payment-method">
+                <option value="cash">💵 Наличка</option>
+                <option value="non_cash">💳 Безнал</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label><input type="checkbox" id="expense-urgent" style="width: auto; margin-right: 8px;"> 🚨 Срочный платёж</label>
+        </div>
+        <div class="form-group">
+            <label>📎 Счёт на оплату</label>
+            <input type="file" id="expense-invoice" accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+        <div class="form-group">
+            <label>Статус *</label>
+            <select id="expense-status">
+                <option value="paid">✅ Оплатили</option>
+                <option value="pending">⏳ В план оплат</option>
+            </select>
+        </div>
+        <button class="btn-primary" id="save-expense-btn">💾 Сохранить расход</button>
+    `;
+    
+    document.getElementById('form-modal-title').textContent = '➕ Добавить расход';
+    document.getElementById('form-modal-content').innerHTML = modalHtml;
+    document.getElementById('form-modal').classList.remove('hidden');
+    
+    document.getElementById('save-expense-btn').onclick = async () => {
+        const date = document.getElementById('expense-date').value;
+        const category = document.getElementById('expense-category').value;
+        const name = document.getElementById('expense-name').value.trim();
+        const supplier = document.getElementById('expense-supplier').value.trim();
+        const quantity = parseFloat(document.getElementById('expense-quantity').value) || 1;
+        const amount = parseFloat(document.getElementById('expense-amount').value);
+        const paymentMethod = document.getElementById('expense-payment-method').value;
+        const isUrgent = document.getElementById('expense-urgent').checked;
+        const paymentStatus = document.getElementById('expense-status').value;
+        
+        if (!name || !amount || amount <= 0) {
+            alert('Заполните наименование и сумму');
+            return;
+        }
+        
+        let invoiceUrl = null;
+        let invoiceName = null;
+        const fileInput = document.getElementById('expense-invoice');
+        if (fileInput && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            invoiceName = file.name;
+            const fileName = `invoices/${currentProjectId}/${Date.now()}_${file.name}`;
+            const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
+            if (!uploadError) {
+                const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+                invoiceUrl = urlData.publicUrl;
+            }
+        }
+        
+        const { data: expense, error: insertError } = await supabase
+            .from('expenses')
+            .insert({
+                project_id: currentProjectId,
+                date: date,
+                name: name,
+                category: category,
+                quantity: quantity,
+                amount: amount,
+                payment_type: paymentMethod === 'cash' ? 'cash' : 'invoice',
+                payment_status: paymentStatus,
+                supplier: supplier || null,
+                is_urgent: isUrgent,
+                payment_method: paymentMethod,
+                invoice_url: invoiceUrl,
+                invoice_name: invoiceName,
+                created_by: currentUser?.id
+            })
+            .select('id')
+            .single();
+        
+        if (insertError) {
+            alert('Ошибка: ' + insertError.message);
+            return;
+        }
+        
+        if (paymentStatus === 'pending') {
+            await supabase.from('tasks').insert({
+                project_id: currentProjectId,
+                type: 'payment',
+                title: `💰 Платёж: ${name}`,
+                description: `Сумма: ${amount.toLocaleString()} ₸\nПоставщик: ${supplier || '—'}\nКатегория: ${category}\n${isUrgent ? '🚨 СРОЧНЫЙ ПЛАТЁЖ' : ''}`,
+                status: 'pending',
+                priority: isUrgent ? 'high' : 'medium',
+                created_by: currentUser?.id
+            });
+        }
+        
+        document.getElementById('form-modal').classList.add('hidden');
+        loadExpenses();
+        showMessage('✅ Расход добавлен', 'success');
+    };
+}
+
+window.markExpensePaid = async function(expenseId) {
+    const { error } = await supabase
+        .from('expenses')
+        .update({ 
+            payment_status: 'paid',
+            accountant_status: 'paid',
+            sent_to_accountant: true,
+            updated_at: new Date()
+        })
+        .eq('id', expenseId);
+    
+    if (error) {
+        showMessage('Ошибка: ' + error.message, 'error');
+    } else {
+        showMessage('✅ Расход отмечен как оплаченный', 'success');
+        loadExpenses();
+    }
+};
+
+// ===== КОНЕЦ РАЗДЕЛА РАСХОДЫ =====
             init();
         })();
     </script>
