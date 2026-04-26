@@ -85,14 +85,6 @@
         .action-item { padding: 12px 16px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
         .fullscreen-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #F8FAFC; z-index: 10001; overflow-y: auto; padding: 16px; }
         .letter-preview { background: white; border: 2px solid #0F172A; padding: 30px; font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
-        .letter-preview .letter-header { text-align: center; margin-bottom: 10px; }
-        .letter-preview .letter-header .company-name { font-size: 18px; font-weight: 700; }
-        .letter-preview .letter-header .company-details { font-size: 11px; }
-        .letter-preview .letter-date { text-align: right; margin: 15px 0; }
-        .letter-preview .letter-to { margin: 10px 0; }
-        .letter-preview .letter-subject { text-align: center; font-weight: 700; margin: 15px 0; text-transform: uppercase; }
-        .letter-preview .letter-body { margin: 15px 0; }
-        .letter-preview .letter-signature { margin-top: 30px; }
         .letter-logo { font-size: 32px; font-weight: 800; color: #0F172A; letter-spacing: 6px; text-align: center; margin-bottom: 5px; }
         .letter-subtitle { font-size: 14px; letter-spacing: 8px; text-align: center; color: #F59E0B; font-weight: 600; margin-bottom: 10px; }
     </style>
@@ -128,7 +120,7 @@
             <div id="tab-progress" class="tab-content"><div id="progress-container"></div></div>
             <div id="tab-history" class="tab-content"><div id="history-container"></div></div>
             <div id="tab-expenses" class="tab-content"><div class="info-card"><h3>💰 Расходы</h3><p>Загрузка...</p></div></div>
-            <div id="tab-materials" class="tab-content"><div class="info-card"><h3>📦 Материалы</h3><p>Загрузка...</p></div></div>
+            <div id="tab-materials" class="tab-content"><div id="materials-container"></div></div>
             <div id="tab-checklist" class="tab-content"><div class="info-card"><h3>✅ Чек-лист</h3><p>Загрузка...</p></div></div>
             <div id="tab-issues" class="tab-content"><div class="info-card"><h3>⚠️ Проблемы</h3><p>Загрузка...</p></div></div>
             <div id="tab-report" class="tab-content"><div class="info-card"><h3>📑 Отчет</h3><p>Загрузка...</p></div></div>
@@ -179,7 +171,7 @@
             }
 
             function setupFilters() { document.querySelectorAll('.filter-btn').forEach(function(btn) { btn.addEventListener('click', function() { document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); currentFilter = btn.dataset.filter; renderProjects(); }); }); }
-            function setupTabs() { document.querySelectorAll('.tab').forEach(function(t) { t.addEventListener('click', function() { document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); }); document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); }); t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active'); if (t.dataset.tab === 'progress') loadProgressTab(); if (t.dataset.tab === 'history') loadHistoryTab(); }); }); }
+            function setupTabs() { document.querySelectorAll('.tab').forEach(function(t) { t.addEventListener('click', function() { document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); }); document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); }); t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active'); if (t.dataset.tab === 'progress') loadProgressTab(); if (t.dataset.tab === 'history') loadHistoryTab(); if (t.dataset.tab === 'materials') loadMaterialsTab(); }); }); }
             function setupTabsScroll() { const tabsContainer = document.getElementById('tabs-container'); const scrollLeft = document.getElementById('scroll-left'); const scrollRight = document.getElementById('scroll-right'); if (!tabsContainer) return; function updateArrows() { if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0); if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1); } if (scrollLeft) scrollLeft.addEventListener('click', function() { tabsContainer.scrollBy({ left: -200, behavior: 'smooth' }); }); if (scrollRight) scrollRight.addEventListener('click', function() { tabsContainer.scrollBy({ left: 200, behavior: 'smooth' }); }); tabsContainer.addEventListener('scroll', updateArrows); window.addEventListener('resize', updateArrows); setTimeout(updateArrows, 300); setTimeout(updateArrows, 600); }
             function setupModals() { document.getElementById('close-form-modal').onclick = function() { document.getElementById('form-modal').classList.add('hidden'); }; document.getElementById('close-edit-modal').onclick = function() { document.getElementById('edit-modal').classList.add('hidden'); }; document.getElementById('action-overlay').onclick = closeActionMenu; }
 
@@ -334,100 +326,11 @@
             window.openActionMenu = function(axisId, brigadeId, subAxisName) { window.showActionMenu([ { label: '⏰ Сдвиг ГПР', action: function() { closeActionMenu(); window.openShiftGPRForm(axisId, brigadeId); } }, { label: '📋 Сдать Наряд', action: function() { closeActionMenu(); window.openWorkOrderForm(axisId, brigadeId); } }, { label: '👷 Заменить бригаду', action: function() { closeActionMenu(); window.openChangeBrigadeForm(axisId, brigadeId); } }, { label: '✉️ Письмо заказчику', action: function() { closeActionMenu(); window.openLetterFormAction(axisId, brigadeId); } }, { label: '💰 Аванс', action: function() { closeActionMenu(); window.openAdvanceForm(axisId, brigadeId); } }, { label: '📝 Задача', action: function() { closeActionMenu(); window.openTaskForm(axisId, brigadeId); } } ]); };
             window.showActionMenu = function(items) { const menu = document.getElementById('action-menu'); const overlay = document.getElementById('action-overlay'); menu.innerHTML = items.map(function(i) { return '<div class="action-item">'+i.label+'</div>'; }).join(''); overlay.classList.remove('hidden'); menu.classList.remove('hidden'); menu.querySelectorAll('.action-item').forEach(function(item, idx) { item.addEventListener('click', function() { items[idx].action(); }); }); };
 
-            // ПИСЬМО С ФИРМЕННЫМ БЛАНКОМ
-            window.getNextLetterNumber = async function() {
-                var { data, error } = await supabase.rpc('next_letter_number');
-                if (error || !data) {
-                    var { data: lastLetter } = await supabase.from('letters').select('letter_number_full').order('created_at',{ascending:false}).limit(1);
-                    if (lastLetter && lastLetter.length && lastLetter[0].letter_number_full) {
-                        var lastNum = parseInt(lastLetter[0].letter_number_full.replace('-Р',''));
-                        return (lastNum + 1) + '-Р';
-                    }
-                    return '1-Р';
-                }
-                return data + '-Р';
+            // ЗАГЛУШКА НА ПИСЬМО ЗАКАЗЧИКУ
+            window.openLetterFormAction = function(axisId, brigadeId) {
+                alert('✉️ Функция письма заказчику временно недоступна.\n\nПожалуйста, используйте кнопку «⏰ Сдвиг ГПР» с причиной «Заказчик» — письмо создастся автоматически.');
             };
 
-            window.openLetterFormAction = async function(axisId, brigadeId) {
-                var letterNumber = await window.getNextLetterNumber();
-                var { data: project } = await supabase.from('projects').select('*').eq('id', currentProjectId).single();
-                var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name), axes(name)').eq('axis_id', axisId).eq('brigade_id', brigadeId);
-                var axisName = (stages&&stages.length>0) ? stages[0]?.axes?.name : '—';
-                var currentEnd = (stages||[]).reduce(function(max, s) { return s.plan_end && (!max || s.plan_end > max) ? s.plan_end : max; }, null);
-                var companyName = 'ТОО «Lamgroup Construction»';
-                var companyBIN = '100740008625';
-                var companyAddress = 'г. Алматы, ул. Сатпаева, 90/1, офис 301';
-                var directorName = 'Ким В.Г.';
-
-                var html = '<div class="form-group"><label>Причина задержки *</label><textarea id="letter-reason" rows="3"></textarea></div>';
-                html += '<div class="form-group"><label>Срок сдвига (дней) *</label><input type="number" id="letter-days" value="1" min="1"></div>';
-                html += '<p style="color:#64748B;font-size:12px;margin-bottom:12px">📧 Исходящий № '+letterNumber+'</p>';
-                html += '<div class="letter-preview" id="letter-preview"></div>';
-                document.getElementById('form-modal-title').textContent = '✉️ Письмо заказчику';
-                document.getElementById('form-modal-content').innerHTML = html;
-                document.getElementById('form-modal').classList.remove('hidden');
-
-                function updatePreview() {
-                    var days = parseInt(document.getElementById('letter-days').value) || 0;
-                    var reason = document.getElementById('letter-reason').value || '_______________________';
-                    var newEnd = currentEnd ? new Date(currentEnd) : new Date();
-                    newEnd.setDate(newEnd.getDate() + days);
-                    var today = new Date();
-                    document.getElementById('letter-preview').innerHTML = 
-                        '<div class="letter-logo">LAMGROUP</div><div class="letter-subtitle">CONSTRUCTION</div>'+
-                        '<div class="letter-header"><div class="company-name">'+companyName+'</div><div class="company-details">БИН: '+companyBIN+' • '+companyAddress+'</div></div>'+
-                        '<div class="letter-date">Исх. № '+letterNumber+' от '+window.formatDate(today.toISOString().split('T')[0])+'</div>'+
-                        '<div class="letter-to"><strong>Кому:</strong> '+(project?.customer_director_name||'_______________________')+'<br>Директору '+(project?.customer_company_name||'_______________________')+'<br>БИН: '+(project?.customer_bin||'_______________________')+'<br>'+(project?.customer_legal_address||'_______________________')+'</div>'+
-                        '<div class="letter-subject">УВЕДОМЛЕНИЕ о переносе сроков работ</div>'+
-                        '<div class="letter-body"><p>Уважаемый(ая) '+(project?.customer_director_name||'_______________________')+'.</p><p>Настоящим уведомляем Вас о переносе сроков выполнения работ по объекту: <strong>'+(project?.name||'—')+'</strong></p><p>Ось: '+axisName+'</p><p>В связи с: '+reason+'</p><p>Сроки выполнения работ переносятся с <strong>'+window.formatDate(currentEnd)+'</strong> на <strong>'+window.formatDate(newEnd.toISOString().split('T')[0])+'</strong> (+'+days+' дней).</p><p>Просим принять данную информацию к сведению.</p></div>'+
-                        '<div class="letter-signature"><p>С уважением,</p><p>Директор '+companyName+'</p><p><br></p><p>_______________________ '+directorName+'</p></div>';
-                }
-                document.getElementById('letter-days').addEventListener('input', updatePreview);
-                document.getElementById('letter-reason').addEventListener('input', updatePreview);
-                updatePreview();
-
-                var saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = '📤 Отправить письмо';
-                saveBtn.addEventListener('click', async function() {
-                    var days = parseInt(document.getElementById('letter-days').value) || 0;
-                    var reason = document.getElementById('letter-reason').value;
-                    if (!reason) { alert('Укажите причину'); return; }
-                    var newEnd = currentEnd ? new Date(currentEnd) : new Date();
-                    newEnd.setDate(newEnd.getDate() + days); var nd = newEnd.toISOString().split('T')[0];
-                    var today = new Date();
-                    await supabase.from('letters').insert({project_id: currentProjectId, axis_id: axisId, letter_number_full: letterNumber, letter_date: today.toISOString().split('T')[0], delay_reason: 'customer', delay_description: reason, delay_days: days, new_end_date: nd, status: 'sent_to_office', sent_to_office: true, created_by: currentUser?.id, created_by_name: currentUser?.full_name});
-                    for (var i = 0; i < (stages||[]).length; i++) { var se = stages[i].plan_end ? new Date(stages[i].plan_end) : new Date(); se.setDate(se.getDate() + days); await supabase.from('axis_work_stages').update({ plan_end: se.toISOString().split('T')[0] }).eq('id', stages[i].id); }
-                    await supabase.from('axes').update({ plan_end: nd }).eq('id', axisId);
-                    await supabase.from('tasks').insert({project_id: currentProjectId, type: 'letter', title: 'Письмо №'+letterNumber+': сдвиг +'+days+' дн.', description: reason, status: 'pending', priority: 'high', created_by: currentUser?.id});
-                    await supabase.from('change_history').insert({project_id:currentProjectId,entity_type:'axis',entity_id:axisId,action:'letter_sent',comment:'Письмо №'+letterNumber+': +'+days+' дн. '+reason,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name});
-                    alert('✅ Письмо №'+letterNumber+' отправлено. ГПР сдвинут.');
-                    document.getElementById('form-modal').classList.add('hidden');
-                    if (document.getElementById('axis-detail-page').classList.contains('hidden')) loadProgressTab(); else window.openAxisDetailPage(currentAxisId);
-                });
-                document.getElementById('form-modal-content').appendChild(saveBtn);
-
-                var pdfBtn = document.createElement('button'); pdfBtn.className = 'btn-pdf'; pdfBtn.textContent = '📥 Скачать PDF'; pdfBtn.style.width = '100%'; pdfBtn.style.marginTop = '8px';
-                pdfBtn.addEventListener('click', function() {
-                    var printWindow = window.open('', '_blank', 'width=800,height=600');
-                    var letterContent = document.getElementById('letter-preview').innerHTML;
-                    printWindow.document.write('<html><head><meta charset="UTF-8"><title>Письмо '+letterNumber+'</title>');
-                    printWindow.document.write('<style>');
-                    printWindow.document.write('body { font-family: "Times New Roman", serif; padding: 30px; max-width: 800px; margin: 0 auto; }');
-                    printWindow.document.write('.letter-logo { font-size: 32px; font-weight: 800; color: #0F172A; letter-spacing: 6px; text-align: center; margin-bottom: 5px; }');
-                    printWindow.document.write('.letter-subtitle { font-size: 14px; letter-spacing: 8px; text-align: center; color: #F59E0B; font-weight: 600; margin-bottom: 10px; }');
-                    printWindow.document.write('.letter-header { text-align: center; margin-bottom: 10px; } .company-name { font-size: 16px; font-weight: 700; } .company-details { font-size: 11px; }');
-                    printWindow.document.write('.letter-date { text-align: right; margin: 15px 0; } .letter-to { margin: 10px 0; }');
-                    printWindow.document.write('.letter-subject { text-align: center; font-weight: 700; margin: 15px 0; text-transform: uppercase; }');
-                    printWindow.document.write('.letter-body { margin: 15px 0; } .letter-signature { margin-top: 30px; }');
-                    printWindow.document.write('</style></head><body>');
-                    printWindow.document.write(letterContent);
-                    printWindow.document.write('</body></html>');
-                    printWindow.document.close();
-                    setTimeout(function() { printWindow.print(); }, 500);
-                });
-                document.getElementById('form-modal-content').appendChild(pdfBtn);
-            };
-
-            // СДВИГ ГПР С АВТОМАТИЧЕСКИМ ПИСЬМОМ
             window.openShiftGPRForm = async function(axisId, brigadeId) {
                 var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
                 if(!stages||!stages.length){alert('Нет этапов');return;}
@@ -556,6 +459,170 @@
             window.editSubAxis = async function(axisId, brigadeId) { alert('✏️ Редактирование подоси (в разработке)'); };
             window.deleteSubAxisConfirm = function(axisId, brigadeId, name) { if(confirm('⚠️ Удалить бригаду '+name+'?')){ supabase.from('axis_work_stages').delete().eq('axis_id',axisId).eq('brigade_id',brigadeId).then(function(){window.openAxisDetailPage(axisId);}); } };
             window.addStageToBrigade = function(axisId, brigadeId, subAxisName) { alert('➕ Добавление этапа (в разработке)'); };
+
+            window.getNextLetterNumber = async function() {
+                var { data, error } = await supabase.rpc('next_letter_number');
+                if (error || !data) {
+                    var { data: lastLetter } = await supabase.from('letters').select('letter_number_full').order('created_at',{ascending:false}).limit(1);
+                    if (lastLetter && lastLetter.length && lastLetter[0].letter_number_full) {
+                        var lastNum = parseInt(lastLetter[0].letter_number_full.replace('-Р',''));
+                        return (lastNum + 1) + '-Р';
+                    }
+                    return '1-Р';
+                }
+                return data + '-Р';
+            };
+
+            // ===== МАТЕРИАЛЫ =====
+            async function loadMaterialsTab() {
+                var container = document.getElementById('materials-container');
+                container.innerHTML = '<div class="loading">Загрузка материалов...</div>';
+                var { data: materials } = await supabase.from('material_catalog').select('*').eq('project_id', currentProjectId).order('name');
+                var { data: waybills } = await supabase.from('material_waybills').select('*, material_waybill_items(*), brigades(name)').eq('project_id', currentProjectId).order('created_at', { ascending: false });
+                var html = '<div style="display:flex;gap:8px;margin-bottom:16px"><button class="btn-primary" id="add-material-btn" style="flex:1">➕ Создать материал</button><button class="btn-primary" id="issue-material-btn" style="flex:1;background:linear-gradient(135deg,#F59E0B,#F97316)">📤 Выдать материал</button></div>';
+                html += '<div class="info-card"><h3 style="margin-bottom:16px">📋 Справочник материалов</h3>';
+                if (!materials || materials.length === 0) { html += '<p style="color:#64748B">Нет материалов</p>'; }
+                else {
+                    materials.forEach(function(m) {
+                        var hasInvoice = m.supplier_invoice_url ? true : false;
+                        html += '<div class="gpr-item"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><strong>'+m.name+'</strong>'+(hasInvoice?' <span style="font-size:18px">📎</span>':'')+'</div>';
+                        html += '<div style="font-size:13px;color:#64748B">📐 '+m.unit+' | Всего: '+m.total_quantity+' | Доступно: '+m.available_quantity+'</div>';
+                        html += '<div style="display:flex;gap:6px;margin-top:6px"><button class="btn-small btn-edit edit-material-btn" data-id="'+m.id+'" data-name="'+m.name+'" data-unit="'+m.unit+'" data-qty="'+m.total_quantity+'">✏️</button><button class="btn-small btn-delete delete-material-btn" data-id="'+m.id+'" data-name="'+m.name+'">🗑️</button>';
+                        if (hasInvoice) { html += '<button class="btn-small btn-pdf download-invoice-btn" data-url="'+m.supplier_invoice_url+'" data-name="'+m.supplier_invoice_name+'">📥 Накладная</button>'; }
+                        html += '</div></div>';
+                    });
+                }
+                html += '</div>';
+                html += '<div class="info-card"><h3 style="margin-bottom:16px">📤 Выданные материалы (накладные)</h3>';
+                if (!waybills || waybills.length === 0) { html += '<p style="color:#64748B">Нет выдач</p>'; }
+                else {
+                    waybills.forEach(function(w) {
+                        var items = w.material_waybill_items || [];
+                        var itemsText = items.map(function(i) { return '• '+i.material_name+' — '+i.quantity+' '+i.unit; }).join('<br>');
+                        html += '<div class="gpr-item"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>📄 '+w.waybill_number+'</strong><span style="font-size:12px;color:#64748B">'+new Date(w.waybill_date).toLocaleDateString('ru-RU')+'</span></div>';
+                        html += '<div style="font-size:13px;color:#64748B">👷 '+(w.brigades?.name||'—')+' | 📍 '+(w.sub_axis_name||'—')+'</div>';
+                        html += '<div style="font-size:13px;margin-top:4px">'+itemsText+'</div>';
+                        html += '<div style="display:flex;gap:6px;margin-top:6px"><button class="btn-small btn-add view-waybill-btn" data-id="'+w.id+'">👁️ Просмотр</button><button class="btn-small btn-pdf print-waybill-btn" data-id="'+w.id+'">🖨️ Печать</button></div></div>';
+                    });
+                }
+                html += '</div>';
+                container.innerHTML = html;
+                document.getElementById('add-material-btn').addEventListener('click', openAddMaterialForm);
+                document.getElementById('issue-material-btn').addEventListener('click', openIssueMaterialForm);
+                container.querySelectorAll('.edit-material-btn').forEach(function(btn) { btn.addEventListener('click', function() { openEditMaterialForm(btn.dataset.id, btn.dataset.name, btn.dataset.unit, btn.dataset.qty); }); });
+                container.querySelectorAll('.delete-material-btn').forEach(function(btn) { btn.addEventListener('click', function() { deleteMaterial(btn.dataset.id, btn.dataset.name); }); });
+                container.querySelectorAll('.download-invoice-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.open(btn.dataset.url, '_blank'); }); });
+                container.querySelectorAll('.view-waybill-btn').forEach(function(btn) { btn.addEventListener('click', function() { viewWaybill(btn.dataset.id); }); });
+                container.querySelectorAll('.print-waybill-btn').forEach(function(btn) { btn.addEventListener('click', function() { printWaybill(btn.dataset.id); }); });
+            }
+
+            function openAddMaterialForm() {
+                var html = '<div class="form-group"><label>Наименование *</label><input type="text" id="mat-name" placeholder="Минплита 100мм"></div>';
+                html += '<div class="row-2"><div class="form-group"><label>Ед. измерения *</label><select id="mat-unit"><option value="м²">м²</option><option value="шт">шт</option><option value="пог.м">пог.м</option><option value="рулон">рулон</option><option value="упак">упаковка</option><option value="кг">кг</option></select></div><div class="form-group"><label>Количество *</label><input type="number" id="mat-qty" step="0.01"></div></div>';
+                html += '<div class="form-group"><label>📎 Накладная поставщика</label><input type="file" id="mat-invoice" accept=".pdf,.jpg,.jpeg,.png"></div>';
+                document.getElementById('form-modal-title').textContent = '➕ Создать материал';
+                document.getElementById('form-modal-content').innerHTML = html;
+                document.getElementById('form-modal').classList.remove('hidden');
+                var saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Сохранить';
+                saveBtn.addEventListener('click', async function() {
+                    var name = document.getElementById('mat-name').value.trim(); var unit = document.getElementById('mat-unit').value; var qty = parseFloat(document.getElementById('mat-qty').value) || 0;
+                    if (!name || qty <= 0) { alert('Заполните все поля'); return; }
+                    var invoiceUrl = null, invoiceName = null;
+                    var fileInput = document.getElementById('mat-invoice');
+                    if (fileInput && fileInput.files[0]) { var file = fileInput.files[0]; invoiceName = file.name; var fileName = 'materials/'+currentProjectId+'/'+Date.now()+'_'+file.name; var { error } = await supabase.storage.from('reports').upload(fileName, file); if (!error) { var { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName); invoiceUrl = urlData.publicUrl; } }
+                    await supabase.from('material_catalog').insert({ project_id: currentProjectId, name: name, unit: unit, total_quantity: qty, available_quantity: qty, supplier_invoice_url: invoiceUrl, supplier_invoice_name: invoiceName, created_by: currentUser?.id });
+                    document.getElementById('form-modal').classList.add('hidden'); loadMaterialsTab(); alert('✅ Материал создан');
+                });
+                document.getElementById('form-modal-content').appendChild(saveBtn);
+            }
+
+            function openEditMaterialForm(id, name, unit, qty) {
+                var html = '<div class="form-group"><label>Наименование</label><input type="text" id="edit-mat-name" value="'+name+'"></div>';
+                html += '<div class="row-2"><div class="form-group"><label>Ед. измерения</label><select id="edit-mat-unit"><option value="м²" '+(unit==='м²'?'selected':'')+'>м²</option><option value="шт" '+(unit==='шт'?'selected':'')+'>шт</option><option value="пог.м" '+(unit==='пог.м'?'selected':'')+'>пог.м</option><option value="рулон" '+(unit==='рулон'?'selected':'')+'>рулон</option><option value="упак" '+(unit==='упак'?'selected':'')+'>упаковка</option><option value="кг" '+(unit==='кг'?'selected':'')+'>кг</option></select></div><div class="form-group"><label>Общее количество</label><input type="number" id="edit-mat-qty" value="'+qty+'" step="0.01"></div></div>';
+                html += '<div class="form-group"><label>📎 Новая накладная поставщика</label><input type="file" id="edit-mat-invoice" accept=".pdf,.jpg,.jpeg,.png"></div>';
+                document.getElementById('form-modal-title').textContent = '✏️ Редактировать материал';
+                document.getElementById('form-modal-content').innerHTML = html;
+                document.getElementById('form-modal').classList.remove('hidden');
+                var saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Сохранить';
+                saveBtn.addEventListener('click', async function() {
+                    var newName = document.getElementById('edit-mat-name').value.trim(); var newUnit = document.getElementById('edit-mat-unit').value; var newQty = parseFloat(document.getElementById('edit-mat-qty').value) || 0;
+                    if (!newName || newQty <= 0) { alert('Заполните все поля'); return; }
+                    var updateData = { name: newName, unit: newUnit, total_quantity: newQty, available_quantity: newQty };
+                    var fileInput = document.getElementById('edit-mat-invoice');
+                    if (fileInput && fileInput.files[0]) { var file = fileInput.files[0]; var fileName = 'materials/'+currentProjectId+'/'+Date.now()+'_'+file.name; var { error } = await supabase.storage.from('reports').upload(fileName, file); if (!error) { var { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName); updateData.supplier_invoice_url = urlData.publicUrl; updateData.supplier_invoice_name = file.name; } }
+                    await supabase.from('material_catalog').update(updateData).eq('id', id);
+                    document.getElementById('form-modal').classList.add('hidden'); loadMaterialsTab(); alert('✅ Материал обновлён');
+                });
+                document.getElementById('form-modal-content').appendChild(saveBtn);
+            }
+
+            async function deleteMaterial(id, name) { if (!confirm('⚠️ Удалить материал «'+name+'»?')) return; await supabase.from('material_catalog').delete().eq('id', id); loadMaterialsTab(); alert('✅ Материал удалён'); }
+
+            function openIssueMaterialForm() {
+                supabase.from('material_catalog').select('*').eq('project_id', currentProjectId).order('name').then(function(res) {
+                    var materials = res.data || [];
+                    if (!materials.length) { alert('Нет материалов для выдачи'); return; }
+                    var html = '<div class="form-group"><label>Бригада *</label><select id="issue-brigade">'+allBrigades.map(function(b){return '<option value="'+b.id+'">'+b.name+' ('+(b.foreman_name||'')+')</option>';}).join('')+'</select></div>';
+                    html += '<div class="form-group"><label>Ось / Подось *</label><input type="text" id="issue-axis" placeholder="1-5"></div>';
+                    html += '<div class="form-group"><label>📋 Материалы для выдачи</label>';
+                    materials.forEach(function(m) {
+                        html += '<div style="display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px;background:#F8FAFC;border-radius:10px">';
+                        html += '<input type="checkbox" class="issue-mat-check" data-id="'+m.id+'" data-name="'+m.name+'" data-unit="'+m.unit+'" data-avail="'+m.available_quantity+'" style="width:20px;height:20px">';
+                        html += '<span style="flex:1;font-size:13px">'+m.name+'<br><small>Доступно: '+m.available_quantity+' '+m.unit+'</small></span>';
+                        html += '<input type="number" class="issue-mat-qty" placeholder="0" style="width:80px;padding:8px" step="0.01" disabled><span style="font-size:12px">'+m.unit+'</span></div>';
+                    });
+                    html += '</div>';
+                    document.getElementById('form-modal-title').textContent = '📤 Выдать материал';
+                    document.getElementById('form-modal-content').innerHTML = html;
+                    document.getElementById('form-modal').classList.remove('hidden');
+                    document.querySelectorAll('.issue-mat-check').forEach(function(cb) { cb.addEventListener('change', function() { var qtyInput = cb.parentElement.querySelector('.issue-mat-qty'); qtyInput.disabled = !cb.checked; if (!cb.checked) qtyInput.value = ''; }); });
+                    var saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Выдать';
+                    saveBtn.addEventListener('click', async function() {
+                        var brigadeId = document.getElementById('issue-brigade').value; var axisName = document.getElementById('issue-axis').value.trim();
+                        if (!axisName) { alert('Укажите ось/подось'); return; }
+                        var items = [];
+                        document.querySelectorAll('.issue-mat-check:checked').forEach(function(cb) { var qty = parseFloat(cb.parentElement.querySelector('.issue-mat-qty').value) || 0; if (qty > 0 && qty <= parseFloat(cb.dataset.avail)) { items.push({ material_id: cb.dataset.id, material_name: cb.dataset.name, unit: cb.dataset.unit, quantity: qty }); } });
+                        if (!items.length) { alert('Выберите материалы и укажите количество'); return; }
+                        var { data: waybill } = await supabase.from('material_waybills').insert({ project_id: currentProjectId, brigade_id: brigadeId, sub_axis_name: axisName, issued_by: currentUser?.id, issued_by_name: currentUser?.full_name }).select('id').single();
+                        for (var i = 0; i < items.length; i++) { await supabase.from('material_waybill_items').insert({ waybill_id: waybill.id, ...items[i] }); var { data: mat } = await supabase.from('material_catalog').select('available_quantity').eq('id', items[i].material_id).single(); if (mat) { await supabase.from('material_catalog').update({ available_quantity: mat.available_quantity - items[i].quantity }).eq('id', items[i].material_id); } }
+                        var { data: updatedWaybill } = await supabase.from('material_waybills').select('*').eq('id', waybill.id).single();
+                        if (updatedWaybill) { var waybillNumber = 'НК-'+new Date().getFullYear().toString().slice(-2)+'-'+String(waybill.id).slice(-4); await supabase.from('material_waybills').update({ waybill_number: waybillNumber }).eq('id', waybill.id); }
+                        document.getElementById('form-modal').classList.add('hidden'); loadMaterialsTab(); alert('✅ Материалы выданы. Накладная создана.');
+                    });
+                    document.getElementById('form-modal-content').appendChild(saveBtn);
+                });
+            }
+
+            async function viewWaybill(waybillId) {
+                var { data: waybill } = await supabase.from('material_waybills').select('*, material_waybill_items(*), brigades(name), projects(name)').eq('id', waybillId).single();
+                if (!waybill) return;
+                var items = waybill.material_waybill_items || [];
+                var html = '<div style="font-family:Times New Roman,serif;padding:20px;border:1px solid #000"><h3 style="text-align:center">ООО «LamGroup Construction»</h3><h4 style="text-align:center">НАКЛАДНАЯ НА ВЫДАЧУ МАТЕРИАЛОВ</h4><p style="text-align:center"><strong>'+waybill.waybill_number+'</strong> от '+new Date(waybill.waybill_date).toLocaleDateString('ru-RU')+'</p><p><strong>Объект:</strong> '+(waybill.projects?.name||'—')+'</p><p><strong>Бригада:</strong> '+(waybill.brigades?.name||'—')+'</p><p><strong>Ось / Подось:</strong> '+(waybill.sub_axis_name||'—')+'</p>';
+                html += '<table style="width:100%;border-collapse:collapse;margin:10px 0"><tr style="border:1px solid #000"><th style="padding:6px">№</th><th style="padding:6px">Наименование</th><th style="padding:6px">Ед.изм</th><th style="padding:6px">Кол-во</th></tr>';
+                items.forEach(function(item, idx) { html += '<tr style="border:1px solid #000"><td style="padding:6px">'+(idx+1)+'</td><td style="padding:6px">'+item.material_name+'</td><td style="padding:6px">'+item.unit+'</td><td style="padding:6px">'+item.quantity+'</td></tr>'; });
+                html += '</table><p style="margin-top:30px"><strong>Выдал:</strong> '+(waybill.issued_by_name||'—')+' ___________________</p><p><strong>Получил:</strong> ___________________</p></div>';
+                var materialIds = items.map(function(i) { return i.material_id; });
+                if (materialIds.length > 0) {
+                    var { data: materialsWithInvoices } = await supabase.from('material_catalog').select('supplier_invoice_url,supplier_invoice_name').in('id', materialIds);
+                    var invoices = (materialsWithInvoices || []).filter(function(m) { return m.supplier_invoice_url; });
+                    if (invoices.length > 0) { html += '<div style="margin-top:20px"><h4>📎 Накладные поставщиков:</h4>'; invoices.forEach(function(inv) { html += '<p>📄 <a href="'+inv.supplier_invoice_url+'" target="_blank" style="color:#1E40AF;text-decoration:underline">'+inv.supplier_invoice_name+'</a></p>'; }); html += '</div>'; }
+                }
+                document.getElementById('form-modal-title').textContent = '📄 Накладная '+waybill.waybill_number;
+                document.getElementById('form-modal-content').innerHTML = html;
+                document.getElementById('form-modal').classList.remove('hidden');
+            }
+
+            function printWaybill(waybillId) {
+                viewWaybill(waybillId).then(function() {
+                    setTimeout(function() {
+                        var content = document.getElementById('form-modal-content').innerHTML;
+                        var printWindow = window.open('', '_blank', 'width=800,height=600');
+                        printWindow.document.write('<html><head><meta charset="UTF-8"><title>Накладная</title><style>body{font-family:"Times New Roman",serif;padding:30px;max-width:800px;margin:0 auto}table{border-collapse:collapse;width:100%}td,th{border:1px solid #000;padding:6px}h3,h4{text-align:center}</style></head><body>'+content+'</body></html>');
+                        printWindow.document.close();
+                        setTimeout(function() { printWindow.print(); }, 500);
+                    }, 300);
+                });
+            }
 
             init();
         })();
