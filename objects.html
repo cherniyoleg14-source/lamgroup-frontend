@@ -1550,6 +1550,7 @@ window.markExpensePaid = async function(expenseId) {
 // ===== КОНЕЦ РАЗДЕЛА РАСХОДЫ =====
             // ============================================================
 // ============================================================
+// ============================================================
 // ===== ПРОБЛЕМЫ (СТИЛЬ LAMGROUP + ВСЕ ПРАВКИ) =====
 // ============================================================
 
@@ -1557,7 +1558,7 @@ async function loadIssues() {
     const container = document.getElementById('tab-issues');
     container.innerHTML = '<div class="loading">Загрузка проблем...</div>';
     
-    // Загружаем проблемы для текущего объекта
+    // Загружаем проблемы
     const { data, error } = await supabase
         .from('project_issues')
         .select('*')
@@ -1572,57 +1573,41 @@ async function loadIssues() {
     const issues = data || [];
     const today = new Date();
     
-    // Загружаем пользователей для отображения имён ответственных
-    const { data: users } = await supabase
-        .from('users')
-        .select('id, full_name');
-    
+    // Загружаем пользователей для отображения имён
+    const { data: users } = await supabase.from('users').select('id, full_name');
     const userMap = {};
-    if (users) {
-        users.forEach(u => { userMap[u.id] = u.full_name; });
-    }
+    if (users) users.forEach(u => { userMap[u.id] = u.full_name; });
     
-    // Обновляем статус "просрочена"
+    // Обновляем просроченные
     for (const issue of issues) {
-        if (issue.deadline && issue.status !== 'completed' && issue.status !== 'cancelled') {
-            const deadlineDate = new Date(issue.deadline);
-            if (deadlineDate < today && issue.status !== 'overdue') {
-                await supabase
-                    .from('project_issues')
-                    .update({ status: 'overdue', updated_at: new Date() })
-                    .eq('id', issue.id);
-                issue.status = 'overdue';
-            }
+        if (issue.deadline && issue.status !== 'completed' && issue.deadline < today.toISOString().split('T')[0] && issue.status !== 'overdue') {
+            await supabase.from('project_issues').update({ status: 'overdue', updated_at: new Date() }).eq('id', issue.id);
+            issue.status = 'overdue';
         }
     }
     
-    // Статистика (кликабельная)
-    const openCount = issues.filter(i => i.status === 'open' || i.status === 'in_progress').length;
-    const overdueCount = issues.filter(i => i.status === 'overdue').length;
-    const completedCount = issues.filter(i => i.status === 'completed').length;
-    
-    const priorityMap = { high: 'Высокий', medium: 'Средний', low: 'Низкий' };
-    const statusMap = {
-        'open': { text: 'Открыта', icon: '🟡', class: 'status-open' },
-        'in_progress': { text: 'В работе', icon: '🔵', class: 'status-in_progress' },
-        'completed': { text: 'Выполнена', icon: '✅', class: 'status-completed' },
-        'overdue': { text: 'Просрочена', icon: '🔴', class: 'status-overdue' }
+    // Статистика
+    const stats = {
+        open: issues.filter(i => i.status === 'open' || i.status === 'in_progress').length,
+        overdue: issues.filter(i => i.status === 'overdue').length,
+        completed: issues.filter(i => i.status === 'completed').length
     };
     
+    // Рендер
     let html = `
         <div class="info-card">
             <!-- СТАТИСТИКА (КЛИКАБЕЛЬНАЯ) -->
             <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
-                <div class="stat-card clickable" data-filter="open" style="flex: 1; background: #FEF3C7; border-radius: 20px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.2s;">
-                    <div style="font-size: 28px; font-weight: 800; color: #92400E;">${openCount}</div>
+                <div class="stat-card" data-filter="open" style="flex: 1; background: #FEF3C7; border-radius: 20px; padding: 16px; text-align: center; cursor: pointer;">
+                    <div style="font-size: 28px; font-weight: 800; color: #92400E;">${stats.open}</div>
                     <div style="font-size: 12px; color: #92400E;">🟡 Открытых</div>
                 </div>
-                <div class="stat-card clickable" data-filter="overdue" style="flex: 1; background: #FEE2E2; border-radius: 20px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.2s;">
-                    <div style="font-size: 28px; font-weight: 800; color: #991B1B;">${overdueCount}</div>
+                <div class="stat-card" data-filter="overdue" style="flex: 1; background: #FEE2E2; border-radius: 20px; padding: 16px; text-align: center; cursor: pointer;">
+                    <div style="font-size: 28px; font-weight: 800; color: #991B1B;">${stats.overdue}</div>
                     <div style="font-size: 12px; color: #991B1B;">🔴 Просрочено</div>
                 </div>
-                <div class="stat-card clickable" data-filter="completed" style="flex: 1; background: #D1FAE5; border-radius: 20px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.2s;">
-                    <div style="font-size: 28px; font-weight: 800; color: #065F46;">${completedCount}</div>
+                <div class="stat-card" data-filter="completed" style="flex: 1; background: #D1FAE5; border-radius: 20px; padding: 16px; text-align: center; cursor: pointer;">
+                    <div style="font-size: 28px; font-weight: 800; color: #065F46;">${stats.completed}</div>
                     <div style="font-size: 12px; color: #065F46;">✅ Выполнено</div>
                 </div>
             </div>
@@ -1631,7 +1616,7 @@ async function loadIssues() {
             
             <!-- ФИЛЬТРЫ -->
             <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-                <button class="filter-chip active" data-filter="all" style="padding: 8px 16px; border-radius: 30px; border: 1px solid #E2E8F0; background: white; cursor: pointer;">Все</button>
+                <button class="filter-chip active" data-filter="all" style="padding: 8px 16px; border-radius: 30px; border: 1px solid #E2E8F0; background: #0F172A; color: white; cursor: pointer;">Все</button>
                 <button class="filter-chip" data-filter="open" style="padding: 8px 16px; border-radius: 30px; border: 1px solid #E2E8F0; background: white; cursor: pointer;">Открытые</button>
                 <button class="filter-chip" data-filter="overdue" style="padding: 8px 16px; border-radius: 30px; border: 1px solid #E2E8F0; background: white; cursor: pointer;">Просроченные</button>
                 <button class="filter-chip" data-filter="completed" style="padding: 8px 16px; border-radius: 30px; border: 1px solid #E2E8F0; background: white; cursor: pointer;">Выполненные</button>
@@ -1640,51 +1625,48 @@ async function loadIssues() {
             <div id="issues-list">
     `;
     
-    // Рендер карточек
+    // Карточки проблем
     issues.forEach(issue => {
-        const status = statusMap[issue.status] || statusMap.open;
+        const statusText = { open: 'Открыта', in_progress: 'В работе', completed: 'Выполнена', overdue: 'Просрочена' }[issue.status] || 'Открыта';
+        const statusIcon = { open: '🟡', in_progress: '🔵', completed: '✅', overdue: '🔴' }[issue.status] || '🟡';
         const borderColor = issue.priority === 'high' ? '#EF4444' : (issue.priority === 'medium' ? '#F59E0B' : '#10B981');
         
-        // Получаем имена ответственных
+        // Имена ответственных
         let responsibleNames = '—';
         if (issue.responsible_ids && issue.responsible_ids.length) {
             const names = issue.responsible_ids.map(id => userMap[id] || id.slice(0, 8)).filter(Boolean);
             responsibleNames = names.join(', ');
         }
         
-        // Расчёт дней
-        let daysLeftHtml = '';
+        // Дни до дедлайна
+        let daysHtml = '';
         if (issue.deadline && issue.status !== 'completed') {
             const deadline = new Date(issue.deadline);
             const daysLeft = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
-            if (daysLeft < 0) {
-                daysLeftHtml = `<span style="color: #EF4444; font-size: 12px;">⚠️ Просрочено на ${Math.abs(daysLeft)} дн.</span>`;
-            } else if (daysLeft <= 3) {
-                daysLeftHtml = `<span style="color: #F59E0B; font-size: 12px;">⏰ Осталось ${daysLeft} дн.</span>`;
-            } else {
-                daysLeftHtml = `<span style="color: #64748B; font-size: 12px;">📅 ${deadline.toLocaleDateString('ru-RU')}</span>`;
-            }
+            daysHtml = daysLeft < 0 ? `<span style="color:#EF4444;">⚠️ Просрочено на ${Math.abs(daysLeft)} дн.</span>` : 
+                       daysLeft <= 3 ? `<span style="color:#F59E0B;">⏰ Осталось ${daysLeft} дн.</span>` : 
+                       `<span>📅 ${deadline.toLocaleDateString('ru-RU')}</span>`;
         }
         
         html += `
-            <div class="gpr-item issue-card" data-status="${issue.status}" style="border-left: 4px solid ${borderColor}; margin-bottom: 16px; transition: all 0.2s;">
+            <div class="gpr-item issue-card" data-status="${issue.status}" style="border-left: 4px solid ${borderColor}; margin-bottom: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
                     <div>
                         <strong style="font-size: 16px;">${escapeHtml(issue.title)}</strong>
                         ${issue.is_urgent ? '<span style="background:#FEE2E2; color:#991B1B; padding:4px 10px; border-radius:20px; font-size:11px; margin-left:8px;">🚨 СРОЧНО</span>' : ''}
-                        ${issue.priority ? `<span style="background:#F1F5F9; padding:4px 10px; border-radius:20px; font-size:11px; margin-left:8px;">● ${priorityMap[issue.priority]}</span>` : ''}
+                        <span style="background:#F1F5F9; padding:4px 10px; border-radius:20px; font-size:11px; margin-left:8px;">● ${issue.priority === 'high' ? 'Высокий' : issue.priority === 'medium' ? 'Средний' : 'Низкий'}</span>
                     </div>
-                    <span style="padding: 4px 12px; border-radius: 20px; background: ${status.class === 'status-completed' ? '#D1FAE5' : status.class === 'status-overdue' ? '#FEE2E2' : '#FEF3C7'}; color: ${status.class === 'status-completed' ? '#065F46' : status.class === 'status-overdue' ? '#991B1B' : '#92400E'}; font-size: 12px;">${status.icon} ${status.text}</span>
+                    <span style="padding: 4px 12px; border-radius: 20px; background: ${issue.status === 'completed' ? '#D1FAE5' : issue.status === 'overdue' ? '#FEE2E2' : '#FEF3C7'}; font-size: 12px;">${statusIcon} ${statusText}</span>
                 </div>
                 
                 <div style="font-size: 13px; color: #64748B; margin-bottom: 10px;">
                     📅 ${new Date(issue.created_at).toLocaleDateString('ru-RU')}
-                    ${daysLeftHtml ? ` | ${daysLeftHtml}` : ''}
+                    ${daysHtml ? ` | ${daysHtml}` : ''}
                 </div>
                 
-                ${issue.axes_selected && issue.axes_selected.length ? `<div style="font-size: 12px; margin-bottom: 10px; color: #64748B;">📍 Оси: ${issue.axes_selected.join(', ')}</div>` : ''}
+                ${issue.axes_selected && issue.axes_selected.length ? `<div style="font-size: 12px; margin-bottom: 10px;">📍 Оси: ${issue.axes_selected.join(', ')}</div>` : ''}
                 
-                <div style="font-size: 14px; margin-bottom: 12px; color: #334155;">📝 ${escapeHtml(issue.description) || '—'}</div>
+                <div style="font-size: 14px; margin-bottom: 12px;">📝 ${escapeHtml(issue.description) || '—'}</div>
                 
                 <div style="display: flex; justify-content: space-between; font-size: 12px; color: #64748B; margin-bottom: 12px;">
                     <span>👤 Создал: ${issue.created_by_name || '—'}</span>
@@ -1699,7 +1681,7 @@ async function loadIssues() {
                 
                 ${issue.resolved_note ? `<div style="font-size: 13px; background: #F8FAFC; padding: 10px; border-radius: 12px; margin-top: 10px; border-left: 3px solid #10B981;">📌 Причина: ${escapeHtml(issue.resolved_note)}</div>` : ''}
                 
-                ${issue.status !== 'completed' && issue.status !== 'cancelled' ? `
+                ${issue.status !== 'completed' ? `
                     <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #F1F5F9;">
                         <div class="row-2" style="gap: 12px;">
                             <div style="flex: 1;">
@@ -1712,7 +1694,7 @@ async function loadIssues() {
                             </div>
                             <div id="note-group-${issue.id}" style="flex: 1; display: none;">
                                 <label style="font-size: 11px;">Причина</label>
-                                <input type="text" class="issue-note-input" data-id="${issue.id}" placeholder="Укажите причину..." value="${escapeHtml(issue.resolved_note || '')}" style="width: 100%; padding: 10px; border-radius: 12px; border: 1.5px solid #E2E8F0;">
+                                <input type="text" class="issue-note-input" data-id="${issue.id}" placeholder="Укажите причину..." style="width: 100%; padding: 10px; border-radius: 12px; border: 1.5px solid #E2E8F0;">
                             </div>
                         </div>
                         <button class="btn-primary update-issue-btn" data-id="${issue.id}" style="margin-top: 12px; padding: 10px; font-size: 14px;">💾 Обновить</button>
@@ -1722,31 +1704,29 @@ async function loadIssues() {
         `;
     });
     
-    html += `
-            </div>
-        </div>
-    `;
-    
+    html += `</div></div>`;
     container.innerHTML = html;
     
-    // ===== ФИЛЬТРАЦИЯ =====
+    // ФИЛЬТРАЦИЯ
     document.querySelectorAll('.filter-chip').forEach(chip => {
         chip.addEventListener('click', () => {
             const filter = chip.dataset.filter;
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-            chip.classList.add('active');
+            document.querySelectorAll('.filter-chip').forEach(c => {
+                c.style.background = 'white';
+                c.style.color = '#0F172A';
+            });
+            chip.style.background = '#0F172A';
+            chip.style.color = 'white';
+            
             document.querySelectorAll('.issue-card').forEach(card => {
-                if (filter === 'all') {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = (card.dataset.status === filter) ? 'block' : 'none';
-                }
+                if (filter === 'all') card.style.display = 'block';
+                else card.style.display = (card.dataset.status === filter) ? 'block' : 'none';
             });
         });
     });
     
-    // Клик по статистике (проваливание)
-    document.querySelectorAll('.stat-card.clickable').forEach(card => {
+    // КЛИК ПО СТАТИСТИКЕ
+    document.querySelectorAll('.stat-card').forEach(card => {
         card.addEventListener('click', () => {
             const filter = card.dataset.filter;
             document.querySelectorAll('.filter-chip').forEach(c => {
@@ -1757,236 +1737,115 @@ async function loadIssues() {
     
     document.getElementById('add-issue-btn')?.addEventListener('click', openAddIssueForm);
     
-    // ===== ОБРАБОТЧИКИ СТАТУСА =====
+    // ОБНОВЛЕНИЕ СТАТУСА
     document.querySelectorAll('.issue-status-select').forEach(select => {
-        const issueId = select.dataset.id;
-        const noteGroup = document.getElementById(`note-group-${issueId}`);
-        
-        // Показываем поле причины только если статус "выполнена"
+        const noteGroup = document.getElementById(`note-group-${select.dataset.id}`);
         select.addEventListener('change', () => {
-            if (select.value === 'completed') {
-                noteGroup.style.display = 'block';
-            } else {
-                noteGroup.style.display = 'none';
-            }
+            noteGroup.style.display = select.value === 'completed' ? 'block' : 'none';
         });
     });
     
     document.querySelectorAll('.update-issue-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
-            const issueId = btn.dataset.id;
-            const statusSelect = document.querySelector(`.issue-status-select[data-id="${issueId}"]`);
-            const noteInput = document.querySelector(`.issue-note-input[data-id="${issueId}"]`);
-            const newStatus = statusSelect?.value;
-            const note = noteInput?.value || '';
+            const id = btn.dataset.id;
+            const status = document.querySelector(`.issue-status-select[data-id="${id}"]`).value;
+            const note = document.querySelector(`.issue-note-input[data-id="${id}"]`)?.value || '';
             
-            if (newStatus === 'completed' && !note) {
+            if (status === 'completed' && !note) {
                 alert('Укажите причину выполнения');
                 return;
             }
             
-            const updateData = { 
-                status: newStatus,
-                resolved_note: note,
-                updated_at: new Date()
-            };
+            const { error } = await supabase.from('project_issues').update({ 
+                status, resolved_note: note, updated_at: new Date(),
+                completed_at: status === 'completed' ? new Date() : null
+            }).eq('id', id);
             
-            if (newStatus === 'completed') {
-                updateData.completed_at = new Date();
-            }
-            
-            const { error } = await supabase
-                .from('project_issues')
-                .update(updateData)
-                .eq('id', issueId);
-            
-            if (error) {
-                showMessage('Ошибка: ' + error.message, 'error');
-            } else {
-                showMessage('Статус обновлён', 'success');
-                loadIssues();
-            }
+            if (error) showMessage('Ошибка: ' + error.message, 'error');
+            else { showMessage('Статус обновлён', 'success'); loadIssues(); }
         });
     });
 }
 
-// ========== ФОРМА СОЗДАНИЯ ПРОБЛЕМЫ ==========
+// ========== ФОРМА СОЗДАНИЯ ==========
 async function openAddIssueForm() {
-    // Загружаем оси объекта (выпадающий список)
-    const { data: blocks } = await supabase
-        .from('blocks')
-        .select('id')
-        .eq('project_id', currentProjectId);
-    
-    let axesListHtml = '<select id="issue-axes" multiple style="width: 100%; padding: 12px; border-radius: 14px; border: 1.5px solid #E2E8F0; min-height: 100px;">';
-    if (blocks && blocks.length) {
-        const blockIds = blocks.map(b => b.id);
-        const { data: axes } = await supabase
-            .from('axes')
-            .select('name')
-            .in('block_id', blockIds);
-        
-        if (axes) {
-            axes.forEach(axis => {
-                axesListHtml += `<option value="${axis.name}">${axis.name}</option>`;
-            });
-        }
+    // Оси (выпадающий список)
+    const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
+    let axesHtml = '<select id="issue-axes" multiple style="width:100%; padding:12px; border-radius:14px; border:1.5px solid #E2E8F0; min-height:100px;">';
+    if (blocks?.length) {
+        const { data: axes } = await supabase.from('axes').select('name').in('block_id', blocks.map(b => b.id));
+        axes?.forEach(a => axesHtml += `<option value="${a.name}">${a.name}</option>`);
     }
-    axesListHtml += '</select><p style="font-size: 12px; color: #64748B; margin-top: 5px;">(для выбора нескольких зажмите Ctrl или Cmd)</p>';
+    axesHtml += '</select><p style="font-size:12px; color:#64748B;">(Ctrl/Cmd для выбора нескольких)</p>';
     
-    // Загружаем пользователей для назначения (без смайликов)
-    const { data: users } = await supabase
-        .from('users')
-        .select('id, full_name, role')
-        .in('role', ['worker', 'manager'])
-        .order('full_name');
-    
-    let usersListHtml = '<select id="issue-responsible" multiple style="width: 100%; padding: 12px; border-radius: 14px; border: 1.5px solid #E2E8F0; min-height: 120px;">';
-    if (users) {
-        users.forEach(user => {
-            const roleLabel = user.role === 'manager' ? 'Руководитель' : 'ИТР';
-            usersListHtml += `<option value="${user.id}">${user.full_name} (${roleLabel})</option>`;
-        });
-    }
-    usersListHtml += '</select><p style="font-size: 12px; color: #64748B; margin-top: 5px;">(для выбора нескольких зажмите Ctrl или Cmd)</p>';
+    // Ответственные (без смайликов)
+    const { data: users } = await supabase.from('users').select('id, full_name, role').in('role', ['worker', 'manager']).order('full_name');
+    let usersHtml = '<select id="issue-responsible" multiple style="width:100%; padding:12px; border-radius:14px; border:1.5px solid #E2E8F0; min-height:120px;">';
+    users?.forEach(u => usersHtml += `<option value="${u.id}">${u.full_name} (${u.role === 'manager' ? 'Руководитель' : 'ИТР'})</option>`);
+    usersHtml += '</select><p style="font-size:12px; color:#64748B;">(Ctrl/Cmd для выбора нескольких)</p>';
     
     const today = new Date().toISOString().split('T')[0];
-    const defaultDeadline = new Date();
-    defaultDeadline.setDate(defaultDeadline.getDate() + 7);
-    const defaultDeadlineStr = defaultDeadline.toISOString().split('T')[0];
+    const defaultDeadline = new Date(); defaultDeadline.setDate(defaultDeadline.getDate() + 7);
     
     const modalHtml = `
-        <div class="form-group">
-            <label>📅 Дата создания</label>
-            <input type="text" value="${today}" disabled style="background: #F8FAFC;">
-        </div>
-        <div class="form-group">
-            <label>📝 Наименование проблемы *</label>
-            <input type="text" id="issue-title" placeholder="Краткое описание проблемы">
-        </div>
-        <div class="form-group">
-            <label>📄 Описание *</label>
-            <textarea id="issue-description" rows="3" placeholder="Подробное описание..."></textarea>
-        </div>
-        <div class="form-group">
-            <label>📍 Оси</label>
-            ${axesListHtml}
-        </div>
-        <div class="form-group">
-            <label><input type="checkbox" id="issue-urgent" style="width: auto; margin-right: 8px;"> 🚨 Срочная проблема</label>
-        </div>
-        <div id="deadline-group" style="display: none;" class="form-group">
-            <label>📅 Крайний срок *</label>
-            <input type="date" id="issue-deadline" value="${defaultDeadlineStr}">
-        </div>
-        <div class="form-group" id="priority-group">
-            <label>🔴 Приоритет</label>
-            <select id="issue-priority">
-                <option value="low">Низкий</option>
-                <option value="medium" selected>Средний</option>
-                <option value="high">Высокий</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>👤 Назначить ответственных (можно нескольких)</label>
-            ${usersListHtml}
-        </div>
-        <div class="form-group">
-            <label>📎 Прикрепить фото</label>
-            <input type="file" id="issue-photo" accept="image/*" multiple>
-        </div>
-        <button class="btn-primary" id="save-issue-btn">📤 Создать проблему</button>
+        <div class="form-group"><label>📅 Дата создания</label><input type="text" value="${today}" disabled style="background:#F8FAFC;"></div>
+        <div class="form-group"><label>📝 Наименование *</label><input type="text" id="issue-title"></div>
+        <div class="form-group"><label>📄 Описание *</label><textarea id="issue-description" rows="3"></textarea></div>
+        <div class="form-group"><label>📍 Оси</label>${axesHtml}</div>
+        <div class="form-group"><label><input type="checkbox" id="issue-urgent" style="width:auto;"> 🚨 Срочная проблема</label></div>
+        <div id="deadline-group" style="display:none;" class="form-group"><label>📅 Крайний срок</label><input type="date" id="issue-deadline" value="${defaultDeadline.toISOString().split('T')[0]}"></div>
+        <div class="form-group"><label>🔴 Приоритет</label><select id="issue-priority"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option></select></div>
+        <div class="form-group"><label>👤 Ответственные (можно нескольких)</label>${usersHtml}</div>
+        <div class="form-group"><label>📎 Фото</label><input type="file" id="issue-photo" accept="image/*" multiple></div>
+        <button class="btn-primary" id="save-issue-btn">📤 Создать</button>
     `;
     
     document.getElementById('form-modal-title').textContent = '⚠️ Новая проблема';
     document.getElementById('form-modal-content').innerHTML = modalHtml;
     document.getElementById('form-modal').classList.remove('hidden');
     
-    // Срочная проблема → приоритет высокий
-    document.getElementById('issue-urgent').addEventListener('change', (e) => {
-        const deadlineGroup = document.getElementById('deadline-group');
-        const prioritySelect = document.getElementById('issue-priority');
-        deadlineGroup.style.display = e.target.checked ? 'block' : 'none';
-        if (e.target.checked) {
-            prioritySelect.value = 'high';
-            prioritySelect.disabled = true;
-        } else {
-            prioritySelect.value = 'medium';
-            prioritySelect.disabled = false;
-        }
-    });
+    // Срочная → приоритет высокий
+    document.getElementById('issue-urgent').onchange = (e) => {
+        document.getElementById('deadline-group').style.display = e.target.checked ? 'block' : 'none';
+        const priority = document.getElementById('issue-priority');
+        if (e.target.checked) { priority.value = 'high'; priority.disabled = true; }
+        else { priority.value = 'medium'; priority.disabled = false; }
+    };
     
     document.getElementById('save-issue-btn').onclick = async () => {
         const title = document.getElementById('issue-title').value.trim();
-        const description = document.getElementById('issue-description').value.trim();
+        const desc = document.getElementById('issue-description').value.trim();
         const priority = document.getElementById('issue-priority').value;
         const isUrgent = document.getElementById('issue-urgent').checked;
         const deadline = isUrgent ? document.getElementById('issue-deadline').value : null;
+        const axes = Array.from(document.getElementById('issue-axes').selectedOptions).map(o => o.value);
+        const responsible = Array.from(document.getElementById('issue-responsible').selectedOptions).map(o => o.value);
         
-        // Собираем выбранные оси
-        const axisSelect = document.getElementById('issue-axes');
-        const selectedAxes = Array.from(axisSelect.selectedOptions).map(opt => opt.value);
+        if (!title || !desc) { alert('Заполните наименование и описание'); return; }
+        if (!responsible.length) { alert('Выберите ответственного'); return; }
+        if (isUrgent && !deadline) { alert('Укажите крайний срок'); return; }
         
-        // Собираем выбранных ответственных
-        const respSelect = document.getElementById('issue-responsible');
-        const responsibleIds = Array.from(respSelect.selectedOptions).map(opt => opt.value);
-        
-        if (!title || !description) {
-            alert('Заполните наименование и описание');
-            return;
-        }
-        
-        if (responsibleIds.length === 0) {
-            alert('Выберите хотя бы одного ответственного');
-            return;
-        }
-        
-        if (isUrgent && !deadline) {
-            alert('Укажите крайний срок для срочной проблемы');
-            return;
-        }
-        
-        // Загружаем фото
+        // Загрузка фото
         const photos = [];
-        const photoFiles = document.getElementById('issue-photo').files;
-        for (const file of photoFiles) {
+        for (const file of document.getElementById('issue-photo').files) {
             const fileName = `issues/${currentProjectId}/${Date.now()}_${file.name}`;
-            const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
-            if (!uploadError) {
-                const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-                photos.push(urlData.publicUrl);
+            const { error } = await supabase.storage.from('reports').upload(fileName, file);
+            if (!error) {
+                const { data: url } = supabase.storage.from('reports').getPublicUrl(fileName);
+                photos.push(url.publicUrl);
             }
         }
         
-        const { error: insertError } = await supabase
-            .from('project_issues')
-            .insert({
-                project_id: currentProjectId,
-                title: title,
-                description: description,
-                priority: priority,
-                is_urgent: isUrgent,
-                deadline: deadline,
-                axes_selected: selectedAxes,
-                photos: photos,
-                responsible_ids: responsibleIds,
-                status: 'open',
-                created_by: currentUser?.id,
-                created_by_name: currentUser?.full_name,
-                created_at: new Date()
-            });
+        const { error } = await supabase.from('project_issues').insert({
+            project_id: currentProjectId, title, description: desc, priority, is_urgent: isUrgent,
+            deadline, axes_selected: axes, photos, responsible_ids: responsible,
+            status: 'open', created_by: currentUser?.id, created_by_name: currentUser?.full_name, created_at: new Date()
+        });
         
-        if (insertError) {
-            alert('Ошибка: ' + insertError.message);
-        } else {
-            document.getElementById('form-modal').classList.add('hidden');
-            loadIssues();
-            showMessage('✅ Проблема создана', 'success');
-        }
+        if (error) alert('Ошибка: ' + error.message);
+        else { document.getElementById('form-modal').classList.add('hidden'); loadIssues(); showMessage('✅ Проблема создана', 'success'); }
     };
 }
-
-// ===== КОНЕЦ РАЗДЕЛА ПРОБЛЕМЫ =====
             init();
         })();
     </script>
