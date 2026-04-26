@@ -495,13 +495,11 @@ async function loadChecklist() {
     const container = document.getElementById('tab-checklist');
     container.innerHTML = '<div class="loading">Загрузка чек-листа...</div>';
     
-    // Загружаем готовые пункты чек-листа (где project_id IS NULL)
-    // ИЛИ если у тебя есть поле is_global, можно использовать его
+    // Загружаем пункты чек-листа (глобальные + уже привязанные к этому объекту)
     const { data, error } = await supabase
         .from('checklists')
         .select('*')
-        .is('project_id', null)  // готовые пункты, не привязанные к объекту
-        // .eq('is_global', true)  // или так, если есть такое поле
+        .or(`project_id.is.null,project_id.eq.${currentProjectId}`)
         .order('created_at', { ascending: true });
     
     if (error && !error.message.includes('does not exist')) {
@@ -514,7 +512,7 @@ async function loadChecklist() {
     const total = items.length;
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
     
-    // Группировка по категориям
+    // Группировка по категориям (section)
     const sections = {
         customer: { title: '📋 Взаимодействие с Заказчиком', items: [] },
         workers: { title: '👷 Взаимодействие с Монтажниками', items: [] },
@@ -529,7 +527,7 @@ async function loadChecklist() {
     // Формируем HTML
     let html = `
         <div class="info-card">
-            <div class="checklist-progress-container" style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
                 <div style="flex: 1; background: #F8FAFC; border-radius: 20px; padding: 16px; text-align: center;">
                     <div style="font-size: 28px; font-weight: 800; color: #0F172A;">${completed}/${total}</div>
                     <div style="font-size: 12px; color: #64748B;">Выполнено</div>
@@ -590,14 +588,18 @@ async function loadChecklist() {
                 label.style.color = '#334155';
             }
             
-            // Сохраняем в БД
+            // Сохраняем в БД с привязкой к объекту и отметкой кто выполнил
+            const updateData = {
+                is_completed: isChecked,
+                updated_at: new Date(),
+                completed_at: isChecked ? new Date() : null,
+                completed_by: isChecked ? currentUser?.id : null,
+                project_id: currentProjectId  // привязываем к текущему объекту
+            };
+            
             const { error } = await supabase
                 .from('checklists')
-                .update({ 
-                    is_completed: isChecked, 
-                    updated_at: new Date(),
-                    project_id: currentProjectId  // привязываем к текущему объекту
-                })
+                .update(updateData)
                 .eq('id', id);
             
             if (error) {
@@ -619,7 +621,6 @@ async function loadChecklist() {
         });
     });
 }
-
 // ============================================================
 // ===== МАТЕРИАЛЫ (ПОЛНАЯ ВЕРСИЯ) =====
 var currentMaterialsTab = 'incomes';
