@@ -87,6 +87,20 @@
         .letter-preview { background: white; border: 2px solid #0F172A; padding: 30px; font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
         .letter-logo { font-size: 32px; font-weight: 800; color: #0F172A; letter-spacing: 6px; text-align: center; margin-bottom: 5px; }
         .letter-subtitle { font-size: 14px; letter-spacing: 8px; text-align: center; color: #F59E0B; font-weight: 600; margin-bottom: 10px; }
+        
+        /* Checklist progress */
+        .checklist-progress-container { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+        .checklist-stat-card { flex: 1; background: #F8FAFC; border-radius: 20px; padding: 16px; text-align: center; }
+        .checklist-stat-value { font-size: 28px; font-weight: 800; color: #0F172A; }
+        .checklist-stat-label { font-size: 12px; color: #64748B; }
+        .checklist-progress-bar { height: 8px; background: #E2E8F0; border-radius: 40px; overflow: hidden; margin: 16px 0; }
+        .checklist-progress-fill { height: 100%; background: linear-gradient(90deg, #0F172A, #F59E0B); width: 0%; }
+        .checklist-item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #F1F5F9; }
+        .checklist-item input[type="checkbox"] { width: 22px; height: 22px; accent-color: #F59E0B; cursor: pointer; }
+        .checklist-item label { flex: 1; font-size: 14px; cursor: pointer; }
+        .checklist-completed { text-decoration: line-through; color: #94A3B8; }
+        .checklist-section { margin-bottom: 24px; }
+        .checklist-section h4 { margin-bottom: 12px; font-size: 16px; color: #0F172A; }
     </style>
 </head>
 <body>
@@ -121,7 +135,7 @@
             <div id="tab-history" class="tab-content"><div id="history-container"></div></div>
             <div id="tab-expenses" class="tab-content"><div class="info-card"><h3>💰 Расходы</h3><p>Загрузка...</p></div></div>
             <div id="tab-materials" class="tab-content"><div id="materials-container"></div></div>
-            <div id="tab-checklist" class="tab-content"><div class="info-card"><h3>✅ Чек-лист</h3><p>Загрузка...</p></div></div>
+            <div id="tab-checklist" class="tab-content"></div>
             <div id="tab-issues" class="tab-content"><div class="info-card"><h3>⚠️ Проблемы</h3><p>Загрузка...</p></div></div>
             <div id="tab-report" class="tab-content"><div class="info-card"><h3>📑 Отчет</h3><p>Загрузка...</p></div></div>
         </div>
@@ -171,7 +185,7 @@
             }
 
             function setupFilters() { document.querySelectorAll('.filter-btn').forEach(function(btn) { btn.addEventListener('click', function() { document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); currentFilter = btn.dataset.filter; renderProjects(); }); }); }
-            function setupTabs() { document.querySelectorAll('.tab').forEach(function(t) { t.addEventListener('click', function() { document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); }); document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); }); t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active'); if (t.dataset.tab === 'progress') loadProgressTab(); if (t.dataset.tab === 'history') loadHistoryTab(); if (t.dataset.tab === 'materials') loadMaterialsTab(); }); }); }
+            function setupTabs() { document.querySelectorAll('.tab').forEach(function(t) { t.addEventListener('click', function() { document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); }); document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); }); t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active'); if (t.dataset.tab === 'progress') loadProgressTab(); if (t.dataset.tab === 'history') loadHistoryTab(); if (t.dataset.tab === 'materials') loadMaterialsTab(); if (t.dataset.tab === 'checklist') loadChecklist(); }); }); }
             function setupTabsScroll() { const tabsContainer = document.getElementById('tabs-container'); const scrollLeft = document.getElementById('scroll-left'); const scrollRight = document.getElementById('scroll-right'); if (!tabsContainer) return; function updateArrows() { if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0); if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1); } if (scrollLeft) scrollLeft.addEventListener('click', function() { tabsContainer.scrollBy({ left: -200, behavior: 'smooth' }); }); if (scrollRight) scrollRight.addEventListener('click', function() { tabsContainer.scrollBy({ left: 200, behavior: 'smooth' }); }); tabsContainer.addEventListener('scroll', updateArrows); window.addEventListener('resize', updateArrows); setTimeout(updateArrows, 300); setTimeout(updateArrows, 600); }
             function setupModals() { document.getElementById('close-form-modal').onclick = function() { document.getElementById('form-modal').classList.add('hidden'); }; document.getElementById('close-edit-modal').onclick = function() { document.getElementById('edit-modal').classList.add('hidden'); }; document.getElementById('action-overlay').onclick = closeActionMenu; }
 
@@ -197,6 +211,9 @@
                     '<p style="margin-bottom:6px"><strong>Юр. адрес:</strong> '+(p.customer_legal_address||'—')+' <button class="btn-small btn-edit" onclick="window.openEditField(\'customer_legal_address\',\''+(p.customer_legal_address||'')+'\')">✏️</button></p>';
                 document.getElementById('back-btn').onclick = function() { document.getElementById('detail-view').classList.add('hidden'); document.getElementById('list-view').classList.remove('hidden'); loadProjects(); };
                 document.getElementById('list-view').classList.add('hidden'); document.getElementById('detail-view').classList.remove('hidden'); document.querySelector('[data-tab="info"]').click();
+                
+                // Загружаем чек-лист при открытии
+                setTimeout(function() { if (document.querySelector('[data-tab="checklist"]').classList.contains('active')) loadChecklist(); }, 100);
             }
 
             window.openEditField = function(field, value) {
@@ -472,6 +489,177 @@
                 }
                 return data + '-Р';
             };
+
+            // ========== НОВАЯ ФУНКЦИЯ ЧЕК-ЛИСТА ==========
+            async function loadChecklist() {
+                const container = document.getElementById('tab-checklist');
+                container.innerHTML = '<div class="loading">Загрузка чек-листа...</div>';
+                
+                // Загружаем пункты ТОЛЬКО для текущего объекта
+                const { data, error } = await supabase
+                    .from('checklists')
+                    .select('*')
+                    .eq('project_id', currentProjectId)
+                    .order('created_at', { ascending: true });
+                
+                if (error && !error.message.includes('does not exist')) {
+                    container.innerHTML = `<div class="info-card"><p class="error">Ошибка: ${error.message}</p></div>`;
+                    return;
+                }
+                
+                const items = data || [];
+                const completed = items.filter(i => i.is_completed === true).length;
+                const total = items.length;
+                const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+                
+                // Группировка по категориям
+                const sections = {
+                    customer: { title: '📋 Взаимодействие с Заказчиком', items: [] },
+                    workers: { title: '👷 Взаимодействие с Монтажниками', items: [] },
+                    docs: { title: '📄 Документация', items: [] }
+                };
+                
+                items.forEach(item => {
+                    const section = item.section || 'customer';
+                    if (sections[section]) sections[section].items.push(item);
+                });
+                
+                // Формируем HTML
+                let html = `
+                    <div class="info-card">
+                        <div class="checklist-progress-container">
+                            <div class="checklist-stat-card">
+                                <div class="checklist-stat-value">${completed}/${total}</div>
+                                <div class="checklist-stat-label">Выполнено</div>
+                            </div>
+                            <div class="checklist-stat-card">
+                                <div class="checklist-stat-value">${percent}%</div>
+                                <div class="checklist-stat-label">Прогресс</div>
+                            </div>
+                        </div>
+                        <div class="checklist-progress-bar">
+                            <div class="checklist-progress-fill" style="width: ${percent}%;"></div>
+                        </div>
+                `;
+                
+                // Рендер категорий
+                for (const [key, section] of Object.entries(sections)) {
+                    if (section.items.length === 0) {
+                        html += `<div class="checklist-section">
+                            <h4>${section.title}</h4>
+                            <p style="color: #94A3B8; font-size: 14px;">Нет пунктов</p>
+                        </div>`;
+                    } else {
+                        html += `<div class="checklist-section">
+                            <h4>${section.title}</h4>`;
+                        
+                        section.items.forEach(item => {
+                            const isCompleted = item.is_completed === true;
+                            html += `
+                                <div class="checklist-item">
+                                    <input type="checkbox" class="checklist-cb" data-id="${item.id}" ${isCompleted ? 'checked' : ''}>
+                                    <label class="${isCompleted ? 'checklist-completed' : ''}">${escapeHtml(item.item_text)}</label>
+                                </div>
+                            `;
+                        });
+                        html += `</div>`;
+                    }
+                }
+                
+                html += `<button class="btn-secondary" id="add-checklist-item-btn" style="width: 100%; margin-top: 20px; padding: 14px;">➕ Добавить пункт</button>`;
+                html += `</div>`;
+                
+                container.innerHTML = html;
+                
+                // Обработчики чекбоксов (с затемнением)
+                document.querySelectorAll('.checklist-cb').forEach(cb => {
+                    cb.addEventListener('change', async (e) => {
+                        const id = cb.dataset.id;
+                        const isChecked = cb.checked;
+                        const label = cb.nextElementSibling;
+                        
+                        // Меняем внешний вид ДО сохранения (мгновенный отклик)
+                        if (isChecked) {
+                            label.classList.add('checklist-completed');
+                        } else {
+                            label.classList.remove('checklist-completed');
+                        }
+                        
+                        // Сохраняем в БД
+                        const { error } = await supabase
+                            .from('checklists')
+                            .update({ is_completed: isChecked, updated_at: new Date() })
+                            .eq('id', id);
+                        
+                        if (error) {
+                            showMessage('Ошибка: ' + error.message, 'error');
+                            // Откатываем внешний вид при ошибке
+                            if (isChecked) {
+                                label.classList.remove('checklist-completed');
+                            } else {
+                                label.classList.add('checklist-completed');
+                            }
+                            cb.checked = !isChecked;
+                        } else {
+                            // Обновляем статистику
+                            loadChecklist();
+                        }
+                    });
+                });
+                
+                // Кнопка добавления пункта
+                document.getElementById('add-checklist-item-btn')?.addEventListener('click', openAddChecklistItemForm);
+            }
+            
+            function openAddChecklistItemForm() {
+                const modalHtml = `
+                    <div class="form-group">
+                        <label>Название пункта *</label>
+                        <input type="text" id="new-checklist-item" placeholder="Например: Проведён инструктаж по ТБ">
+                    </div>
+                    <div class="form-group">
+                        <label>Категория</label>
+                        <select id="new-checklist-section">
+                            <option value="customer">📋 Взаимодействие с Заказчиком</option>
+                            <option value="workers">👷 Взаимодействие с Монтажниками</option>
+                            <option value="docs">📄 Документация</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" id="save-checklist-item-btn">Сохранить</button>
+                `;
+                
+                document.getElementById('form-modal-title').textContent = '➕ Добавить пункт чек-листа';
+                document.getElementById('form-modal-content').innerHTML = modalHtml;
+                document.getElementById('form-modal').classList.remove('hidden');
+                
+                document.getElementById('save-checklist-item-btn').onclick = async () => {
+                    const itemText = document.getElementById('new-checklist-item').value.trim();
+                    const section = document.getElementById('new-checklist-section').value;
+                    
+                    if (!itemText) {
+                        alert('Введите название пункта');
+                        return;
+                    }
+                    
+                    const { error } = await supabase.from('checklists').insert({
+                        project_id: currentProjectId,
+                        item_text: itemText,
+                        section: section,
+                        is_completed: false,
+                        created_by: currentUser?.id
+                    });
+                    
+                    if (error) {
+                        alert('Ошибка: ' + error.message);
+                    } else {
+                        document.getElementById('form-modal').classList.add('hidden');
+                        loadChecklist();
+                        showMessage('✅ Пункт добавлен', 'success');
+                    }
+                };
+            }
+            // ========== КОНЕЦ НОВОЙ ФУНКЦИИ ЧЕК-ЛИСТА ==========
+
 // ============================================================
 // ===== МАТЕРИАЛЫ (ПОЛНАЯ ВЕРСИЯ) =====
 var currentMaterialsTab = 'incomes';
