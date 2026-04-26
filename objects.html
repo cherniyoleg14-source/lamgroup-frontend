@@ -473,9 +473,7 @@
                 return data + '-Р';
             };
 // ============================================================
-// МАТЕРИАЛЫ - ПОЛНОСТЬЮ РАБОЧАЯ ВЕРСИЯ
-// ============================================================
-
+// ===== МАТЕРИАЛЫ (ПОЛНАЯ ВЕРСИЯ) =====
 var currentMaterialsTab = 'incomes';
 var allMaterialsCache = [];
 var allIncomesCache = [];
@@ -610,7 +608,7 @@ function renderStockTab() {
         html += '<div style="overflow-x:auto"><table class="work-table"><thead><tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Всего</th><th>Доступно</th><th>%</th></tr></thead><tbody>';
         allMaterialsCache.forEach(function(m, idx) {
             var pct = m.total_quantity > 0 ? Math.round((m.available_quantity / m.total_quantity) * 100) : 0;
-            html += '<tr><td>'+(idx+1)+'</td><td>'+m.name+'</td><td>'+m.unit+'</td><td class="text-right">'+m.total_quantity+'</td><td class="text-right">'+m.available_quantity+'</td><td class="text-right">'+pct+'%</td></tr>';
+            html += '<tr><td class="text-right">'+(idx+1)+'</td><td><strong>'+m.name+'</strong></td><td>'+m.unit+'</td><td class="text-right">'+m.total_quantity+'</td><td class="text-right">'+m.available_quantity+'</td><td class="text-right">'+pct+'%</td></tr>';
         });
         html += '</tbody></table></div>';
         html += '<button class="btn-pdf" id="export-stock-btn" style="width:100%;margin-top:12px">📥 Скачать остатки (Excel)</button>';
@@ -795,20 +793,110 @@ window.onIncomeItemSelect = function(selectEl) {
     }
 };
 
-// ========== ВЫДАЧА МАТЕРИАЛА (РАБОЧАЯ ВЕРСИЯ) ==========
+// ========== ВЫДАЧА МАТЕРИАЛА (ПОЛНАЯ ВЕРСИЯ) ==========
 function openIssueMaterialForm() {
     var html = '<div class="form-group"><label>Бригада *</label><select id="issue-brigade">';
+    html += '<option value="">Выберите бригаду</option>';
     allBrigades.forEach(function(b) { 
         html += '<option value="'+b.id+'">'+b.name+' ('+(b.foreman_name||'')+')</option>'; 
     });
     html += '</select></div>';
-    html += '<div class="form-group"><label>Ось / Подось *</label><input type="text" id="issue-axis-name" placeholder="Например: Ось 1-10 / Подось 1"></div>';
+    html += '<div class="form-group"><label>Ось / Подось *</label><select id="issue-axis">';
+    html += '<option value="">Сначала выберите бригаду</option>';
+    html += '</select></div>';
     html += '<div id="issue-materials-list"></div>';
     html += '<div class="form-group" style="margin-top:16px"><label>📝 Комментарий</label><textarea id="issue-comment" rows="2" placeholder="Причина выдачи, примечания..."></textarea></div>';
     
     document.getElementById('form-modal-title').textContent = '📤 Выдать материал';
     document.getElementById('form-modal-content').innerHTML = html;
     document.getElementById('form-modal').classList.remove('hidden');
+    
+    // Обработчик выбора бригады
+    document.getElementById('issue-brigade').addEventListener('change', async function() {
+        var brigadeId = this.value;
+        var axisSelect = document.getElementById('issue-axis');
+        
+        if (!brigadeId) {
+            axisSelect.innerHTML = '<option value="">Сначала выберите бригаду</option>';
+            return;
+        }
+        
+        axisSelect.innerHTML = '<option value="">Загрузка осей...</option>';
+        
+        // Получаем оси, закреплённые за этой бригадой на данном объекте
+        var { data: stages } = await supabase
+            .from('axis_work_stages')
+            .select('sub_axis_name, axes(name)')
+            .eq('brigade_id', brigadeId);
+        
+        var axesMap = {};
+        
+        // Собираем оси из axis_work_stages
+        if (stages && stages.length) {
+            stages.forEach(function(s) {
+                var axisName = s.sub_axis_name || (s.axes?.name || '');
+                if (axisName && !axesMap[axisName]) {
+                    axesMap[axisName] = true;
+                }
+            });
+        }
+        
+        // Если нет привязанных осей, показываем все оси объекта
+        if (Object.keys(axesMap).length === 0) {
+            var { data: blocks } = await supabase
+                .from('blocks')
+                .select('id')
+                .eq('project_id', currentProjectId);
+            
+            if (blocks && blocks.length) {
+                var blockIds = blocks.map(function(b) { return b.id; });
+                var { data: axes } = await supabase
+                    .from('axes')
+                    .select('name')
+                    .in('block_id', blockIds);
+                
+                if (axes && axes.length) {
+                    axes.forEach(function(ax) {
+                        if (ax.name && !axesMap[ax.name]) {
+                            axesMap[ax.name] = true;
+                        }
+                    });
+                }
+            }
+        }
+        
+        var axesList = Object.keys(axesMap);
+        axisSelect.innerHTML = '<option value="">Выберите ось/подось</option>';
+        
+        if (axesList.length) {
+            axesList.forEach(function(a) { 
+                axisSelect.innerHTML += '<option value="'+a.replace(/"/g, '&quot;')+'">'+a+'</option>'; 
+            });
+        } else {
+            axisSelect.innerHTML = '<option value="">Нет закреплённых осей</option>';
+        }
+        
+        // Добавляем возможность ручного ввода
+        axisSelect.innerHTML += '<option value="__manual__">✏️ Другая ось (ввести вручную)</option>';
+        
+        // Обработчик выбора оси
+        axisSelect.onchange = function() {
+            var existingInput = document.getElementById('manual-axis-input');
+            if (this.value === '__manual__') {
+                if (!existingInput) {
+                    var input = document.createElement('input');
+                    input.id = 'manual-axis-input';
+                    input.type = 'text';
+                    input.placeholder = 'Введите название оси/подоси';
+                    input.style.cssText = 'width:100%; margin-top:8px; padding:10px; border:1.5px solid #E2E8F0; border-radius:12px';
+                    this.parentElement.appendChild(input);
+                    input.focus();
+                }
+            } else {
+                if (existingInput) existingInput.remove();
+            }
+        };
+    });
     
     renderIssueMaterialsList();
     
@@ -849,10 +937,29 @@ function renderIssueMaterialsList() {
 
 async function submitIssueMaterial() {
     var brigadeId = document.getElementById('issue-brigade').value;
-    var axisName = document.getElementById('issue-axis-name').value.trim();
+    var axisSelect = document.getElementById('issue-axis');
+    var axisName = axisSelect.value;
+    
+    // Проверяем ручной ввод
+    if (axisName === '__manual__') {
+        var manualInput = document.getElementById('manual-axis-input');
+        if (manualInput) {
+            axisName = manualInput.value.trim();
+        }
+        if (!axisName) {
+            alert('Введите название оси/подоси');
+            return;
+        }
+    }
+    
     var comment = document.getElementById('issue-comment').value.trim();
     
-    if (!axisName) {
+    if (!brigadeId) {
+        alert('Выберите бригаду');
+        return;
+    }
+    
+    if (!axisName || axisName === '') {
         alert('Укажите ось / подось');
         return;
     }
@@ -879,7 +986,7 @@ async function submitIssueMaterial() {
     var waybillNumber = 'МН-' + new Date().getFullYear().toString().slice(-2) + '-' + Date.now().toString().slice(-6);
     var today = new Date().toISOString().split('T')[0];
     
-    // Создаём накладную с правильными полями
+    // Создаём накладную
     var waybillData = {
         project_id: currentProjectId,
         brigade_id: brigadeId,
@@ -942,7 +1049,7 @@ async function submitIssueMaterial() {
             project_id: currentProjectId,
             entity_type: 'material_waybill',
             action: 'issue_material',
-            comment: `Выданы материалы: ${items.map(i => i.quantity + ' ' + i.material_name).join(', ')}. Ось: ${axisName}`,
+            comment: 'Выданы материалы: ' + items.map(function(i) { return i.quantity + ' ' + i.material_name; }).join(', ') + '. Ось: ' + axisName,
             changed_by: currentUser?.id,
             changed_by_name: currentUser?.full_name
         });
@@ -964,7 +1071,7 @@ async function viewIncome(incomeId) {
     
     var items = income.material_income_items || [];
     var html = '<div style="font-family:Times New Roman,serif;padding:20px;border:1px solid #000">';
-    html += '<h3 style="text-align:center">ООО «LamGroup Construction»</h3>';
+    html += '<h3 style="text-align:center">ТОО «Lamgroup Construction»</h3>';
     html += '<h4 style="text-align:center">ПРИХОД МАТЕРИАЛОВ</h4>';
     html += '<p style="text-align:center"><strong>'+income.income_number+'</strong> от '+new Date(income.income_date).toLocaleDateString('ru-RU')+'</p>';
     html += '<p><strong>Поставщик:</strong> '+(income.supplier_name||'—')+'</p>';
@@ -993,7 +1100,7 @@ async function viewWaybill(waybillId) {
     
     var items = waybill.material_waybill_items || [];
     var html = '<div style="font-family:Times New Roman,serif;padding:20px;border:1px solid #000">';
-    html += '<h3 style="text-align:center">ООО «LamGroup Construction»</h3>';
+    html += '<h3 style="text-align:center">ТОО «Lamgroup Construction»</h3>';
     html += '<h4 style="text-align:center">НАКЛАДНАЯ НА ВЫДАЧУ МАТЕРИАЛОВ</h4>';
     html += '<p style="text-align:center"><strong>'+waybill.waybill_number+'</strong> от '+new Date(waybill.waybill_date).toLocaleDateString('ru-RU')+'</p>';
     html += '<p><strong>Объект:</strong> '+(waybill.projects?.name||'—')+'</p>';
@@ -1005,7 +1112,7 @@ async function viewWaybill(waybillId) {
         html += '<tr style="border:1px solid #000"><td>'+(idx+1)+'</td><td>'+item.material_name+'</td><td>'+item.unit+'</td><td>'+item.quantity+'</td></tr>'; 
     });
     html += '</table>';
-    html += '<p style="margin-top:30px"><strong>Выдал:</strong> '+(waybill.issued_by_name||'—')+' ___________________</p>';
+    html += '<p style="margin-top:30px"><strong>Выдал:</strong> '+(waybill.issued_by_name || currentUser?.full_name || '—')+' ___________________</p>';
     html += '<p><strong>Получил:</strong> ___________________</p>';
     html += '</div>';
     
@@ -1033,6 +1140,7 @@ function printWaybill(waybillId) {
         }, 300);
     });
 }
+// ===== КОНЕЦ РАЗДЕЛА МАТЕРИАЛЫ =====
 
            
             init();
