@@ -490,14 +490,12 @@
                 return data + '-Р';
             };
 
-// ========== ЧЕК-ЛИСТ (ПРАВИЛЬНАЯ РАБОТА С ОТМЕТКАМИ) ==========
+// ========== ЧЕК-ЛИСТ (ИСПРАВЛЕННЫЙ) ==========
 async function loadChecklist() {
     const container = document.getElementById('tab-checklist');
     container.innerHTML = '<div class="loading">Загрузка чек-листа...</div>';
     
-    // Загружаем ДВА типа пунктов:
-    // 1. Глобальные (project_id IS NULL) - неотмеченные
-    // 2. Уже отмеченные на этом объекте (project_id = currentProjectId)
+    // Загружаем пункты для ЭТОГО объекта (project_id = текущий объект ИЛИ NULL)
     const { data, error } = await supabase
         .from('checklists')
         .select('*')
@@ -511,19 +509,15 @@ async function loadChecklist() {
     
     const items = data || [];
     
-    // Подсчитываем выполненные (is_completed = true)
     const completed = items.filter(i => i.is_completed === true).length;
     const total = items.length;
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
     
-    // Разделяем по категориям
     const customerItems = items.filter(i => i.section === 'foreman_customer');
     const workersItems = items.filter(i => i.section === 'foreman_workers');
     
-    // Формируем HTML
     let html = `
         <div class="info-card">
-            <!-- Статистика -->
             <div style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
                 <div style="flex: 1; background: #F8FAFC; border-radius: 20px; padding: 16px; text-align: center;">
                     <div style="font-size: 28px; font-weight: 800; color: #0F172A;">${completed}/${total}</div>
@@ -534,14 +528,12 @@ async function loadChecklist() {
                     <div style="font-size: 12px; color: #64748B;">Прогресс</div>
                 </div>
             </div>
-            
-            <!-- Прогресс-бар -->
             <div style="height: 8px; background: #E2E8F0; border-radius: 40px; overflow: hidden; margin-bottom: 24px;">
                 <div style="width: ${percent}%; height: 100%; background: linear-gradient(90deg, #0F172A, #F59E0B);"></div>
             </div>
     `;
     
-    // ===== Категория: Заказчик =====
+    // Категория: Заказчик
     html += `<div style="margin-bottom: 28px;">
         <h4 style="margin-bottom: 16px; font-size: 16px; color: #0F172A;">📋 Взаимодействие с Заказчиком</h4>`;
     
@@ -552,7 +544,7 @@ async function loadChecklist() {
             const isChecked = item.is_completed === true;
             html += `
                 <div class="checklist-item" style="display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid #F1F5F9;">
-                    <input type="checkbox" class="checklist-cb" data-id="${item.id}" data-current-project="${item.project_id === currentProjectId}" ${isChecked ? 'checked' : ''} 
+                    <input type="checkbox" class="checklist-cb" data-id="${item.id}" ${isChecked ? 'checked' : ''} 
                            style="width: 20px; height: 20px; accent-color: #F59E0B; cursor: pointer;">
                     <label style="flex: 1; font-size: 14px; ${isChecked ? 'text-decoration: line-through; color: #94A3B8;' : 'color: #334155;'} cursor: pointer;">
                         ${escapeHtml(item.item_text)}
@@ -563,7 +555,7 @@ async function loadChecklist() {
     }
     html += `</div>`;
     
-    // ===== Категория: Монтажники =====
+    // Категория: Монтажники
     html += `<div style="margin-bottom: 28px;">
         <h4 style="margin-bottom: 16px; font-size: 16px; color: #0F172A;">👷 Взаимодействие с Монтажниками</h4>`;
     
@@ -574,7 +566,7 @@ async function loadChecklist() {
             const isChecked = item.is_completed === true;
             html += `
                 <div class="checklist-item" style="display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid #F1F5F9;">
-                    <input type="checkbox" class="checklist-cb" data-id="${item.id}" data-current-project="${item.project_id === currentProjectId}" ${isChecked ? 'checked' : ''} 
+                    <input type="checkbox" class="checklist-cb" data-id="${item.id}" ${isChecked ? 'checked' : ''} 
                            style="width: 20px; height: 20px; accent-color: #F59E0B; cursor: pointer;">
                     <label style="flex: 1; font-size: 14px; ${isChecked ? 'text-decoration: line-through; color: #94A3B8;' : 'color: #334155;'} cursor: pointer;">
                         ${escapeHtml(item.item_text)}
@@ -594,7 +586,6 @@ async function loadChecklist() {
             const id = cb.dataset.id;
             const isChecked = cb.checked;
             const label = cb.nextElementSibling;
-            const wasLinkedToProject = cb.dataset.currentProject === 'true';
             
             // Мгновенное затемнение
             if (isChecked) {
@@ -605,27 +596,14 @@ async function loadChecklist() {
                 label.style.color = '#334155';
             }
             
-            // Готовим данные для обновления
-            let updateData = {
+            // ВСЕГДА привязываем к текущему объекту
+            const updateData = {
                 is_completed: isChecked,
-                updated_at: new Date()
+                project_id: currentProjectId,
+                completed_at: isChecked ? new Date() : null,
+                completed_by: isChecked ? currentUser?.id : null
             };
             
-            if (isChecked) {
-                // При отметке: привязываем к объекту, запоминаем кто и когда
-                updateData.project_id = currentProjectId;
-                updateData.completed_at = new Date();
-                updateData.completed_by = currentUser?.id;
-            } else {
-                // При снятии галочки: 
-                // Оставляем project_id = currentProjectId (чтобы пункт оставался в выборке)
-                // Но очищаем completed_at и completed_by
-                updateData.project_id = currentProjectId;
-                updateData.completed_at = null;
-                updateData.completed_by = null;
-            }
-            
-            // Обновляем в БД
             const { error } = await supabase
                 .from('checklists')
                 .update(updateData)
@@ -643,7 +621,7 @@ async function loadChecklist() {
                 }
                 cb.checked = !isChecked;
             } else {
-                // Обновляем статистику
+                // Перезагружаем для обновления статистики
                 loadChecklist();
                 showMessage(isChecked ? '✅ Пункт отмечен' : '◻️ Галочка снята', 'success');
             }
