@@ -6,1143 +6,1243 @@
     <title>Объекты | LamGroup</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', -apple-system, sans-serif; background: #F8FAFC; padding: 16px; min-height: 100vh; -webkit-font-smoothing: antialiased; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 16px;
+            min-height: 100vh;
+        }
         .container { max-width: 600px; margin: 0 auto; }
-        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
-        .app-header h1 { font-size: 24px; font-weight: 800; color: #0F172A; letter-spacing: -0.5px; }
-        .logo-badge { background: linear-gradient(135deg, #F59E0B, #F97316); color: white; padding: 4px 10px; border-radius: 30px; font-size: 11px; font-weight: 700; }
-        .role-badge { background: #E2E8F0; color: #0F172A; padding: 6px 12px; border-radius: 30px; font-size: 12px; font-weight: 600; }
-        .filter-bar { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-        .filter-bar::-webkit-scrollbar { display: none; }
-        .filter-btn { padding: 8px 14px; border-radius: 30px; font-size: 13px; font-weight: 600; border: 1.5px solid #E2E8F0; background: white; color: #64748B; cursor: pointer; white-space: nowrap; }
-        .filter-btn.active { background: #0F172A; color: white; border-color: #0F172A; }
-        .objects-grid { display: flex; flex-direction: column; gap: 12px; }
-        .object-card { background: white; border-radius: 20px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; border: 1px solid #F1F5F9; }
+        
+        /* Header */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: #1a2e4b;
+            letter-spacing: -0.5px;
+        }
+        .role-badge {
+            background: #e2e8f0;
+            color: #1a2e4b;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* Filters */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid #d1d5db;
+            background: white;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .filter-btn.active {
+            background: #1a2e4b;
+            color: white;
+            border-color: #1a2e4b;
+        }
+        
+        /* Objects Grid */
+        .objects-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .object-card {
+            background: white;
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #edf2f7;
+        }
         .object-card:active { transform: scale(0.99); }
-        .object-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-        .object-name { font-size: 16px; font-weight: 700; color: #0F172A; }
-        .object-status { padding: 4px 10px; border-radius: 30px; font-size: 11px; font-weight: 700; }
-        .status-preparation { background: #FEF3C7; color: #92400E; } .status-mobilization { background: #DBEAFE; color: #1E40AF; } .status-in_progress { background: #D1FAE5; color: #065F46; } .status-completed { background: #E2E8F0; color: #475569; }
-        .object-address { font-size: 13px; color: #64748B; margin-bottom: 8px; }
-        .progress-section { margin: 12px 0; } .progress-bar { height: 6px; background: #F1F5F9; border-radius: 30px; overflow: hidden; } .progress-fill { height: 100%; background: linear-gradient(90deg, #0F172A, #F59E0B); border-radius: 30px; width: 0%; }
-        .object-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid #F1F5F9; font-size: 12px; color: #64748B; }
-        .object-sum { font-size: 13px; font-weight: 600; color: #0F172A; margin-top: 6px; }
-        .back-btn { background: none; border: none; color: #0F172A; font-size: 15px; font-weight: 600; cursor: pointer; padding: 8px 0; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
-        .tabs-wrapper { position: relative; margin: 16px 0; }
-        .tabs { display: flex; gap: 4px; overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; padding-bottom: 6px; }
-        .tabs::-webkit-scrollbar { display: none; }
-        .tab { padding: 8px 12px; background: none; border: none; font-weight: 600; color: #64748B; cursor: pointer; white-space: nowrap; font-size: 12px; }
-        .tab.active { color: #0F172A; border-bottom: 3px solid #F59E0B; }
-        .scroll-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 30px; height: 30px; background: white; border: 1px solid #E2E8F0; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 10; font-size: 16px; font-weight: 700; color: #0F172A; }
-        .scroll-arrow.left { left: -15px; } .scroll-arrow.right { right: -15px; } .scroll-arrow.hidden { display: none; }
-        .tab-content { display: none; } .tab-content.active { display: block; animation: fadeIn 0.3s ease; } @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .info-card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #F1F5F9; }
-        .form-group { margin-bottom: 14px; } label { font-weight: 600; color: #475569; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 4px; }
-        input, select, textarea { width: 100%; padding: 12px 14px; border: 1.5px solid #E2E8F0; border-radius: 14px; font-size: 14px; background: white; font-family: 'Inter', sans-serif; }
-        input:focus, select:focus, textarea:focus { outline: none; border-color: #F59E0B; box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
-        .btn-primary { width: 100%; background: linear-gradient(135deg, #0F172A, #1E293B); color: white; padding: 14px; border-radius: 14px; font-weight: 700; border: none; cursor: pointer; margin-top: 10px; font-size: 15px; }
-        .btn-secondary { background: #F8FAFC; color: #0F172A; padding: 8px 14px; border-radius: 12px; font-weight: 600; border: 1.5px solid #E2E8F0; cursor: pointer; font-size: 12px; }
-        .btn-small { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; }
-        .btn-edit { background: #FEF3C7; color: #92400E; } .btn-delete { background: #FEE2E2; color: #991B1B; } .btn-add { background: #DBEAFE; color: #1E40AF; }
-        .btn-pdf { background: #F3E8FF; color: #6B21A8; padding: 6px 12px; border-radius: 10px; font-weight: 600; border: 1px solid #D8B4FE; cursor: pointer; font-size: 12px; }
-        .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .object-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .object-name { font-size: 18px; font-weight: 700; color: #1a2e4b; }
+        .object-status {
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-preparation { background: #fef3c7; color: #92400e; }
+        .status-mobilization { background: #dbeafe; color: #1e40af; }
+        .status-in_progress { background: #d1fae5; color: #065f46; }
+        .status-completed { background: #e2e8f0; color: #1a2e4b; }
+        .status-paused { background: #fee2e2; color: #991b1b; }
+        
+        .object-address { font-size: 14px; color: #64748b; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .progress-section { margin: 14px 0; }
+        .progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2c4c7c, #1a2e4b);
+            border-radius: 10px;
+            width: 0%;
+        }
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+        }
+        .object-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #64748b;
+            padding-top: 12px;
+            border-top: 1px solid #f1f5f9;
+        }
+        .date-badge {
+            background: #f8fafc;
+            padding: 4px 10px;
+            border-radius: 30px;
+        }
+        
+        /* Detail View */
+        .back-btn {
+            background: none;
+            border: none;
+            color: #1a2e4b;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 0;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin: 16px 0;
+            border-bottom: 2px solid #e2e8f0;
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 10px 14px;
+            background: none;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab.active {
+            color: #1a2e4b;
+            border-bottom-color: #1a2e4b;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Cards & Forms */
+        .info-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 15px;
+            background: white;
+            font-family: inherit;
+        }
+        .form-group textarea { resize: vertical; }
+        
+        .btn-primary {
+            width: 100%;
+            background: #1a2e4b;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary:active { background: #2c4c7c; }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #1a2e4b;
+            border: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-small {
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-success { background: #d1fae5; color: #065f46; }
+        .btn-danger { background: #fee2e2; color: #991b1b; }
+        
+        /* GPR Items */
+        .gpr-item {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .gpr-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .gpr-axis { font-weight: 700; color: #1a2e4b; }
+        .gpr-stage { background: #e2e8f0; padding: 4px 10px; border-radius: 30px; font-size: 12px; }
+        .progress-slider {
+            width: 100%;
+            margin: 12px 0;
+        }
+        .row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
         .hidden { display: none !important; }
-        .loading { text-align: center; padding: 40px 20px; color: #64748B; }
-        .empty-state { text-align: center; padding: 40px 20px; background: white; border-radius: 20px; color: #64748B; }
-        .message { padding: 14px; border-radius: 14px; margin: 14px 0; display: none; font-weight: 500; font-size: 14px; }
-        .message.success { background: #D1FAE5; color: #065F46; display: block; } .message.error { background: #FEE2E2; color: #991B1B; display: block; }
-        .gpr-item { background: white; border-radius: 16px; padding: 14px; margin-bottom: 10px; border: 1.5px solid #F1F5F9; }
-        .axis-card { background: white; border-radius: 16px; padding: 14px; margin-bottom: 12px; border: 1.5px solid #E2E8F0; }
-        .axis-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .axis-name { font-weight: 700; color: #0F172A; font-size: 15px; }
-        .axis-dates { font-size: 12px; color: #64748B; margin-bottom: 8px; }
-        .brigade-section { background: #F8FAFC; border-radius: 14px; padding: 14px; margin: 10px 0; border: 1px solid #E2E8F0; }
-        .brigade-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .brigade-name { font-weight: 600; color: #0F172A; font-size: 14px; }
-        .work-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 6px 0; }
-        .work-table th { text-align: left; padding: 6px; background: #F1F5F9; color: #475569; font-weight: 600; font-size: 10px; }
-        .work-table td { padding: 6px; border-bottom: 1px solid #F1F5F9; }
-        .work-table .text-right { text-align: right; }
-        .progress-input { width: 55px; padding: 5px 6px; border-radius: 8px; border: 1px solid #E2E8F0; text-align: center; font-size: 12px; }
-        .status-badge-sm { padding: 3px 6px; border-radius: 20px; font-size: 10px; font-weight: 600; }
-        .status-in_progress-sm { background: #D1FAE5; color: #065F46; } .status-pending-sm { background: #FEF3C7; color: #92400E; } .status-completed-sm { background: #E2E8F0; color: #475569; }
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10002; }
-        .modal.hidden { display: none !important; }
-        .modal-content { background: white; border-radius: 24px; padding: 20px; max-width: 500px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-title { font-size: 20px; font-weight: 800; color: #0F172A; }
-        .close-btn { background: #F1F5F9; border: none; width: 36px; height: 36px; border-radius: 36px; font-size: 18px; cursor: pointer; color: #64748B; display: flex; align-items: center; justify-content: center; }
-        .action-menu-modal { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 20px 20px 0 0; padding: 16px; z-index: 10003; box-shadow: 0 -4px 20px rgba(0,0,0,0.1); animation: slideUp 0.3s ease; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .action-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 10002; }
-        .action-item { padding: 12px 16px; cursor: pointer; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
-        .fullscreen-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #F8FAFC; z-index: 10001; overflow-y: auto; padding: 16px; }
-        .letter-preview { background: white; border: 2px solid #0F172A; padding: 30px; font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
-        .letter-logo { font-size: 32px; font-weight: 800; color: #0F172A; letter-spacing: 6px; text-align: center; margin-bottom: 5px; }
-        .letter-subtitle { font-size: 14px; letter-spacing: 8px; text-align: center; color: #F59E0B; font-weight: 600; margin-bottom: 10px; }
+        .loading { text-align: center; padding: 40px; color: #64748b; }
+        .empty-state { text-align: center; padding: 40px; background: white; border-radius: 20px; color: #64748b; }
+        .message { padding: 14px; border-radius: 14px; margin-bottom: 16px; display: none; }
+        .message.success { background: #d1fae5; color: #065f46; display: block; }
+        .message.error { background: #fee2e2; color: #991b1b; display: block; }
+        
+        /* Checklist */
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .checklist-item input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            accent-color: #1a2e4b;
+        }
+        .checklist-item label {
+            flex: 1;
+            font-size: 14px;
+            color: #334155;
+        }
+        .checklist-item .checklist-category {
+            font-size: 11px;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+        
+        /* Stats cards */
+        .stats-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            flex: 1;
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1a2e4b;
+        }
+        .stat-label {
+            font-size: 11px;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+        .stat-card.success .stat-value { color: #10b981; }
+        .stat-card.warning .stat-value { color: #f59e0b; }
+        .stat-card.danger .stat-value { color: #ef4444; }
+        
+        /* Priority badges */
+        .priority-high { border-left: 4px solid #ef4444; }
+        .priority-medium { border-left: 4px solid #f59e0b; }
+        .priority-low { border-left: 4px solid #10b981; }
+        
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .status-paid { background: #d1fae5; color: #065f46; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-open { background: #fee2e2; color: #991b1b; }
+        .status-closed { background: #e2e8f0; color: #475569; }
+        .status-in_progress-badge { background: #dbeafe; color: #1e40af; }
+        
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal.hidden { display: none; }
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a2e4b;
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- LIST VIEW -->
         <div id="list-view">
-            <div class="app-header"><h1>LamGroup <span class="logo-badge">Construction</span></h1><span class="role-badge" id="role-badge"></span></div>
-            <div class="filter-bar">
-                <button class="filter-btn active" data-filter="all">Все</button><button class="filter-btn" data-filter="my">Мои</button>
-                <button class="filter-btn" data-filter="preparation">Подготовка</button><button class="filter-btn" data-filter="in_progress">В работе</button><button class="filter-btn" data-filter="completed">Завершён</button>
+            <div class="app-header">
+                <h1>🏗️ Объекты</h1>
+                <span class="role-badge" id="role-badge">Загрузка...</span>
             </div>
+            
+            <div class="filter-bar">
+                <button class="filter-btn active" data-filter="all">Все</button>
+                <button class="filter-btn" data-filter="my">Мои</button>
+                <button class="filter-btn" data-filter="preparation">Подготовка</button>
+                <button class="filter-btn" data-filter="in_progress">В работе</button>
+                <button class="filter-btn" data-filter="completed">Завершён</button>
+            </div>
+            
             <div id="objects-container"><div class="loading">Загрузка объектов...</div></div>
         </div>
+        
+        <!-- DETAIL VIEW -->
         <div id="detail-view" class="hidden">
             <button class="back-btn" id="back-btn">← Назад</button>
-            <div class="app-header"><h1 id="detail-name"></h1><span class="role-badge" id="detail-status-badge"></span></div>
-            <div class="tabs-wrapper">
-                <div class="scroll-arrow left hidden" id="scroll-left">←</div>
-                <div class="tabs" id="tabs-container">
-                    <button class="tab active" data-tab="info">📋 Инфо</button>
-                    <button class="tab" data-tab="progress">📊 Прогресс</button>
-                    <button class="tab" data-tab="history">📜 История</button>
-                    <button class="tab" data-tab="expenses">💰 Расходы</button>
-                    <button class="tab" data-tab="materials">📦 Материалы</button>
-                    <button class="tab" data-tab="checklist">✅ Чек-лист</button>
-                    <button class="tab" data-tab="issues">⚠️ Проблемы</button>
-                    <button class="tab" data-tab="report">📑 Отчет</button>
-                </div>
-                <div class="scroll-arrow right" id="scroll-right">→</div>
+            <div class="app-header">
+                <h1 id="detail-name">Объект</h1>
+                <span class="role-badge" id="detail-status-badge"></span>
             </div>
-            <div id="tab-info" class="tab-content active"><div class="info-card" id="detail-content"></div></div>
-            <div id="tab-progress" class="tab-content"><div id="progress-container"></div></div>
-            <div id="tab-history" class="tab-content"><div id="history-container"></div></div>
-            <div id="tab-expenses" class="tab-content"><div class="info-card"><h3>💰 Расходы</h3><p>Загрузка...</p></div></div>
-            <div id="tab-materials" class="tab-content"><div id="materials-container"></div></div>
-            <div id="tab-checklist" class="tab-content"><div class="info-card"><h3>✅ Чек-лист</h3><p>Загрузка...</p></div></div>
-            <div id="tab-issues" class="tab-content"><div class="info-card"><h3>⚠️ Проблемы</h3><p>Загрузка...</p></div></div>
-            <div id="tab-report" class="tab-content"><div class="info-card"><h3>📑 Отчет</h3><p>Загрузка...</p></div></div>
+            
+            <div class="tabs">
+                <button class="tab active" data-tab="info">📋 Инфо</button>
+                <button class="tab" data-tab="gpr-plan">📅 План ГПР</button>
+                <button class="tab" data-tab="gpr-fact">📊 Прогресс</button>
+                <button class="tab" data-tab="expenses">💰 Расходы</button>
+                <button class="tab" data-tab="materials">📦 Материалы</button>
+                <button class="tab" data-tab="checklist">✅ Чек-лист</button>
+                <button class="tab" data-tab="issues">⚠️ Проблемы</button>
+            </div>
+            
+            <!-- TAB: INFO -->
+            <div id="tab-info" class="tab-content active">
+                <div class="info-card" id="detail-content"></div>
+            </div>
+            
+            <!-- TAB: GPR PLAN -->
+            <div id="tab-gpr-plan" class="tab-content">
+                <div class="info-card">
+                    <h3 style="margin-bottom: 20px;">➕ Добавить работу</h3>
+                    <div class="form-group">
+                        <label>Ось *</label>
+                        <select id="gpr-axis"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Вид работ *</label>
+                        <select id="gpr-stage"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Бригада *</label>
+                        <select id="gpr-brigade"></select>
+                    </div>
+                    <div class="row-2">
+                        <div class="form-group"><label>Объём</label><input type="number" id="gpr-volume" step="0.01"></div>
+                        <div class="form-group"><label>Цена за ед.</label><input type="number" id="gpr-price" step="0.01"></div>
+                    </div>
+                    <div class="row-2">
+                        <div class="form-group"><label>Начало</label><input type="date" id="gpr-start"></div>
+                        <div class="form-group"><label>Окончание</label><input type="date" id="gpr-end"></div>
+                    </div>
+                    <button class="btn-primary" id="add-gpr-btn">Добавить в план</button>
+                </div>
+                <div id="gpr-plan-list"></div>
+            </div>
+            
+            <!-- TAB: GPR FACT (PROGRESS) -->
+            <div id="tab-gpr-fact" class="tab-content">
+                <div id="gpr-progress-list"></div>
+            </div>
+            
+            <!-- TAB: EXPENSES (ОБНОВЛЁН) -->
+            <div id="tab-expenses" class="tab-content">
+                <div class="info-card">
+                    <div class="stats-row">
+                        <div class="stat-card success"><div class="stat-value" id="exp-paid-total">0 ₸</div><div class="stat-label">Оплачено</div></div>
+                        <div class="stat-card warning"><div class="stat-value" id="exp-pending-total">0 ₸</div><div class="stat-label">Ожидает</div></div>
+                        <div class="stat-card"><div class="stat-value" id="exp-total">0 ₸</div><div class="stat-label">Итого</div></div>
+                    </div>
+                    
+                    <h3 style="margin-bottom: 16px;">➕ Добавить расход</h3>
+                    <div class="form-group"><label>Наименование *</label><input type="text" id="exp-name" placeholder="Например: Доставка материалов"></div>
+                    <div class="row-2">
+                        <div class="form-group"><label>Категория</label>
+                            <select id="exp-category">
+                                <option value="delivery">🚛 Доставка</option>
+                                <option value="consumables">🔧 Расходники</option>
+                                <option value="cradles">🏗️ Люльки</option>
+                                <option value="scaffolding">🪜 Леса</option>
+                                <option value="rent">🏢 Аренда</option>
+                                <option value="other">📄 Прочее</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Сумма *</label><input type="number" id="exp-amount" step="0.01" placeholder="Сумма в ₸"></div>
+                    </div>
+                    <div class="row-2">
+                        <div class="form-group"><label>Вид оплаты</label>
+                            <select id="exp-payment">
+                                <option value="cash">💵 Наличка</option>
+                                <option value="card_itr">💳 Карта ИТР</option>
+                                <option value="card_volodya">💳 Карта Володи</option>
+                                <option value="card_makha">💳 Карта Маха</option>
+                                <option value="invoice">🧾 По счету</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Статус</label>
+                            <select id="exp-status">
+                                <option value="pending">⏳ Ожидает оплаты</option>
+                                <option value="paid">✅ Оплачен</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Поставщик/Получатель</label><input type="text" id="exp-supplier" placeholder="ТОО «СтройМатериалы»"></div>
+                    <div class="form-group"><label>Примечание</label><textarea id="exp-note" rows="2" placeholder="Детали расхода..."></textarea></div>
+                    <button class="btn-primary" id="add-expense-btn">💾 Сохранить расход</button>
+                </div>
+                <div id="expenses-list"></div>
+            </div>
+            
+            <!-- TAB: MATERIALS (без изменений) -->
+            <div id="tab-materials" class="tab-content">
+                <div class="info-card">
+                    <h3 style="margin-bottom: 16px;">➕ Добавить материал</h3>
+                    <div class="form-group"><label>Поставщик</label><input type="text" id="mat-supplier"></div>
+                    <div class="form-group"><label>№ накладной</label><input type="text" id="mat-invoice"></div>
+                    <div class="form-group"><label>Наименование</label><input type="text" id="mat-name"></div>
+                    <div class="row-2">
+                        <div class="form-group"><label>Количество</label><input type="number" id="mat-qty" step="0.01"></div>
+                        <div class="form-group"><label>Ед.изм</label><input type="text" id="mat-unit" value="шт"></div>
+                    </div>
+                    <button class="btn-primary" id="add-material-btn">Добавить</button>
+                </div>
+                <div id="materials-list"></div>
+            </div>
+            
+            <!-- TAB: CHECKLIST (ОБНОВЛЁН) -->
+            <div id="tab-checklist" class="tab-content">
+                <div class="info-card">
+                    <div class="stats-row">
+                        <div class="stat-card success"><div class="stat-value" id="checklist-completed">0</div><div class="stat-label">Выполнено</div></div>
+                        <div class="stat-card"><div class="stat-value" id="checklist-total">0</div><div class="stat-label">Всего пунктов</div></div>
+                        <div class="stat-card"><div class="stat-value" id="checklist-percent">0%</div><div class="stat-label">Прогресс</div></div>
+                    </div>
+                    <progress id="checklist-progress-bar" value="0" max="100" style="width:100%; height:8px; border-radius:10px; margin-bottom:20px"></progress>
+                    
+                    <div id="checklist-customer"></div>
+                    <div id="checklist-workers"></div>
+                    <div id="checklist-docs"></div>
+                    
+                    <button class="btn-secondary" id="add-checklist-btn" style="margin-top:16px;">➕ Добавить пункт</button>
+                </div>
+            </div>
+            
+            <!-- TAB: ISSUES (ОБНОВЛЁН) -->
+            <div id="tab-issues" class="tab-content">
+                <div class="info-card">
+                    <div class="stats-row">
+                        <div class="stat-card danger"><div class="stat-value" id="issues-open">0</div><div class="stat-label">Открытых</div></div>
+                        <div class="stat-card success"><div class="stat-value" id="issues-closed">0</div><div class="stat-label">Закрытых</div></div>
+                    </div>
+                    
+                    <h3 style="margin-bottom: 16px;">⚠️ Сообщить о проблеме</h3>
+                    <div class="form-group"><label>Тема *</label><input type="text" id="issue-title" placeholder="Краткое описание"></div>
+                    <div class="form-group"><label>Описание *</label><textarea id="issue-desc" rows="3" placeholder="Подробное описание проблемы..."></textarea></div>
+                    <div class="row-2">
+                        <div class="form-group"><label>Приоритет</label>
+                            <select id="issue-priority">
+                                <option value="low">🟢 Низкий</option>
+                                <option value="medium">🟡 Средний</option>
+                                <option value="high">🔴 Высокий (критично)</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Связанная ось</label><input type="text" id="issue-axis" placeholder="Например: Ось 1-5"></div>
+                    </div>
+                    <div class="form-group"><label>Ответственный (Telegram ID)</label><input type="text" id="issue-responsible" placeholder="ID пользователя в Telegram"></div>
+                    <button class="btn-primary" id="add-issue-btn">📢 Создать проблему</button>
+                </div>
+                <div id="issues-list"></div>
+            </div>
         </div>
-        <div id="axis-detail-page" class="fullscreen-modal hidden"></div>
-        <div id="action-overlay" class="action-overlay hidden"></div>
-        <div id="action-menu" class="action-menu-modal hidden"></div>
-        <div id="form-modal" class="modal hidden"><div class="modal-content"><div class="modal-header"><span class="modal-title" id="form-modal-title"></span><button class="close-btn" id="close-form-modal">&times;</button></div><div id="form-modal-content"></div></div></div>
-        <div id="edit-modal" class="modal hidden"><div class="modal-content"><div class="modal-header"><span class="modal-title" id="edit-modal-title"></span><button class="close-btn" id="close-edit-modal">&times;</button></div><div id="edit-modal-content"></div><button class="btn-primary" id="save-edit-btn">Сохранить</button></div></div>
+        
         <div id="message" class="message"></div>
     </div>
 
-    <script>
-        window.closeActionMenu = function() { var m=document.getElementById('action-menu'); var o=document.getElementById('action-overlay'); if(m)m.classList.add('hidden'); if(o)o.classList.add('hidden'); };
-        window.closeAxisDetailPage = function() { var p=document.getElementById('axis-detail-page'); if(p)p.classList.add('hidden'); if(window._loadProgressTab)window._loadProgressTab(); };
-        window.formatDate = function(dateStr) { if(!dateStr) return '—'; var d = new Date(dateStr); return d.toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'}); };
-        window.formatDateShort = function(dateStr) { if(!dateStr) return '—'; var d = new Date(dateStr); return d.toLocaleDateString('ru-RU'); };
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title" id="modal-title">Заголовок</span>
+                <button class="close-btn" id="close-modal-btn">&times;</button>
+            </div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
 
+    <script>
         (function() {
-            const tg = window.Telegram.WebApp; tg.expand(); tg.ready();
+            const tg = window.Telegram.WebApp;
+            tg.expand(); tg.ready();
+            
             const SUPABASE_URL = 'https://owagntywpiymqhbfoxye.supabase.co';
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YWdudHl3cGl5bXFoYmZveHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTg5MDUsImV4cCI6MjA5MTg5NDkwNX0.p-3xAhbFgH5lcGnbBfkcQQFVza_Yc2qoY6VBlhmmFGg';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            let userId = tg.initDataUnsafe?.user?.id; if (!userId) { alert('Ошибка авторизации'); return; }
-            let currentUser = null, currentRole = 'worker', currentProjectId = null, currentFilter = 'all', allProjects = [], allBrigades = [], allWorkStages = [];
-            let currentAxisId = null;
-
-            function showMessage(text, type) { const msg = document.getElementById('message'); msg.textContent = text; msg.className = 'message '+type; setTimeout(function(){ msg.className = 'message'; }, 3000); }
-            function escapeHtml(text) { if (!text) return ''; return String(text).replace(/[&<>]/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c] || c; }); }
-
-            async function init() { await loadUser(); await loadBrigades(); await loadWorkStages(); await loadProjects(); setupFilters(); setupTabs(); setupTabsScroll(); setupModals(); }
-            async function loadUser() { const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single(); if (data) { currentUser = data; currentRole = data.role; } document.getElementById('role-badge').textContent = currentRole === 'manager' ? 'Руководитель' : currentRole === 'worker' ? 'ИТР' : 'Монтажник'; }
-            async function loadBrigades() { const { data } = await supabase.from('brigades').select('*').order('name'); allBrigades = data || []; }
-            async function loadWorkStages() { const { data } = await supabase.from('work_stages').select('*').order('id'); allWorkStages = data || []; }
-            async function loadProjects() { let query = supabase.from('projects').select('*, users!projects_responsible_worker_id_fkey(full_name)').order('created_at', { ascending: false }); if (currentRole === 'worker') query = query.eq('responsible_worker_id', currentUser?.id); const { data } = await query; allProjects = data || []; renderProjects(); }
-
+            
+            let userId = null;
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) userId = tg.initDataUnsafe.user.id;
+            if (!userId) userId = 531738802;
+            
+            let currentUser = null, currentRole = 'worker', currentProjectId = null;
+            let currentFilter = 'all', allProjects = [], allBrigades = [], workStages = [];
+            
+            // UI Elements
+            const listView = document.getElementById('list-view'), detailView = document.getElementById('detail-view');
+            const objectsContainer = document.getElementById('objects-container');
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            
+            function showMessage(text, type) {
+                const msg = document.getElementById('message');
+                msg.textContent = text;
+                msg.className = 'message ' + type;
+                setTimeout(() => msg.className = 'message', 3000);
+            }
+            
+            function closeModal() { modal.classList.add('hidden'); }
+            document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+            
+            // Init
+            async function init() {
+                await loadUser();
+                await loadWorkStages();
+                await loadBrigades();
+                await loadProjects();
+                setupTabs();
+                setupFilters();
+                setupForms();
+            }
+            
+            async function loadUser() {
+                const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
+                if (data) { currentUser = data; currentRole = data.role; }
+                document.getElementById('role-badge').textContent = currentRole === 'manager' ? 'Руководитель' : 'ИТР';
+            }
+            
+            async function loadWorkStages() {
+                const { data } = await supabase.from('work_stages').select('*').order('id');
+                workStages = data || [];
+                const select = document.getElementById('gpr-stage');
+                if (select) {
+                    select.innerHTML = '<option value="">Выберите вид работ</option>';
+                    workStages.forEach(s => select.innerHTML += `<option value="${s.id}">${s.name}</option>`);
+                }
+            }
+            
+            async function loadBrigades() {
+                const { data } = await supabase.from('brigades').select('*').eq('status', 'active').order('name');
+                allBrigades = data || [];
+                const select = document.getElementById('gpr-brigade');
+                if (select) {
+                    select.innerHTML = '<option value="">Выберите бригаду</option>';
+                    allBrigades.forEach(b => select.innerHTML += `<option value="${b.id}">${b.name} (${b.foreman_name || ''})</option>`);
+                }
+            }
+            
+            async function loadProjects() {
+                objectsContainer.innerHTML = '<div class="loading">Загрузка...</div>';
+                let query = supabase.from('projects').select('*, users!projects_responsible_worker_id_fkey(full_name)').order('created_at', { ascending: false });
+                if (currentRole !== 'manager') query = query.eq('responsible_worker_id', currentUser.id);
+                
+                const { data, error } = await query;
+                if (error) { objectsContainer.innerHTML = '<div class="error">Ошибка загрузки</div>'; return; }
+                
+                for (let p of data) {
+                    const { data: gpr } = await supabase.from('schedule_plan').select('progress').eq('axis_id.block_id.project_id', p.id);
+                    if (gpr && gpr.length > 0) {
+                        p.avg_progress = Math.round(gpr.reduce((acc, i) => acc + (i.progress || 0), 0) / gpr.length);
+                    } else p.avg_progress = 0;
+                }
+                
+                allProjects = data || [];
+                renderProjects();
+            }
+            
             function renderProjects() {
                 let filtered = allProjects;
-                if (currentFilter === 'my') filtered = allProjects.filter(function(p) { return p.responsible_worker_id === currentUser?.id; });
-                else if (currentFilter !== 'all') filtered = allProjects.filter(function(p) { return p.status === currentFilter; });
-                const container = document.getElementById('objects-container');
-                if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">🏗️ Нет объектов</div>'; return; }
+                if (currentFilter === 'my') filtered = allProjects.filter(p => p.responsible_worker_id === currentUser.id);
+                else if (currentFilter !== 'all') filtered = allProjects.filter(p => p.status === currentFilter);
+                
+                if (filtered.length === 0) {
+                    objectsContainer.innerHTML = '<div class="empty-state">🏗️ Нет объектов</div>';
+                    return;
+                }
+                
                 let html = '<div class="objects-grid">';
-                filtered.forEach(function(p) { const st = { 'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация', 'in_progress': '🔨 В работе', 'completed': '✅ Завершён' }[p.status] || p.status;
-                    html += '<div class="object-card" data-id="'+p.id+'"><div class="object-header"><span class="object-name">'+p.name+'</span><span class="object-status status-'+p.status+'">'+st+'</span></div><div class="object-address">📍 '+p.address+'</div><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div></div><div class="object-footer"><div>👤 '+(p.users?.full_name || '—')+'</div><div>📅 '+window.formatDateShort(p.start_date)+'</div></div></div>'; });
-                container.innerHTML = html + '</div>';
-                container.querySelectorAll('.object-card').forEach(function(c) { c.addEventListener('click', function() { showDetail(c.dataset.id); }); });
+                filtered.forEach(p => {
+                    const statusMap = {
+                        'preparation': { text: '📋 Подготовка', class: 'status-preparation' },
+                        'mobilization': { text: '🚚 Мобилизация', class: 'status-mobilization' },
+                        'in_progress': { text: '🔨 В работе', class: 'status-in_progress' },
+                        'completed': { text: '✅ Завершён', class: 'status-completed' },
+                        'paused': { text: '⏸️ Пауза', class: 'status-paused' }
+                    };
+                    const st = statusMap[p.status] || { text: p.status, class: '' };
+                    const start = p.start_date ? new Date(p.start_date).toLocaleDateString('ru-RU') : '—';
+                    const end = p.end_date_contract ? new Date(p.end_date_contract).toLocaleDateString('ru-RU') : '—';
+                    
+                    html += `<div class="object-card" data-id="${p.id}">
+                        <div class="object-header">
+                            <span class="object-name">${escapeHtml(p.name)}</span>
+                            <span class="object-status ${st.class}">${st.text}</span>
+                        </div>
+                        <div class="object-address">📍 ${escapeHtml(p.address)}</div>
+                        <div class="progress-section">
+                            <div class="progress-bar"><div class="progress-fill" style="width:${p.avg_progress}%"></div></div>
+                            <div class="progress-text"><span>Готовность: ${p.avg_progress}%</span><span>План: —</span></div>
+                        </div>
+                        <div class="object-footer">
+                            <span>👤 ${p.users?.full_name || '—'}</span>
+                            <div><span class="date-badge">📅 ${start}</span><span class="date-badge">🏁 ${end}</span></div>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+                objectsContainer.innerHTML = html;
+                document.querySelectorAll('.object-card').forEach(c => c.addEventListener('click', () => showDetail(c.dataset.id)));
             }
-
-            function setupFilters() { document.querySelectorAll('.filter-btn').forEach(function(btn) { btn.addEventListener('click', function() { document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); currentFilter = btn.dataset.filter; renderProjects(); }); }); }
-            function setupTabs() { document.querySelectorAll('.tab').forEach(function(t) { t.addEventListener('click', function() { document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); }); document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); }); t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active'); if (t.dataset.tab === 'progress') loadProgressTab(); if (t.dataset.tab === 'history') loadHistoryTab(); if (t.dataset.tab === 'materials') loadMaterialsTab(); }); }); }
-            function setupTabsScroll() { const tabsContainer = document.getElementById('tabs-container'); const scrollLeft = document.getElementById('scroll-left'); const scrollRight = document.getElementById('scroll-right'); if (!tabsContainer) return; function updateArrows() { if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0); if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1); } if (scrollLeft) scrollLeft.addEventListener('click', function() { tabsContainer.scrollBy({ left: -200, behavior: 'smooth' }); }); if (scrollRight) scrollRight.addEventListener('click', function() { tabsContainer.scrollBy({ left: 200, behavior: 'smooth' }); }); tabsContainer.addEventListener('scroll', updateArrows); window.addEventListener('resize', updateArrows); setTimeout(updateArrows, 300); setTimeout(updateArrows, 600); }
-            function setupModals() { document.getElementById('close-form-modal').onclick = function() { document.getElementById('form-modal').classList.add('hidden'); }; document.getElementById('close-edit-modal').onclick = function() { document.getElementById('edit-modal').classList.add('hidden'); }; document.getElementById('action-overlay').onclick = closeActionMenu; }
-
-            async function showDetail(id) {
-                currentProjectId = id;
-                const { data: p } = await supabase.from('projects').select('*, users(full_name)').eq('id', id).single(); if (!p) return;
+            
+            function setupFilters() {
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        currentFilter = btn.dataset.filter;
+                        renderProjects();
+                    });
+                });
+            }
+            
+            function setupTabs() {
+                document.querySelectorAll('.tab').forEach(t => {
+                    t.addEventListener('click', () => {
+                        const tabName = t.dataset.tab;
+                        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+                        document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+                        t.classList.add('active');
+                        document.getElementById(`tab-${tabName}`).classList.add('active');
+                        
+                        if (tabName === 'gpr-plan') loadGprPlan();
+                        else if (tabName === 'gpr-fact') loadGprProgress();
+                        else if (tabName === 'expenses') loadExpenses();
+                        else if (tabName === 'materials') loadMaterials();
+                        else if (tabName === 'checklist') loadChecklist();
+                        else if (tabName === 'issues') loadIssues();
+                    });
+                });
+            }
+            
+            async function showDetail(projectId) {
+                currentProjectId = projectId;
+                const { data: p } = await supabase.from('projects').select('*, users(full_name)').eq('id', projectId).single();
+                
+                const statusMap = {
+                    'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация',
+                    'in_progress': '🔨 В работе', 'completed': '✅ Завершён', 'paused': '⏸️ Пауза'
+                };
+                
                 document.getElementById('detail-name').textContent = p.name;
-                document.getElementById('detail-status-badge').textContent = { 'preparation':'📋 Подготовка','mobilization':'🚚 Мобилизация','in_progress':'🔨 В работе','completed':'✅ Завершён' }[p.status]||p.status;
-                document.getElementById('detail-content').innerHTML = 
-                    '<p style="margin-bottom:8px"><strong>📍 Адрес:</strong> '+p.address+' <button class="btn-small btn-edit" onclick="window.openEditField(\'address\',\''+escapeHtml(p.address)+'\')">✏️</button></p>'+
-                    '<p style="margin-bottom:8px"><strong>💰 Цена договора:</strong> '+(p.contract_price?.toLocaleString()||0)+' ₸ <button class="btn-small btn-edit" onclick="window.openEditField(\'contract_price\',\''+(p.contract_price||0)+'\')">✏️</button></p>'+
-                    '<p style="margin-bottom:8px"><strong>📐 Проектная площадь:</strong> '+(p.project_area||0)+' м² <button class="btn-small btn-edit" onclick="window.openEditField(\'project_area\',\''+(p.project_area||0)+'\')">✏️</button></p>'+
-                    '<p style="margin-bottom:8px"><strong>📅 Начало:</strong> '+window.formatDate(p.start_date)+' <button class="btn-small btn-edit" onclick="window.openEditField(\'start_date\',\''+(p.start_date||'')+'\')">✏️</button></p>'+
-                    '<p style="margin-bottom:8px"><strong>🏁 Окончание:</strong> '+window.formatDate(p.end_date_contract)+' <button class="btn-small btn-edit" onclick="window.openEditField(\'end_date_contract\',\''+(p.end_date_contract||'')+'\')">✏️</button></p>'+
-                    '<p style="margin-bottom:8px"><strong>👤 ИТР:</strong> '+(p.users?.full_name||'—')+'</p>'+
-                    '<p style="margin-bottom:8px"><strong>📋 Менеджер:</strong> '+(p.manager_name||'—')+' · '+(p.manager_phone||'—')+' <button class="btn-small btn-edit" onclick="window.openEditManager()">✏️</button></p>'+
-                    '<p style="margin-bottom:8px"><strong>📊 Статус:</strong> <select id="change-status" style="display:inline;width:auto;padding:6px">'+['preparation','mobilization','in_progress','completed','paused'].map(function(s){ return '<option value="'+s+'" '+(p.status===s?'selected':'')+'>'+({'preparation':'📋 Подготовка','mobilization':'🚚 Мобилизация','in_progress':'🔨 В работе','completed':'✅ Завершён','paused':'⏸️ Пауза'}[s]||s)+'</option>'; }).join('')+'</select> <button class="btn-small btn-edit" onclick="window.updateStatus()">Обновить</button></p>'+
-                    '<hr style="margin:14px 0"><h4 style="margin-bottom:8px">📄 РЕКВИЗИТЫ ЗАКАЗЧИКА</h4>'+
-                    '<p style="margin-bottom:6px"><strong>№ договора:</strong> '+(p.contract_number||'—')+' <button class="btn-small btn-edit" onclick="window.openEditField(\'contract_number\',\''+(p.contract_number||'')+'\')">✏️</button></p>'+
-                    '<p style="margin-bottom:6px"><strong>Компания:</strong> '+(p.customer_company_name||'—')+' <button class="btn-small btn-edit" onclick="window.openEditField(\'customer_company_name\',\''+(p.customer_company_name||'')+'\')">✏️</button></p>'+
-                    '<p style="margin-bottom:6px"><strong>Директор:</strong> '+(p.customer_director_name||'—')+' <button class="btn-small btn-edit" onclick="window.openEditField(\'customer_director_name\',\''+(p.customer_director_name||'')+'\')">✏️</button></p>'+
-                    '<p style="margin-bottom:6px"><strong>БИН:</strong> '+(p.customer_bin||'—')+' <button class="btn-small btn-edit" onclick="window.openEditField(\'customer_bin\',\''+(p.customer_bin||'')+'\')">✏️</button></p>'+
-                    '<p style="margin-bottom:6px"><strong>Юр. адрес:</strong> '+(p.customer_legal_address||'—')+' <button class="btn-small btn-edit" onclick="window.openEditField(\'customer_legal_address\',\''+(p.customer_legal_address||'')+'\')">✏️</button></p>';
-                document.getElementById('back-btn').onclick = function() { document.getElementById('detail-view').classList.add('hidden'); document.getElementById('list-view').classList.remove('hidden'); loadProjects(); };
-                document.getElementById('list-view').classList.add('hidden'); document.getElementById('detail-view').classList.remove('hidden'); document.querySelector('[data-tab="info"]').click();
+                document.getElementById('detail-status-badge').textContent = statusMap[p.status] || p.status;
+                
+                // Load axes for select
+                const { data: axes } = await supabase.from('axes').select('*').eq('block_id.project_id', projectId);
+                const axisSelect = document.getElementById('gpr-axis');
+                axisSelect.innerHTML = '<option value="">Выберите ось</option>';
+                if (axes) axes.forEach(a => axisSelect.innerHTML += `<option value="${a.id}">${escapeHtml(a.name)}</option>`);
+                
+                // Info Tab
+                document.getElementById('detail-content').innerHTML = `
+                    <div style="margin-bottom:16px"><strong>📍 Адрес:</strong> ${escapeHtml(p.address)}</div>
+                    <div style="margin-bottom:16px"><strong>💰 Цена договора:</strong> ${(p.contract_price || 0).toLocaleString()} ₸</div>
+                    <div style="margin-bottom:16px"><strong>📐 Проектная площадь:</strong> ${p.project_area || 0} м²</div>
+                    <div style="margin-bottom:16px"><strong>👤 Ответственный:</strong> ${p.users?.full_name || '—'}</div>
+                    <div class="form-group">
+                        <label>🔄 Сменить статус</label>
+                        <select id="change-status">
+                            <option value="preparation" ${p.status === 'preparation' ? 'selected' : ''}>📋 Подготовка</option>
+                            <option value="mobilization" ${p.status === 'mobilization' ? 'selected' : ''}>🚚 Мобилизация</option>
+                            <option value="in_progress" ${p.status === 'in_progress' ? 'selected' : ''}>🔨 В работе</option>
+                            <option value="completed" ${p.status === 'completed' ? 'selected' : ''}>✅ Завершён</option>
+                            <option value="paused" ${p.status === 'paused' ? 'selected' : ''}>⏸️ Пауза</option>
+                        </select>
+                    </div>
+                    <button class="btn-secondary" id="update-status-btn">Обновить статус</button>
+                `;
+                
+                document.getElementById('update-status-btn').addEventListener('click', async () => {
+                    const newStatus = document.getElementById('change-status').value;
+                    await supabase.from('projects').update({ status: newStatus }).eq('id', projectId);
+                    showDetail(projectId);
+                    loadProjects();
+                });
+                
+                listView.classList.add('hidden');
+                detailView.classList.remove('hidden');
+                document.querySelector('[data-tab="info"]').click();
             }
-
-            window.openEditField = function(field, value) {
-                document.getElementById('edit-modal-title').textContent = '✏️ Редактировать';
-                document.getElementById('edit-modal-content').innerHTML = '<div class="form-group"><label>'+field+'</label><input type="'+(field.includes('date')?'date':'text')+'" id="edit-value" value="'+value+'"></div>';
-                document.getElementById('save-edit-btn').onclick = async function() {
-                    var newVal = document.getElementById('edit-value').value; var oldVal = value;
-                    await supabase.from('projects').update({[field]: field.includes('price')||field.includes('area')?parseFloat(newVal)||0:newVal}).eq('id',currentProjectId);
-                    await supabase.from('change_history').insert({project_id:currentProjectId,entity_type:'project',entity_id:currentProjectId,action:'update_field',field_name:field,old_value:String(oldVal),new_value:String(newVal),changed_by:currentUser?.id,changed_by_name:currentUser?.full_name});
-                    document.getElementById('edit-modal').classList.add('hidden'); showDetail(currentProjectId);
-                };
-                document.getElementById('edit-modal').classList.remove('hidden');
-            };
-            window.openEditManager = function() {
-                document.getElementById('edit-modal-title').textContent = '✏️ Менеджер';
-                document.getElementById('edit-modal-content').innerHTML = '<div class="form-group"><label>Имя</label><input id="edit-mgr-name"><div class="form-group"><label>Телефон</label><input id="edit-mgr-phone">';
-                document.getElementById('save-edit-btn').onclick = async function() {
-                    await supabase.from('projects').update({manager_name:document.getElementById('edit-mgr-name').value,manager_phone:document.getElementById('edit-mgr-phone').value}).eq('id',currentProjectId);
-                    document.getElementById('edit-modal').classList.add('hidden'); showDetail(currentProjectId);
-                };
-                document.getElementById('edit-modal').classList.remove('hidden');
-            };
-            window.updateStatus = async function() { await supabase.from('projects').update({status:document.getElementById('change-status').value}).eq('id',currentProjectId); showDetail(currentProjectId); loadProjects(); };
-
-            async function loadHistoryTab() {
-                var container = document.getElementById('history-container');
-                container.innerHTML = '<div class="loading">Загрузка истории...</div>';
-                var { data } = await supabase.from('change_history').select('*').eq('project_id',currentProjectId).order('changed_at',{ascending:false}).limit(50);
-                if (!data || !data.length) { container.innerHTML = '<div class="info-card"><p>Нет изменений</p></div>'; return; }
-                var html = '<div class="info-card"><h3 style="margin-bottom:16px">📜 История изменений</h3>';
-                data.forEach(function(h) {
-                    html += '<div class="gpr-item"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><strong>'+h.action+'</strong><span style="font-size:11px;color:#64748B">'+window.formatDate(h.changed_at)+' '+new Date(h.changed_at).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+'</span></div><div style="font-size:12px;color:#64748B">👤 '+h.changed_by_name+'</div>';
-                    if (h.field_name) html += '<div style="font-size:12px;margin-top:4px">Поле: <strong>'+h.field_name+'</strong></div>';
-                    if (h.old_value) html += '<div style="font-size:12px;color:#991B1B">Было: '+h.old_value+'</div>';
-                    if (h.new_value) html += '<div style="font-size:12px;color:#065F46">Стало: '+h.new_value+'</div>';
-                    if (h.comment) html += '<div style="font-size:12px;margin-top:4px;color:#64748B">📝 '+h.comment+'</div>';
-                    html += '</div>';
+            
+            function setupForms() {
+                document.getElementById('back-btn').addEventListener('click', () => {
+                    detailView.classList.add('hidden');
+                    listView.classList.remove('hidden');
+                    loadProjects();
                 });
-                html += '</div>'; container.innerHTML = html;
-            }
-
-            async function loadProgressTab() {
-                window._loadProgressTab = loadProgressTab;
-                var container = document.getElementById('progress-container'); container.innerHTML = '<div class="loading">Загрузка осей...</div>';
-                var { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
-                if (!blocks?.length) { container.innerHTML = '<div class="empty-state">Нет блоков</div>'; return; }
-                var { data: axes } = await supabase.from('axes').select('*').in('block_id', blocks.map(function(b) { return b.id; })).order('name');
-                if (!axes?.length) { container.innerHTML = '<div class="info-card"><p>Нет осей.</p><button class="btn-primary" id="create-axis-btn">➕ Создать ось</button></div>'; document.getElementById('create-axis-btn').addEventListener('click', window.openCreateAxis); return; }
-                var html = '';
-                for (var i = 0; i < axes.length; i++) {
-                    var axis = axes[i]; var aId = axis.id; var aName = axis.name;
-                    var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id', aId);
-                    var brigades = [...new Set((stages||[]).map(function(s) { return s.brigade_id; }).filter(Boolean))];
-                    var totalProgress = stages?.length ? Math.round(stages.reduce(function(s,st) { return s + (st.progress||0); }, 0) / stages.length) : 0;
-                    var minStart = stages?.length ? stages.reduce(function(min,st) { return st.plan_start && (!min || st.plan_start < min) ? st.plan_start : min; }, null) : null;
-                    var maxEnd = stages?.length ? stages.reduce(function(max,st) { return st.plan_end && (!max || st.plan_end > max) ? st.plan_end : max; }, null) : null;
-                    var statusMap = { in_progress:'🔨 В работе', no_readiness:'⏳ Нет стройготовности', no_brigade:'👷 Нет бригады', completed:'✅ Завершена', paused:'⏸️ Пауза' };
-                    html += '<div class="axis-card"><div class="axis-header"><span class="axis-name">🔵 Ось '+aName+'</span><span class="status-badge-sm status-'+(axis.status||'no_brigade')+'-sm">'+(statusMap[axis.status]||axis.status)+'</span></div><div class="axis-dates">📅 '+window.formatDateShort(minStart)+' — '+window.formatDateShort(maxEnd)+' | 📐 '+(axis.total_area||0)+' м² | 👷 Бригад: '+brigades.length+'</div><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:'+totalProgress+'%"></div></div><span style="font-size:11px">'+totalProgress+'%</span></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn-secondary open-axis-btn" data-id="'+aId+'">👁️ Открыть ГПР</button><button class="btn-small btn-edit edit-axis-btn" data-id="'+aId+'">✏️</button><button class="btn-small btn-delete delete-axis-btn" data-id="'+aId+'" data-name="'+escapeHtml(aName)+'">🗑️</button></div></div>';
-                }
-                html += '<button class="btn-primary" id="create-axis-btn2" style="margin-top:8px">➕ Добавить ось</button>';
-                container.innerHTML = html;
-                container.querySelectorAll('.open-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.openAxisDetailPage(btn.dataset.id); }); });
-                container.querySelectorAll('.edit-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.openEditAxis(btn.dataset.id); }); });
-                container.querySelectorAll('.delete-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.deleteAxisConfirm(btn.dataset.id, btn.dataset.name); }); });
-                var createBtn2 = document.getElementById('create-axis-btn2'); if (createBtn2) createBtn2.addEventListener('click', window.openCreateAxis);
-            }
-            window._loadProgressTab = loadProgressTab;
-
-            window.openCreateAxis = function() {
-                var html = '<div class="form-group"><label>Название оси *</label><input type="text" id="new-axis-name" placeholder="1-10"></div><div class="row-2"><div class="form-group"><label>Общая площадь (м²)</label><input type="number" id="new-axis-area" step="0.01"></div><div class="form-group"><label>Статус</label><select id="new-axis-status"><option value="no_brigade">👷 Нет бригады</option><option value="no_readiness">⏳ Нет стройготовности</option><option value="in_progress">🔨 В работе</option></select></div></div><div id="brigades-container"></div><button class="btn-secondary" id="add-brigade-block-btn" style="width:100%;margin:10px 0">➕ Добавить бригаду</button>';
-                document.getElementById('form-modal-title').textContent = '➕ Создать ось';
-                document.getElementById('form-modal-content').innerHTML = html; document.getElementById('form-modal').classList.remove('hidden');
-                document.getElementById('add-brigade-block-btn').addEventListener('click', window.addBrigadeBlock);
-                window.addBrigadeBlock();
-                var saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Создать ось с ГПР';
-                saveBtn.addEventListener('click', async function() {
-                    var name = document.getElementById('new-axis-name').value; var area = parseFloat(document.getElementById('new-axis-area').value)||0; var status = document.getElementById('new-axis-status').value;
-                    if (!name) { alert('Введите название оси'); return; }
-                    var { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
-                    if (!blocks?.length) { alert('Нет блоков'); return; }
-                    var { data: axis } = await supabase.from('axes').insert({ block_id: blocks[0].id, name: name, total_area: area, status: status }).select('id').single();
-                    var brigadeBlocks = document.querySelectorAll('.brigade-block'); var minStart=null, maxEnd=null;
-                    for (const block of brigadeBlocks) { var brigadeId=block.querySelector('.brigade-select').value; var subAxisName=block.querySelector('.subaxis-name-input').value||''; var stageRows=block.querySelectorAll('.stage-row');
-                        for (const row of stageRows) { var stageId=row.querySelector('.stage-select').value; var vol=parseFloat(row.querySelector('.stage-volume').value)||0; var price=parseFloat(row.querySelector('.stage-price').value)||0; var start=row.querySelector('.stage-start').value; var end=row.querySelector('.stage-end').value;
-                            if (stageId&&vol>0) { if(start&&(!minStart||start<minStart))minStart=start; if(end&&(!maxEnd||end>maxEnd))maxEnd=end; await supabase.from('axis_work_stages').insert({axis_id:axis.id,brigade_id:brigadeId||null,sub_axis_name:subAxisName,stage_id:parseInt(stageId),volume:vol,unit:'м²',price_per_unit:price,total_cost:vol*price,plan_start:start||null,plan_end:end||null,progress:0,status:'pending',created_by:currentUser?.id}); } } }
-                    if (minStart||maxEnd) await supabase.from('axes').update({plan_start:minStart,plan_end:maxEnd}).eq('id',axis.id);
-                    await supabase.from('change_history').insert({project_id:currentProjectId,entity_type:'axis',entity_id:axis.id,action:'create_axis',comment:'Ось создана: '+name,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name});
-                    document.getElementById('form-modal').classList.add('hidden'); loadProgressTab(); alert('✅ Ось создана!');
-                });
-                document.getElementById('form-modal-content').appendChild(saveBtn);
-            };
-            window.addBrigadeBlock = function() { var container = document.getElementById('brigades-container'); var block = document.createElement('div'); block.className = 'brigade-block'; block.style.cssText = 'background:#F8FAFC;border-radius:14px;padding:14px;margin:10px 0;border:1px solid #E2E8F0'; block.innerHTML = '<div class="form-group"><label>👷 Бригада</label><select class="brigade-select">'+allBrigades.map(function(b){return '<option value="'+b.id+'">'+b.name+' ('+(b.foreman_name||'')+')</option>';}).join('')+'</select></div><div class="form-group"><label>📍 Подось</label><input type="text" class="subaxis-name-input" placeholder="1-5"></div><div class="stages-rows"></div><button class="btn-add add-stage-btn" style="margin-top:6px">+ Добавить этап</button>'; container.appendChild(block); block.querySelector('.add-stage-btn').addEventListener('click', function() { window.addStageRow(block.querySelector('.stages-rows')); }); window.addStageRow(block.querySelector('.stages-rows')); };
-            window.addStageRow = function(container) { var row = document.createElement('div'); row.className = 'stage-row'; row.style.cssText = 'display:flex;gap:6px;margin:6px 0;align-items:center;flex-wrap:wrap'; row.innerHTML = '<select class="stage-select" style="flex:2;min-width:110px">'+allWorkStages.map(function(s){return '<option value="'+s.id+'">'+s.name+'</option>';}).join('')+'</select><input type="number" class="stage-volume" placeholder="м²" style="width:65px" step="0.01"><input type="number" class="stage-price" placeholder="₸/м²" style="width:75px" step="0.01"><input type="date" class="stage-start" style="width:125px"><input type="date" class="stage-end" style="width:125px"><button class="btn-delete" onclick="this.parentElement.remove()" style="width:28px;height:28px">✕</button>'; container.appendChild(row); };
-            window.openEditAxis = async function(axisId) { const { data: axis } = await supabase.from('axes').select('*').eq('id',axisId).single(); if(!axis) return; document.getElementById('edit-modal-title').textContent = '✏️ Редактировать ось '+axis.name; document.getElementById('edit-modal-content').innerHTML = '<div class="form-group"><label>Название</label><input type="text" id="edit-axis-name" value="'+axis.name+'"></div><div class="form-group"><label>Площадь</label><input type="number" id="edit-axis-area" value="'+(axis.total_area||0)+'"></div><div class="form-group"><label>Статус</label><select id="edit-axis-status"><option value="in_progress" '+(axis.status==='in_progress'?'selected':'')+'>🔨 В работе</option><option value="no_readiness" '+(axis.status==='no_readiness'?'selected':'')+'>⏳ Нет стройготовности</option><option value="no_brigade" '+(axis.status==='no_brigade'?'selected':'')+'>👷 Нет бригады</option><option value="completed" '+(axis.status==='completed'?'selected':'')+'>✅ Завершена</option><option value="paused" '+(axis.status==='paused'?'selected':'')+'>⏸️ Пауза</option></select></div>'; document.getElementById('save-edit-btn').onclick = async function() { await supabase.from('axes').update({name:document.getElementById('edit-axis-name').value,total_area:parseFloat(document.getElementById('edit-axis-area').value)||0,status:document.getElementById('edit-axis-status').value}).eq('id',axisId); document.getElementById('edit-modal').classList.add('hidden'); loadProgressTab(); }; document.getElementById('edit-modal').classList.remove('hidden'); };
-            window.deleteAxisConfirm = function(axisId, axisName) { if(confirm('⚠️ Удалить ось '+axisName+'?')){ supabase.from('axis_work_stages').delete().eq('axis_id',axisId).then(function(){supabase.from('axes').delete().eq('id',axisId).then(function(){loadProgressTab();});}); } };
-
-            window.openAxisDetailPage = async function(axisId) {
-                currentAxisId = axisId;
-                const { data: axis } = await supabase.from('axes').select('*').eq('id', axisId).single();
-                const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name, foreman_name), work_stages(name)').eq('axis_id', axisId).order('plan_start');
-                if (!axis) return;
-                const brigades = [...new Set((stages||[]).map(function(s) { return s.brigade_id; }).filter(Boolean))];
-                const totalProgress = stages?.length ? Math.round(stages.reduce(function(s,st) { return s + (st.progress||0); }, 0) / stages.length) : 0;
-                const statusMap = { in_progress:'🔨 В работе', no_readiness:'⏳ Нет стройготовности', no_brigade:'👷 Нет бригады', completed:'✅ Завершена', paused:'⏸️ Пауза' };
-                var pageHtml = '<div style="max-width:600px;margin:0 auto"><button class="back-btn" id="close-axis-btn">← Назад</button><div class="info-card"><h3>📊 ГПР — Ось '+axis.name+'</h3><span class="status-badge-sm status-'+(axis.status||'no_brigade')+'-sm">'+(statusMap[axis.status]||axis.status)+'</span><p>📅 '+window.formatDateShort(axis.plan_start)+' — '+window.formatDateShort(axis.plan_end)+' | 📐 '+(axis.total_area||0)+' м²</p><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:'+totalProgress+'%"></div></div><span>'+totalProgress+'%</span></div></div>';
-                for (var b = 0; b < brigades.length; b++) {
-                    var brigadeId = brigades[b];
-                    var bs = (stages||[]).filter(function(s) { return s.brigade_id === brigadeId; }); var brigade = bs[0]?.brigades; var subAxisName = bs[0]?.sub_axis_name || '';
-                    var brProgress = Math.round(bs.reduce(function(s,st) { return s + (st.progress||0); }, 0) / bs.length);
-                    var allCompleted = bs.every(function(s) { return (s.progress||0) >= 100; });
-                    pageHtml += '<div class="brigade-section"><div class="brigade-header"><span class="brigade-name">👷 '+(brigade?.name||'Бригада')+'</span><span class="status-badge-sm '+(allCompleted?'status-completed-sm':'status-in_progress-sm')+'">'+(allCompleted?'✅ Завершена':'⚙️ В работе')+' '+brProgress+'%</span></div>'+(subAxisName?'<p>📍 '+subAxisName+'</p>':'')+'<table class="work-table"><thead><tr><th>Этап</th><th>м²</th><th>Цена</th><th>Сумма</th><th>%</th><th>📅</th></tr></thead><tbody>'+bs.map(function(ws) { return '<tr><td>'+(ws.work_stages?.name||'—')+'</td><td class="text-right">'+(ws.volume||0)+'</td><td class="text-right">'+(ws.price_per_unit||0)+' ₸</td><td class="text-right">'+((ws.total_cost||0).toLocaleString())+' ₸</td><td><input type="number" class="progress-input" value="'+(ws.progress||0)+'" min="0" max="100" data-sid="'+ws.id+'" data-aid="'+axisId+'">%</td><td style="font-size:10px">'+window.formatDateShort(ws.plan_start)+'<br>'+window.formatDateShort(ws.plan_end)+'</td></tr>'; }).join('')+'</tbody></table><div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn-secondary action-menu-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" data-subaxis="'+escapeHtml(subAxisName)+'">⋯ Действия</button><button class="btn-small btn-edit edit-subaxis-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'">✏️</button><button class="btn-small btn-delete delete-subaxis-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" data-name="'+escapeHtml(brigade?.name||'бригаду')+'">🗑️</button><button class="btn-small btn-add add-stage-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" data-subaxis="'+escapeHtml(subAxisName)+'">+</button></div></div>';
-                }
-                pageHtml += '<button class="btn-primary add-brigade-btn" data-axis="'+axisId+'" style="margin-top:8px">➕ Добавить бригаду</button></div>';
-                document.getElementById('axis-detail-page').innerHTML = pageHtml;
-                document.getElementById('axis-detail-page').classList.remove('hidden');
-                var page = document.getElementById('axis-detail-page');
-                page.querySelector('#close-axis-btn').addEventListener('click', closeAxisDetailPage);
-                page.querySelectorAll('.action-menu-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.openActionMenu(btn.dataset.axis, btn.dataset.brigade, btn.dataset.subaxis); }); });
-                page.querySelectorAll('.edit-subaxis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.editSubAxis(btn.dataset.axis, btn.dataset.brigade); }); });
-                page.querySelectorAll('.delete-subaxis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.deleteSubAxisConfirm(btn.dataset.axis, btn.dataset.brigade, btn.dataset.name); }); });
-                page.querySelectorAll('.add-stage-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.addStageToBrigade(btn.dataset.axis, btn.dataset.brigade, btn.dataset.subaxis); }); });
-                page.querySelectorAll('.add-brigade-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.addBrigadeToAxis(btn.dataset.axis); }); });
-                page.querySelectorAll('.progress-input').forEach(function(inp) { inp.addEventListener('change', function() { window.updateStageProgress(this.dataset.sid, parseInt(this.value)||0, this.dataset.aid); }); });
-            };
-
-            window.updateStageProgress = async function(stageId, value, axisId) { const p = Math.max(0, Math.min(100, value)); const s = p >= 100 ? 'completed' : p > 0 ? 'in_progress' : 'pending'; await supabase.from('axis_work_stages').update({progress:p,status:s}).eq('id',stageId); window.openAxisDetailPage(axisId); };
-            window.openActionMenu = function(axisId, brigadeId, subAxisName) { window.showActionMenu([ { label: '⏰ Сдвиг ГПР', action: function() { closeActionMenu(); window.openShiftGPRForm(axisId, brigadeId); } }, { label: '📋 Сдать Наряд', action: function() { closeActionMenu(); window.openWorkOrderForm(axisId, brigadeId); } }, { label: '👷 Заменить бригаду', action: function() { closeActionMenu(); window.openChangeBrigadeForm(axisId, brigadeId); } }, { label: '✉️ Письмо заказчику', action: function() { closeActionMenu(); window.openLetterFormAction(axisId, brigadeId); } }, { label: '💰 Аванс', action: function() { closeActionMenu(); window.openAdvanceForm(axisId, brigadeId); } }, { label: '📝 Задача', action: function() { closeActionMenu(); window.openTaskForm(axisId, brigadeId); } } ]); };
-            window.showActionMenu = function(items) { const menu = document.getElementById('action-menu'); const overlay = document.getElementById('action-overlay'); menu.innerHTML = items.map(function(i) { return '<div class="action-item">'+i.label+'</div>'; }).join(''); overlay.classList.remove('hidden'); menu.classList.remove('hidden'); menu.querySelectorAll('.action-item').forEach(function(item, idx) { item.addEventListener('click', function() { items[idx].action(); }); }); };
-
-            // ЗАГЛУШКА НА ПИСЬМО ЗАКАЗЧИКУ
-            window.openLetterFormAction = function(axisId, brigadeId) {
-                alert('✉️ Функция письма заказчику временно недоступна.\n\nПожалуйста, используйте кнопку «⏰ Сдвиг ГПР» с причиной «Заказчик» — письмо создастся автоматически.');
-            };
-
-            window.openShiftGPRForm = async function(axisId, brigadeId) {
-                var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
-                if(!stages||!stages.length){alert('Нет этапов');return;}
-                var brigade=stages[0]?.brigades?.name||'Бригада';
-                var currentEnd=stages.reduce(function(max,s){return s.plan_end&&(!max||s.plan_end>max)?s.plan_end:max;},null);
-                var html='<div class="form-group"><label>Бригада</label><input value="'+brigade+'" disabled></div><div class="form-group"><label>Текущая дата</label><input value="'+window.formatDate(currentEnd)+'" disabled></div><div class="form-group"><label>Новая дата *</label><input type="date" id="shift-new-date" value="'+(currentEnd||'')+'"></div><div class="form-group"><label>Причина *</label><select id="shift-reason"><option value="customer">Заказчик</option><option value="lamgroup">LamGroup</option><option value="contractor">Монтажник</option></select></div><div class="form-group"><label>Описание</label><textarea id="shift-desc" rows="3"></textarea></div>';
-                document.getElementById('form-modal-title').textContent='⏰ Сдвиг ГПР';
-                document.getElementById('form-modal-content').innerHTML=html;document.getElementById('form-modal').classList.remove('hidden');
-                var saveBtn=document.createElement('button');saveBtn.className='btn-primary';saveBtn.textContent='Сохранить';
-                saveBtn.addEventListener('click',async function(){
-                    var newDate=document.getElementById('shift-new-date').value;var reason=document.getElementById('shift-reason').value;var desc=document.getElementById('shift-desc').value;
-                    if(!newDate){alert('Укажите дату');return;}
-                    for(var i=0;i<stages.length;i++){await supabase.from('axis_work_stages').update({plan_end:newDate}).eq('id',stages[i].id);}
-                    await supabase.from('axes').update({plan_end:newDate}).eq('id',axisId);
-                    await supabase.from('change_history').insert({project_id:currentProjectId,entity_type:'axis',entity_id:axisId,action:'shift_gpr',comment:'Сдвиг: '+reason+'. '+desc,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name});
-                    if(reason==='customer'){
-                        var letterNumber = await window.getNextLetterNumber();
-                        await supabase.from('letters').insert({project_id:currentProjectId,axis_id:axisId,letter_number_full:letterNumber,delay_reason:'customer',delay_description:desc,delay_days:Math.ceil((new Date(newDate)-new Date(currentEnd))/(1000*60*60*24)),new_end_date:newDate,status:'sent_to_office',sent_to_office:true,created_by:currentUser?.id,created_by_name:currentUser?.full_name});
-                        await supabase.from('tasks').insert({project_id:currentProjectId,type:'letter',title:'Письмо №'+letterNumber+': сдвиг ГПР',description:desc,status:'pending',priority:'high',created_by:currentUser?.id});
-                        alert('✅ Срок сдвинут. Письмо №'+letterNumber+' создано в задачах.');
-                    }else{alert('✅ Срок изменён');}
-                    document.getElementById('form-modal').classList.add('hidden');
-                    if(document.getElementById('axis-detail-page').classList.contains('hidden'))loadProgressTab();else window.openAxisDetailPage(currentAxisId);
-                });
-                document.getElementById('form-modal-content').appendChild(saveBtn);
-            };
-
-            window.openWorkOrderForm = async function(axisId, brigadeId) {
-                var { data: axis } = await supabase.from('axes').select('*').eq('id',axisId).single();
-                var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name,foreman_name)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
-                if(!stages||!stages.length){alert('Нет этапов');return;}
-                var brigade=stages[0]?.brigades;var totalVolume=stages.reduce(function(s,st){return s+(st.volume||0);},0);
-                var subName=stages[0]?.sub_axis_name||'';
-                var html='<div class="form-group"><label>Бригада</label><input value="'+(brigade?.name||'')+' ('+(brigade?.foreman_name||'')+')" disabled></div><div class="form-group"><label>Ось / Подось</label><input value="'+(axis?.name||'')+' / '+subName+'" disabled></div><div class="row-2"><div class="form-group"><label>Общий объём</label><input value="'+totalVolume+'" disabled></div><div class="form-group"><label>Факт. объём *</label><input type="number" id="narad-fact" step="0.01" value="'+totalVolume+'"></div></div><div class="form-group"><label>Цена за м²</label><input type="number" id="narad-price" step="0.01" value="'+(stages[0]?.price_per_unit||0)+'"></div><div class="form-group"><label><input type="checkbox" id="narad-confirm"> ✅ Подтверждаю</label></div>';
-                document.getElementById('form-modal-title').textContent='📋 Сдать Наряд';
-                document.getElementById('form-modal-content').innerHTML=html;document.getElementById('form-modal').classList.remove('hidden');
-                var saveBtn=document.createElement('button');saveBtn.className='btn-primary';saveBtn.textContent='Сформировать';
-                saveBtn.addEventListener('click',async function(){
-                    if(!document.getElementById('narad-confirm').checked){alert('Подтвердите');return;}
-                    var fact=parseFloat(document.getElementById('narad-fact').value)||0;var price=parseFloat(document.getElementById('narad-price').value)||0;
-                    await supabase.from('work_orders').insert({project_id:currentProjectId,axis_name:(axis?.name||'')+' / '+subName,brigade_id:brigadeId,work_type:'Работы',volume:totalVolume,actual_volume:fact,price:price,total_amount:fact*price,created_by:currentUser?.id,status:'pending_foreman'});
-                    await supabase.from('tasks').insert({project_id:currentProjectId,type:'order',title:'Наряд: '+(brigade?.name||'')+' — '+subName,description:'Сумма: '+(fact*price).toLocaleString()+' ₸',status:'pending',priority:'high',created_by:currentUser?.id});
-                    await supabase.from('change_history').insert({project_id:currentProjectId,entity_type:'axis',entity_id:axisId,action:'work_order',comment:'Наряд сдан: '+(fact*price).toLocaleString()+' ₸',changed_by:currentUser?.id,changed_by_name:currentUser?.full_name});
-                    alert('✅ Наряд создан');document.getElementById('form-modal').classList.add('hidden');
-                });
-                document.getElementById('form-modal-content').appendChild(saveBtn);
-            };
-
-            window.openChangeBrigadeForm = async function(axisId, brigadeId) {
-                var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
-                if(!stages||!stages.length){alert('Нет этапов');return;}
-                var oldBrigade=stages[0]?.brigades?.name||'Бригада';
-                var totalProgress=Math.round(stages.reduce(function(s,st){return s+(st.progress||0);},0)/stages.length);
-                var html='<div class="form-group"><label>Текущая</label><input value="'+oldBrigade+'" disabled></div><div class="form-group"><label>Выполнено</label><input value="'+totalProgress+'%" disabled></div><div class="form-group"><label>Новая бригада *</label><select id="change-brigade-select">';
-                allBrigades.forEach(function(b){if(b.id!==brigadeId)html+='<option value="'+b.id+'">'+b.name+' ('+(b.foreman_name||'')+')</option>';});
-                html+='</select></div><div class="form-group"><label>Комментарий</label><textarea id="change-brigade-comment" rows="2"></textarea></div>';
-                document.getElementById('form-modal-title').textContent='👷 Заменить бригаду';
-                document.getElementById('form-modal-content').innerHTML=html;document.getElementById('form-modal').classList.remove('hidden');
-                var saveBtn=document.createElement('button');saveBtn.className='btn-primary';saveBtn.textContent='Заменить';
-                saveBtn.addEventListener('click',async function(){
-                    var newId=document.getElementById('change-brigade-select').value;var comment=document.getElementById('change-brigade-comment').value;
-                    if(!newId){alert('Выберите бригаду');return;}
-                    for(var i=0;i<stages.length;i++){await supabase.from('axis_work_stages').update({brigade_id:newId}).eq('id',stages[i].id);}
-                    await supabase.from('change_history').insert({project_id:currentProjectId,entity_type:'axis',entity_id:axisId,action:'change_brigade',old_value:oldBrigade,new_value:document.getElementById('change-brigade-select').selectedOptions[0]?.text||'',comment:comment,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name});
-                    alert('✅ Бригада заменена');document.getElementById('form-modal').classList.add('hidden');
-                    window.openAxisDetailPage(currentAxisId);
-                });
-                document.getElementById('form-modal-content').appendChild(saveBtn);
-            };
-
-            window.openAdvanceForm = async function(axisId, brigadeId) {
-                var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
-                if(!stages||!stages.length){alert('Нет этапов');return;}
-                var brigade=stages[0]?.brigades;var totalCost=stages.reduce(function(s,st){return s+(st.total_cost||0);},0);
-                var subName=stages[0]?.sub_axis_name||'';
-                var { data: prev } = await supabase.from('advances').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId);
-                var paid=(prev||[]).reduce(function(s,a){return s+(a.amount||0);},0);var rem=totalCost-paid;
-                var html='<div class="form-group"><label>Бригада</label><input value="'+(brigade?.name||'')+'" disabled></div><div class="form-group"><label>Подось</label><input value="'+subName+'" disabled></div><div class="form-group"><label>Сумма договора</label><input value="'+totalCost.toLocaleString()+' ₸" disabled></div><div class="form-group"><label>Выплачено</label><input value="'+paid.toLocaleString()+' ₸" disabled></div><div class="form-group"><label>Остаток</label><input value="'+Math.max(0,rem).toLocaleString()+' ₸" disabled></div><div class="form-group"><label>Сумма запроса *</label><input type="number" id="advance-amount" step="0.01" max="'+Math.max(0,rem)+'"></div><div class="form-group"><label><input type="checkbox" id="advance-confirm"> ✅ Подтверждаю</label></div>';
-                document.getElementById('form-modal-title').textContent='💰 Аванс';
-                document.getElementById('form-modal-content').innerHTML=html;document.getElementById('form-modal').classList.remove('hidden');
-                var saveBtn=document.createElement('button');saveBtn.className='btn-primary';saveBtn.textContent='Сформировать';
-                saveBtn.addEventListener('click',async function(){
-                    if(!document.getElementById('advance-confirm').checked){alert('Подтвердите');return;}
-                    var amount=parseFloat(document.getElementById('advance-amount').value)||0;
-                    if(amount<=0||amount>rem){alert('Некорректная сумма');return;}
-                    await supabase.from('advances').insert({project_id:currentProjectId,axis_id:axisId,brigade_id:brigadeId,amount:amount,previous_payments:paid,total_contract:totalCost,remaining:rem-amount,created_by:currentUser?.id,created_by_name:currentUser?.full_name,status:'pending'});
-                    await supabase.from('payment_plan').insert({project_id:currentProjectId,brigade_id:brigadeId,type:'advance',amount:amount,status:'pending'});
-                    alert('✅ Аванс создан');document.getElementById('form-modal').classList.add('hidden');
-                });
-                document.getElementById('form-modal-content').appendChild(saveBtn);
-            };
-
-            window.openTaskForm = async function(axisId, brigadeId) {
-                var { data: axis } = await supabase.from('axes').select('*').eq('id',axisId).single();
-                var { data: users } = await supabase.from('users').select('id, full_name').in('role',['manager','worker']);
-                var html='<div class="form-group"><label>Ось</label><input value="'+(axis?.name||'')+'" disabled></div><div class="form-group"><label>Тема *</label><input type="text" id="task-title"></div><div class="form-group"><label>Описание</label><textarea id="task-desc" rows="3"></textarea></div><div class="form-group"><label>Ответственный *</label><select id="task-responsible">'+(users||[]).map(function(u){return '<option value="'+u.id+'">'+u.full_name+'</option>';}).join('')+'</select></div>';
-                document.getElementById('form-modal-title').textContent='📝 Задача';
-                document.getElementById('form-modal-content').innerHTML=html;document.getElementById('form-modal').classList.remove('hidden');
-                var saveBtn=document.createElement('button');saveBtn.className='btn-primary';saveBtn.textContent='Создать';
-                saveBtn.addEventListener('click',async function(){
-                    var title=document.getElementById('task-title').value;var desc=document.getElementById('task-desc').value;
-                    var respId=document.getElementById('task-responsible').value;var respName=document.getElementById('task-responsible').selectedOptions[0]?.text||'';
-                    if(!title||!respId){alert('Заполните поля');return;}
-                    await supabase.from('custom_tasks').insert({project_id:currentProjectId,title:title,description:desc,created_by:currentUser?.id,created_by_name:currentUser?.full_name,responsible_ids:[respId],responsible_names:[respName],status:'pending'});
-                    await supabase.from('tasks').insert({project_id:currentProjectId,type:'task',title:title,description:desc,status:'pending',priority:'medium',created_by:currentUser?.id,responsible_ids:[respId]});
-                    alert('✅ Задача создана');document.getElementById('form-modal').classList.add('hidden');
-                });
-                document.getElementById('form-modal-content').appendChild(saveBtn);
-            };
-
-            window.addBrigadeToAxis = function(axisId) {
-                var html='<div class="form-group"><label>👷 Бригада</label><select id="add-brigade-select">'+allBrigades.map(function(b){return '<option value="'+b.id+'">'+b.name+'</option>';}).join('')+'</select></div><div class="form-group"><label>📍 Подось</label><input type="text" id="add-subaxis-name" placeholder="1-5"></div><div id="add-stages-rows"></div><button class="btn-add" id="add-stage-to-brigade-btn" style="margin-top:6px">+ Этап</button>';
-                document.getElementById('form-modal-title').textContent='➕ Добавить бригаду';
-                document.getElementById('form-modal-content').innerHTML=html;document.getElementById('form-modal').classList.remove('hidden');
-                window.addStageRow(document.getElementById('add-stages-rows'));
-                document.getElementById('add-stage-to-brigade-btn').addEventListener('click',function(){window.addStageRow(document.getElementById('add-stages-rows'));});
-                var saveBtn=document.createElement('button');saveBtn.className='btn-primary';saveBtn.textContent='Добавить';
-                saveBtn.addEventListener('click',async function(){
-                    var brigadeId=document.getElementById('add-brigade-select').value;var subAxisName=document.getElementById('add-subaxis-name').value;
-                    var rows=document.querySelectorAll('#add-stages-rows .stage-row');
-                    for(var i=0;i<rows.length;i++){var row=rows[i];var stageId=row.querySelector('.stage-select').value;var vol=parseFloat(row.querySelector('.stage-volume').value)||0;var price=parseFloat(row.querySelector('.stage-price').value)||0;var start=row.querySelector('.stage-start').value;var end=row.querySelector('.stage-end').value;if(stageId&&vol>0){await supabase.from('axis_work_stages').insert({axis_id:axisId,brigade_id:brigadeId,sub_axis_name:subAxisName,stage_id:parseInt(stageId),volume:vol,unit:'м²',price_per_unit:price,total_cost:vol*price,plan_start:start||null,plan_end:end||null,progress:0,status:'pending',created_by:currentUser?.id});}}
-                    document.getElementById('form-modal').classList.add('hidden');window.openAxisDetailPage(axisId);
-                });
-                document.getElementById('form-modal-content').appendChild(saveBtn);
-            };
-            window.editSubAxis = async function(axisId, brigadeId) { alert('✏️ Редактирование подоси (в разработке)'); };
-            window.deleteSubAxisConfirm = function(axisId, brigadeId, name) { if(confirm('⚠️ Удалить бригаду '+name+'?')){ supabase.from('axis_work_stages').delete().eq('axis_id',axisId).eq('brigade_id',brigadeId).then(function(){window.openAxisDetailPage(axisId);}); } };
-            window.addStageToBrigade = function(axisId, brigadeId, subAxisName) { alert('➕ Добавление этапа (в разработке)'); };
-
-            window.getNextLetterNumber = async function() {
-                var { data, error } = await supabase.rpc('next_letter_number');
-                if (error || !data) {
-                    var { data: lastLetter } = await supabase.from('letters').select('letter_number_full').order('created_at',{ascending:false}).limit(1);
-                    if (lastLetter && lastLetter.length && lastLetter[0].letter_number_full) {
-                        var lastNum = parseInt(lastLetter[0].letter_number_full.replace('-Р',''));
-                        return (lastNum + 1) + '-Р';
+                
+                document.getElementById('add-gpr-btn').addEventListener('click', async () => {
+                    const axis = document.getElementById('gpr-axis').value;
+                    const stage = document.getElementById('gpr-stage').value;
+                    const brigade = document.getElementById('gpr-brigade').value;
+                    const volume = parseFloat(document.getElementById('gpr-volume').value) || 0;
+                    const price = parseFloat(document.getElementById('gpr-price').value) || 0;
+                    
+                    if (!axis || !stage || !brigade) { alert('Заполните обязательные поля'); return; }
+                    
+                    const { error } = await supabase.from('schedule_plan').insert({
+                        axis_id: axis, stage_id: stage, brigade_id: brigade,
+                        volume, price_per_unit: price, total_cost: volume * price,
+                        plan_start: document.getElementById('gpr-start').value,
+                        plan_end: document.getElementById('gpr-end').value,
+                        progress: 0
+                    });
+                    
+                    if (!error) {
+                        showMessage('Работа добавлена!', 'success');
+                        loadGprPlan();
                     }
-                    return '1-Р';
-                }
-                return data + '-Р';
-            };
-// ============================================================
-// ===== МАТЕРИАЛЫ (ПОЛНАЯ ВЕРСИЯ) =====
-var currentMaterialsTab = 'incomes';
-var allMaterialsCache = [];
-var allIncomesCache = [];
-var allWaybillsCache = [];
-
-async function loadMaterialsTab() {
-    var container = document.getElementById('materials-container');
-    container.innerHTML = '<div class="loading">Загрузка материалов...</div>';
-
-    var [matRes, incRes, wbRes] = await Promise.all([
-        supabase.from('material_catalog').select('*').eq('project_id', currentProjectId).order('name'),
-        supabase.from('material_incomes').select('*, material_income_items(*)').eq('project_id', currentProjectId).order('created_at', { ascending: false }),
-        supabase.from('material_waybills').select('*, material_waybill_items(*), brigades(name)').eq('project_id', currentProjectId).order('created_at', { ascending: false })
-    ]);
-
-    allMaterialsCache = matRes.data || [];
-    allIncomesCache = incRes.data || [];
-    allWaybillsCache = wbRes.data || [];
-
-    renderMaterialsTab();
-}
-
-function renderMaterialsTab() {
-    var container = document.getElementById('materials-container');
-    var html = '';
-
-    html += '<div class="tabs-wrapper"><div class="tabs" style="gap:4px">';
-    html += '<button class="tab '+(currentMaterialsTab==='incomes'?'active':'')+'" onclick="switchMaterialsTab(\'incomes\')">📋 Накладные</button>';
-    html += '<button class="tab '+(currentMaterialsTab==='catalog'?'active':'')+'" onclick="switchMaterialsTab(\'catalog\')">📦 Справочник</button>';
-    html += '<button class="tab '+(currentMaterialsTab==='stock'?'active':'')+'" onclick="switchMaterialsTab(\'stock\')">📊 Остатки</button>';
-    html += '</div></div>';
-
-    html += '<div style="display:flex;gap:8px;margin-bottom:16px">';
-    html += '<button class="btn-primary" id="add-income-btn" style="flex:1">➕ Создать приход</button>';
-    html += '<button class="btn-primary" id="issue-material-btn" style="flex:1;background:linear-gradient(135deg,#F59E0B,#F97316)">📤 Выдать материал</button>';
-    html += '</div>';
-
-    if (currentMaterialsTab === 'incomes') {
-        html += renderIncomesTab();
-    } else if (currentMaterialsTab === 'catalog') {
-        html += renderCatalogTab();
-    } else if (currentMaterialsTab === 'stock') {
-        html += renderStockTab();
-    }
-
-    container.innerHTML = html;
-
-    var addIncomeBtn = document.getElementById('add-income-btn');
-    var issueBtn = document.getElementById('issue-material-btn');
-    if (addIncomeBtn) addIncomeBtn.addEventListener('click', openAddIncomeForm);
-    if (issueBtn) issueBtn.addEventListener('click', openIssueMaterialForm);
-
-    container.querySelectorAll('.view-income-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() { viewIncome(btn.dataset.id); });
-    });
-    container.querySelectorAll('.view-waybill-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() { viewWaybill(btn.dataset.id); });
-    });
-    container.querySelectorAll('.print-waybill-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() { printWaybill(btn.dataset.id); });
-    });
-}
-
-window.switchMaterialsTab = function(tabName) {
-    currentMaterialsTab = tabName;
-    renderMaterialsTab();
-};
-
-function renderIncomesTab() {
-    var html = '';
-
-    html += '<div class="info-card"><h3 style="margin-bottom:16px">📋 Приходы</h3>';
-    if (!allIncomesCache.length) {
-        html += '<p style="color:#64748B">Нет приходов</p>';
-    } else {
-        allIncomesCache.forEach(function(inc) {
-            var items = inc.material_income_items || [];
-            var itemsText = items.map(function(i) { return '• '+i.material_name+' — '+i.quantity+' '+i.unit; }).join('<br>');
-            html += '<div class="gpr-item">';
-            html += '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>📄 '+(inc.income_number||'Приход')+'</strong><span style="font-size:12px;color:#64748B">'+new Date(inc.income_date).toLocaleDateString('ru-RU')+'</span></div>';
-            html += '<div style="font-size:13px;color:#64748B">Поставщик: '+(inc.supplier_name||'—')+' | Накл: '+(inc.supplier_invoice_number||'—')+'</div>';
-            if (inc.supplier_invoice_name) html += '<div style="font-size:12px;color:#64748B">📎 '+inc.supplier_invoice_name+'</div>';
-            html += '<div style="font-size:13px;margin-top:4px">'+itemsText+'</div>';
-            html += '<button class="btn-small btn-add view-income-btn" data-id="'+inc.id+'" style="margin-top:6px">👁️ Просмотр</button>';
-            html += '</div>';
-        });
-    }
-    html += '</div>';
-
-    html += '<div class="info-card"><h3 style="margin-bottom:16px">📤 Выдачи</h3>';
-    if (!allWaybillsCache.length) {
-        html += '<p style="color:#64748B">Нет выдач</p>';
-    } else {
-        allWaybillsCache.forEach(function(w) {
-            var items = w.material_waybill_items || [];
-            var itemsText = items.map(function(i) { return '• '+i.material_name+' — '+i.quantity+' '+i.unit; }).join('<br>');
-            html += '<div class="gpr-item">';
-            html += '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>📄 '+w.waybill_number+'</strong><span style="font-size:12px;color:#64748B">'+new Date(w.waybill_date).toLocaleDateString('ru-RU')+'</span></div>';
-            html += '<div style="font-size:13px;color:#64748B">👷 '+(w.brigades?.name||'—')+' | 📍 '+(w.sub_axis_name||'—')+'</div>';
-            html += '<div style="font-size:13px;margin-top:4px">'+itemsText+'</div>';
-            if (w.comment) html += '<div style="font-size:12px;color:#64748B;margin-top:4px">📝 '+w.comment+'</div>';
-            html += '<div style="display:flex;gap:6px;margin-top:6px"><button class="btn-small btn-add view-waybill-btn" data-id="'+w.id+'">👁️</button><button class="btn-small btn-pdf print-waybill-btn" data-id="'+w.id+'">🖨️</button></div>';
-            html += '</div>';
-        });
-    }
-    html += '</div>';
-
-    return html;
-}
-
-function renderCatalogTab() {
-    var html = '<div class="info-card"><h3 style="margin-bottom:16px">📦 Справочник материалов</h3>';
-    if (!allMaterialsCache.length) {
-        html += '<p style="color:#64748B">Нет материалов</p>';
-    } else {
-        allMaterialsCache.forEach(function(m) {
-            html += '<div class="gpr-item">';
-            html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><strong>'+m.name+'</strong></div>';
-            html += '<div style="font-size:13px;color:#64748B">📐 '+m.unit+' | Всего: '+m.total_quantity+' | Доступно: '+m.available_quantity+'</div>';
-            html += '</div>';
-        });
-    }
-    html += '</div>';
-    return html;
-}
-
-function renderStockTab() {
-    var html = '<div class="info-card"><h3 style="margin-bottom:16px">📊 Остатки материалов</h3>';
-    if (!allMaterialsCache.length) {
-        html += '<p style="color:#64748B">Нет материалов</p>';
-    } else {
-        html += '<div style="overflow-x:auto"><table class="work-table"><thead><tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Всего</th><th>Доступно</th><th>%</th></tr></thead><tbody>';
-        allMaterialsCache.forEach(function(m, idx) {
-            var pct = m.total_quantity > 0 ? Math.round((m.available_quantity / m.total_quantity) * 100) : 0;
-            html += '<tr><td class="text-right">'+(idx+1)+'</td><td><strong>'+m.name+'</strong></td><td>'+m.unit+'</td><td class="text-right">'+m.total_quantity+'</td><td class="text-right">'+m.available_quantity+'</td><td class="text-right">'+pct+'%</td></tr>';
-        });
-        html += '</tbody></table></div>';
-        html += '<button class="btn-pdf" id="export-stock-btn" style="width:100%;margin-top:12px">📥 Скачать остатки (Excel)</button>';
-    }
-    html += '</div>';
-
-    setTimeout(function() {
-        var exportBtn = document.getElementById('export-stock-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', function() {
-                var data = allMaterialsCache.map(function(m, idx) {
-                    return { '№': idx+1, 'Наименование': m.name, 'Ед.изм': m.unit, 'Всего': m.total_quantity, 'Доступно': m.available_quantity, '%': m.total_quantity > 0 ? Math.round((m.available_quantity/m.total_quantity)*100) : 0 };
                 });
-                var wb = XLSX.utils.book_new();
-                var ws = XLSX.utils.json_to_sheet(data);
-                XLSX.utils.book_append_sheet(wb, ws, 'Остатки');
-                XLSX.writeFile(wb, 'Остатки_материалов_'+new Date().toISOString().split('T')[0]+'.xlsx');
-            });
-        }
-    }, 100);
-
-    return html;
-}
-
-// ========== ПРИХОД МАТЕРИАЛОВ ==========
-function openAddIncomeForm() {
-    var html = '<div class="form-group"><label>Поставщик</label><input type="text" id="inc-supplier" placeholder="ТОО «СтройМатериалы»"></div>';
-    html += '<div class="row-2"><div class="form-group"><label>№ накладной поставщика</label><input type="text" id="inc-invoice-number" placeholder="1234"></div><div class="form-group"><label>Дата накладной</label><input type="date" id="inc-invoice-date"></div></div>';
-    html += '<div class="form-group"><label>📎 Файл накладной</label><input type="file" id="inc-invoice-file" accept=".pdf,.jpg,.jpeg,.png"></div>';
-    html += '<div id="income-items-container"></div>';
-    html += '<button class="btn-add" id="add-income-item-btn" style="margin-top:8px">+ Добавить материал</button>';
-    html += '<p style="color:#64748B;font-size:12px;margin-top:8px">⚠️ Выберите существующий материал или создайте новый</p>';
-
-    document.getElementById('form-modal-title').textContent = '➕ Создать приход';
-    document.getElementById('form-modal-content').innerHTML = html;
-    document.getElementById('form-modal').classList.remove('hidden');
-
-    addIncomeItemRow();
-    document.getElementById('add-income-item-btn').addEventListener('click', function() { addIncomeItemRow(); });
-
-    var saveBtn = document.createElement('button'); 
-    saveBtn.className = 'btn-primary'; 
-    saveBtn.textContent = 'Сохранить приход';
-    saveBtn.addEventListener('click', async function() {
-        var supplier = document.getElementById('inc-supplier').value.trim();
-        var invoiceNumber = document.getElementById('inc-invoice-number').value.trim();
-        var invoiceDate = document.getElementById('inc-invoice-date').value;
-        var rows = document.querySelectorAll('#income-items-container .income-item-row');
-        var items = [];
-        
-        for (var i = 0; i < rows.length; i++) {
-            var select = rows[i].querySelector('.inc-item-select');
-            var isNew = select.value === '__new__';
-            var name, unit, qty;
-            if (isNew) {
-                name = rows[i].querySelector('.inc-item-new-name').value.trim();
-                unit = rows[i].querySelector('.inc-item-unit').value;
-                qty = parseFloat(rows[i].querySelector('.inc-item-qty').value) || 0;
-            } else {
-                var selectedOption = select.selectedOptions[0];
-                name = selectedOption ? selectedOption.dataset.name : '';
-                unit = selectedOption ? selectedOption.dataset.unit : '';
-                qty = parseFloat(rows[i].querySelector('.inc-item-qty').value) || 0;
-            }
-            if (name && qty > 0) items.push({ name: name, unit: unit, quantity: qty, isNew: isNew });
-        }
-        if (!items.length) { alert('Добавьте хотя бы один материал'); return; }
-
-        var invoiceUrl = null, invoiceName = null;
-        var fileInput = document.getElementById('inc-invoice-file');
-        if (fileInput && fileInput.files[0]) {
-            var file = fileInput.files[0]; 
-            invoiceName = file.name;
-            var fileName = 'incomes/'+currentProjectId+'/'+Date.now()+'_'+file.name;
-            var { error } = await supabase.storage.from('reports').upload(fileName, file);
-            if (!error) { 
-                var { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName); 
-                invoiceUrl = urlData.publicUrl; 
-            }
-        }
-
-        var { data: income, error: incomeError } = await supabase.from('material_incomes').insert({
-            project_id: currentProjectId, 
-            supplier_name: supplier,
-            supplier_invoice_number: invoiceNumber, 
-            supplier_invoice_date: invoiceDate || null,
-            supplier_invoice_url: invoiceUrl, 
-            supplier_invoice_name: invoiceName,
-            created_by: currentUser?.id, 
-            income_date: new Date().toISOString().split('T')[0]
-        }).select('id').single();
-
-        if (incomeError) { alert('Ошибка: ' + incomeError.message); return; }
-
-        for (var i = 0; i < items.length; i++) {
-            await supabase.from('material_income_items').insert({ 
-                income_id: income.id, 
-                material_name: items[i].name, 
-                unit: items[i].unit, 
-                quantity: items[i].quantity 
-            });
-            
-            var { data: existing } = await supabase
-                .from('material_catalog')
-                .select('*')
-                .eq('project_id', currentProjectId)
-                .eq('name', items[i].name)
-                .eq('unit', items[i].unit)
-                .single();
-            
-            if (existing) {
-                await supabase
-                    .from('material_catalog')
-                    .update({
-                        total_quantity: existing.total_quantity + items[i].quantity,
-                        available_quantity: existing.available_quantity + items[i].quantity
-                    })
-                    .eq('id', existing.id);
-            } else {
-                await supabase
-                    .from('material_catalog')
-                    .insert({
-                        project_id: currentProjectId, 
-                        name: items[i].name, 
-                        unit: items[i].unit,
-                        total_quantity: items[i].quantity, 
-                        available_quantity: items[i].quantity,
+                
+                // Add Expense
+                document.getElementById('add-expense-btn').addEventListener('click', async () => {
+                    const name = document.getElementById('exp-name').value.trim();
+                    const category = document.getElementById('exp-category').value;
+                    const amount = parseFloat(document.getElementById('exp-amount').value);
+                    const paymentType = document.getElementById('exp-payment').value;
+                    const status = document.getElementById('exp-status').value;
+                    const supplier = document.getElementById('exp-supplier').value;
+                    const note = document.getElementById('exp-note').value;
+                    
+                    if (!name || !amount || amount <= 0) { alert('Заполните наименование и сумму'); return; }
+                    
+                    const { error } = await supabase.from('expenses').insert({
+                        project_id: currentProjectId,
+                        name: name,
+                        category: category,
+                        amount: amount,
+                        payment_type: paymentType,
+                        payment_status: status,
+                        supplier: supplier || null,
+                        description: note || null,
+                        date: new Date().toISOString().split('T')[0],
                         created_by: currentUser?.id
                     });
-            }
-        }
-
-        var incomeNumber = 'ПР-'+new Date().getFullYear().toString().slice(-2)+'-'+String(income.id).slice(-4);
-        await supabase.from('material_incomes').update({ income_number: incomeNumber }).eq('id', income.id);
-
-        document.getElementById('form-modal').classList.add('hidden');
-        loadMaterialsTab();
-        alert('✅ Приход создан');
-    });
-    document.getElementById('form-modal-content').appendChild(saveBtn);
-}
-
-function addIncomeItemRow() {
-    var container = document.getElementById('income-items-container');
-    var row = document.createElement('div');
-    row.className = 'income-item-row';
-    row.style.cssText = 'display:flex;gap:6px;margin:8px 0;align-items:center;flex-wrap:wrap;padding:8px;background:#F8FAFC;border-radius:10px';
-
-    var selectHtml = '<select class="inc-item-select" style="flex:2;min-width:150px" onchange="onIncomeItemSelect(this)">';
-    selectHtml += '<option value="">🔄 Выберите материал</option>';
-    allMaterialsCache.forEach(function(m) {
-        selectHtml += '<option value="'+m.id+'" data-name="'+m.name+'" data-unit="'+m.unit+'">'+m.name+' ('+m.unit+')</option>';
-    });
-    selectHtml += '<option value="__new__">➕ НОВЫЙ МАТЕРИАЛ</option>';
-    selectHtml += '</select>';
-
-    row.innerHTML = selectHtml +
-        '<input type="text" class="inc-item-new-name" placeholder="Название" style="display:none;flex:2;min-width:120px">' +
-        '<input type="number" class="inc-item-qty" placeholder="Кол-во" style="width:80px" step="0.01">' +
-        '<select class="inc-item-unit" style="width:80px"><option value="м²">м²</option><option value="шт">шт</option><option value="пог.м">пог.м</option><option value="рулон">рулон</option><option value="упак">упаковка</option><option value="кг">кг</option></select>' +
-        '<button class="btn-delete" onclick="this.parentElement.remove()" style="width:28px;height:28px">✕</button>';
-    container.appendChild(row);
-}
-
-window.onIncomeItemSelect = function(selectEl) {
-    var row = selectEl.parentElement;
-    var newNameInput = row.querySelector('.inc-item-new-name');
-    var qtyInput = row.querySelector('.inc-item-qty');
-    var unitSelect = row.querySelector('.inc-item-unit');
-
-    if (selectEl.value === '__new__') {
-        newNameInput.style.display = 'block';
-        qtyInput.value = '';
-        unitSelect.value = 'м²';
-    } else if (selectEl.value) {
-        newNameInput.style.display = 'none';
-        newNameInput.value = '';
-        unitSelect.value = selectEl.selectedOptions[0].dataset.unit || 'м²';
-        qtyInput.focus();
-    } else {
-        newNameInput.style.display = 'none';
-    }
-};
-
-// ========== ВЫДАЧА МАТЕРИАЛА (ПОЛНАЯ ВЕРСИЯ) ==========
-function openIssueMaterialForm() {
-    var html = '<div class="form-group"><label>Бригада *</label><select id="issue-brigade">';
-    html += '<option value="">Выберите бригаду</option>';
-    allBrigades.forEach(function(b) { 
-        html += '<option value="'+b.id+'">'+b.name+' ('+(b.foreman_name||'')+')</option>'; 
-    });
-    html += '</select></div>';
-    html += '<div class="form-group"><label>Ось / Подось *</label><select id="issue-axis">';
-    html += '<option value="">Сначала выберите бригаду</option>';
-    html += '</select></div>';
-    html += '<div id="issue-materials-list"></div>';
-    html += '<div class="form-group" style="margin-top:16px"><label>📝 Комментарий</label><textarea id="issue-comment" rows="2" placeholder="Причина выдачи, примечания..."></textarea></div>';
-    
-    document.getElementById('form-modal-title').textContent = '📤 Выдать материал';
-    document.getElementById('form-modal-content').innerHTML = html;
-    document.getElementById('form-modal').classList.remove('hidden');
-    
-    // Обработчик выбора бригады
-    document.getElementById('issue-brigade').addEventListener('change', async function() {
-        var brigadeId = this.value;
-        var axisSelect = document.getElementById('issue-axis');
-        
-        if (!brigadeId) {
-            axisSelect.innerHTML = '<option value="">Сначала выберите бригаду</option>';
-            return;
-        }
-        
-        axisSelect.innerHTML = '<option value="">Загрузка осей...</option>';
-        
-        // Получаем оси, закреплённые за этой бригадой на данном объекте
-        var { data: stages } = await supabase
-            .from('axis_work_stages')
-            .select('sub_axis_name, axes(name)')
-            .eq('brigade_id', brigadeId);
-        
-        var axesMap = {};
-        
-        // Собираем оси из axis_work_stages
-        if (stages && stages.length) {
-            stages.forEach(function(s) {
-                var axisName = s.sub_axis_name || (s.axes?.name || '');
-                if (axisName && !axesMap[axisName]) {
-                    axesMap[axisName] = true;
-                }
-            });
-        }
-        
-        // Если нет привязанных осей, показываем все оси объекта
-        if (Object.keys(axesMap).length === 0) {
-            var { data: blocks } = await supabase
-                .from('blocks')
-                .select('id')
-                .eq('project_id', currentProjectId);
-            
-            if (blocks && blocks.length) {
-                var blockIds = blocks.map(function(b) { return b.id; });
-                var { data: axes } = await supabase
-                    .from('axes')
-                    .select('name')
-                    .in('block_id', blockIds);
+                    
+                    if (error) { alert('Ошибка: ' + error.message); }
+                    else {
+                        showMessage('Расход добавлен', 'success');
+                        document.getElementById('exp-name').value = '';
+                        document.getElementById('exp-amount').value = '';
+                        document.getElementById('exp-supplier').value = '';
+                        document.getElementById('exp-note').value = '';
+                        loadExpenses();
+                    }
+                });
                 
-                if (axes && axes.length) {
-                    axes.forEach(function(ax) {
-                        if (ax.name && !axesMap[ax.name]) {
-                            axesMap[ax.name] = true;
-                        }
+                // Add Material (без изменений)
+                document.getElementById('add-material-btn').addEventListener('click', async () => {
+                    const supplier = document.getElementById('mat-supplier').value;
+                    const invoice = document.getElementById('mat-invoice').value;
+                    const name = document.getElementById('mat-name').value;
+                    const qty = parseFloat(document.getElementById('mat-qty').value);
+                    const unit = document.getElementById('mat-unit').value;
+                    
+                    if (!name || !qty) { alert('Заполните наименование и количество'); return; }
+                    
+                    const { error } = await supabase.from('materials').insert({
+                        project_id: currentProjectId,
+                        supplier_name: supplier,
+                        invoice_number: invoice,
+                        material_name: name,
+                        quantity: qty,
+                        unit: unit,
+                        created_by: currentUser?.id
                     });
-                }
+                    
+                    if (error) { alert('Ошибка: ' + error.message); }
+                    else {
+                        showMessage('Материал добавлен', 'success');
+                        document.getElementById('mat-name').value = '';
+                        document.getElementById('mat-qty').value = '';
+                        loadMaterials();
+                    }
+                });
+                
+                // Add Checklist Item
+                document.getElementById('add-checklist-btn').addEventListener('click', () => {
+                    modalTitle.textContent = '➕ Добавить пункт чек-листа';
+                    modalBody.innerHTML = `
+                        <div class="form-group"><label>Название пункта *</label><input type="text" id="checklist-item-name" placeholder="Например: Проведён инструктаж по ТБ"></div>
+                        <div class="form-group"><label>Категория</label>
+                            <select id="checklist-item-category">
+                                <option value="customer">📋 Взаимодействие с Заказчиком</option>
+                                <option value="workers">👷 Взаимодействие с Монтажниками</option>
+                                <option value="docs">📄 Документация</option>
+                            </select>
+                        </div>
+                        <button class="btn-primary" id="save-checklist-item">Сохранить</button>
+                    `;
+                    modal.classList.remove('hidden');
+                    document.getElementById('save-checklist-item').addEventListener('click', async () => {
+                        const name = document.getElementById('checklist-item-name').value.trim();
+                        const category = document.getElementById('checklist-item-category').value;
+                        if (!name) { alert('Введите название'); return; }
+                        
+                        await supabase.from('checklists').insert({
+                            project_id: currentProjectId,
+                            item_text: name,
+                            section: category,
+                            is_completed: false,
+                            created_by: currentUser?.id
+                        });
+                        closeModal();
+                        loadChecklist();
+                        showMessage('Пункт добавлен', 'success');
+                    });
+                });
+                
+                // Add Issue
+                document.getElementById('add-issue-btn').addEventListener('click', async () => {
+                    const title = document.getElementById('issue-title').value.trim();
+                    const description = document.getElementById('issue-desc').value.trim();
+                    const priority = document.getElementById('issue-priority').value;
+                    const axisName = document.getElementById('issue-axis').value;
+                    const responsibleId = document.getElementById('issue-responsible').value;
+                    
+                    if (!title || !description) { alert('Заполните тему и описание'); return; }
+                    
+                    const { error } = await supabase.from('project_issues').insert({
+                        project_id: currentProjectId,
+                        title: title,
+                        description: description,
+                        priority: priority,
+                        status: 'open',
+                        axis_name: axisName || null,
+                        responsible_id: responsibleId ? parseInt(responsibleId) : null,
+                        created_by: currentUser?.id,
+                        created_by_name: currentUser?.full_name
+                    });
+                    
+                    if (error) { alert('Ошибка: ' + error.message); }
+                    else {
+                        showMessage('Проблема создана', 'success');
+                        document.getElementById('issue-title').value = '';
+                        document.getElementById('issue-desc').value = '';
+                        document.getElementById('issue-axis').value = '';
+                        document.getElementById('issue-responsible').value = '';
+                        loadIssues();
+                    }
+                });
             }
-        }
-        
-        var axesList = Object.keys(axesMap);
-        axisSelect.innerHTML = '<option value="">Выберите ось/подось</option>';
-        
-        if (axesList.length) {
-            axesList.forEach(function(a) { 
-                axisSelect.innerHTML += '<option value="'+a.replace(/"/g, '&quot;')+'">'+a+'</option>'; 
-            });
-        } else {
-            axisSelect.innerHTML = '<option value="">Нет закреплённых осей</option>';
-        }
-        
-        // Добавляем возможность ручного ввода
-        axisSelect.innerHTML += '<option value="__manual__">✏️ Другая ось (ввести вручную)</option>';
-        
-        // Обработчик выбора оси
-        axisSelect.onchange = function() {
-            var existingInput = document.getElementById('manual-axis-input');
-            if (this.value === '__manual__') {
-                if (!existingInput) {
-                    var input = document.createElement('input');
-                    input.id = 'manual-axis-input';
-                    input.type = 'text';
-                    input.placeholder = 'Введите название оси/подоси';
-                    input.style.cssText = 'width:100%; margin-top:8px; padding:10px; border:1.5px solid #E2E8F0; border-radius:12px';
-                    this.parentElement.appendChild(input);
-                    input.focus();
-                }
-            } else {
-                if (existingInput) existingInput.remove();
+            
+            // ========== GPR FUNCTIONS (без изменений) ==========
+            async function loadGprPlan() {
+                const container = document.getElementById('gpr-plan-list');
+                const { data } = await supabase.from('schedule_plan').select('*, axes(name), work_stages(name), brigades(name, foreman_name)').eq('axis_id.block_id.project_id', currentProjectId);
+                if (!data || data.length === 0) { container.innerHTML = '<div class="info-card"><p>Нет работ в плане</p></div>'; return; }
+                
+                let html = '<div style="margin-top:20px">';
+                data.forEach(i => {
+                    html += `<div class="gpr-item">
+                        <div class="gpr-header"><span class="gpr-axis">${escapeHtml(i.axes?.name)}</span><span class="gpr-stage">${escapeHtml(i.work_stages?.name)}</span></div>
+                        <div>👷 ${escapeHtml(i.brigades?.name)} (${escapeHtml(i.brigades?.foreman_name)})</div>
+                        <div>📐 Объём: ${i.volume} | 💵 Цена: ${i.price_per_unit} ₸ | 💰 Сумма: ${i.total_cost} ₸</div>
+                        <div>📅 ${i.plan_start || '—'} → ${i.plan_end || '—'}</div>
+                    </div>`;
+                });
+                html += '</div>';
+                container.innerHTML = html;
             }
-        };
-    });
-    
-    renderIssueMaterialsList();
-    
-    var saveBtn = document.createElement('button'); 
-    saveBtn.className = 'btn-primary'; 
-    saveBtn.textContent = 'Выдать';
-    saveBtn.addEventListener('click', submitIssueMaterial);
-    document.getElementById('form-modal-content').appendChild(saveBtn);
-}
-
-function renderIssueMaterialsList() {
-    var container = document.getElementById('issue-materials-list');
-    if (!allMaterialsCache.length) {
-        container.innerHTML = '<p style="color:#64748B; padding:16px; text-align:center">Нет материалов в справочнике. Сначала создайте приход.</p>';
-        return;
-    }
-    
-    var html = '<div class="form-group" style="margin-top:16px"><label>📋 Материалы для выдачи</label>';
-    allMaterialsCache.forEach(function(m) {
-        var disabled = m.available_quantity <= 0 ? 'disabled' : '';
-        html += '<div style="display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px;background:#F8FAFC;border-radius:10px">';
-        html += '<input type="checkbox" class="issue-mat-check" data-id="'+m.id+'" data-name="'+m.name+'" data-unit="'+m.unit+'" data-avail="'+m.available_quantity+'" style="width:20px;height:20px" '+disabled+'>';
-        html += '<span style="flex:1;font-size:13px"><strong>'+m.name+'</strong><br><small>Доступно: '+m.available_quantity+' '+m.unit+'</small></span>';
-        html += '<input type="number" class="issue-mat-qty" placeholder="Кол-во" style="width:80px;padding:8px" step="0.01" min="0" max="'+m.available_quantity+'" disabled>';
-        html += '<span style="font-size:12px">'+m.unit+'</span></div>';
-    });
-    html += '</div>';
-    container.innerHTML = html;
-    
-    document.querySelectorAll('.issue-mat-check').forEach(function(cb) {
-        cb.addEventListener('change', function() {
-            var qtyInput = this.parentElement.querySelector('.issue-mat-qty');
-            qtyInput.disabled = !this.checked;
-            if (!this.checked) qtyInput.value = '';
-        });
-    });
-}
-
-async function submitIssueMaterial() {
-    var brigadeId = document.getElementById('issue-brigade').value;
-    var axisSelect = document.getElementById('issue-axis');
-    var axisName = axisSelect.value;
-    
-    // Проверяем ручной ввод
-    if (axisName === '__manual__') {
-        var manualInput = document.getElementById('manual-axis-input');
-        if (manualInput) {
-            axisName = manualInput.value.trim();
-        }
-        if (!axisName) {
-            alert('Введите название оси/подоси');
-            return;
-        }
-    }
-    
-    var comment = document.getElementById('issue-comment').value.trim();
-    
-    if (!brigadeId) {
-        alert('Выберите бригаду');
-        return;
-    }
-    
-    if (!axisName || axisName === '') {
-        alert('Укажите ось / подось');
-        return;
-    }
-    
-    var items = [];
-    document.querySelectorAll('.issue-mat-check:checked').forEach(function(cb) {
-        var qty = parseFloat(cb.parentElement.querySelector('.issue-mat-qty').value) || 0;
-        var avail = parseFloat(cb.dataset.avail);
-        if (qty > 0 && qty <= avail) {
-            items.push({ 
-                material_id: cb.dataset.id, 
-                material_name: cb.dataset.name, 
-                unit: cb.dataset.unit, 
-                quantity: qty 
-            });
-        }
-    });
-    
-    if (items.length === 0) {
-        alert('Выберите материалы и укажите количество');
-        return;
-    }
-    
-    var waybillNumber = 'МН-' + new Date().getFullYear().toString().slice(-2) + '-' + Date.now().toString().slice(-6);
-    var today = new Date().toISOString().split('T')[0];
-    
-    // Создаём накладную
-    var waybillData = {
-        project_id: currentProjectId,
-        brigade_id: brigadeId,
-        waybill_number: waybillNumber,
-        waybill_date: today,
-        sub_axis_name: axisName,
-        issued_by: currentUser?.id,
-        issued_by_name: currentUser?.full_name,
-        comment: comment || null
-    };
-    
-    console.log('Отправляем данные:', waybillData);
-    
-    var { data: waybill, error: waybillError } = await supabase
-        .from('material_waybills')
-        .insert(waybillData)
-        .select('id')
-        .single();
-    
-    if (waybillError) {
-        console.error('Ошибка создания накладной:', waybillError);
-        alert('Ошибка при создании накладной: ' + waybillError.message);
-        return;
-    }
-    
-    // Добавляем позиции и обновляем остатки
-    for (var i = 0; i < items.length; i++) {
-        var item = items[i];
-        
-        await supabase
-            .from('material_waybill_items')
-            .insert({
-                waybill_id: waybill.id,
-                material_name: item.material_name,
-                unit: item.unit,
-                quantity: item.quantity
-            });
-        
-        var { data: mat } = await supabase
-            .from('material_catalog')
-            .select('available_quantity')
-            .eq('id', item.material_id)
-            .single();
-        
-        if (mat) {
-            await supabase
-                .from('material_catalog')
-                .update({ 
-                    available_quantity: mat.available_quantity - item.quantity,
-                    updated_at: new Date()
-                })
-                .eq('id', item.material_id);
-        }
-    }
-    
-    // Записываем историю
-    await supabase
-        .from('change_history')
-        .insert({
-            project_id: currentProjectId,
-            entity_type: 'material_waybill',
-            action: 'issue_material',
-            comment: 'Выданы материалы: ' + items.map(function(i) { return i.quantity + ' ' + i.material_name; }).join(', ') + '. Ось: ' + axisName,
-            changed_by: currentUser?.id,
-            changed_by_name: currentUser?.full_name
-        });
-    
-    document.getElementById('form-modal').classList.add('hidden');
-    await loadMaterialsTab();
-    alert('✅ Материалы выданы. Накладная №' + waybillNumber + ' создана.');
-}
-
-// ========== ПРОСМОТР НАКЛАДНЫХ ==========
-async function viewIncome(incomeId) {
-    var { data: income } = await supabase
-        .from('material_incomes')
-        .select('*, material_income_items(*)')
-        .eq('id', incomeId)
-        .single();
-    
-    if (!income) return;
-    
-    var items = income.material_income_items || [];
-    var html = '<div style="font-family:Times New Roman,serif;padding:20px;border:1px solid #000">';
-    html += '<h3 style="text-align:center">ТОО «Lamgroup Construction»</h3>';
-    html += '<h4 style="text-align:center">ПРИХОД МАТЕРИАЛОВ</h4>';
-    html += '<p style="text-align:center"><strong>'+income.income_number+'</strong> от '+new Date(income.income_date).toLocaleDateString('ru-RU')+'</p>';
-    html += '<p><strong>Поставщик:</strong> '+(income.supplier_name||'—')+'</p>';
-    html += '<p><strong>Накладная поставщика:</strong> '+(income.supplier_invoice_number||'—')+' от '+(income.supplier_invoice_date ? new Date(income.supplier_invoice_date).toLocaleDateString('ru-RU') : '—')+'</p>';
-    html += '<table style="width:100%;border-collapse:collapse;margin:10px 0"><tr style="border:1px solid #000"><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th></tr>';
-    items.forEach(function(item, idx) { 
-        html += '<tr style="border:1px solid #000"><td>'+(idx+1)+'</td><td>'+item.material_name+'</td><td>'+item.unit+'</td><td>'+item.quantity+'</td></tr>'; 
-    });
-    html += '</table>';
-    if (income.supplier_invoice_url) html += '<p>📎 <a href="'+income.supplier_invoice_url+'" target="_blank">'+income.supplier_invoice_name+'</a></p>';
-    html += '</div>';
-    
-    document.getElementById('form-modal-title').textContent = '📄 '+income.income_number;
-    document.getElementById('form-modal-content').innerHTML = html;
-    document.getElementById('form-modal').classList.remove('hidden');
-}
-
-async function viewWaybill(waybillId) {
-    var { data: waybill } = await supabase
-        .from('material_waybills')
-        .select('*, material_waybill_items(*), brigades(name), projects(name)')
-        .eq('id', waybillId)
-        .single();
-    
-    if (!waybill) return;
-    
-    var items = waybill.material_waybill_items || [];
-    var html = '<div style="font-family:Times New Roman,serif;padding:20px;border:1px solid #000">';
-    html += '<h3 style="text-align:center">ТОО «Lamgroup Construction»</h3>';
-    html += '<h4 style="text-align:center">НАКЛАДНАЯ НА ВЫДАЧУ МАТЕРИАЛОВ</h4>';
-    html += '<p style="text-align:center"><strong>'+waybill.waybill_number+'</strong> от '+new Date(waybill.waybill_date).toLocaleDateString('ru-RU')+'</p>';
-    html += '<p><strong>Объект:</strong> '+(waybill.projects?.name||'—')+'</p>';
-    html += '<p><strong>Бригада:</strong> '+(waybill.brigades?.name||'—')+'</p>';
-    html += '<p><strong>Ось/Подось:</strong> '+(waybill.sub_axis_name||'—')+'</p>';
-    if (waybill.comment) html += '<p><strong>Комментарий:</strong> '+waybill.comment+'</p>';
-    html += '<table style="width:100%;border-collapse:collapse;margin:10px 0"><tr style="border:1px solid #000"><th>№</th><th>Наименование</th><th>Ед.</th><th>Кол-во</th></tr>';
-    items.forEach(function(item, idx) { 
-        html += '<tr style="border:1px solid #000"><td>'+(idx+1)+'</td><td>'+item.material_name+'</td><td>'+item.unit+'</td><td>'+item.quantity+'</td></tr>'; 
-    });
-    html += '</table>';
-    html += '<p style="margin-top:30px"><strong>Выдал:</strong> '+(waybill.issued_by_name || currentUser?.full_name || '—')+' ___________________</p>';
-    html += '<p><strong>Получил:</strong> ___________________</p>';
-    html += '</div>';
-    
-    document.getElementById('form-modal-title').textContent = '📄 '+waybill.waybill_number;
-    document.getElementById('form-modal-content').innerHTML = html;
-    document.getElementById('form-modal').classList.remove('hidden');
-}
-
-function printWaybill(waybillId) {
-    viewWaybill(waybillId).then(function() {
-        setTimeout(function() {
-            var content = document.getElementById('form-modal-content').innerHTML;
-            var printWindow = window.open('', '_blank', 'width=800,height=600');
-            printWindow.document.write('<html><head><meta charset="UTF-8"><title>Накладная</title>');
-            printWindow.document.write('<style>');
-            printWindow.document.write('body{font-family:"Times New Roman",serif;padding:30px;max-width:800px;margin:0 auto}');
-            printWindow.document.write('table{border-collapse:collapse;width:100%}');
-            printWindow.document.write('td,th{border:1px solid #000;padding:6px}');
-            printWindow.document.write('h3,h4{text-align:center}');
-            printWindow.document.write('</style></head><body>');
-            printWindow.document.write(content);
-            printWindow.document.write('</body></html>');
-            printWindow.document.close();
-            setTimeout(function() { printWindow.print(); }, 500);
-        }, 300);
-    });
-}
-// ===== КОНЕЦ РАЗДЕЛА МАТЕРИАЛЫ =====
-
-           
+            
+            async function loadGprProgress() {
+                const container = document.getElementById('gpr-progress-list');
+                const { data } = await supabase.from('schedule_plan').select('*, axes(name), work_stages(name), brigades(name)').eq('axis_id.block_id.project_id', currentProjectId);
+                if (!data || data.length === 0) { container.innerHTML = '<div class="info-card"><p>Нет работ</p></div>'; return; }
+                
+                let html = '';
+                data.forEach(i => {
+                    html += `<div class="gpr-item">
+                        <div class="gpr-header"><span class="gpr-axis">${escapeHtml(i.axes?.name)}</span><span class="gpr-stage">${escapeHtml(i.work_stages?.name)}</span></div>
+                        <div>👷 ${escapeHtml(i.brigades?.name)}</div>
+                        <div>Прогресс: <strong>${i.progress || 0}%</strong></div>
+                        <input type="range" min="0" max="100" value="${i.progress || 0}" class="progress-slider" data-id="${i.id}">
+                        <button class="btn-secondary" data-id="${i.id}" onclick="updateProgress(this)">Обновить</button>
+                        ${i.progress == 100 ? `<button class="btn-primary" style="margin-top:8px" data-id="${i.id}" onclick="createWorkOrder(this)">📋 Сформировать Наряд</button>` : ''}
+                    </div>`;
+                });
+                container.innerHTML = html;
+            }
+            
+            window.updateProgress = async function(btn) {
+                const id = btn.dataset.id;
+                const slider = document.querySelector(`.progress-slider[data-id="${id}"]`);
+                const newProgress = parseInt(slider.value);
+                
+                await supabase.from('schedule_plan').update({ progress: newProgress }).eq('id', id);
+                await supabase.from('work_progress_history').insert({ schedule_id: id, progress: newProgress, created_by: userId });
+                loadGprProgress();
+                if (newProgress == 100) alert('Этап завершён! Можно формировать наряд.');
+            };
+            
+            window.createWorkOrder = async function(btn) {
+                const id = btn.dataset.id;
+                const { data: gpr } = await supabase.from('schedule_plan').select('*, axes(name), work_stages(name), brigades(*)').eq('id', id).single();
+                
+                await supabase.from('work_orders').insert({
+                    project_id: currentProjectId,
+                    schedule_id: id,
+                    brigade_id: gpr.brigade_id,
+                    axis_name: gpr.axes?.name,
+                    work_type: gpr.work_stages?.name,
+                    volume: gpr.volume,
+                    price: gpr.price_per_unit,
+                    total_amount: gpr.total_cost,
+                    created_by: userId,
+                    status: 'pending_foreman'
+                });
+                
+                alert('Наряд сформирован и отправлен на проверку!');
+                loadGprProgress();
+            };
+            
+            // ========== EXPENSES (ОБНОВЛЁН) ==========
+            async function loadExpenses() {
+                const container = document.getElementById('expenses-list');
+                container.innerHTML = '<div class="loading">Загрузка расходов...</div>';
+                
+                const { data } = await supabase
+                    .from('expenses')
+                    .select('*')
+                    .eq('project_id', currentProjectId)
+                    .order('date', { ascending: false });
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="info-card"><p>Нет расходов</p></div>';
+                    updateExpenseStats([]);
+                    return;
+                }
+                
+                updateExpenseStats(data);
+                
+                const categoryMap = {
+                    'delivery': '🚛 Доставка', 'consumables': '🔧 Расходники',
+                    'cradles': '🏗️ Люльки', 'scaffolding': '🪜 Леса',
+                    'rent': '🏢 Аренда', 'other': '📄 Прочее'
+                };
+                
+                let html = '';
+                data.forEach(exp => {
+                    const statusClass = exp.payment_status === 'paid' ? 'status-paid' : 'status-pending';
+                    const statusText = exp.payment_status === 'paid' ? '✅ Оплачен' : '⏳ Ожидает';
+                    html += `<div class="gpr-item">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px">
+                            <div><strong>${escapeHtml(exp.name)}</strong><br><span style="font-size:11px; color:#64748b">${categoryMap[exp.category] || exp.category}</span></div>
+                            <div><span style="font-size:18px; font-weight:700">${exp.amount.toLocaleString()} ₸</span></div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:12px; color:#64748b">
+                            <span>💳 ${exp.payment_type === 'cash' ? 'Наличка' : exp.payment_type === 'invoice' ? 'По счету' : 'Карта'}</span>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        ${exp.supplier ? `<div style="font-size:12px; margin-top:6px">🏢 ${escapeHtml(exp.supplier)}</div>` : ''}
+                        ${exp.description ? `<div style="font-size:12px; margin-top:6px; color:#64748b">📝 ${escapeHtml(exp.description)}</div>` : ''}
+                        ${exp.payment_status !== 'paid' && currentRole === 'manager' ? 
+                            `<button class="btn-small btn-success" style="margin-top:8px" onclick="markExpensePaid('${exp.id}')">✅ Отметить оплаченным</button>` : ''}
+                    </div>`;
+                });
+                container.innerHTML = html;
+            }
+            
+            function updateExpenseStats(expenses) {
+                const paid = expenses.filter(e => e.payment_status === 'paid').reduce((s, e) => s + e.amount, 0);
+                const pending = expenses.filter(e => e.payment_status === 'pending').reduce((s, e) => s + e.amount, 0);
+                document.getElementById('exp-paid-total').textContent = paid.toLocaleString() + ' ₸';
+                document.getElementById('exp-pending-total').textContent = pending.toLocaleString() + ' ₸';
+                document.getElementById('exp-total').textContent = (paid + pending).toLocaleString() + ' ₸';
+            }
+            
+            window.markExpensePaid = async function(expenseId) {
+                await supabase.from('expenses').update({ payment_status: 'paid', updated_at: new Date() }).eq('id', expenseId);
+                loadExpenses();
+                showMessage('Расход отмечен как оплаченный', 'success');
+            };
+            
+            // ========== MATERIALS (без изменений) ==========
+            async function loadMaterials() {
+                const container = document.getElementById('materials-list');
+                const { data } = await supabase.from('materials').select('*').eq('project_id', currentProjectId).order('created_at', { ascending: false });
+                if (!data || data.length === 0) { container.innerHTML = '<div class="info-card"><p>Нет материалов</p></div>'; return; }
+                
+                let html = '';
+                data.forEach(m => {
+                    html += `<div class="gpr-item">
+                        <div><strong>${escapeHtml(m.material_name)}</strong></div>
+                        <div>📦 ${m.quantity} ${m.unit} | 🏢 ${escapeHtml(m.supplier_name || '—')}</div>
+                        <div style="font-size:12px; color:#64748b">📄 Накладная: ${escapeHtml(m.invoice_number || '—')}</div>
+                    </div>`;
+                });
+                container.innerHTML = html;
+            }
+            
+            // ========== CHECKLIST (ОБНОВЛЁН) ==========
+            async function loadChecklist() {
+                const { data } = await supabase
+                    .from('checklists')
+                    .select('*')
+                    .eq('project_id', currentProjectId)
+                    .order('created_at', { ascending: true });
+                
+                const items = data || [];
+                const completed = items.filter(i => i.is_completed === true).length;
+                const total = items.length;
+                const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+                
+                document.getElementById('checklist-completed').textContent = completed;
+                document.getElementById('checklist-total').textContent = total;
+                document.getElementById('checklist-percent').textContent = percent + '%';
+                document.getElementById('checklist-progress-bar').value = percent;
+                
+                const sections = {
+                    customer: { title: '📋 Взаимодействие с Заказчиком', items: [] },
+                    workers: { title: '👷 Взаимодействие с Монтажниками', items: [] },
+                    docs: { title: '📄 Документация', items: [] }
+                };
+                
+                items.forEach(item => {
+                    const section = item.section || 'docs';
+                    if (sections[section]) sections[section].items.push(item);
+                });
+                
+                for (let [key, section] of Object.entries(sections)) {
+                    const container = document.getElementById(`checklist-${key}`);
+                    if (!container) continue;
+                    
+                    if (section.items.length === 0) {
+                        container.innerHTML = `<div style="margin-bottom:20px"><h4>${section.title}</h4><p style="color:#64748b; font-size:13px">Нет пунктов</p></div>`;
+                    } else {
+                        let html = `<div style="margin-bottom:20px"><h4>${section.title}</h4>`;
+                        section.items.forEach(item => {
+                            html += `<div class="checklist-item">
+                                <input type="checkbox" class="checklist-cb" data-id="${item.id}" ${item.is_completed ? 'checked' : ''}>
+                                <label style="${item.is_completed ? 'text-decoration:line-through; color:#94a3b8' : ''}">${escapeHtml(item.item_text)}</label>
+                            </div>`;
+                        });
+                        html += `</div>`;
+                        container.innerHTML = html;
+                    }
+                }
+                
+                document.querySelectorAll('.checklist-cb').forEach(cb => {
+                    cb.addEventListener('change', async (e) => {
+                        const id = cb.dataset.id;
+                        const isChecked = cb.checked;
+                        await supabase.from('checklists').update({ is_completed: isChecked, updated_at: new Date() }).eq('id', id);
+                        loadChecklist();
+                    });
+                });
+            }
+            
+            // ========== ISSUES (ОБНОВЛЁН) ==========
+            async function loadIssues() {
+                const container = document.getElementById('issues-list');
+                container.innerHTML = '<div class="loading">Загрузка проблем...</div>';
+                
+                const { data } = await supabase
+                    .from('project_issues')
+                    .select('*')
+                    .eq('project_id', currentProjectId)
+                    .order('created_at', { ascending: false });
+                
+                const issues = data || [];
+                const openCount = issues.filter(i => i.status !== 'closed').length;
+                const closedCount = issues.filter(i => i.status === 'closed').length;
+                
+                document.getElementById('issues-open').textContent = openCount;
+                document.getElementById('issues-closed').textContent = closedCount;
+                
+                if (issues.length === 0) {
+                    container.innerHTML = '<div class="info-card"><p>Нет зарегистрированных проблем</p></div>';
+                    return;
+                }
+                
+                const priorityMap = { high: '🔴 Высокий', medium: '🟡 Средний', low: '🟢 Низкий' };
+                const priorityClass = { high: 'priority-high', medium: 'priority-medium', low: 'priority-low' };
+                
+                let html = '';
+                issues.forEach(issue => {
+                    const statusText = issue.status === 'closed' ? '✅ Закрыта' : (issue.status === 'in_progress' ? '🔨 В работе' : '⚠️ Открыта');
+                    const statusClass = issue.status === 'closed' ? 'status-closed' : 'status-open';
+                    
+                    html += `<div class="gpr-item ${priorityClass[issue.priority] || ''}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px">
+                            <div><strong>${escapeHtml(issue.title)}</strong><br><span style="font-size:11px">${priorityMap[issue.priority] || issue.priority}</span></div>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        <div style="font-size:13px; margin-bottom:8px">📝 ${escapeHtml(issue.description)}</div>
+                        <div style="display:flex; justify-content:space-between; font-size:12px; color:#64748b">
+                            <span>📅 ${new Date(issue.created_at).toLocaleDateString('ru-RU')}</span>
+                            <span>👤 ${issue.created_by_name || '—'}</span>
+                        </div>
+                        ${issue.axis_name ? `<div style="font-size:12px; margin-top:6px">📍 Ось: ${escapeHtml(issue.axis_name)}</div>` : ''}
+                        ${issue.resolution ? `<div style="font-size:12px; background:#f8fafc; padding:8px; border-radius:10px; margin-top:8px">✅ Решение: ${escapeHtml(issue.resolution)}</div>` : ''}
+                        ${issue.status !== 'closed' && currentRole === 'manager' ? 
+                            `<button class="btn-small btn-success" style="margin-top:8px" onclick="closeIssue('${issue.id}')">✅ Закрыть проблему</button>` : ''}
+                    </div>`;
+                });
+                container.innerHTML = html;
+            }
+            
+            window.closeIssue = async function(issueId) {
+                const resolution = prompt('Введите решение/комментарий по проблеме:');
+                if (resolution === null) return;
+                
+                await supabase.from('project_issues').update({ 
+                    status: 'closed', 
+                    resolution: resolution,
+                    resolved_at: new Date(),
+                    resolved_by: currentUser?.id
+                }).eq('id', issueId);
+                
+                loadIssues();
+                showMessage('Проблема закрыта', 'success');
+            };
+            
+            function escapeHtml(text) {
+                if (!text) return '';
+                return String(text).replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
+            }
+            
             init();
         })();
     </script>
