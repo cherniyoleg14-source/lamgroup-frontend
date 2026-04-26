@@ -490,43 +490,38 @@
                 return data + '-Р';
             };
 
-// ========== ЧЕК-ЛИСТ (ТОЛЬКО ОТМЕТКА, БЕЗ ДОБАВЛЕНИЯ) ==========
+// ========== ЧЕК-ЛИСТ (ГОТОВЫЕ ПУНКТЫ, ТОЛЬКО ОТМЕТКА) ==========
 async function loadChecklist() {
     const container = document.getElementById('tab-checklist');
     container.innerHTML = '<div class="loading">Загрузка чек-листа...</div>';
     
-    // Загружаем пункты чек-листа (глобальные + уже привязанные к этому объекту)
+    // Загружаем глобальные пункты (project_id IS NULL)
     const { data, error } = await supabase
         .from('checklists')
         .select('*')
-        .or(`project_id.is.null,project_id.eq.${currentProjectId}`)
-        .order('created_at', { ascending: true });
+        .is('project_id', null)
+        .order('sort_order', { ascending: true });
     
-    if (error && !error.message.includes('does not exist')) {
+    if (error) {
         container.innerHTML = `<div class="info-card"><p class="error">Ошибка: ${error.message}</p></div>`;
         return;
     }
     
     const items = data || [];
+    
+    // Подсчитываем выполненные (is_completed = true)
     const completed = items.filter(i => i.is_completed === true).length;
     const total = items.length;
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
     
-    // Группировка по категориям (section)
-    const sections = {
-        customer: { title: '📋 Взаимодействие с Заказчиком', items: [] },
-        workers: { title: '👷 Взаимодействие с Монтажниками', items: [] },
-        docs: { title: '📄 Документация', items: [] }
-    };
-    
-    items.forEach(item => {
-        const section = item.section || 'customer';
-        if (sections[section]) sections[section].items.push(item);
-    });
+    // Разделяем по категориям
+    const customerItems = items.filter(i => i.section === 'foreman_customer');
+    const workersItems = items.filter(i => i.section === 'foreman_workers');
     
     // Формируем HTML
     let html = `
         <div class="info-card">
+            <!-- Статистика -->
             <div style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
                 <div style="flex: 1; background: #F8FAFC; border-radius: 20px; padding: 16px; text-align: center;">
                     <div style="font-size: 28px; font-weight: 800; color: #0F172A;">${completed}/${total}</div>
@@ -537,42 +532,61 @@ async function loadChecklist() {
                     <div style="font-size: 12px; color: #64748B;">Прогресс</div>
                 </div>
             </div>
+            
+            <!-- Прогресс-бар -->
             <div style="height: 8px; background: #E2E8F0; border-radius: 40px; overflow: hidden; margin-bottom: 24px;">
                 <div style="width: ${percent}%; height: 100%; background: linear-gradient(90deg, #0F172A, #F59E0B);"></div>
             </div>
     `;
     
-    // Рендер категорий
-    for (const [key, section] of Object.entries(sections)) {
-        if (section.items.length === 0) {
-            html += `<div style="margin-bottom: 24px;">
-                <h4 style="margin-bottom: 12px; font-size: 16px; color: #0F172A;">${section.title}</h4>
-                <p style="color: #94A3B8; font-size: 14px;">Нет пунктов</p>
-            </div>`;
-        } else {
-            html += `<div style="margin-bottom: 24px;">
-                <h4 style="margin-bottom: 12px; font-size: 16px; color: #0F172A;">${section.title}</h4>`;
-            
-            section.items.forEach(item => {
-                const isChecked = item.is_completed === true;
-                html += `
-                    <div class="checklist-item" style="display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid #F1F5F9;">
-                        <input type="checkbox" class="checklist-cb" data-id="${item.id}" ${isChecked ? 'checked' : ''} 
-                               style="width: 22px; height: 22px; accent-color: #F59E0B; cursor: pointer;">
-                        <label style="flex: 1; font-size: 14px; ${isChecked ? 'text-decoration: line-through; color: #94A3B8;' : 'color: #334155;'} cursor: pointer;">
-                            ${escapeHtml(item.item_text)}
-                        </label>
-                    </div>
-                `;
-            });
-            html += `</div>`;
-        }
+    // ===== Категория: Заказчик =====
+    html += `<div style="margin-bottom: 28px;">
+        <h4 style="margin-bottom: 16px; font-size: 16px; color: #0F172A;">📋 Взаимодействие с Заказчиком</h4>`;
+    
+    if (customerItems.length === 0) {
+        html += `<p style="color: #94A3B8; font-size: 14px;">Нет пунктов</p>`;
+    } else {
+        customerItems.forEach(item => {
+            const isChecked = item.is_completed === true;
+            html += `
+                <div class="checklist-item" style="display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid #F1F5F9;">
+                    <input type="checkbox" class="checklist-cb" data-id="${item.id}" ${isChecked ? 'checked' : ''} 
+                           style="width: 20px; height: 20px; accent-color: #F59E0B; cursor: pointer;">
+                    <label style="flex: 1; font-size: 14px; ${isChecked ? 'text-decoration: line-through; color: #94A3B8;' : 'color: #334155;'} cursor: pointer;">
+                        ${escapeHtml(item.item_text)}
+                    </label>
+                </div>
+            `;
+        });
     }
+    html += `</div>`;
+    
+    // ===== Категория: Монтажники =====
+    html += `<div style="margin-bottom: 28px;">
+        <h4 style="margin-bottom: 16px; font-size: 16px; color: #0F172A;">👷 Взаимодействие с Монтажниками</h4>`;
+    
+    if (workersItems.length === 0) {
+        html += `<p style="color: #94A3B8; font-size: 14px;">Нет пунктов</p>`;
+    } else {
+        workersItems.forEach(item => {
+            const isChecked = item.is_completed === true;
+            html += `
+                <div class="checklist-item" style="display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid #F1F5F9;">
+                    <input type="checkbox" class="checklist-cb" data-id="${item.id}" ${isChecked ? 'checked' : ''} 
+                           style="width: 20px; height: 20px; accent-color: #F59E0B; cursor: pointer;">
+                    <label style="flex: 1; font-size: 14px; ${isChecked ? 'text-decoration: line-through; color: #94A3B8;' : 'color: #334155;'} cursor: pointer;">
+                        ${escapeHtml(item.item_text)}
+                    </label>
+                </div>
+            `;
+        });
+    }
+    html += `</div>`;
     
     html += `</div>`;
     container.innerHTML = html;
     
-    // Обработчики чекбоксов (с затемнением)
+    // Обработчики чекбоксов
     document.querySelectorAll('.checklist-cb').forEach(cb => {
         cb.addEventListener('change', async (e) => {
             const id = cb.dataset.id;
@@ -588,23 +602,20 @@ async function loadChecklist() {
                 label.style.color = '#334155';
             }
             
-            // Сохраняем в БД с привязкой к объекту и отметкой кто выполнил
-            const updateData = {
-                is_completed: isChecked,
-                updated_at: new Date(),
-                completed_at: isChecked ? new Date() : null,
-                completed_by: isChecked ? currentUser?.id : null,
-                project_id: currentProjectId  // привязываем к текущему объекту
-            };
-            
+            // Обновляем в БД
             const { error } = await supabase
                 .from('checklists')
-                .update(updateData)
+                .update({ 
+                    is_completed: isChecked,
+                    completed_at: isChecked ? new Date() : null,
+                    completed_by: isChecked ? currentUser?.id : null,
+                    project_id: currentProjectId
+                })
                 .eq('id', id);
             
             if (error) {
                 showMessage('Ошибка: ' + error.message, 'error');
-                // Откатываем при ошибке
+                // Откатываем
                 if (isChecked) {
                     label.style.textDecoration = 'none';
                     label.style.color = '#334155';
