@@ -86,13 +86,15 @@
         .fullscreen-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #F8FAFC; z-index: 10001; overflow-y: auto; padding: 16px; }
         .letter-preview { background: white; border: 2px solid #0F172A; padding: 30px; font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.6; max-width: 800px; margin: 0 auto; }
         .letter-preview .letter-header { text-align: center; margin-bottom: 10px; }
-        .letter-preview .letter-header .company-name { font-size: 16px; font-weight: 700; }
+        .letter-preview .letter-header .company-name { font-size: 18px; font-weight: 700; }
         .letter-preview .letter-header .company-details { font-size: 11px; }
         .letter-preview .letter-date { text-align: right; margin: 15px 0; }
         .letter-preview .letter-to { margin: 10px 0; }
         .letter-preview .letter-subject { text-align: center; font-weight: 700; margin: 15px 0; text-transform: uppercase; }
         .letter-preview .letter-body { margin: 15px 0; }
         .letter-preview .letter-signature { margin-top: 30px; }
+        .letter-logo { font-size: 32px; font-weight: 800; color: #0F172A; letter-spacing: 6px; text-align: center; margin-bottom: 5px; }
+        .letter-subtitle { font-size: 14px; letter-spacing: 8px; text-align: center; color: #F59E0B; font-weight: 600; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -136,7 +138,7 @@
         <div id="action-menu" class="action-menu-modal hidden"></div>
         <div id="form-modal" class="modal hidden"><div class="modal-content"><div class="modal-header"><span class="modal-title" id="form-modal-title"></span><button class="close-btn" id="close-form-modal">&times;</button></div><div id="form-modal-content"></div></div></div>
         <div id="edit-modal" class="modal hidden"><div class="modal-content"><div class="modal-header"><span class="modal-title" id="edit-modal-title"></span><button class="close-btn" id="close-edit-modal">&times;</button></div><div id="edit-modal-content"></div><button class="btn-primary" id="save-edit-btn">Сохранить</button></div></div>
-        <div id="letter-modal" class="modal hidden"><div class="modal-content" style="max-width:800px;max-height:90vh"><div class="modal-header"><span class="modal-title">📧 Предпросмотр письма</span><button class="close-btn" id="close-letter-modal">&times;</button></div><div id="letter-content"></div><button class="btn-primary" id="copy-letter-btn">📋 Копировать текст</button></div></div>
+        <div id="letter-modal" class="modal hidden"><div class="modal-content" style="max-width:800px;max-height:90vh"><div class="modal-header"><span class="modal-title">📧 Предпросмотр письма</span><button class="close-btn" id="close-letter-modal">&times;</button></div><div id="letter-content"></div><button class="btn-primary" id="download-letter-pdf">📥 Скачать PDF</button></div></div>
         <div id="message" class="message"></div>
     </div>
 
@@ -181,7 +183,7 @@
             function setupTabs() { document.querySelectorAll('.tab').forEach(function(t) { t.addEventListener('click', function() { document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); }); document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); }); t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active'); if (t.dataset.tab === 'progress') loadProgressTab(); if (t.dataset.tab === 'history') loadHistoryTab(); }); }); }
             function setupTabsScroll() { const tabsContainer = document.getElementById('tabs-container'); const scrollLeft = document.getElementById('scroll-left'); const scrollRight = document.getElementById('scroll-right'); if (!tabsContainer) return; function updateArrows() { if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0); if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1); } if (scrollLeft) scrollLeft.addEventListener('click', function() { tabsContainer.scrollBy({ left: -200, behavior: 'smooth' }); }); if (scrollRight) scrollRight.addEventListener('click', function() { tabsContainer.scrollBy({ left: 200, behavior: 'smooth' }); }); tabsContainer.addEventListener('scroll', updateArrows); window.addEventListener('resize', updateArrows); setTimeout(updateArrows, 300); setTimeout(updateArrows, 600); }
             function setupModals() { document.getElementById('close-form-modal').onclick = function() { document.getElementById('form-modal').classList.add('hidden'); }; document.getElementById('close-edit-modal').onclick = function() { document.getElementById('edit-modal').classList.add('hidden'); }; document.getElementById('close-letter-modal').onclick = function() { document.getElementById('letter-modal').classList.add('hidden'); }; document.getElementById('action-overlay').onclick = closeActionMenu; }
-                        // ===== ДЕТАЛИ ОБЪЕКТА =====
+
             async function showDetail(id) {
                 currentProjectId = id;
                 const { data: p } = await supabase.from('projects').select('*, users(full_name)').eq('id', id).single(); if (!p) return;
@@ -210,8 +212,7 @@
                 document.getElementById('edit-modal-title').textContent = '✏️ Редактировать';
                 document.getElementById('edit-modal-content').innerHTML = '<div class="form-group"><label>'+field+'</label><input type="'+(field.includes('date')?'date':'text')+'" id="edit-value" value="'+value+'"></div>';
                 document.getElementById('save-edit-btn').onclick = async function() {
-                    var newVal = document.getElementById('edit-value').value;
-                    var oldVal = value;
+                    var newVal = document.getElementById('edit-value').value; var oldVal = value;
                     await supabase.from('projects').update({[field]: field.includes('price')||field.includes('area')?parseFloat(newVal)||0:newVal}).eq('id',currentProjectId);
                     await supabase.from('change_history').insert({project_id:currentProjectId,entity_type:'project',entity_id:currentProjectId,action:'update_field',field_name:field,old_value:String(oldVal),new_value:String(newVal),changed_by:currentUser?.id,changed_by_name:currentUser?.full_name});
                     document.getElementById('edit-modal').classList.add('hidden'); showDetail(currentProjectId);
@@ -227,12 +228,8 @@
                 };
                 document.getElementById('edit-modal').classList.remove('hidden');
             };
-            window.updateStatus = async function() {
-                await supabase.from('projects').update({status:document.getElementById('change-status').value}).eq('id',currentProjectId);
-                showDetail(currentProjectId); loadProjects();
-            };
+            window.updateStatus = async function() { await supabase.from('projects').update({status:document.getElementById('change-status').value}).eq('id',currentProjectId); showDetail(currentProjectId); loadProjects(); };
 
-            // ===== ИСТОРИЯ =====
             async function loadHistoryTab() {
                 var container = document.getElementById('history-container');
                 container.innerHTML = '<div class="loading">Загрузка истории...</div>';
@@ -240,20 +237,16 @@
                 if (!data || !data.length) { container.innerHTML = '<div class="info-card"><p>Нет изменений</p></div>'; return; }
                 var html = '<div class="info-card"><h3 style="margin-bottom:16px">📜 История изменений</h3>';
                 data.forEach(function(h) {
-                    html += '<div class="gpr-item">';
-                    html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><strong>'+h.action+'</strong><span style="font-size:11px;color:#64748B">'+window.formatDate(h.changed_at)+' '+new Date(h.changed_at).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+'</span></div>';
-                    html += '<div style="font-size:12px;color:#64748B">👤 '+h.changed_by_name+'</div>';
+                    html += '<div class="gpr-item"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><strong>'+h.action+'</strong><span style="font-size:11px;color:#64748B">'+window.formatDate(h.changed_at)+' '+new Date(h.changed_at).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+'</span></div><div style="font-size:12px;color:#64748B">👤 '+h.changed_by_name+'</div>';
                     if (h.field_name) html += '<div style="font-size:12px;margin-top:4px">Поле: <strong>'+h.field_name+'</strong></div>';
                     if (h.old_value) html += '<div style="font-size:12px;color:#991B1B">Было: '+h.old_value+'</div>';
                     if (h.new_value) html += '<div style="font-size:12px;color:#065F46">Стало: '+h.new_value+'</div>';
                     if (h.comment) html += '<div style="font-size:12px;margin-top:4px;color:#64748B">📝 '+h.comment+'</div>';
                     html += '</div>';
                 });
-                html += '</div>';
-                container.innerHTML = html;
+                html += '</div>'; container.innerHTML = html;
             }
 
-            // ===== ПРОГРЕСС =====
             async function loadProgressTab() {
                 window._loadProgressTab = loadProgressTab;
                 var container = document.getElementById('progress-container'); container.innerHTML = '<div class="loading">Загрузка осей...</div>';
@@ -281,7 +274,6 @@
             }
             window._loadProgressTab = loadProgressTab;
 
-            // ===== СОЗДАТЬ ОСЬ =====
             window.openCreateAxis = function() {
                 var html = '<div class="form-group"><label>Название оси *</label><input type="text" id="new-axis-name" placeholder="1-10"></div><div class="row-2"><div class="form-group"><label>Общая площадь (м²)</label><input type="number" id="new-axis-area" step="0.01"></div><div class="form-group"><label>Статус</label><select id="new-axis-status"><option value="no_brigade">👷 Нет бригады</option><option value="no_readiness">⏳ Нет стройготовности</option><option value="in_progress">🔨 В работе</option></select></div></div><div id="brigades-container"></div><button class="btn-secondary" id="add-brigade-block-btn" style="width:100%;margin:10px 0">➕ Добавить бригаду</button>';
                 document.getElementById('form-modal-title').textContent = '➕ Создать ось';
@@ -310,7 +302,6 @@
             window.openEditAxis = async function(axisId) { const { data: axis } = await supabase.from('axes').select('*').eq('id',axisId).single(); if(!axis) return; document.getElementById('edit-modal-title').textContent = '✏️ Редактировать ось '+axis.name; document.getElementById('edit-modal-content').innerHTML = '<div class="form-group"><label>Название</label><input type="text" id="edit-axis-name" value="'+axis.name+'"></div><div class="form-group"><label>Площадь</label><input type="number" id="edit-axis-area" value="'+(axis.total_area||0)+'"></div><div class="form-group"><label>Статус</label><select id="edit-axis-status"><option value="in_progress" '+(axis.status==='in_progress'?'selected':'')+'>🔨 В работе</option><option value="no_readiness" '+(axis.status==='no_readiness'?'selected':'')+'>⏳ Нет стройготовности</option><option value="no_brigade" '+(axis.status==='no_brigade'?'selected':'')+'>👷 Нет бригады</option><option value="completed" '+(axis.status==='completed'?'selected':'')+'>✅ Завершена</option><option value="paused" '+(axis.status==='paused'?'selected':'')+'>⏸️ Пауза</option></select></div>'; document.getElementById('save-edit-btn').onclick = async function() { await supabase.from('axes').update({name:document.getElementById('edit-axis-name').value,total_area:parseFloat(document.getElementById('edit-axis-area').value)||0,status:document.getElementById('edit-axis-status').value}).eq('id',axisId); document.getElementById('edit-modal').classList.add('hidden'); loadProgressTab(); }; document.getElementById('edit-modal').classList.remove('hidden'); };
             window.deleteAxisConfirm = function(axisId, axisName) { if(confirm('⚠️ Удалить ось '+axisName+'?')){ supabase.from('axis_work_stages').delete().eq('axis_id',axisId).then(function(){supabase.from('axes').delete().eq('id',axisId).then(function(){loadProgressTab();});}); } };
 
-            // ===== ДЕТАЛЬНАЯ СТРАНИЦА ОСИ =====
             window.openAxisDetailPage = async function(axisId) {
                 currentAxisId = axisId;
                 const { data: axis } = await supabase.from('axes').select('*').eq('id', axisId).single();
@@ -344,19 +335,35 @@
             window.openActionMenu = function(axisId, brigadeId, subAxisName) { window.showActionMenu([ { label: '⏰ Сдвиг ГПР', action: function() { closeActionMenu(); window.openShiftGPRForm(axisId, brigadeId); } }, { label: '📋 Сдать Наряд', action: function() { closeActionMenu(); window.openWorkOrderForm(axisId, brigadeId); } }, { label: '👷 Заменить бригаду', action: function() { closeActionMenu(); window.openChangeBrigadeForm(axisId, brigadeId); } }, { label: '✉️ Письмо заказчику', action: function() { closeActionMenu(); window.openLetterFormAction(axisId, brigadeId); } }, { label: '💰 Аванс', action: function() { closeActionMenu(); window.openAdvanceForm(axisId, brigadeId); } }, { label: '📝 Задача', action: function() { closeActionMenu(); window.openTaskForm(axisId, brigadeId); } } ]); };
             window.showActionMenu = function(items) { const menu = document.getElementById('action-menu'); const overlay = document.getElementById('action-overlay'); menu.innerHTML = items.map(function(i) { return '<div class="action-item">'+i.label+'</div>'; }).join(''); overlay.classList.remove('hidden'); menu.classList.remove('hidden'); menu.querySelectorAll('.action-item').forEach(function(item, idx) { item.addEventListener('click', function() { items[idx].action(); }); }); };
 
-            // ===== ФОРМА ПИСЬМА С ФИРМЕННЫМ БЛАНКОМ =====
+            // ПИСЬМО С ФИРМЕННЫМ БЛАНКОМ И СКВОЗНОЙ НУМЕРАЦИЕЙ
+            window.getNextLetterNumber = async function() {
+                var { data, error } = await supabase.rpc('next_letter_number');
+                if (error || !data) {
+                    var { data: lastLetter } = await supabase.from('letters').select('letter_number_full').order('created_at',{ascending:false}).limit(1);
+                    if (lastLetter && lastLetter.length && lastLetter[0].letter_number_full) {
+                        var lastNum = parseInt(lastLetter[0].letter_number_full.replace('-Р',''));
+                        return (lastNum + 1) + '-Р';
+                    }
+                    return '1-Р';
+                }
+                return data + '-Р';
+            };
+
             window.openLetterFormAction = async function(axisId, brigadeId) {
+                var letterNumber = await window.getNextLetterNumber();
                 var { data: project } = await supabase.from('projects').select('*').eq('id', currentProjectId).single();
-                var { data: company } = await supabase.from('company_info').select('*').eq('id', 1).single();
-                if (!company) { company = { name: 'ТОО «Lamgroup Construction»', director_name: 'Ким В.Г.', bin: '100740008625', legal_address: 'г. Алматы, ул. Сатпаева, 90/1, офис 301' }; }
                 var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name), axes(name)').eq('axis_id', axisId).eq('brigade_id', brigadeId);
                 var axisName = (stages&&stages.length>0) ? stages[0]?.axes?.name : '—';
                 var brigadeName = (stages&&stages.length>0) ? stages[0]?.brigades?.name : '—';
                 var currentEnd = (stages||[]).reduce(function(max, s) { return s.plan_end && (!max || s.plan_end > max) ? s.plan_end : max; }, null);
+                var companyName = 'ТОО «Lamgroup Construction»';
+                var companyBIN = '100740008625';
+                var companyAddress = 'г. Алматы, ул. Сатпаева, 90/1, офис 301';
+                var directorName = 'Ким В.Г.';
 
                 var html = '<div class="form-group"><label>Причина задержки *</label><textarea id="letter-reason" rows="3"></textarea></div>';
                 html += '<div class="form-group"><label>Срок сдвига (дней) *</label><input type="number" id="letter-days" value="1" min="1"></div>';
-                html += '<p style="color:#64748B;font-size:12px;margin-bottom:12px">📧 Письмо будет сформировано на фирменном бланке</p>';
+                html += '<p style="color:#64748B;font-size:12px;margin-bottom:12px">📧 Исходящий № '+letterNumber+'</p>';
                 html += '<div class="letter-preview" id="letter-preview"></div>';
                 document.getElementById('form-modal-title').textContent = '✉️ Письмо заказчику';
                 document.getElementById('form-modal-content').innerHTML = html;
@@ -368,17 +375,14 @@
                     var newEnd = currentEnd ? new Date(currentEnd) : new Date();
                     newEnd.setDate(newEnd.getDate() + days);
                     var today = new Date();
-                    var letterNumber = 'ИСХ-'+today.getFullYear().toString().slice(-2)+'-'+String(Math.floor(Math.random()*9000)+1000);
                     document.getElementById('letter-preview').innerHTML = 
-                        '<div class="letter-header">'+
-                        '<div class="company-name">'+company.name+'</div>'+
-                        '<div class="company-details">БИН: '+company.bin+' • '+company.legal_address+'</div>'+
-                        '</div>'+
+                        '<div class="letter-logo">LAMGROUP</div><div class="letter-subtitle">CONSTRUCTION</div>'+
+                        '<div class="letter-header"><div class="company-name">'+companyName+'</div><div class="company-details">БИН: '+companyBIN+' • '+companyAddress+'</div></div>'+
                         '<div class="letter-date">Исх. № '+letterNumber+' от '+window.formatDate(today.toISOString().split('T')[0])+'</div>'+
                         '<div class="letter-to"><strong>Кому:</strong> '+(project?.customer_director_name||'_______________________')+'<br>Директору '+(project?.customer_company_name||'_______________________')+'<br>БИН: '+(project?.customer_bin||'_______________________')+'<br>'+(project?.customer_legal_address||'_______________________')+'</div>'+
                         '<div class="letter-subject">УВЕДОМЛЕНИЕ о переносе сроков работ</div>'+
                         '<div class="letter-body"><p>Уважаемый(ая) '+(project?.customer_director_name||'_______________________')+'!</p><p>Настоящим уведомляем Вас о переносе сроков выполнения работ по объекту: <strong>'+(project?.name||'—')+'</strong></p><p>Ось: '+axisName+' • Бригада: '+brigadeName+'</p><p>В связи с: '+reason+'</p><p>Сроки выполнения работ переносятся с <strong>'+window.formatDate(currentEnd)+'</strong> на <strong>'+window.formatDate(newEnd.toISOString().split('T')[0])+'</strong> (+'+days+' дней).</p><p>Просим принять данную информацию к сведению.</p></div>'+
-                        '<div class="letter-signature"><p>С уважением,</p><p>Директор '+company.name+'</p><p><br></p><p>_______________________ '+company.director_name+'</p></div>';
+                        '<div class="letter-signature"><p>С уважением,</p><p>Директор '+companyName+'</p><p><br></p><p>_______________________ '+directorName+'</p></div>';
                 }
                 document.getElementById('letter-days').addEventListener('input', updatePreview);
                 document.getElementById('letter-reason').addEventListener('input', updatePreview);
@@ -390,21 +394,47 @@
                     var reason = document.getElementById('letter-reason').value;
                     if (!reason) { alert('Укажите причину'); return; }
                     var newEnd = currentEnd ? new Date(currentEnd) : new Date();
-                    newEnd.setDate(newEnd.getDate() + days);
-                    var nd = newEnd.toISOString().split('T')[0];
-                    await supabase.from('letters').insert({project_id: currentProjectId, axis_id: axisId, delay_reason: 'customer', delay_description: reason, delay_days: days, new_end_date: nd, status: 'sent_to_office', sent_to_office: true, created_by: currentUser?.id, created_by_name: currentUser?.full_name});
+                    newEnd.setDate(newEnd.getDate() + days); var nd = newEnd.toISOString().split('T')[0];
+                    var today = new Date();
+                    await supabase.from('letters').insert({project_id: currentProjectId, axis_id: axisId, letter_number_full: letterNumber, letter_date: today.toISOString().split('T')[0], delay_reason: 'customer', delay_description: reason, delay_days: days, new_end_date: nd, status: 'sent_to_office', sent_to_office: true, created_by: currentUser?.id, created_by_name: currentUser?.full_name});
                     for (var i = 0; i < (stages||[]).length; i++) { var se = stages[i].plan_end ? new Date(stages[i].plan_end) : new Date(); se.setDate(se.getDate() + days); await supabase.from('axis_work_stages').update({ plan_end: se.toISOString().split('T')[0] }).eq('id', stages[i].id); }
                     await supabase.from('axes').update({ plan_end: nd }).eq('id', axisId);
-                    await supabase.from('tasks').insert({project_id: currentProjectId, type: 'letter', title: 'Письмо: сдвиг +'+days+' дн.', description: reason, status: 'pending', priority: 'high', created_by: currentUser?.id});
-                    await supabase.from('change_history').insert({project_id:currentProjectId,entity_type:'axis',entity_id:axisId,action:'letter_sent',comment:'Письмо заказчику: +'+days+' дн. '+reason,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name});
-                    alert('✅ Письмо отправлено. ГПР сдвинут.');
+                    await supabase.from('tasks').insert({project_id: currentProjectId, type: 'letter', title: 'Письмо №'+letterNumber+': сдвиг +'+days+' дн.', description: reason, status: 'pending', priority: 'high', created_by: currentUser?.id});
+                    await supabase.from('change_history').insert({project_id:currentProjectId,entity_type:'axis',entity_id:axisId,action:'letter_sent',comment:'Письмо №'+letterNumber+': +'+days+' дн. '+reason,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name});
+                    alert('✅ Письмо №'+letterNumber+' отправлено. ГПР сдвинут.');
                     document.getElementById('form-modal').classList.add('hidden');
                     if (document.getElementById('axis-detail-page').classList.contains('hidden')) loadProgressTab(); else window.openAxisDetailPage(currentAxisId);
                 });
                 document.getElementById('form-modal-content').appendChild(saveBtn);
+
+                var pdfBtn = document.createElement('button'); pdfBtn.className = 'btn-pdf'; pdfBtn.textContent = '📥 Скачать PDF'; pdfBtn.style.width = '100%'; pdfBtn.style.marginTop = '8px';
+                pdfBtn.addEventListener('click', function() {
+                    var { jsPDF } = window.jspdf; var doc = new jsPDF();
+                    doc.setFontSize(18); doc.text('LAMGROUP', 105, 20, {align:'center'});
+                    doc.setFontSize(12); doc.text('CONSTRUCTION', 105, 27, {align:'center'});
+                    doc.setFontSize(10); doc.text(companyName, 105, 36, {align:'center'});
+                    doc.text('БИН: '+companyBIN+' • '+companyAddress, 105, 42, {align:'center'});
+                    doc.text('Исх. № '+letterNumber+' от '+window.formatDate(new Date().toISOString().split('T')[0]), 190, 55, {align:'right'});
+                    doc.text('Кому: '+(project?.customer_director_name||''), 14, 65);
+                    doc.text('Директору '+(project?.customer_company_name||''), 14, 72);
+                    doc.setFontSize(12); doc.text('УВЕДОМЛЕНИЕ о переносе сроков работ', 105, 85, {align:'center'});
+                    doc.setFontSize(10);
+                    doc.text('Уважаемый(ая) '+(project?.customer_director_name||'')+'.', 14, 100);
+                    doc.text('Настоящим уведомляем Вас о переносе сроков выполнения работ по объекту: '+(project?.name||''), 14, 110);
+                    doc.text('Ось: '+axisName+' • Бригада: '+brigadeName, 14, 118);
+                    var daysPdf = parseInt(document.getElementById('letter-days').value) || 0;
+                    var newEndPdf = currentEnd ? new Date(currentEnd) : new Date(); newEndPdf.setDate(newEndPdf.getDate() + daysPdf);
+                    doc.text('В связи с: '+document.getElementById('letter-reason').value, 14, 126);
+                    doc.text('Сроки переносятся с '+window.formatDate(currentEnd)+' на '+window.formatDate(newEndPdf.toISOString().split('T')[0])+' (+'+daysPdf+' дней).', 14, 134);
+                    doc.text('С уважением,', 14, 155);
+                    doc.text('Директор '+companyName, 14, 162);
+                    doc.text('_______________________ '+directorName, 14, 175);
+                    doc.save('Письмо_'+letterNumber+'.pdf');
+                });
+                document.getElementById('form-modal-content').appendChild(pdfBtn);
             };
 
-            // ===== ОСТАЛЬНЫЕ ФОРМЫ (СДВИГ, НАРЯД, ЗАМЕНА, АВАНС, ЗАДАЧА) =====
+            // СДВИГ ГПР С АВТОМАТИЧЕСКИМ ПИСЬМОМ
             window.openShiftGPRForm = async function(axisId, brigadeId) {
                 var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
                 if(!stages||!stages.length){alert('Нет этапов');return;}
@@ -420,7 +450,12 @@
                     for(var i=0;i<stages.length;i++){await supabase.from('axis_work_stages').update({plan_end:newDate}).eq('id',stages[i].id);}
                     await supabase.from('axes').update({plan_end:newDate}).eq('id',axisId);
                     await supabase.from('change_history').insert({project_id:currentProjectId,entity_type:'axis',entity_id:axisId,action:'shift_gpr',comment:'Сдвиг: '+reason+'. '+desc,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name});
-                    if(reason==='customer'){await supabase.from('letters').insert({project_id:currentProjectId,axis_id:axisId,delay_reason:'customer',delay_description:desc,new_end_date:newDate,status:'draft',created_by:currentUser?.id,created_by_name:currentUser?.full_name});await supabase.from('tasks').insert({project_id:currentProjectId,type:'letter',title:'Письмо заказчику',description:desc,status:'pending',priority:'high',created_by:currentUser?.id});alert('✅ Срок сдвинут. Письмо создано.');}else{alert('✅ Срок изменён');}
+                    if(reason==='customer'){
+                        var letterNumber = await window.getNextLetterNumber();
+                        await supabase.from('letters').insert({project_id:currentProjectId,axis_id:axisId,letter_number_full:letterNumber,delay_reason:'customer',delay_description:desc,delay_days:Math.ceil((new Date(newDate)-new Date(currentEnd))/(1000*60*60*24)),new_end_date:newDate,status:'sent_to_office',sent_to_office:true,created_by:currentUser?.id,created_by_name:currentUser?.full_name});
+                        await supabase.from('tasks').insert({project_id:currentProjectId,type:'letter',title:'Письмо №'+letterNumber+': сдвиг ГПР',description:desc,status:'pending',priority:'high',created_by:currentUser?.id});
+                        alert('✅ Срок сдвинут. Письмо №'+letterNumber+' создано в задачах.');
+                    }else{alert('✅ Срок изменён');}
                     document.getElementById('form-modal').classList.add('hidden');
                     if(document.getElementById('axis-detail-page').classList.contains('hidden'))loadProgressTab();else window.openAxisDetailPage(currentAxisId);
                 });
@@ -476,8 +511,7 @@
                 var brigade=stages[0]?.brigades;var totalCost=stages.reduce(function(s,st){return s+(st.total_cost||0);},0);
                 var subName=stages[0]?.sub_axis_name||'';
                 var { data: prev } = await supabase.from('advances').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId);
-                var paid=(prev||[]).reduce(function(s,a){return s+(a.amount||0);},0);
-                var rem=totalCost-paid;
+                var paid=(prev||[]).reduce(function(s,a){return s+(a.amount||0);},0);var rem=totalCost-paid;
                 var html='<div class="form-group"><label>Бригада</label><input value="'+(brigade?.name||'')+'" disabled></div><div class="form-group"><label>Подось</label><input value="'+subName+'" disabled></div><div class="form-group"><label>Сумма договора</label><input value="'+totalCost.toLocaleString()+' ₸" disabled></div><div class="form-group"><label>Выплачено</label><input value="'+paid.toLocaleString()+' ₸" disabled></div><div class="form-group"><label>Остаток</label><input value="'+Math.max(0,rem).toLocaleString()+' ₸" disabled></div><div class="form-group"><label>Сумма запроса *</label><input type="number" id="advance-amount" step="0.01" max="'+Math.max(0,rem)+'"></div><div class="form-group"><label><input type="checkbox" id="advance-confirm"> ✅ Подтверждаю</label></div>';
                 document.getElementById('form-modal-title').textContent='💰 Аванс';
                 document.getElementById('form-modal-content').innerHTML=html;document.getElementById('form-modal').classList.remove('hidden');
