@@ -472,7 +472,6 @@
                 }
                 return data + '-Р';
             };
-
 // ===== МАТЕРИАЛЫ (ОБНОВЛЁННЫЕ) =====
 var currentMaterialsTab = 'incomes';
 var allMaterialsCache = [];
@@ -483,7 +482,6 @@ async function loadMaterialsTab() {
     var container = document.getElementById('materials-container');
     container.innerHTML = '<div class="loading">Загрузка материалов...</div>';
 
-    // Загружаем все данные
     var [matRes, incRes, wbRes] = await Promise.all([
         supabase.from('material_catalog').select('*').eq('project_id', currentProjectId).order('name'),
         supabase.from('material_incomes').select('*, material_income_items(*)').eq('project_id', currentProjectId).order('created_at', { ascending: false }),
@@ -501,20 +499,17 @@ function renderMaterialsTab() {
     var container = document.getElementById('materials-container');
     var html = '';
 
-    // Подвкладки
     html += '<div class="tabs-wrapper"><div class="tabs" style="gap:4px">';
     html += '<button class="tab '+(currentMaterialsTab==='incomes'?'active':'')+'" onclick="switchMaterialsTab(\'incomes\')">📋 Накладные</button>';
     html += '<button class="tab '+(currentMaterialsTab==='catalog'?'active':'')+'" onclick="switchMaterialsTab(\'catalog\')">📦 Справочник</button>';
     html += '<button class="tab '+(currentMaterialsTab==='stock'?'active':'')+'" onclick="switchMaterialsTab(\'stock\')">📊 Остатки</button>';
     html += '</div></div>';
 
-    // Кнопки действий
     html += '<div style="display:flex;gap:8px;margin-bottom:16px">';
     html += '<button class="btn-primary" id="add-income-btn" style="flex:1">➕ Создать приход</button>';
     html += '<button class="btn-primary" id="issue-material-btn" style="flex:1;background:linear-gradient(135deg,#F59E0B,#F97316)">📤 Выдать материал</button>';
     html += '</div>';
 
-    // Контент подвкладок
     if (currentMaterialsTab === 'incomes') {
         html += renderIncomesTab();
     } else if (currentMaterialsTab === 'catalog') {
@@ -525,13 +520,11 @@ function renderMaterialsTab() {
 
     container.innerHTML = html;
 
-    // Обработчики
     var addIncomeBtn = document.getElementById('add-income-btn');
     var issueBtn = document.getElementById('issue-material-btn');
     if (addIncomeBtn) addIncomeBtn.addEventListener('click', openAddIncomeForm);
     if (issueBtn) issueBtn.addEventListener('click', openIssueMaterialForm);
 
-    // Обработчики для накладных
     container.querySelectorAll('.view-income-btn').forEach(function(btn) {
         btn.addEventListener('click', function() { viewIncome(btn.dataset.id); });
     });
@@ -551,7 +544,6 @@ window.switchMaterialsTab = function(tabName) {
 function renderIncomesTab() {
     var html = '';
 
-    // Приходы
     html += '<div class="info-card"><h3 style="margin-bottom:16px">📋 Приходы</h3>';
     if (!allIncomesCache.length) {
         html += '<p style="color:#64748B">Нет приходов</p>';
@@ -570,7 +562,6 @@ function renderIncomesTab() {
     }
     html += '</div>';
 
-    // Выдачи
     html += '<div class="info-card"><h3 style="margin-bottom:16px">📤 Выдачи</h3>';
     if (!allWaybillsCache.length) {
         html += '<p style="color:#64748B">Нет выдач</p>';
@@ -640,14 +631,14 @@ function renderStockTab() {
     return html;
 }
 
-// Создать приход
+// Создать приход (с выбором существующего или нового материала)
 function openAddIncomeForm() {
     var html = '<div class="form-group"><label>Поставщик</label><input type="text" id="inc-supplier" placeholder="ТОО «СтройМатериалы»"></div>';
     html += '<div class="row-2"><div class="form-group"><label>№ накладной поставщика</label><input type="text" id="inc-invoice-number" placeholder="1234"></div><div class="form-group"><label>Дата накладной</label><input type="date" id="inc-invoice-date"></div></div>';
     html += '<div class="form-group"><label>📎 Файл накладной</label><input type="file" id="inc-invoice-file" accept=".pdf,.jpg,.jpeg,.png"></div>';
     html += '<div id="income-items-container"></div>';
     html += '<button class="btn-add" id="add-income-item-btn" style="margin-top:8px">+ Добавить материал</button>';
-    html += '<p style="color:#64748B;font-size:12px;margin-top:8px">⚠️ Если материал уже существует — количество суммируется</p>';
+    html += '<p style="color:#64748B;font-size:12px;margin-top:8px">⚠️ Выберите существующий материал или создайте новый</p>';
 
     document.getElementById('form-modal-title').textContent = '➕ Создать приход';
     document.getElementById('form-modal-content').innerHTML = html;
@@ -664,10 +655,20 @@ function openAddIncomeForm() {
         var rows = document.querySelectorAll('#income-items-container .income-item-row');
         var items = [];
         for (var i = 0; i < rows.length; i++) {
-            var name = rows[i].querySelector('.inc-item-name').value.trim();
-            var qty = parseFloat(rows[i].querySelector('.inc-item-qty').value) || 0;
-            var unit = rows[i].querySelector('.inc-item-unit').value;
-            if (name && qty > 0) items.push({ name: name, unit: unit, quantity: qty });
+            var select = rows[i].querySelector('.inc-item-select');
+            var isNew = select.value === '__new__';
+            var name, unit, qty;
+            if (isNew) {
+                name = rows[i].querySelector('.inc-item-new-name').value.trim();
+                unit = rows[i].querySelector('.inc-item-unit').value;
+                qty = parseFloat(rows[i].querySelector('.inc-item-qty').value) || 0;
+            } else {
+                var selectedOption = select.selectedOptions[0];
+                name = selectedOption ? selectedOption.dataset.name : '';
+                unit = selectedOption ? selectedOption.dataset.unit : '';
+                qty = parseFloat(rows[i].querySelector('.inc-item-qty').value) || 0;
+            }
+            if (name && qty > 0) items.push({ name: name, unit: unit, quantity: qty, isNew: isNew });
         }
         if (!items.length) { alert('Добавьте хотя бы один материал'); return; }
 
@@ -689,7 +690,6 @@ function openAddIncomeForm() {
 
         for (var i = 0; i < items.length; i++) {
             await supabase.from('material_income_items').insert({ income_id: income.id, material_name: items[i].name, unit: items[i].unit, quantity: items[i].quantity });
-            // Обновляем или создаём в справочнике
             var { data: existing } = await supabase.from('material_catalog').select('*').eq('project_id', currentProjectId).eq('name', items[i].name).eq('unit', items[i].unit).single();
             if (existing) {
                 await supabase.from('material_catalog').update({
@@ -705,7 +705,6 @@ function openAddIncomeForm() {
             }
         }
 
-        // Обновляем номер прихода
         var incomeNumber = 'ПР-'+new Date().getFullYear().toString().slice(-2)+'-'+String(income.id).slice(-4);
         await supabase.from('material_incomes').update({ income_number: incomeNumber }).eq('id', income.id);
 
@@ -720,13 +719,43 @@ function addIncomeItemRow() {
     var container = document.getElementById('income-items-container');
     var row = document.createElement('div');
     row.className = 'income-item-row';
-    row.style.cssText = 'display:flex;gap:6px;margin:8px 0;align-items:center;flex-wrap:wrap';
-    row.innerHTML = '<input type="text" class="inc-item-name" placeholder="Наименование" style="flex:2;min-width:120px">'+
-        '<input type="number" class="inc-item-qty" placeholder="Кол-во" style="width:80px" step="0.01">'+
-        '<select class="inc-item-unit" style="width:80px"><option value="м²">м²</option><option value="шт">шт</option><option value="пог.м">пог.м</option><option value="рулон">рулон</option><option value="упак">упаковка</option><option value="кг">кг</option></select>'+
+    row.style.cssText = 'display:flex;gap:6px;margin:8px 0;align-items:center;flex-wrap:wrap;padding:8px;background:#F8FAFC;border-radius:10px';
+
+    var selectHtml = '<select class="inc-item-select" style="flex:2;min-width:150px" onchange="onIncomeItemSelect(this)">';
+    selectHtml += '<option value="">🔄 Выберите материал</option>';
+    allMaterialsCache.forEach(function(m) {
+        selectHtml += '<option value="'+m.id+'" data-name="'+m.name+'" data-unit="'+m.unit+'">'+m.name+' ('+m.unit+')</option>';
+    });
+    selectHtml += '<option value="__new__">➕ НОВЫЙ МАТЕРИАЛ</option>';
+    selectHtml += '</select>';
+
+    row.innerHTML = selectHtml +
+        '<input type="text" class="inc-item-new-name" placeholder="Название" style="display:none;flex:2;min-width:120px">' +
+        '<input type="number" class="inc-item-qty" placeholder="Кол-во" style="width:80px" step="0.01">' +
+        '<select class="inc-item-unit" style="width:80px"><option value="м²">м²</option><option value="шт">шт</option><option value="пог.м">пог.м</option><option value="рулон">рулон</option><option value="упак">упаковка</option><option value="кг">кг</option></select>' +
         '<button class="btn-delete" onclick="this.parentElement.remove()" style="width:28px;height:28px">✕</button>';
     container.appendChild(row);
 }
+
+window.onIncomeItemSelect = function(selectEl) {
+    var row = selectEl.parentElement;
+    var newNameInput = row.querySelector('.inc-item-new-name');
+    var qtyInput = row.querySelector('.inc-item-qty');
+    var unitSelect = row.querySelector('.inc-item-unit');
+
+    if (selectEl.value === '__new__') {
+        newNameInput.style.display = 'block';
+        qtyInput.value = '';
+        unitSelect.value = 'м²';
+    } else if (selectEl.value) {
+        newNameInput.style.display = 'none';
+        newNameInput.value = '';
+        unitSelect.value = selectEl.selectedOptions[0].dataset.unit || 'м²';
+        qtyInput.focus();
+    } else {
+        newNameInput.style.display = 'none';
+    }
+};
 
 // Выдать материал
 function openIssueMaterialForm() {
@@ -740,14 +769,12 @@ function openIssueMaterialForm() {
     document.getElementById('form-modal-content').innerHTML = html;
     document.getElementById('form-modal').classList.remove('hidden');
 
-    // При выборе бригады — загружаем оси
     document.getElementById('issue-brigade').addEventListener('change', async function() {
         var brigadeId = this.value;
         var axisSelect = document.getElementById('issue-axis');
         axisSelect.innerHTML = '<option value="">Загрузка осей...</option>';
 
-        // Ищем подоси, где работает эта бригада
-        var { data: stages } = await supabase.from('axis_work_stages').select('sub_axis_name, axis_id, axes(name)').eq('brigade_id', brigadeId);
+        var { data: stages } = await supabase.from('axis_work_stages').select('sub_axis_name, axes(name)').eq('brigade_id', brigadeId);
         var axesMap = {};
         if (stages) {
             stages.forEach(function(s) {
@@ -759,12 +786,9 @@ function openIssueMaterialForm() {
         axisSelect.innerHTML = '<option value="">Выберите ось</option>';
         if (axesList.length) {
             axesList.forEach(function(a) { axisSelect.innerHTML += '<option value="'+a+'">'+a+'</option>'; });
-        } else {
-            axisSelect.innerHTML += '<option value="">Нет осей для этой бригады</option>';
         }
     });
 
-    // Загружаем материалы
     var materialsHtml = '<div class="form-group" style="margin-top:16px"><label>📋 Материалы для выдачи</label>';
     allMaterialsCache.forEach(function(m) {
         materialsHtml += '<div style="display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px;background:#F8FAFC;border-radius:10px">';
@@ -798,10 +822,14 @@ function openIssueMaterialForm() {
         });
         if (!items.length) { alert('Выберите материалы и укажите количество'); return; }
 
-        var { data: waybill } = await supabase.from('material_waybills').insert({
+        var waybillNumber = 'НК-'+new Date().getFullYear().toString().slice(-2)+'-'+Date.now().toString().slice(-4);
+        var { data: waybill, error: waybillError } = await supabase.from('material_waybills').insert({
             project_id: currentProjectId, brigade_id: brigadeId, sub_axis_name: axisName,
+            waybill_number: waybillNumber, waybill_date: new Date().toISOString().split('T')[0],
             issued_by: currentUser?.id, issued_by_name: currentUser?.full_name
         }).select('id').single();
+
+        if (waybillError) { console.error('Ошибка создания накладной:', waybillError); alert('Ошибка: ' + waybillError.message); return; }
 
         for (var i = 0; i < items.length; i++) {
             await supabase.from('material_waybill_items').insert({ waybill_id: waybill.id, ...items[i] });
@@ -810,9 +838,6 @@ function openIssueMaterialForm() {
                 await supabase.from('material_catalog').update({ available_quantity: mat.available_quantity - items[i].quantity }).eq('id', items[i].material_id);
             }
         }
-
-        var waybillNumber = 'НК-'+new Date().getFullYear().toString().slice(-2)+'-'+String(waybill.id).slice(-4);
-        await supabase.from('material_waybills').update({ waybill_number: waybillNumber }).eq('id', waybill.id);
 
         document.getElementById('form-modal').classList.add('hidden');
         loadMaterialsTab();
@@ -867,6 +892,7 @@ function printWaybill(waybillId) {
         }, 300);
     });
 }
+
            
             init();
         })();
