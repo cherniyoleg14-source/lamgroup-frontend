@@ -240,28 +240,17 @@
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
                 
                 try {
-                    let query = supabase
+                    // Загружаем все отчёты со статусом 'pending'
+                    const { data, error } = await supabase
                         .from('object_reports')
                         .select('*, projects(name)')
                         .eq('status', 'pending')
                         .order('report_date', { ascending: false });
                     
-                    if (currentRole !== 'manager') {
-                        const { data: userProjects } = await supabase
-                            .from('projects')
-                            .select('id')
-                            .eq('responsible_worker_id', currentUser?.id);
-                        const projectIds = userProjects?.map(p => p.id) || [];
-                        if (projectIds.length > 0) {
-                            query = query.in('project_id', projectIds);
-                        } else {
-                            container.innerHTML = '<div class="empty-state">Нет отчётов на проверке</div>';
-                            return;
-                        }
-                    }
-                    
-                    const { data, error } = await query;
                     if (error) throw error;
+                    
+                    console.log('Найдено отчётов со статусом pending:', data?.length);
+                    console.log('Pending отчёты:', data);
                     
                     if (!data || data.length === 0) {
                         container.innerHTML = '<div class="empty-state">Нет отчётов на проверке</div>';
@@ -295,27 +284,12 @@
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
                 
                 try {
-                    let query = supabase
+                    const { data, error } = await supabase
                         .from('object_reports')
                         .select('*, projects(name)')
                         .eq('status', 'confirmed')
                         .order('report_date', { ascending: false });
                     
-                    if (currentRole !== 'manager') {
-                        const { data: userProjects } = await supabase
-                            .from('projects')
-                            .select('id')
-                            .eq('responsible_worker_id', currentUser?.id);
-                        const projectIds = userProjects?.map(p => p.id) || [];
-                        if (projectIds.length > 0) {
-                            query = query.in('project_id', projectIds);
-                        } else {
-                            container.innerHTML = '<div class="empty-state">Нет проверенных отчётов</div>';
-                            return;
-                        }
-                    }
-                    
-                    const { data, error } = await query;
                     if (error) throw error;
                     
                     if (!data || data.length === 0) {
@@ -559,7 +533,6 @@
                 } else {
                     showMessage('✅ Отчёт проверен', 'success');
                     document.getElementById('report-modal').classList.add('hidden');
-                    // Перезагружаем обе вкладки
                     await loadPendingReports();
                     await loadCompletedReports();
                 }
