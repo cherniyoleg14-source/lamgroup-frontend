@@ -178,6 +178,17 @@
                 await loadPendingReports();
                 await loadCompletedReports();
                 await loadAllTasks();
+                // Добавленные инициализации
+updateMainTabs();
+addNewTabContents();
+addCreateButtonStyle();
+if (typeof loadTasksTasks === 'function') await loadTasksTasks();
+if (typeof loadExpensesFinance === 'function') await loadExpensesFinance();
+if (typeof loadOrdersFinance === 'function') await loadOrdersFinance();
+if (typeof loadAdvancesFinance === 'function') await loadAdvancesFinance();
+if (typeof loadPaymentPlanFinance === 'function') await loadPaymentPlanFinance();
+if (typeof loadLettersList === 'function') await loadLettersList();
+if (typeof loadIssuesList === 'function') await loadIssuesList();
             }
             
             async function loadUser() {
@@ -190,22 +201,36 @@
             }
             
             function setupMainTabs() {
-                document.querySelectorAll('.main-tab').forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
-                        document.querySelectorAll('.main-tab-content').forEach(c => c.classList.remove('active'));
-                        tab.classList.add('active');
-                        document.getElementById(`main-${tab.dataset.main}`).classList.add('active');
-                        if (tab.dataset.main === 'reports') {
-                            loadPendingReports();
-                            loadCompletedReports();
-                        }
-                        if (tab.dataset.main === 'all-tasks') {
-                            loadAllTasks();
-                        }
-                    });
-                });
+    document.querySelectorAll('.main-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.main-tab-content').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`main-${tab.dataset.main}`).classList.add('active');
+            
+            if (tab.dataset.main === 'reports') {
+                loadPendingReports();
+                loadCompletedReports();
             }
+            if (tab.dataset.main === 'all-tasks') {
+                if (typeof loadTasksTasks === 'function') loadTasksTasks();
+            }
+            if (tab.dataset.main === 'finance') {
+                if (typeof loadExpensesFinance === 'function') loadExpensesFinance();
+                if (typeof loadOrdersFinance === 'function') loadOrdersFinance();
+                if (typeof loadAdvancesFinance === 'function') loadAdvancesFinance();
+                if (typeof loadPaymentPlanFinance === 'function') loadPaymentPlanFinance();
+            }
+            if (tab.dataset.main === 'payment-plan') {
+                if (typeof loadPaymentPlanFinance === 'function') loadPaymentPlanFinance();
+            }
+            if (tab.dataset.main === 'letters-issues') {
+                if (typeof loadLettersList === 'function') loadLettersList();
+                if (typeof loadIssuesList === 'function') loadIssuesList();
+            }
+        });
+    });
+}
             
             function setupSubTabs() {
                 document.querySelectorAll('.sub-tab').forEach(tab => {
@@ -612,6 +637,426 @@
             };
             
             window.loadAllTasks = loadAllTasks;
+            // ============================================================
+// ДОБАВЛЕННЫЕ ФУНКЦИИ (НИЧЕГО НЕ УДАЛЯЮТ)
+// ============================================================
+
+// Обновляем главные вкладки (добавляем новые вкладки)
+function updateMainTabs() {
+    const mainTabsContainer = document.querySelector('.main-tabs');
+    if (!mainTabsContainer) return;
+    
+    const existingTabs = Array.from(mainTabsContainer.querySelectorAll('.main-tab')).map(t => t.dataset.main);
+    
+    // Добавляем новые вкладки, если их нет
+    const newTabs = [
+        { data: "all-tasks", text: "⚠️ Все задачи", active: false },
+        { data: "finance", text: "💰 Финансы", active: false },
+        { data: "payment-plan", text: "📊 План оплат", active: false },
+        { data: "letters-issues", text: "✉️ Письма и проблемы", active: false }
+    ];
+    
+    for (const tab of newTabs) {
+        if (!existingTabs.includes(tab.data)) {
+            const tabBtn = document.createElement('button');
+            tabBtn.className = 'main-tab';
+            tabBtn.dataset.main = tab.data;
+            tabBtn.textContent = tab.text;
+            mainTabsContainer.appendChild(tabBtn);
+        }
+    }
+}
+
+// Обновляем HTML для новых вкладок
+function addNewTabContents() {
+    const container = document.querySelector('.container');
+    if (!container) return;
+    
+    // Проверяем, есть ли уже новые вкладки
+    if (document.getElementById('main-all-tasks')) return;
+    
+    const newContents = `
+        <!-- Все задачи (новая вкладка) -->
+        <div id="main-all-tasks" class="main-tab-content">
+            <button class="create-btn" id="create-task-btn">➕ Создать задачу</button>
+            <div class="filter-bar">
+                <button class="filter-chip active" data-task-filter="all">Все</button>
+                <button class="filter-chip" data-task-filter="pending">⏳ Ожидается</button>
+                <button class="filter-chip" data-task-filter="in_progress">🔵 В работе</button>
+                <button class="filter-chip" data-task-filter="completed">✅ Сделано</button>
+            </div>
+            <div id="custom-tasks-list"></div>
+        </div>
+        
+        <!-- Финансы (новая вкладка) -->
+        <div id="main-finance" class="main-tab-content">
+            <div class="sub-tabs">
+                <button class="sub-tab active" data-sub="expenses">💰 Расходы</button>
+                <button class="sub-tab" data-sub="orders">📋 Наряды</button>
+                <button class="sub-tab" data-sub="advances">💸 Авансы</button>
+                <button class="sub-tab" data-sub="payment-plan">📊 План оплат</button>
+            </div>
+            <div id="finance-expenses" class="sub-content active"></div>
+            <div id="finance-orders" class="sub-content"></div>
+            <div id="finance-advances" class="sub-content"></div>
+            <div id="finance-payment-plan" class="sub-content"></div>
+        </div>
+        
+        <!-- План оплат (новая вкладка) -->
+        <div id="main-payment-plan" class="main-tab-content">
+            <div id="payment-plan-list"></div>
+        </div>
+        
+        <!-- Письма и проблемы (новая вкладка) -->
+        <div id="main-letters-issues" class="main-tab-content">
+            <div class="sub-tabs">
+                <button class="sub-tab active" data-sub="letters">✉️ Письма</button>
+                <button class="sub-tab" data-sub="issues">⚠️ Проблемы</button>
+            </div>
+            <div id="letters-list" class="sub-content active"></div>
+            <div id="issues-list" class="sub-content"></div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', newContents);
+}
+
+// Добавляем стили для create-btn
+function addCreateButtonStyle() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .create-btn {
+            background: linear-gradient(135deg, #0F172A, #1E293B);
+            color: white;
+            padding: 14px;
+            border-radius: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .create-btn:active { transform: scale(0.98); }
+        .priority-high { border-left: 4px solid #EF4444; }
+        .priority-medium { border-left: 4px solid #F59E0B; }
+        .priority-low { border-left: 4px solid #10B981; }
+        .type-expense { background: #FEF3C7; color: #92400E; }
+        .type-order { background: #D1FAE5; color: #065F46; }
+        .type-advance { background: #F3E8FF; color: #6B21A8; }
+        .type-letter { background: #FEE2E2; color: #991B1B; }
+        .type-issue { background: #FFEDD5; color: #9A3412; }
+        .status-in-progress { background: #DBEAFE; color: #1E40AF; }
+        .radio-group { display: flex; gap: 20px; align-items: center; }
+        .radio-group label { display: flex; align-items: center; gap: 6px; font-weight: normal; text-transform: none; margin-bottom: 0; }
+        .responsible-list { margin: 8px 0; padding: 0; list-style: none; }
+        .responsible-list li { display: inline-block; background: #E2E8F0; padding: 2px 8px; border-radius: 20px; font-size: 11px; margin: 2px; }
+    `;
+    document.head.appendChild(style);
+}
+            // ========== НОВЫЕ ФУНКЦИИ ДЛЯ ЗАДАЧ ==========
+
+async function loadTasksTasks(filter = 'all') {
+    const container = document.getElementById('custom-tasks-list');
+    if (!container) return;
+    container.innerHTML = '<div class="loading">Загрузка...</div>';
+    
+    let query = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false });
+    if (filter !== 'all') query = query.eq('status', filter);
+    if (currentRole !== 'manager') query = query.or(`created_by.eq.${currentUser?.id},responsible_ids.cs.{${currentUser?.id}}`);
+    
+    const { data, error } = await query;
+    if (error) { container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`; return; }
+    if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Нет задач</div>'; return; }
+    
+    const priorityClass = { high: 'priority-high', medium: 'priority-medium', low: 'priority-low' };
+    const priorityText = { high: '🔴 Высокий', medium: '🟡 Средний', low: '🟢 Низкий' };
+    const statusMap = { pending: { text: '⏳ Ожидается', class: 'status-pending' }, in_progress: { text: '🔵 В работе', class: 'status-in-progress' }, completed: { text: '✅ Сделано', class: 'status-completed' } };
+    
+    let html = '';
+    for (const task of data) {
+        const status = statusMap[task.status] || statusMap.pending;
+        const today = new Date();
+        const deadline = task.deadline ? new Date(task.deadline) : null;
+        let daysLeft = '';
+        if (deadline && task.status !== 'completed') {
+            const diff = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+            daysLeft = diff < 0 ? `<span style="color:#EF4444;">⚠️ Просрочено на ${Math.abs(diff)} дн.</span>` :
+                       diff <= 3 ? `<span style="color:#F59E0B;">⏰ Осталось ${diff} дн.</span>` : '';
+        }
+        const responsibleNames = task.responsible_names?.join(', ') || '—';
+        
+        html += `<div class="task-card ${priorityClass[task.priority] || ''}" onclick="viewCustomTask('${task.id}')">
+            <div class="task-header"><span class="task-type type-task">📌 Задача</span><span class="task-status ${status.class}">${status.text}</span></div>
+            <div class="task-title">${escapeHtml(task.title)}</div>
+            <div class="task-description">${priorityText[task.priority] || '🟡 Средний'} ${task.projects?.name ? ` | 🏗️ ${escapeHtml(task.projects.name)}` : ''} | 👤 ${responsibleNames} ${daysLeft ? ` | ${daysLeft}` : ''}</div>
+            <div class="task-meta"><span>📅 ${new Date(task.created_at).toLocaleDateString('ru-RU')}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewCustomTask('${task.id}')">👁️ Открыть</span></div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+async function openCreateTaskForm() {
+    const today = new Date().toISOString().split('T')[0];
+    const defaultDeadline = new Date(); defaultDeadline.setDate(defaultDeadline.getDate() + 7);
+    
+    const { data: projects } = await supabase.from('projects').select('id, name').order('name');
+    let projectsHtml = '<option value="">— Не выбрано —</option>';
+    projects?.forEach(p => { projectsHtml += `<option value="${p.id}">${escapeHtml(p.name)}</option>`; });
+    
+    const { data: users } = await supabase.from('users').select('id, full_name, role').order('full_name');
+    let usersHtml = '<select id="task-responsible" multiple size="5" style="width:100%; padding:10px; border-radius:14px; min-height:120px;"><option value="">Выберите...</option>';
+    users?.forEach(u => {
+        usersHtml += `<option value="${u.id}" data-name="${u.full_name}">${u.full_name} (${u.role === 'manager' ? 'Руководитель' : 'ИТР'})</option>`;
+    });
+    usersHtml += '</select><p style="font-size:12px; color:#64748B;">(для выбора нескольких зажмите Ctrl или Cmd)</p>';
+    
+    const modalHtml = `
+        <div class="form-group"><label>📅 Дата создания</label><input type="text" value="${today}" disabled style="background:#F8FAFC;"></div>
+        <div class="form-group"><label>📅 Дата завершения *</label><input type="date" id="task-deadline" value="${defaultDeadline.toISOString().split('T')[0]}" required></div>
+        <div class="form-group"><label>📝 Название задачи *</label><input type="text" id="task-title" placeholder="Например: Согласовать смету" required></div>
+        <div class="form-group"><label>📄 Описание</label><textarea id="task-description" rows="3" placeholder="Подробное описание..."></textarea></div>
+        <div class="form-group"><label>🏗️ Объект</label><select id="task-project">${projectsHtml}</select></div>
+        <div class="form-group"><label>👤 Кому назначить (можно нескольких) *</label>${usersHtml}</div>
+        <div class="form-group"><label>🎯 Приоритет</label><div class="radio-group"><label><input type="radio" name="priority" value="low"> 🟢 Низкий</label><label><input type="radio" name="priority" value="medium" checked> 🟡 Средний</label><label><input type="radio" name="priority" value="high"> 🔴 Высокий</label></div></div>
+        <div class="form-group"><label>📊 Статус</label><div class="radio-group"><label><input type="radio" name="status" value="pending" checked> ⏳ Ожидается</label><label><input type="radio" name="status" value="in_progress"> 🔵 В работе</label><label><input type="radio" name="status" value="completed"> ✅ Сделано</label></div></div>
+        <button class="btn-primary" id="save-custom-task-btn">📤 Создать задачу</button>
+    `;
+    
+    document.getElementById('task-create-body').innerHTML = modalHtml;
+    document.getElementById('task-create-modal').classList.remove('hidden');
+    
+    document.getElementById('save-custom-task-btn').onclick = async () => {
+        const title = document.getElementById('task-title').value.trim();
+        const deadline = document.getElementById('task-deadline').value;
+        const projectId = document.getElementById('task-project').value || null;
+        const responsibleSelect = document.getElementById('task-responsible');
+        const responsibleIds = Array.from(responsibleSelect.selectedOptions).map(opt => opt.value).filter(v => v);
+        const responsibleNames = Array.from(responsibleSelect.selectedOptions).map(opt => opt.dataset.name || opt.text.split(' (')[0]);
+        const priority = document.querySelector('input[name="priority"]:checked')?.value;
+        const status = document.querySelector('input[name="status"]:checked')?.value;
+        
+        if (!title || !deadline) { alert('Заполните название и дату'); return; }
+        if (!responsibleIds.length) { alert('Выберите ответственного'); return; }
+        
+        const { error } = await supabase.from('custom_tasks').insert({
+            title: title, description: document.getElementById('task-description').value || null,
+            deadline: deadline, project_id: projectId,
+            responsible_ids: responsibleIds, responsible_names: responsibleNames,
+            priority: priority || 'medium', status: status || 'pending',
+            created_by: currentUser?.id, created_by_name: currentUser?.full_name,
+            created_at: new Date()
+        });
+        
+        if (error) { showMessage('Ошибка: ' + error.message, 'error'); }
+        else { showMessage('✅ Задача создана', 'success'); document.getElementById('task-create-modal').classList.add('hidden'); loadTasksTasks(); }
+    };
+}
+
+window.viewCustomTask = async function(taskId) {
+    const { data: task } = await supabase.from('custom_tasks').select('*, projects(name)').eq('id', taskId).single();
+    if (!task) return;
+    const responsibleList = task.responsible_names?.map(n => `<li>${escapeHtml(n)}</li>`).join('') || '—';
+    const modalHtml = `
+        <div><strong>📌 ${escapeHtml(task.title)}</strong></div>
+        <div>📅 Создана: ${new Date(task.created_at).toLocaleDateString('ru-RU')}</div>
+        <div>📅 Завершить до: ${task.deadline ? new Date(task.deadline).toLocaleDateString('ru-RU') : '—'}</div>
+        ${task.projects?.name ? `<div>🏗️ Объект: ${escapeHtml(task.projects.name)}</div>` : ''}
+        <div style="background:#F8FAFC; padding:12px; margin:12px 0;">📝 ${escapeHtml(task.description || '—')}</div>
+        <div><strong>👥 Кому назначена:</strong><ul class="responsible-list">${responsibleList}</ul></div>
+        <div>👤 Создал: ${task.created_by_name || '—'}</div>
+        <div class="form-group"><label>Статус</label><select id="custom-task-status-update">
+            <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>⏳ Ожидается</option>
+            <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>🔵 В работе</option>
+            <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>✅ Сделано</option>
+        </select></div>
+        <button class="btn-primary" id="update-custom-task-status">💾 Обновить статус</button>
+    `;
+    document.getElementById('task-view-body').innerHTML = modalHtml;
+    document.getElementById('task-view-modal').classList.remove('hidden');
+    document.getElementById('update-custom-task-status').onclick = async () => {
+        const newStatus = document.getElementById('custom-task-status-update').value;
+        await supabase.from('custom_tasks').update({ status: newStatus, updated_at: new Date() }).eq('id', taskId);
+        showMessage('Статус обновлён', 'success');
+        document.getElementById('task-view-modal').classList.add('hidden');
+        loadTasksTasks();
+    };
+};
+
+// ========== ФИНАНСЫ ==========
+async function loadExpensesFinance() {
+    const container = document.getElementById('finance-expenses');
+    if (!container) return;
+    container.innerHTML = '<div class="loading">Загрузка...</div>';
+    let query = supabase.from('expenses').select('*, projects(name)').eq('payment_status', 'pending').order('date', { ascending: false });
+    if (currentRole !== 'manager') {
+        const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
+        const projectIds = userProjects?.map(p => p.id) || [];
+        if (projectIds.length) query = query.in('project_id', projectIds);
+        else { container.innerHTML = '<div class="empty-state">Нет расходов</div>'; return; }
+    }
+    const { data, error } = await query;
+    if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет расходов</div>'; return; }
+    let html = '';
+    for (const exp of data) {
+        html += `<div class="task-card"><div class="task-header"><span class="task-type type-expense">💰 Расход</span><span class="task-status status-pending">⏳ Ожидает</span></div>
+            <div class="task-title">${exp.projects?.name || '—'}</div><div class="task-description">${escapeHtml(exp.name)} — ${Number(exp.amount).toLocaleString()} ₸<br>${exp.supplier ? `🏢 ${escapeHtml(exp.supplier)}` : ''}</div>
+            <div class="task-meta"><span>📅 ${exp.date ? new Date(exp.date).toLocaleDateString('ru-RU') : '—'}</span>
+            ${currentRole === 'manager' ? `<button class="btn-small btn-confirm" onclick="markExpensePaidFinance('${exp.id}')">✅ Оплатить</button>` : ''}</div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+window.markExpensePaidFinance = async (expenseId) => {
+    await supabase.from('expenses').update({ payment_status: 'paid' }).eq('id', expenseId);
+    loadExpensesFinance(); loadPaymentPlanFinance();
+    showMessage('Расход оплачен', 'success');
+};
+
+async function loadOrdersFinance() {
+    const container = document.getElementById('finance-orders');
+    if (!container) return;
+    container.innerHTML = '<div class="loading">Загрузка...</div>';
+    let query = supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status', 'pending_foreman').order('created_at', { ascending: false });
+    if (currentRole !== 'manager') {
+        const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
+        const projectIds = userProjects?.map(p => p.id) || [];
+        if (projectIds.length) query = query.in('project_id', projectIds);
+        else { container.innerHTML = '<div class="empty-state">Нет нарядов</div>'; return; }
+    }
+    const { data, error } = await query;
+    if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет нарядов</div>'; return; }
+    let html = '';
+    for (const order of data) {
+        html += `<div class="task-card"><div class="task-header"><span class="task-type type-order">📋 Наряд</span><span class="task-status status-pending">⏳ Ожидает</span></div>
+            <div class="task-title">${order.projects?.name || '—'}</div><div class="task-description">👷 ${order.brigades?.name || '—'} | ${escapeHtml(order.work_type)}<br>💰 ${Number(order.total_amount).toLocaleString()} ₸</div>
+            <div class="task-meta"><span>📅 ${new Date(order.created_at).toLocaleDateString('ru-RU')}</span>
+            ${currentRole === 'manager' ? `<button class="btn-small btn-confirm" onclick="approveOrderFinance('${order.id}')">✅ Утвердить</button>` : ''}</div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+window.approveOrderFinance = async (orderId) => {
+    await supabase.from('work_orders').update({ status: 'approved' }).eq('id', orderId);
+    loadOrdersFinance();
+    showMessage('Наряд утверждён', 'success');
+};
+
+async function loadAdvancesFinance() {
+    const container = document.getElementById('finance-advances');
+    if (!container) return;
+    container.innerHTML = '<div class="loading">Загрузка...</div>';
+    let query = supabase.from('advances').select('*, projects(name), brigades(name)').eq('status', 'pending').order('created_at', { ascending: false });
+    if (currentRole !== 'manager') {
+        const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
+        const projectIds = userProjects?.map(p => p.id) || [];
+        if (projectIds.length) query = query.in('project_id', projectIds);
+        else { container.innerHTML = '<div class="empty-state">Нет авансов</div>'; return; }
+    }
+    const { data, error } = await query;
+    if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет авансов</div>'; return; }
+    let html = '';
+    for (const advance of data) {
+        html += `<div class="task-card"><div class="task-header"><span class="task-type type-advance">💰 Аванс</span><span class="task-status status-pending">⏳ Ожидает</span></div>
+            <div class="task-title">${advance.projects?.name || '—'}</div><div class="task-description">👷 ${advance.brigades?.name || '—'}<br>💰 Сумма: ${Number(advance.amount).toLocaleString()} ₸</div>
+            <div class="task-meta"><span>📅 ${new Date(advance.created_at).toLocaleDateString('ru-RU')}</span>
+            ${currentRole === 'manager' ? `<button class="btn-small btn-confirm" onclick="approveAdvanceFinance('${advance.id}')">✅ Утвердить</button>` : ''}</div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+window.approveAdvanceFinance = async (advanceId) => {
+    await supabase.from('advances').update({ status: 'approved' }).eq('id', advanceId);
+    loadAdvancesFinance();
+    showMessage('Аванс утверждён', 'success');
+};
+
+async function loadPaymentPlanFinance() {
+    const container = document.getElementById('finance-payment-plan');
+    if (!container) return;
+    container.innerHTML = '<div class="loading">Загрузка...</div>';
+    let query = supabase.from('expenses').select('*, projects(name)').eq('payment_status', 'pending').order('planned_payment_date', { ascending: true });
+    if (currentRole !== 'manager') {
+        const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
+        const projectIds = userProjects?.map(p => p.id) || [];
+        if (projectIds.length) query = query.in('project_id', projectIds);
+        else { container.innerHTML = '<div class="empty-state">Нет планов оплат</div>'; return; }
+    }
+    const { data, error } = await query;
+    if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет планов оплат</div>'; return; }
+    let html = '';
+    for (const exp of data) {
+        html += `<div class="task-card"><div class="task-header"><span class="task-type type-expense">💰 Платёж</span><span class="task-status status-pending">⏳ Ожидает</span></div>
+            <div class="task-title">${exp.projects?.name || '—'}</div><div class="task-description">${escapeHtml(exp.name)} — ${Number(exp.amount).toLocaleString()} ₸<br>🏢 ${escapeHtml(exp.supplier || '—')}</div>
+            <div class="task-meta"><span>📅 План: ${exp.planned_payment_date ? new Date(exp.planned_payment_date).toLocaleDateString('ru-RU') : '—'}</span>
+            ${currentRole === 'manager' ? `<button class="btn-small btn-confirm" onclick="markExpensePaidFinance('${exp.id}')">✅ Оплатить</button>` : ''}</div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+// ========== ПИСЬМА И ПРОБЛЕМЫ ==========
+async function loadLettersList() {
+    const container = document.getElementById('letters-list');
+    if (!container) return;
+    container.innerHTML = '<div class="loading">Загрузка...</div>';
+    let query = supabase.from('letters').select('*, projects(name)').eq('status', 'sent_to_office').order('created_at', { ascending: false });
+    if (currentRole !== 'manager') {
+        const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
+        const projectIds = userProjects?.map(p => p.id) || [];
+        if (projectIds.length) query = query.in('project_id', projectIds);
+        else { container.innerHTML = '<div class="empty-state">Нет писем</div>'; return; }
+    }
+    const { data, error } = await query;
+    if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет писем</div>'; return; }
+    let html = '';
+    for (const letter of data) {
+        html += `<div class="task-card"><div class="task-header"><span class="task-type type-letter">✉️ Письмо</span><span class="task-status status-pending">⏳ Требуется отправка</span></div>
+            <div class="task-title">${letter.projects?.name || '—'}</div><div class="task-description">📄 ${escapeHtml(letter.letter_number_full)}<br>📝 ${escapeHtml(letter.delay_description || '—')}</div>
+            <div class="task-meta"><span>📅 ${new Date(letter.created_at).toLocaleDateString('ru-RU')}</span>
+            <span class="btn-small btn-confirm" onclick="markLetterSent('${letter.id}')">📨 Отправить</span></div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+window.markLetterSent = async (letterId) => {
+    await supabase.from('letters').update({ status: 'sent_to_customer', sent_to_customer: true }).eq('id', letterId);
+    loadLettersList();
+    showMessage('Письмо отмечено как отправленное', 'success');
+};
+
+async function loadIssuesList() {
+    const container = document.getElementById('issues-list');
+    if (!container) return;
+    container.innerHTML = '<div class="loading">Загрузка...</div>';
+    let query = supabase.from('project_issues').select('*, projects(name)').in('status', ['open', 'in_progress', 'overdue']).order('created_at', { ascending: false });
+    if (currentRole !== 'manager') {
+        const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
+        const projectIds = userProjects?.map(p => p.id) || [];
+        if (projectIds.length) query = query.in('project_id', projectIds);
+        else { container.innerHTML = '<div class="empty-state">Нет проблем</div>'; return; }
+    }
+    const { data, error } = await query;
+    if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет проблем</div>'; return; }
+    let html = '';
+    for (const issue of data) {
+        const priorityIcon = issue.priority === 'high' ? '🔴' : issue.priority === 'medium' ? '🟡' : '🟢';
+        html += `<div class="task-card" onclick="viewIssueDetail('${issue.id}')"><div class="task-header"><span class="task-type type-issue">⚠️ Проблема</span><span class="task-status status-pending">${priorityIcon} ${issue.status === 'overdue' ? 'Просрочена' : (issue.status === 'in_progress' ? 'В работе' : 'Открыта')}</span></div>
+            <div class="task-title">${issue.projects?.name || '—'}</div><div class="task-description">📝 ${escapeHtml(issue.title)}<br>${escapeHtml(issue.description?.substring(0, 80) || '')}</div>
+            <div class="task-meta"><span>👤 ${issue.created_by_name || '—'}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewIssueDetail('${issue.id}')">👁️ Просмотреть</span></div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+window.viewIssueDetail = async (issueId) => {
+    const { data: issue } = await supabase.from('project_issues').select('*').eq('id', issueId).single();
+    alert(`Проблема: ${issue?.title}\n${issue?.description}\nСтатус: ${issue?.status}\nПриоритет: ${issue?.priority}`);
+};
+            
             init();
         })();
     </script>
