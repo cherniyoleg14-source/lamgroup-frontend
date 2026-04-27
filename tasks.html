@@ -737,7 +737,8 @@ async function loadExpensesFinance() {
 
 window.markExpensePaidFinance = async (expenseId) => {
     await supabase.from('expenses').update({ payment_status: 'paid' }).eq('id', expenseId);
-    loadExpensesFinance(); loadPaymentPlanFinance();
+    loadExpensesFinance();         // обновить список ожидающих
+    loadPaymentPlanFinance();      // добавить в план оплат
     showMessage('Расход оплачен', 'success');
 };
 
@@ -766,8 +767,9 @@ async function loadOrdersFinance() {
 }
 
 window.approveOrderFinance = async (orderId) => {
-    await supabase.from('work_orders').update({ status: 'approved' }).eq('id', orderId);
-    loadOrdersFinance();
+    await supabase.from('work_orders').update({ status: 'approved', approved_at: new Date() }).eq('id', orderId);
+    loadOrdersFinance();           // обновить список на утверждение
+    loadPaymentPlanFinance();      // добавить в план оплат
     showMessage('Наряд утверждён', 'success');
 };
 
@@ -796,8 +798,9 @@ async function loadAdvancesFinance() {
 }
 
 window.approveAdvanceFinance = async (advanceId) => {
-    await supabase.from('advances').update({ status: 'approved' }).eq('id', advanceId);
-    loadAdvancesFinance();
+    await supabase.from('advances').update({ status: 'approved', approved_by: currentUser?.id, approved_at: new Date() }).eq('id', advanceId);
+    loadAdvancesFinance();         // обновить список на утверждение
+    loadPaymentPlanFinance();      // добавить в план оплат
     showMessage('Аванс утверждён', 'success');
 };
 
@@ -805,23 +808,62 @@ async function loadPaymentPlanFinance() {
     const container = document.getElementById('finance-payment-plan');
     if (!container) return;
     container.innerHTML = '<div class="loading">Загрузка...</div>';
-    let query = supabase.from('expenses').select('*, projects(name)').eq('payment_status', 'pending').order('planned_payment_date', { ascending: true });
+    
+    // Получаем все утверждённые операции
+    const [expensesRes, ordersRes, advancesRes] = await Promise.all([
+        supabase.from('expenses').select('*, projects(name)').eq('payment_status', 'paid'),
+        supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status', 'approved'),
+        supabase.from('advances').select('*, projects(name), brigades(name)').eq('status', 'approved')
+    ]);
+    
+    const expenses = expensesRes.data || [];
+    const orders = ordersRes.data || [];
+    const advances = advancesRes.data || [];
+    
+    // Фильтрация по правам (если не руководитель)
     if (currentRole !== 'manager') {
         const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
         const projectIds = userProjects?.map(p => p.id) || [];
-        if (projectIds.length) query = query.in('project_id', projectIds);
-        else { container.innerHTML = '<div class="empty-state">Нет планов оплат</div>'; return; }
+        const filterByProject = (item) => projectIds.includes(item.project_id);
+        expenses = expenses.filter(filterByProject);
+        orders = orders.filter(filterByProject);
+        advances = advances.filter(filterByProject);
     }
-    const { data, error } = await query;
-    if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет планов оплат</div>'; return; }
+    
+    if (expenses.length === 0 && orders.length === 0 && advances.length === 0) {
+        container.innerHTML = '<div class="empty-state">Нет утверждённых операций</div>';
+        return;
+    }
+    
     let html = '';
-    for (const exp of data) {
-        html += `<div class="task-card"><div class="task-header"><span class="task-type type-expense">💰 Платёж</span><span class="task-status status-pending">⏳ Ожидает</span></div>
-            <div class="task-title">${exp.projects?.name || '—'}</div><div class="task-description">${escapeHtml(exp.name)} — ${Number(exp.amount).toLocaleString()} ₸<br>🏢 ${escapeHtml(exp.supplier || '—')}</div>
-            <div class="task-meta"><span>📅 План: ${exp.planned_payment_date ? new Date(exp.planned_payment_date).toLocaleDateString('ru-RU') : '—'}</span>
-            ${currentRole === 'manager' ? `<button class="btn-small btn-confirm" onclick="markExpensePaidFinance('${exp.id}')">✅ Оплатить</button>` : ''}</div>
+    
+    // Расходы (оплаченные)
+    for (const exp of expenses) {
+        html += `<div class="task-card"><div class="task-header"><span class="task-type type-expense">✅ Оплачено</span><span class="task-status status-completed">Оплачено</span></div>
+            <div class="task-title">${exp.projects?.name || '—'}</div>
+            <div class="task-description">${escapeHtml(exp.name)} — ${Number(exp.amount).toLocaleString()} ₸<br>🏢 ${escapeHtml(exp.supplier || '—')}<br>📅 ${exp.date ? new Date(exp.date).toLocaleDateString('ru-RU') : '—'}</div>
+            <div class="task-meta"><span>👤 ${exp.created_by_name || '—'}</span></div>
         </div>`;
     }
+    
+    // Наряды (утверждённые)
+    for (const order of orders) {
+        html += `<div class="task-card"><div class="task-header"><span class="task-type type-order">✅ Наряд утверждён</span><span class="task-status status-completed">Утверждён</span></div>
+            <div class="task-title">${order.projects?.name || '—'}</div>
+            <div class="task-description">👷 ${order.brigades?.name || '—'} | ${escapeHtml(order.work_type)}<br>💰 ${Number(order.total_amount).toLocaleString()} ₸</div>
+            <div class="task-meta"><span>📅 ${new Date(order.created_at).toLocaleDateString('ru-RU')}</span></div>
+        </div>`;
+    }
+    
+    // Авансы (утверждённые)
+    for (const advance of advances) {
+        html += `<div class="task-card"><div class="task-header"><span class="task-type type-advance">✅ Аванс утверждён</span><span class="task-status status-completed">Утверждён</span></div>
+            <div class="task-title">${advance.projects?.name || '—'}</div>
+            <div class="task-description">👷 ${advance.brigades?.name || '—'}<br>💰 Сумма: ${Number(advance.amount).toLocaleString()} ₸</div>
+            <div class="task-meta"><span>📅 ${new Date(advance.created_at).toLocaleDateString('ru-RU')}</span></div>
+        </div>`;
+    }
+    
     container.innerHTML = html;
 }
 
