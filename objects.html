@@ -1307,7 +1307,6 @@ async function loadExpenses() {
     const container = document.getElementById('tab-expenses');
     container.innerHTML = '<div class="loading">Загрузка расходов...</div>';
     
-    // Загружаем расходы для текущего объекта
     const { data, error } = await supabase
         .from('expenses')
         .select('*')
@@ -1322,7 +1321,7 @@ async function loadExpenses() {
     const expenses = data || [];
     
     // Статистика
-    const paidTotal = expenses.filter(e => e.payment_status === 'paid').reduce((s, e) => s + Number(e.amount), 0);
+    const approvedTotal = expenses.filter(e => e.payment_status === 'approved').reduce((s, e) => s + Number(e.amount), 0);
     const pendingTotal = expenses.filter(e => e.payment_status === 'pending').reduce((s, e) => s + Number(e.amount), 0);
     
     const categoryMap = {
@@ -1335,26 +1334,25 @@ async function loadExpenses() {
         <div class="info-card">
             <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
                 <div style="flex: 1; background: #D1FAE5; border-radius: 20px; padding: 16px; text-align: center;">
-                    <div style="font-size: 28px; font-weight: 800; color: #065F46;">${paidTotal.toLocaleString()} ₸</div>
-                    <div style="font-size: 12px; color: #065F46;">✅ Оплачено</div>
+                    <div style="font-size: 28px; font-weight: 800; color: #065F46;">${approvedTotal.toLocaleString()} ₸</div>
+                    <div style="font-size: 12px; color: #065F46;">✅ Утверждено</div>
                 </div>
                 <div style="flex: 1; background: #FEF3C7; border-radius: 20px; padding: 16px; text-align: center;">
                     <div style="font-size: 28px; font-weight: 800; color: #92400E;">${pendingTotal.toLocaleString()} ₸</div>
-                    <div style="font-size: 12px; color: #92400E;">⏳ План оплат</div>
+                    <div style="font-size: 12px; color: #92400E;">⏳ Ожидают</div>
                 </div>
             </div>
             
             <button class="btn-primary" id="add-expense-btn" style="margin-bottom: 20px;">➕ Добавить расход</button>
     `;
     
-    // Список расходов
     if (expenses.length === 0) {
         html += '<p style="color: #64748B; text-align: center; padding: 20px;">Нет расходов</p>';
     } else {
         expenses.forEach(exp => {
-            const isPaid = exp.payment_status === 'paid';
+            const isApproved = exp.payment_status === 'approved';
             const isUrgent = exp.is_urgent === true;
-            const borderColor = isUrgent ? '#EF4444' : (isPaid ? '#10B981' : '#F59E0B');
+            const borderColor = isUrgent ? '#EF4444' : (isApproved ? '#10B981' : '#F59E0B');
             
             html += `
                 <div class="gpr-item" style="border-left: 4px solid ${borderColor}; margin-bottom: 12px;">
@@ -1365,18 +1363,18 @@ async function loadExpenses() {
                             <br>
                             <span style="font-size: 11px; color: #64748B;">${categoryMap[exp.category] || exp.category}</span>
                         </div>
-                        <div style="font-size: 18px; font-weight: 700; color: ${isPaid ? '#065F46' : '#92400E'};">${Number(exp.amount).toLocaleString()} ₸</div>
+                        <div style="font-size: 18px; font-weight: 700; color: ${isApproved ? '#065F46' : '#92400E'};">${Number(exp.amount).toLocaleString()} ₸</div>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: #64748B;">
                         <span>📅 ${exp.date ? new Date(exp.date).toLocaleDateString('ru-RU') : '—'}</span>
                         <span>💳 ${exp.payment_method === 'cash' ? 'Наличка' : exp.payment_method === 'non_cash' ? 'Безнал' : (exp.payment_type === 'cash' ? 'Наличка' : 'Безнал')}</span>
-                        <span class="status-badge" style="padding: 2px 8px; border-radius: 20px; background: ${isPaid ? '#D1FAE5' : '#FEF3C7'}; color: ${isPaid ? '#065F46' : '#92400E'};">${isPaid ? '✅ Оплачен' : '⏳ План оплат'}</span>
+                        <span class="status-badge" style="padding: 2px 8px; border-radius: 20px; background: ${isApproved ? '#D1FAE5' : '#FEF3C7'}; color: ${isApproved ? '#065F46' : '#92400E'};">${isApproved ? '✅ Утверждён' : '⏳ Ожидает'}</span>
                     </div>
                     ${exp.supplier ? `<div style="font-size: 12px; margin-top: 6px;">🏢 ${escapeHtml(exp.supplier)}</div>` : ''}
                     ${exp.invoice_name ? `<div style="font-size: 12px; margin-top: 4px;">📎 <a href="${exp.invoice_url}" target="_blank" style="color: #3B82F6;">${escapeHtml(exp.invoice_name)}</a></div>` : ''}
                     ${exp.planned_payment_date ? `<div style="font-size: 12px; margin-top: 4px;">📅 План оплаты: ${new Date(exp.planned_payment_date).toLocaleDateString('ru-RU')}</div>` : ''}
-                    ${!isPaid && currentRole === 'manager' ? `
-                        <button class="btn-small" style="margin-top: 10px; background: #DBEAFE; color: #1E40AF; padding: 6px 12px; border-radius: 10px; border: none; cursor: pointer;" onclick="markExpensePaid('${exp.id}')">✅ Отметить оплаченным</button>
+                    ${!isApproved && currentRole === 'manager' ? `
+                        <button class="btn-small" style="margin-top: 10px; background: #DBEAFE; color: #1E40AF; padding: 6px 12px; border-radius: 10px; border: none; cursor: pointer;" onclick="approveExpense('${exp.id}')">✅ Утвердить</button>
                     ` : ''}
                 </div>
             `;
@@ -1528,21 +1526,20 @@ function openAddExpenseForm() {
     };
 }
 
-window.markExpensePaid = async function(expenseId) {
+window.approveExpense = async function(expenseId) {
     const { error } = await supabase
         .from('expenses')
         .update({ 
-            payment_status: 'paid',
-            accountant_status: 'paid',
-            sent_to_accountant: true,
-            updated_at: new Date()
+            payment_status: 'approved',
+            approved_at: new Date(),
+            approved_by: currentUser?.id
         })
         .eq('id', expenseId);
     
     if (error) {
         showMessage('Ошибка: ' + error.message, 'error');
     } else {
-        showMessage('✅ Расход отмечен как оплаченный', 'success');
+        showMessage('✅ Расход утверждён', 'success');
         loadExpenses();
     }
 };
