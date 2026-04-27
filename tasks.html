@@ -769,15 +769,18 @@ async function loadOrdersFinance() {
 window.approveOrderFinance = async (orderId) => {
     const { error } = await supabase
         .from('work_orders')
-        .update({ status: 'approved' })
+        .update({ 
+            status: 'approved', 
+            approved_at: new Date() 
+        })
         .eq('id', orderId);
     
     if (error) {
         showMessage('Ошибка: ' + error.message, 'error');
     } else {
         showMessage('✅ Наряд утверждён', 'success');
-        loadOrdersFinance();           // обновить список на утверждение
-        loadPaymentPlanFinance();      // добавить в план оплат
+        loadOrdersFinance();
+        loadPaymentPlanFinance();
     }
 };
 
@@ -808,15 +811,19 @@ async function loadAdvancesFinance() {
 window.approveAdvanceFinance = async (advanceId) => {
     const { error } = await supabase
         .from('advances')
-        .update({ status: 'approved', approved_by: currentUser?.id })
+        .update({ 
+            status: 'approved', 
+            approved_by: currentUser?.id, 
+            approved_at: new Date() 
+        })
         .eq('id', advanceId);
     
     if (error) {
         showMessage('Ошибка: ' + error.message, 'error');
     } else {
         showMessage('✅ Аванс утверждён', 'success');
-        loadAdvancesFinance();         // обновить список на утверждение
-        loadPaymentPlanFinance();      // добавить в план оплат
+        loadAdvancesFinance();
+        loadPaymentPlanFinance();
     }
 };
 
