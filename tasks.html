@@ -107,7 +107,7 @@
             <button class="main-tab" data-main="letters-issues">✉️ Письма и проблемы</button>
         </div>
         
-        <!-- ОТЧЁТЫ (рабочая версия) -->
+        <!-- ОТЧЁТЫ (из первого файла - рабочие) -->
         <div id="main-reports" class="main-tab-content active">
             <div class="sub-tabs">
                 <button class="sub-tab active" data-sub="pending">⏳ На проверке</button>
@@ -196,6 +196,7 @@
             
             let currentUser = null;
             let currentRole = 'worker';
+            let currentReportId = null;
             
             function showMessage(text, type) {
                 const msg = document.getElementById('message');
@@ -326,7 +327,7 @@
                 }
             }
             
-            // ========== ОТЧЁТЫ (РАБОЧАЯ ВЕРСИЯ) ==========
+            // ========== ОТЧЁТЫ (из первого файла - рабочие) ==========
             async function loadPendingReports() {
                 const container = document.getElementById('pending-reports');
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
@@ -376,6 +377,7 @@
             }
             
             window.viewReport = async function(reportId) {
+                currentReportId = reportId;
                 const { data: report } = await supabase.from('object_reports').select('*, projects(name)').eq('id', reportId).single();
                 if (!report) return;
                 const modalHtml = `
@@ -398,7 +400,7 @@
                 }
             };
             
-            // ========== ЗАДАЧИ ==========
+            // ========== ЗАДАЧИ (из второго файла) ==========
             async function loadTasksTasks(filter = 'all') {
                 const container = document.getElementById('custom-tasks-list');
                 if (!container) return;
