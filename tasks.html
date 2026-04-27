@@ -18,26 +18,22 @@
         h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #0F172A, #1E293B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .role-badge { background: #E2E8F0; color: #0F172A; padding: 8px 16px; border-radius: 40px; font-size: 13px; font-weight: 600; }
         
-        /* Main Tabs */
         .main-tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #E2E8F0; overflow-x: auto; }
-        .main-tab { padding: 12px 20px; background: none; border: none; font-size: 14px; font-weight: 600; color: #64748B; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .main-tab { padding: 12px 20px; background: none; border: none; font-size: 14px; font-weight: 600; color: #64748B; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; }
         .main-tab.active { color: #0F172A; border-bottom-color: #F59E0B; }
         
         .main-tab-content { display: none; }
         .main-tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         
-        /* Sub Tabs */
         .sub-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-        .sub-tab { padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; border: 1px solid #E2E8F0; background: white; cursor: pointer; transition: all 0.2s; }
+        .sub-tab { padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; border: 1px solid #E2E8F0; background: white; cursor: pointer; }
         .sub-tab.active { background: #0F172A; color: white; border-color: #0F172A; }
         
-        /* Filter chips */
         .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-        .filter-chip { padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; border: 1px solid #E2E8F0; background: white; cursor: pointer; transition: all 0.2s; }
+        .filter-chip { padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; border: 1px solid #E2E8F0; background: white; cursor: pointer; }
         .filter-chip.active { background: #0F172A; color: white; border-color: #0F172A; }
         
-        /* Cards */
-        .task-card { background: white; border-radius: 20px; padding: 18px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #F1F5F9; transition: all 0.2s; cursor: pointer; }
+        .task-card { background: white; border-radius: 20px; padding: 18px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #F1F5F9; cursor: pointer; transition: all 0.2s; }
         .task-card:active { transform: scale(0.99); }
         
         .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
@@ -54,7 +50,7 @@
         .task-description { font-size: 13px; color: #64748B; margin-bottom: 10px; line-height: 1.4; }
         .task-meta { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #94A3B8; padding-top: 10px; border-top: 1px solid #F1F5F9; margin-top: 8px; }
         
-        .btn-small { padding: 6px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-small { padding: 6px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
         .btn-confirm { background: #D1FAE5; color: #065F46; }
         .btn-primary-bg { background: #0F172A; color: white; }
         
@@ -65,7 +61,6 @@
         .message.success { background: #D1FAE5; color: #065F46; display: block; }
         .message.error { background: #FEE2E2; color: #991B1B; display: block; }
         
-        /* Modal */
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10002; }
         .modal.hidden { display: none !important; }
         .modal-content { background: white; border-radius: 24px; padding: 24px; max-width: 550px; width: 90%; max-height: 85vh; overflow-y: auto; }
@@ -88,13 +83,11 @@
             <span class="role-badge" id="role-badge">Загрузка...</span>
         </div>
         
-        <!-- Главные вкладки -->
         <div class="main-tabs">
             <button class="main-tab active" data-main="reports">📑 Отчёты</button>
             <button class="main-tab" data-main="all-tasks">⚠️ Все задачи</button>
         </div>
         
-        <!-- Вкладка: Отчёты -->
         <div id="main-reports" class="main-tab-content active">
             <div class="sub-tabs">
                 <button class="sub-tab active" data-sub="pending-reports">⏳ На проверке</button>
@@ -104,7 +97,6 @@
             <div id="completed-reports" class="sub-content"></div>
         </div>
         
-        <!-- Вкладка: Все задачи -->
         <div id="main-all-tasks" class="main-tab-content">
             <div class="filter-bar">
                 <button class="filter-chip active" data-task-filter="all">Все</button>
@@ -118,7 +110,6 @@
         <div id="message" class="message"></div>
     </div>
     
-    <!-- Модальное окно для отчёта -->
     <div id="report-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -129,7 +120,6 @@
         </div>
     </div>
     
-    <!-- Модальное окно для задачи -->
     <div id="task-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -156,7 +146,6 @@
             let currentUser = null;
             let currentRole = 'worker';
             let currentReportId = null;
-            let currentTaskId = null;
             
             function showMessage(text, type) {
                 const msg = document.getElementById('message');
@@ -181,9 +170,9 @@
                 setupSubTabs();
                 setupTaskFilters();
                 setupModals();
-                loadPendingReports();
-                loadCompletedReports();
-                loadAllTasks();
+                await loadPendingReports();
+                await loadCompletedReports();
+                await loadAllTasks();
             }
             
             async function loadUser() {
@@ -214,6 +203,8 @@
                         parent.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
                         tab.classList.add('active');
                         document.getElementById(tab.dataset.sub).classList.add('active');
+                        if (tab.dataset.sub === 'pending-reports') loadPendingReports();
+                        if (tab.dataset.sub === 'completed-reports') loadCompletedReports();
                     });
                 });
             }
@@ -237,7 +228,6 @@
                 taskModal.onclick = (e) => { if (e.target === taskModal) taskModal.classList.add('hidden'); };
             }
             
-            // ========== ЗАГРУЗКА ОТЧЁТОВ ==========
             async function loadPendingReports() {
                 const container = document.getElementById('pending-reports');
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
@@ -330,7 +320,6 @@
                 container.innerHTML = html;
             }
             
-            // ========== ЗАГРУЗКА ВСЕХ ЗАДАЧ ==========
             async function loadAllTasks(filter = 'all') {
                 const container = document.getElementById('all-tasks-list');
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
@@ -345,7 +334,6 @@
                 }
                 
                 if (currentRole !== 'manager') {
-                    // ИТР видит задачи, назначенные на него
                     query = query.eq('assigned_to', currentUser?.id);
                 }
                 
@@ -385,7 +373,6 @@
                 container.innerHTML = html;
             }
             
-            // ========== ПРОСМОТР ОТЧЁТА ==========
             window.viewReport = async function(reportId) {
                 currentReportId = reportId;
                 const { data: report, error } = await supabase
@@ -396,7 +383,6 @@
                 
                 if (error) { alert('Ошибка загрузки'); return; }
                 
-                // Загружаем задачи по этому отчёту
                 const { data: tasks } = await supabase
                     .from('report_tasks')
                     .select('*')
@@ -434,7 +420,6 @@
                     tasksHtml += '</div></div>';
                 }
                 
-                // Форма создания новой задачи (только для руководителя)
                 let createTaskHtml = '';
                 if (currentRole === 'manager') {
                     const { data: users } = await supabase.from('users').select('id, full_name, role').in('role', ['worker', 'manager']);
@@ -530,14 +515,13 @@
                 } else {
                     showMessage('✅ Отчёт проверен', 'success');
                     document.getElementById('report-modal').classList.add('hidden');
-                    loadPendingReports();
-                    loadCompletedReports();
+                    // Перезагружаем обе вкладки
+                    await loadPendingReports();
+                    await loadCompletedReports();
                 }
             }
             
-            // ========== ПРОСМОТР ЗАДАЧИ ==========
             window.viewTask = async function(taskId) {
-                currentTaskId = taskId;
                 const { data: task, error } = await supabase
                     .from('report_tasks')
                     .select('*, object_reports!inner(report_number, report_date, projects(name))')
@@ -547,7 +531,6 @@
                 if (error) { alert('Ошибка загрузки'); return; }
                 
                 const report = task.object_reports;
-                const statusMap = { pending: 'Ожидается', in_progress: 'В работе', completed: 'Сделано' };
                 
                 const modalHtml = `
                     <div>
