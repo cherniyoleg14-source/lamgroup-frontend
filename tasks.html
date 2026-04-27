@@ -29,6 +29,10 @@
         .sub-tab { padding: 8px 16px; border-radius: 30px; font-size: 13px; font-weight: 600; border: 1px solid #E2E8F0; background: white; cursor: pointer; }
         .sub-tab.active { background: #0F172A; color: white; border-color: #0F172A; }
         
+        .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .filter-chip { padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; border: 1px solid #E2E8F0; background: white; cursor: pointer; }
+        .filter-chip.active { background: #0F172A; color: white; border-color: #0F172A; }
+        
         .task-card { background: white; border-radius: 20px; padding: 18px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #F1F5F9; cursor: pointer; transition: all 0.2s; }
         .task-card:active { transform: scale(0.99); }
         
@@ -103,14 +107,14 @@
             <button class="main-tab" data-main="all-tasks">⚠️ Все задачи</button>
         </div>
         
-        <!-- ОТЧЁТЫ (как было раньше) -->
+        <!-- ОТЧЁТЫ -->
         <div id="main-reports" class="main-tab-content active">
             <div class="sub-tabs">
                 <button class="sub-tab active" data-sub="pending">⏳ На проверке</button>
-                <button class="sub-tab" data-sub="completed">✅ Проверенные</button>
+                <button class="sub-tab" data-sub="confirmed">✅ Проверенные</button>
             </div>
             <div id="pending-reports" class="sub-content active"></div>
-            <div id="completed-reports" class="sub-content"></div>
+            <div id="confirmed-reports" class="sub-content"></div>
         </div>
         
         <!-- Мои задачи -->
@@ -119,7 +123,7 @@
             <div id="my-tasks-list"></div>
         </div>
         
-        <!-- Финансы (расходы, наряды, авансы) -->
+        <!-- Финансы -->
         <div id="main-finance" class="main-tab-content">
             <div class="sub-tabs">
                 <button class="sub-tab active" data-sub="expenses">💰 Расходы</button>
@@ -171,6 +175,17 @@
         </div>
     </div>
     
+    <!-- Модальное окно просмотра отчёта -->
+    <div id="report-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">📄 Детали отчёта</span>
+                <button class="close-btn" id="close-report-modal">&times;</button>
+            </div>
+            <div id="report-modal-body"></div>
+        </div>
+    </div>
+    
     <!-- Модальное окно просмотра/редактирования задачи -->
     <div id="task-view-modal" class="modal hidden">
         <div class="modal-content">
@@ -197,7 +212,6 @@
             
             let currentUser = null;
             let currentRole = 'worker';
-            let currentReportId = null;
             
             function showMessage(text, type) {
                 const msg = document.getElementById('message');
@@ -218,11 +232,20 @@
             
             async function init() {
                 await loadUser();
-                await loadAllData();
                 setupMainTabs();
                 setupSubTabs();
                 setupTaskFilters();
                 setupModals();
+                await loadPendingReports();
+                await loadConfirmedReports();
+                await loadMyTasks();
+                await loadExpensesList();
+                await loadOrdersList();
+                await loadAdvancesList();
+                await loadPaymentPlan();
+                await loadLettersList();
+                await loadIssuesList();
+                await loadAllTasksList();
             }
             
             async function loadUser() {
@@ -234,19 +257,6 @@
                 document.getElementById('role-badge').textContent = currentRole === 'manager' ? 'Руководитель' : 'ИТР';
             }
             
-            async function loadAllData() {
-                await loadPendingReports();
-                await loadCompletedReports();
-                await loadMyTasks();
-                await loadExpensesList();
-                await loadOrdersList();
-                await loadAdvancesList();
-                await loadPaymentPlan();
-                await loadLettersList();
-                await loadIssuesList();
-                await loadAllTasksList();
-            }
-            
             function setupMainTabs() {
                 document.querySelectorAll('.main-tab').forEach(tab => {
                     tab.addEventListener('click', () => {
@@ -255,7 +265,7 @@
                         tab.classList.add('active');
                         document.getElementById(`main-${tab.dataset.main}`).classList.add('active');
                         const mainTab = tab.dataset.main;
-                        if (mainTab === 'reports') { loadPendingReports(); loadCompletedReports(); }
+                        if (mainTab === 'reports') { loadPendingReports(); loadConfirmedReports(); }
                         if (mainTab === 'my-tasks') loadMyTasks();
                         if (mainTab === 'finance') { loadExpensesList(); loadOrdersList(); loadAdvancesList(); }
                         if (mainTab === 'payment-plan') loadPaymentPlan();
@@ -266,37 +276,32 @@
             }
             
             function setupSubTabs() {
-                document.querySelectorAll('.sub-tab').forEach(tab => {
+                document.querySelectorAll('#main-reports .sub-tab').forEach(tab => {
                     tab.addEventListener('click', () => {
-                        const parent = tab.closest('.main-tab-content');
-                        parent.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
-                        parent.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
+                        document.querySelectorAll('#main-reports .sub-tab').forEach(t => t.classList.remove('active'));
+                        document.querySelectorAll('#main-reports .sub-content').forEach(c => c.classList.remove('active'));
                         tab.classList.add('active');
-                        document.getElementById(`${tab.dataset.sub}-reports`).classList.add('active');
                         if (tab.dataset.sub === 'pending') loadPendingReports();
-                        if (tab.dataset.sub === 'completed') loadCompletedReports();
+                        if (tab.dataset.sub === 'confirmed') loadConfirmedReports();
                     });
                 });
                 
-                document.querySelectorAll('.sub-tab').forEach(tab => {
-                    if (tab.closest('#main-finance')) {
-                        tab.addEventListener('click', () => {
-                            const parent = tab.closest('.main-tab-content');
-                            parent.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
-                            parent.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
-                            tab.classList.add('active');
-                            document.getElementById(`${tab.dataset.sub}-list`).classList.add('active');
-                        });
-                    }
-                    if (tab.closest('#main-letters-issues')) {
-                        tab.addEventListener('click', () => {
-                            const parent = tab.closest('.main-tab-content');
-                            parent.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
-                            parent.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
-                            tab.classList.add('active');
-                            document.getElementById(`${tab.dataset.sub}-list`).classList.add('active');
-                        });
-                    }
+                document.querySelectorAll('#main-finance .sub-tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        document.querySelectorAll('#main-finance .sub-tab').forEach(t => t.classList.remove('active'));
+                        document.querySelectorAll('#main-finance .sub-content').forEach(c => c.classList.remove('active'));
+                        tab.classList.add('active');
+                        document.getElementById(`${tab.dataset.sub}-list`).classList.add('active');
+                    });
+                });
+                
+                document.querySelectorAll('#main-letters-issues .sub-tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        document.querySelectorAll('#main-letters-issues .sub-tab').forEach(t => t.classList.remove('active'));
+                        document.querySelectorAll('#main-letters-issues .sub-content').forEach(c => c.classList.remove('active'));
+                        tab.classList.add('active');
+                        document.getElementById(`${tab.dataset.sub}-list`).classList.add('active');
+                    });
                 });
             }
             
@@ -313,10 +318,15 @@
             function setupModals() {
                 const createModal = document.getElementById('task-create-modal');
                 const viewModal = document.getElementById('task-view-modal');
+                const reportModal = document.getElementById('report-modal');
+                
                 document.getElementById('close-create-modal').onclick = () => createModal.classList.add('hidden');
                 document.getElementById('close-view-modal').onclick = () => viewModal.classList.add('hidden');
+                document.getElementById('close-report-modal').onclick = () => reportModal.classList.add('hidden');
+                
                 createModal.onclick = (e) => { if (e.target === createModal) createModal.classList.add('hidden'); };
                 viewModal.onclick = (e) => { if (e.target === viewModal) viewModal.classList.add('hidden'); };
+                reportModal.onclick = (e) => { if (e.target === reportModal) reportModal.classList.add('hidden'); };
                 
                 document.getElementById('create-task-btn').onclick = () => openCreateTaskForm();
             }
@@ -326,65 +336,115 @@
                 const container = document.getElementById('pending-reports');
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
                 try {
-                    const { data, error } = await supabase.from('object_reports').select('*, projects(name)').eq('status', 'pending').order('report_date', { ascending: false });
+                    const { data, error } = await supabase
+                        .from('object_reports')
+                        .select('*, projects(name)')
+                        .eq('status', 'pending')
+                        .order('report_date', { ascending: false });
+                    
                     if (error) throw error;
-                    if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Нет отчётов на проверке</div>'; return; }
+                    if (!data || data.length === 0) {
+                        container.innerHTML = '<div class="empty-state">Нет отчётов на проверке</div>';
+                        return;
+                    }
+                    
                     let html = '';
                     for (const report of data) {
                         html += `
                             <div class="task-card" onclick="viewReport('${report.id}')">
-                                <div class="task-header"><span class="task-type type-report">📑 Отчёт №${report.report_number || '—'}</span><span class="task-status status-pending">⏳ На проверке</span></div>
+                                <div class="task-header">
+                                    <span class="task-type type-report">📑 Отчёт №${report.report_number || '—'}</span>
+                                    <span class="task-status status-pending">⏳ На проверке</span>
+                                </div>
                                 <div class="task-title">${escapeHtml(report.projects?.name || '—')}</div>
                                 <div class="task-description">📅 ${new Date(report.report_date).toLocaleDateString('ru-RU')}<br>📝 ${(report.description || '').substring(0, 80)}</div>
-                                <div class="task-meta"><span>👤 ${report.created_by_name || '—'}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewReport('${report.id}')">👁️ Просмотреть</span></div>
+                                <div class="task-meta">
+                                    <span>👤 ${report.created_by_name || '—'}</span>
+                                    <span class="btn-small btn-confirm" onclick="event.stopPropagation();viewReport('${report.id}')">👁️ Просмотреть</span>
+                                </div>
                             </div>
                         `;
                     }
                     container.innerHTML = html;
-                } catch (error) { container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`; }
+                } catch (error) {
+                    container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
+                }
             }
             
-            async function loadCompletedReports() {
-                const container = document.getElementById('completed-reports');
+            async function loadConfirmedReports() {
+                const container = document.getElementById('confirmed-reports');
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
                 try {
-                    const { data, error } = await supabase.from('object_reports').select('*, projects(name)').eq('status', 'confirmed').order('report_date', { ascending: false });
+                    const { data, error } = await supabase
+                        .from('object_reports')
+                        .select('*, projects(name)')
+                        .eq('status', 'confirmed')
+                        .order('report_date', { ascending: false });
+                    
                     if (error) throw error;
-                    if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Нет проверенных отчётов</div>'; return; }
+                    if (!data || data.length === 0) {
+                        container.innerHTML = '<div class="empty-state">Нет проверенных отчётов</div>';
+                        return;
+                    }
+                    
                     let html = '';
                     for (const report of data) {
                         html += `
                             <div class="task-card" onclick="viewReport('${report.id}')">
-                                <div class="task-header"><span class="task-type type-report">📑 Отчёт №${report.report_number || '—'}</span><span class="task-status status-completed">✅ Проверен</span></div>
+                                <div class="task-header">
+                                    <span class="task-type type-report">📑 Отчёт №${report.report_number || '—'}</span>
+                                    <span class="task-status status-completed">✅ Проверен</span>
+                                </div>
                                 <div class="task-title">${escapeHtml(report.projects?.name || '—')}</div>
                                 <div class="task-description">📅 ${new Date(report.report_date).toLocaleDateString('ru-RU')}<br>📝 ${(report.description || '').substring(0, 80)}</div>
-                                <div class="task-meta"><span>👤 ${report.created_by_name || '—'}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewReport('${report.id}')">👁️ Просмотреть</span></div>
+                                <div class="task-meta">
+                                    <span>👤 ${report.created_by_name || '—'}</span>
+                                    <span class="btn-small btn-confirm" onclick="event.stopPropagation();viewReport('${report.id}')">👁️ Просмотреть</span>
+                                </div>
                             </div>
                         `;
                     }
                     container.innerHTML = html;
-                } catch (error) { container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`; }
+                } catch (error) {
+                    container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
+                }
             }
             
             window.viewReport = async function(reportId) {
-                const { data: report } = await supabase.from('object_reports').select('*, projects(name)').eq('id', reportId).single();
+                const { data: report } = await supabase
+                    .from('object_reports')
+                    .select('*, projects(name)')
+                    .eq('id', reportId)
+                    .single();
+                
                 if (!report) return;
+                
                 const modalHtml = `
-                    <div><strong>📄 Отчёт №${report.report_number} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong></div>
-                    <div>🏗️ ${report.projects?.name}</div>
-                    <div>📍 Оси: ${report.axes_selected?.join(', ') || '—'}</div>
-                    <div>📝 ${escapeHtml(report.description || '—')}</div>
-                    ${report.has_issues ? '<div>⚠️ В отчёте описаны проблемы</div>' : ''}
-                    ${currentRole === 'manager' && report.status === 'pending' ? `<button class="btn-primary" id="mark-report-reviewed" style="margin-top:16px;">✅ Отметить проверенным</button>` : ''}
+                    <div>
+                        <div style="margin-bottom: 12px;"><strong>📄 Отчёт №${report.report_number} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong></div>
+                        <div style="margin-bottom: 8px;">🏗️ ${report.projects?.name || '—'}</div>
+                        <div style="margin-bottom: 8px;">📍 Оси: ${report.axes_selected?.join(', ') || '—'}</div>
+                        <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-bottom: 12px;">📝 ${escapeHtml(report.description || '—')}</div>
+                        ${report.has_issues ? '<div style="margin-bottom: 12px;"><span style="background:#FEE2E2; color:#991B1B; padding:4px 12px; border-radius:20px;">⚠️ В отчёте описаны проблемы</span></div>' : ''}
+                        ${report.photos?.length ? `<div>📸 Фото: ${report.photos.length} шт.</div>` : ''}
+                        ${currentRole === 'manager' && report.status === 'pending' ? `<button class="btn-primary btn-success" id="mark-report-reviewed" style="margin-top: 16px;">✅ Отметить проверенным</button>` : ''}
+                        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">👤 Создал: ${report.created_by_name || '—'}</div>
+                    </div>
                 `;
+                
                 document.getElementById('report-modal-body').innerHTML = modalHtml;
                 document.getElementById('report-modal').classList.remove('hidden');
-                if (currentRole === 'manager') {
+                
+                if (currentRole === 'manager' && report.status === 'pending') {
                     document.getElementById('mark-report-reviewed')?.addEventListener('click', async () => {
-                        await supabase.from('object_reports').update({ status: 'confirmed', reviewed_by: currentUser?.id, reviewed_by_name: currentUser?.full_name }).eq('id', reportId);
+                        await supabase
+                            .from('object_reports')
+                            .update({ status: 'confirmed', reviewed_by: currentUser?.id, reviewed_by_name: currentUser?.full_name })
+                            .eq('id', reportId);
                         document.getElementById('report-modal').classList.add('hidden');
-                        loadPendingReports(); loadCompletedReports();
-                        showMessage('Отчёт проверен', 'success');
+                        loadPendingReports();
+                        loadConfirmedReports();
+                        showMessage('✅ Отчёт проверен', 'success');
                     });
                 }
             };
