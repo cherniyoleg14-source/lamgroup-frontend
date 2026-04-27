@@ -729,17 +729,29 @@ async function loadExpensesFinance() {
         html += `<div class="task-card"><div class="task-header"><span class="task-type type-expense">💰 Расход</span><span class="task-status status-pending">⏳ Ожидает</span></div>
             <div class="task-title">${exp.projects?.name || '—'}</div><div class="task-description">${escapeHtml(exp.name)} — ${Number(exp.amount).toLocaleString()} ₸<br>${exp.supplier ? `🏢 ${escapeHtml(exp.supplier)}` : ''}</div>
             <div class="task-meta"><span>📅 ${exp.date ? new Date(exp.date).toLocaleDateString('ru-RU') : '—'}</span>
-            ${currentRole === 'manager' ? `<button class="btn-small btn-confirm" onclick="markExpensePaidFinance('${exp.id}')">✅ Оплатить</button>` : ''}</div>
+            ${currentRole === 'manager' ? `<button class="btn-small btn-confirm" onclick="approveExpenseFinance('${exp.id}')">✅ Утвердить</button>` : ''}</div>
         </div>`;
     }
     container.innerHTML = html;
 }
 
-window.markExpensePaidFinance = async (expenseId) => {
-    await supabase.from('expenses').update({ payment_status: 'paid' }).eq('id', expenseId);
-    loadExpensesFinance();         // обновить список ожидающих
-    loadPaymentPlanFinance();      // добавить в план оплат
-    showMessage('Расход оплачен', 'success');
+window.approveExpenseFinance = async (expenseId) => {
+    const { error } = await supabase
+        .from('expenses')
+        .update({ 
+            payment_status: 'approved',
+            approved_by: currentUser?.id,
+            approved_at: new Date()
+        })
+        .eq('id', expenseId);
+    
+    if (error) {
+        showMessage('Ошибка: ' + error.message, 'error');
+    } else {
+        showMessage('✅ Расход утверждён', 'success');
+        loadExpensesFinance();
+        loadPaymentPlanFinance();
+    }
 };
 
 async function loadOrdersFinance() {
@@ -770,8 +782,9 @@ window.approveOrderFinance = async (orderId) => {
     const { error } = await supabase
         .from('work_orders')
         .update({ 
-            status: 'approved', 
-            approved_at: new Date() 
+            status: 'approved',
+            approved_by: currentUser?.id,
+            approved_at: new Date()
         })
         .eq('id', orderId);
     
@@ -812,9 +825,9 @@ window.approveAdvanceFinance = async (advanceId) => {
     const { error } = await supabase
         .from('advances')
         .update({ 
-            status: 'approved', 
-            approved_by: currentUser?.id, 
-            approved_at: new Date() 
+            status: 'approved',
+            approved_by: currentUser?.id,
+            approved_at: new Date()
         })
         .eq('id', advanceId);
     
@@ -834,7 +847,7 @@ async function loadPaymentPlanFinance() {
     
     // Получаем все утверждённые операции
     const [expensesRes, ordersRes, advancesRes] = await Promise.all([
-        supabase.from('expenses').select('*, projects(name)').eq('payment_status', 'paid'),
+        supabase.from('expenses').select('*, projects(name)').eq('payment_status', 'approved'),
         supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status', 'approved'),
         supabase.from('advances').select('*, projects(name), brigades(name)').eq('status', 'approved')
     ]);
@@ -859,33 +872,33 @@ async function loadPaymentPlanFinance() {
     
     let html = '';
     
-    // Расходы (оплаченные)
+    // Расходы (утверждённые)
     for (const exp of expenses) {
         html += `<div class="task-card">
-            <div class="task-header"><span class="task-type type-expense">💰 Оплачено</span><span class="task-status status-completed">Оплачено</span></div>
+            <div class="task-header"><span class="task-type type-expense">💰 Расход</span><span class="task-status status-completed">✅ Утверждён</span></div>
             <div class="task-title">${exp.projects?.name || '—'}</div>
             <div class="task-description">${escapeHtml(exp.name)} — ${Number(exp.amount).toLocaleString()} ₸<br>🏢 ${escapeHtml(exp.supplier || '—')}<br>📅 ${exp.date ? new Date(exp.date).toLocaleDateString('ru-RU') : '—'}</div>
-            <div class="task-meta"><span>👤 ${exp.created_by_name || '—'}</span></div>
+            <div class="task-meta"><span>👤 Утвердил: ${exp.approved_by_name || currentUser?.full_name || '—'}</span></div>
         </div>`;
     }
     
     // Наряды (утверждённые)
     for (const order of orders) {
         html += `<div class="task-card">
-            <div class="task-header"><span class="task-type type-order">📋 Наряд утверждён</span><span class="task-status status-completed">Утверждён</span></div>
+            <div class="task-header"><span class="task-type type-order">📋 Наряд</span><span class="task-status status-completed">✅ Утверждён</span></div>
             <div class="task-title">${order.projects?.name || '—'}</div>
             <div class="task-description">👷 ${order.brigades?.name || '—'} | ${escapeHtml(order.work_type)}<br>💰 ${Number(order.total_amount).toLocaleString()} ₸</div>
-            <div class="task-meta"><span>📅 ${new Date(order.created_at).toLocaleDateString('ru-RU')}</span></div>
+            <div class="task-meta"><span>📅 ${new Date(order.approved_at || order.created_at).toLocaleDateString('ru-RU')}</span></div>
         </div>`;
     }
     
     // Авансы (утверждённые)
     for (const advance of advances) {
         html += `<div class="task-card">
-            <div class="task-header"><span class="task-type type-advance">💰 Аванс утверждён</span><span class="task-status status-completed">Утверждён</span></div>
+            <div class="task-header"><span class="task-type type-advance">💰 Аванс</span><span class="task-status status-completed">✅ Утверждён</span></div>
             <div class="task-title">${advance.projects?.name || '—'}</div>
             <div class="task-description">👷 ${advance.brigades?.name || '—'}<br>💰 Сумма: ${Number(advance.amount).toLocaleString()} ₸</div>
-            <div class="task-meta"><span>📅 ${new Date(advance.created_at).toLocaleDateString('ru-RU')}</span></div>
+            <div class="task-meta"><span>📅 ${new Date(advance.approved_at || advance.created_at).toLocaleDateString('ru-RU')}</span></div>
         </div>`;
     }
     
