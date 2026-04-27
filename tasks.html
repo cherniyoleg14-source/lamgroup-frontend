@@ -26,19 +26,18 @@
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         
-        .task-card { background: white; border-radius: 20px; padding: 18px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #F1F5F9; transition: all 0.2s; }
+        .task-card { background: white; border-radius: 20px; padding: 18px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #F1F5F9; transition: all 0.2s; cursor: pointer; }
         .task-card:active { transform: scale(0.99); }
         
         .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
         .task-type { padding: 4px 12px; border-radius: 30px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
         .type-report { background: #F3E8FF; color: #6B21A8; }
         .type-payment { background: #FEF3C7; color: #92400E; }
-        .type-letter { background: #DBEAFE; color: #1E40AF; }
-        .type-problem { background: #FEE2E2; color: #991B1B; }
         
         .task-status { padding: 4px 12px; border-radius: 30px; font-size: 11px; font-weight: 600; }
         .status-pending { background: #FEF3C7; color: #92400E; }
         .status-confirmed { background: #D1FAE5; color: #065F46; }
+        .status-reviewed { background: #DBEAFE; color: #1E40AF; }
         
         .task-title { font-size: 16px; font-weight: 700; color: #0F172A; margin-bottom: 8px; }
         .task-description { font-size: 14px; color: #64748B; margin-bottom: 12px; line-height: 1.4; }
@@ -46,7 +45,7 @@
         
         .btn-small { padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
         .btn-confirm { background: #D1FAE5; color: #065F46; }
-        .btn-confirm:active { background: #A7F3D0; }
+        .btn-create { background: #DBEAFE; color: #1E40AF; }
         
         .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 24px; color: #64748B; }
         .loading { text-align: center; padding: 60px 20px; color: #64748B; }
@@ -58,6 +57,17 @@
         .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
         .filter-chip { padding: 6px 14px; border-radius: 30px; font-size: 13px; font-weight: 600; border: 1px solid #E2E8F0; background: white; cursor: pointer; transition: all 0.2s; }
         .filter-chip.active { background: #0F172A; color: white; border-color: #0F172A; }
+        
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10002; }
+        .modal.hidden { display: none !important; }
+        .modal-content { background: white; border-radius: 24px; padding: 24px; max-width: 550px; width: 90%; max-height: 85vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 20px; font-weight: 800; color: #0F172A; }
+        .close-btn { background: #F1F5F9; border: none; width: 36px; height: 36px; border-radius: 36px; font-size: 18px; cursor: pointer; }
+        .form-group { margin-bottom: 16px; }
+        label { font-weight: 600; color: #475569; font-size: 12px; display: block; margin-bottom: 6px; }
+        textarea, input { width: 100%; padding: 12px; border: 1.5px solid #E2E8F0; border-radius: 14px; font-size: 14px; }
+        .btn-primary { width: 100%; background: linear-gradient(135deg, #0F172A, #1E293B); color: white; padding: 14px; border-radius: 14px; font-weight: 700; border: none; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -68,19 +78,29 @@
         </div>
         
         <div class="tabs">
-            <button class="tab active" data-tab="reports">📑 Отчёты</button>
-            <button class="tab" data-tab="payments">💰 План оплат</button>
+            <button class="tab active" data-tab="pending">⏳ На проверке</button>
+            <button class="tab" data-tab="reviewed">✅ Проверенные</button>
         </div>
         
-        <div id="tab-reports" class="tab-content active">
-            <div id="reports-list"></div>
+        <div id="tab-pending" class="tab-content active">
+            <div id="pending-list"></div>
         </div>
         
-        <div id="tab-payments" class="tab-content">
-            <div id="payments-list"></div>
+        <div id="tab-reviewed" class="tab-content">
+            <div id="reviewed-list"></div>
         </div>
         
         <div id="message" class="message"></div>
+    </div>
+
+    <div id="report-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title" id="modal-title">📄 Детали отчёта</span>
+                <button class="close-btn" id="close-modal-btn">&times;</button>
+            </div>
+            <div id="modal-body"></div>
+        </div>
     </div>
 
     <script>
@@ -98,6 +118,7 @@
             
             let currentUser = null;
             let currentRole = 'worker';
+            let currentReportId = null;
             
             function showMessage(text, type) {
                 const msg = document.getElementById('message');
@@ -106,11 +127,22 @@
                 setTimeout(() => msg.className = 'message', 3000);
             }
             
+            function escapeHtml(text) {
+                if (!text) return '';
+                return String(text).replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
+                });
+            }
+            
             async function init() {
                 await loadUser();
                 setupTabs();
-                loadReports();
-                loadPayments();
+                loadReports('pending');
+                loadReports('reviewed');
+                setupModal();
             }
             
             async function loadUser() {
@@ -130,26 +162,31 @@
                         tab.classList.add('active');
                         const tabName = tab.dataset.tab;
                         document.getElementById(`tab-${tabName}`).classList.add('active');
-                        
-                        if (tabName === 'reports') loadReports();
-                        if (tabName === 'payments') loadPayments();
+                        loadReports(tabName);
                     });
                 });
             }
             
-            // ========== ОТЧЁТЫ ==========
-            async function loadReports() {
-                const container = document.getElementById('reports-list');
-                container.innerHTML = '<div class="loading">Загрузка отчётов...</div>';
+            function setupModal() {
+                const modal = document.getElementById('report-modal');
+                const closeBtn = document.getElementById('close-modal-btn');
+                closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+                modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+            }
+            
+            async function loadReports(statusType) {
+                const containerId = statusType === 'pending' ? 'pending-list' : 'reviewed-list';
+                const container = document.getElementById(containerId);
+                container.innerHTML = '<div class="loading">Загрузка...</div>';
                 
-                // Загружаем отчёты, требующие подтверждения (status = 'pending')
+                const statusFilter = statusType === 'pending' ? 'pending' : 'confirmed';
+                
                 let query = supabase
                     .from('object_reports')
                     .select('*, projects(name)')
-                    .eq('status', 'pending')
+                    .eq('status', statusFilter)
                     .order('report_date', { ascending: false });
                 
-                // Если не руководитель - только свои объекты
                 if (currentRole !== 'manager') {
                     const { data: userProjects } = await supabase
                         .from('projects')
@@ -159,7 +196,7 @@
                     if (projectIds.length > 0) {
                         query = query.in('project_id', projectIds);
                     } else {
-                        container.innerHTML = '<div class="empty-state">Нет отчётов на подтверждении</div>';
+                        container.innerHTML = '<div class="empty-state">Нет отчётов</div>';
                         return;
                     }
                 }
@@ -172,30 +209,32 @@
                 }
                 
                 if (!data || data.length === 0) {
-                    container.innerHTML = '<div class="empty-state">Нет отчётов на подтверждении</div>';
+                    container.innerHTML = '<div class="empty-state">Нет отчётов</div>';
                     return;
                 }
                 
                 let html = '';
                 for (const report of data) {
                     const photosCount = report.photos?.length || 0;
+                    const reportNumber = report.report_number || '—';
+                    const axesText = report.axes_selected?.join(', ') || '—';
+                    
                     html += `
-                        <div class="task-card" data-id="${report.id}">
+                        <div class="task-card" onclick="viewReportDetails('${report.id}')">
                             <div class="task-header">
-                                <span class="task-type type-report">📑 Отчёт №${report.report_number}</span>
-                                <span class="task-status status-pending">⏳ Ожидает подтверждения</span>
+                                <span class="task-type type-report">📑 Отчёт №${reportNumber}</span>
+                                <span class="task-status ${statusType === 'pending' ? 'status-pending' : 'status-reviewed'}">${statusType === 'pending' ? '⏳ На проверке' : '✅ Проверен'}</span>
                             </div>
                             <div class="task-title">${escapeHtml(report.projects?.name || '—')}</div>
                             <div class="task-description">
                                 📅 ${new Date(report.report_date).toLocaleDateString('ru-RU')}<br>
-                                📍 Оси: ${report.axes_selected?.join(', ') || '—'}<br>
+                                📍 Оси: ${axesText}<br>
                                 📸 Фото: ${photosCount} шт.<br>
                                 ${report.has_issues ? '⚠️ В отчёте описаны проблемы<br>' : ''}
                                 📝 ${(report.description || '').substring(0, 100)}${(report.description || '').length > 100 ? '...' : ''}
                             </div>
                             <div class="task-meta">
                                 <span>👤 ${report.created_by_name || '—'}</span>
-                                <button class="btn-small btn-confirm" onclick="confirmReport('${report.id}')">✅ Подтвердить</button>
                             </div>
                         </div>
                     `;
@@ -203,110 +242,150 @@
                 container.innerHTML = html;
             }
             
-            window.confirmReport = async function(reportId) {
+            window.viewReportDetails = async function(reportId) {
+                currentReportId = reportId;
+                const { data: report, error } = await supabase
+                    .from('object_reports')
+                    .select('*, projects(name)')
+                    .eq('id', reportId)
+                    .single();
+                
+                if (error || !report) {
+                    alert('Ошибка загрузки отчёта');
+                    return;
+                }
+                
+                const reportNumber = report.report_number || '—';
+                const axesText = report.axes_selected?.join(', ') || '—';
+                const photos = report.photos || [];
+                
+                let photosHtml = '';
+                if (photos.length > 0) {
+                    photosHtml = '<div style="margin-top: 16px;"><h4>📸 Фото по осям:</h4><div style="display: flex; flex-direction: column; gap: 16px; margin-top: 12px;">';
+                    photos.forEach(photo => {
+                        photosHtml += `
+                            <div style="background: #F8FAFC; border-radius: 16px; padding: 12px;">
+                                <div style="font-weight: 600; margin-bottom: 8px;">📍 ${photo.axis}</div>
+                                <img src="${photo.url}" style="width: 100%; max-height: 250px; object-fit: cover; border-radius: 12px; cursor: pointer;" onclick="window.open('${photo.url}', '_blank')">
+                            </div>
+                        `;
+                    });
+                    photosHtml += '</div></div>';
+                }
+                
+                let actionsHtml = '';
+                if (report.status === 'pending' && currentRole === 'manager') {
+                    actionsHtml = `
+                        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #E2E8F0;">
+                            <div class="form-group">
+                                <label>📝 Ответ руководителя</label>
+                                <textarea id="manager-response" rows="3" placeholder="Напишите комментарий к отчёту..."></textarea>
+                            </div>
+                            <div style="display: flex; gap: 12px;">
+                                <button class="btn-primary" id="create-task-btn" style="margin-top: 0;">📋 Создать задачу ИТР</button>
+                                <button class="btn-primary" id="review-report-btn" style="margin-top: 0; background: #10B981;">✅ Отчёт проверен</button>
+                            </div>
+                        </div>
+                    `;
+                } else if (report.manager_response) {
+                    actionsHtml = `
+                        <div style="margin-top: 20px; padding: 16px; background: #F8FAFC; border-radius: 16px;">
+                            <strong>📝 Ответ руководителя:</strong>
+                            <p style="margin-top: 8px;">${escapeHtml(report.manager_response)}</p>
+                            <div style="font-size: 11px; color: #64748B; margin-top: 8px;">👤 ${report.reviewed_by_name || '—'} | 📅 ${report.manager_response_at ? new Date(report.manager_response_at).toLocaleString() : '—'}</div>
+                        </div>
+                    `;
+                }
+                
+                const modalHtml = `
+                    <div style="max-height: 70vh; overflow-y: auto;">
+                        <div style="margin-bottom: 16px;">
+                            <strong style="font-size: 18px;">📄 Отчёт №${reportNumber} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong>
+                        </div>
+                        
+                        <div style="margin-bottom: 12px;">
+                            <strong>📍 Оси:</strong> ${axesText}
+                        </div>
+                        
+                        <div style="margin-bottom: 16px;">
+                            <strong>📝 Описание:</strong>
+                            <div style="background: #F8FAFC; padding: 14px; border-radius: 14px; margin-top: 6px;">${escapeHtml(report.description || '—')}</div>
+                        </div>
+                        
+                        ${report.has_issues ? `<div style="margin-bottom: 12px;"><span style="background:#FEE2E2; color:#991B1B; padding:4px 12px; border-radius:20px;">⚠️ В отчёте описаны проблемы</span></div>` : ''}
+                        
+                        ${photosHtml}
+                        
+                        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">
+                            <div>👤 Создал: ${report.created_by_name || '—'} (${report.created_by_role === 'manager' ? 'Руководитель' : 'ИТР'})</div>
+                            <div>📅 Создан: ${new Date(report.created_at).toLocaleString()}</div>
+                        </div>
+                        
+                        ${actionsHtml}
+                    </div>
+                `;
+                
+                document.getElementById('modal-title').textContent = '📄 Детали отчёта';
+                document.getElementById('modal-body').innerHTML = modalHtml;
+                document.getElementById('report-modal').classList.remove('hidden');
+                
+                if (report.status === 'pending' && currentRole === 'manager') {
+                    document.getElementById('create-task-btn').onclick = () => createTaskForITR(report);
+                    document.getElementById('review-report-btn').onclick = () => reviewReport(report);
+                }
+            };
+            
+            async function createTaskForITR(report) {
+                const response = document.getElementById('manager-response')?.value.trim();
+                
+                const { error } = await supabase.from('tasks').insert({
+                    project_id: report.project_id,
+                    report_id: report.id,
+                    type: 'report',
+                    title: `📑 Отчёт №${report.report_number} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}`,
+                    description: `Требуется доработка отчёта.\n\nКомментарий руководителя: ${response || 'Без комментария'}`,
+                    status: 'pending',
+                    priority: report.has_issues ? 'high' : 'medium',
+                    created_by: currentUser?.id,
+                    responsible_ids: [report.created_by]
+                });
+                
+                if (error) {
+                    showMessage('Ошибка: ' + error.message, 'error');
+                } else {
+                    await supabase.from('object_reports').update({ task_created: true }).eq('id', report.id);
+                    showMessage('✅ Задача создана для ИТР', 'success');
+                    document.getElementById('report-modal').classList.add('hidden');
+                    loadReports('pending');
+                    loadReports('reviewed');
+                }
+            }
+            
+            async function reviewReport(report) {
+                const response = document.getElementById('manager-response')?.value.trim();
+                
                 const { error } = await supabase
                     .from('object_reports')
-                    .update({ status: 'confirmed', letters_sent: true, schedule_shifted: true })
-                    .eq('id', reportId);
+                    .update({
+                        status: 'confirmed',
+                        manager_response: response || null,
+                        manager_response_at: new Date(),
+                        reviewed_by: currentUser?.id,
+                        reviewed_by_name: currentUser?.full_name
+                    })
+                    .eq('id', report.id);
                 
                 if (error) {
                     showMessage('Ошибка: ' + error.message, 'error');
                 } else {
-                    showMessage('✅ Отчёт подтверждён', 'success');
-                    loadReports();
+                    showMessage('✅ Отчёт проверен', 'success');
+                    document.getElementById('report-modal').classList.add('hidden');
+                    loadReports('pending');
+                    loadReports('reviewed');
                 }
-            };
-            
-            // ========== ПЛАН ОПЛАТ ==========
-            async function loadPayments() {
-                const container = document.getElementById('payments-list');
-                container.innerHTML = '<div class="loading">Загрузка платежей...</div>';
-                
-                // Загружаем расходы со статусом pending
-                let query = supabase
-                    .from('expenses')
-                    .select('*, projects(name)')
-                    .eq('payment_status', 'pending')
-                    .order('date', { ascending: false });
-                
-                // Если не руководитель - только свои объекты
-                if (currentRole !== 'manager') {
-                    const { data: userProjects } = await supabase
-                        .from('projects')
-                        .select('id')
-                        .eq('responsible_worker_id', currentUser?.id);
-                    const projectIds = userProjects?.map(p => p.id) || [];
-                    if (projectIds.length > 0) {
-                        query = query.in('project_id', projectIds);
-                    } else {
-                        container.innerHTML = '<div class="empty-state">Нет платежей на согласовании</div>';
-                        return;
-                    }
-                }
-                
-                const { data, error } = await query;
-                
-                if (error) {
-                    container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
-                    return;
-                }
-                
-                if (!data || data.length === 0) {
-                    container.innerHTML = '<div class="empty-state">Нет платежей на согласовании</div>';
-                    return;
-                }
-                
-                let html = '';
-                for (const expense of data) {
-                    html += `
-                        <div class="task-card" data-id="${expense.id}">
-                            <div class="task-header">
-                                <span class="task-type type-payment">💰 Платёж</span>
-                                <span class="task-status status-pending">⏳ Ожидает оплаты</span>
-                            </div>
-                            <div class="task-title">${escapeHtml(expense.projects?.name || '—')}</div>
-                            <div class="task-description">
-                                <strong>${escapeHtml(expense.name)}</strong><br>
-                                📅 ${expense.date ? new Date(expense.date).toLocaleDateString('ru-RU') : '—'}<br>
-                                💰 Сумма: ${Number(expense.amount).toLocaleString()} ₸<br>
-                                ${expense.supplier ? `🏢 Поставщик: ${escapeHtml(expense.supplier)}<br>` : ''}
-                                ${expense.is_urgent ? '🚨 СРОЧНЫЙ ПЛАТЁЖ<br>' : ''}
-                                💳 ${expense.payment_method === 'cash' ? 'Наличка' : 'Безнал'}
-                            </div>
-                            <div class="task-meta">
-                                <span>👤 Создал: ${expense.created_by_name || '—'}</span>
-                                <button class="btn-small btn-confirm" onclick="confirmPayment('${expense.id}')">✅ Отметить оплаченным</button>
-                            </div>
-                        </div>
-                    `;
-                }
-                container.innerHTML = html;
             }
             
-            window.confirmPayment = async function(expenseId) {
-                const { error } = await supabase
-                    .from('expenses')
-                    .update({ payment_status: 'paid', accountant_status: 'paid', sent_to_accountant: true, updated_at: new Date() })
-                    .eq('id', expenseId);
-                
-                if (error) {
-                    showMessage('Ошибка: ' + error.message, 'error');
-                } else {
-                    showMessage('✅ Платёж отмечен оплаченным', 'success');
-                    loadPayments();
-                }
-            };
-            
-            function escapeHtml(text) {
-                if (!text) return '';
-                return String(text).replace(/[&<>]/g, function(m) {
-                    if (m === '&') return '&amp;';
-                    if (m === '<') return '&lt;';
-                    if (m === '>') return '&gt;';
-                    return m;
-                });
-            }
-            
+            window.loadReports = loadReports;
             init();
         })();
     </script>
