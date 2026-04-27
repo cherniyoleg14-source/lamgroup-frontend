@@ -43,7 +43,6 @@
         
         .task-status { padding: 4px 12px; border-radius: 30px; font-size: 11px; font-weight: 600; }
         .status-pending { background: #FEF3C7; color: #92400E; }
-        .status-in-progress { background: #DBEAFE; color: #1E40AF; }
         .status-completed { background: #D1FAE5; color: #065F46; }
         
         .task-title { font-size: 16px; font-weight: 700; color: #0F172A; margin-bottom: 8px; }
@@ -52,7 +51,6 @@
         
         .btn-small { padding: 6px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
         .btn-confirm { background: #D1FAE5; color: #065F46; }
-        .btn-warning { background: #FEF3C7; color: #92400E; }
         
         .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 24px; color: #64748B; }
         .loading { text-align: center; padding: 60px 20px; color: #64748B; }
@@ -75,11 +73,12 @@
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        /* ДИАГНОСТИКА - показываем границы вкладок */
-#pending-reports { border: 3px solid #F59E0B; min-height: 100px; }
-#completed-reports { border: 3px solid #10B981; min-height: 100px; }
-.sub-content { display: none; }
-.sub-content.active { display: block; }
+        
+        /* ДИАГНОСТИКА */
+        #pending-reports { border: 3px solid #F59E0B; min-height: 100px; }
+        #completed-reports { border: 3px solid #10B981; min-height: 100px; }
+        .sub-content { display: none; }
+        .sub-content.active { display: block; }
     </style>
 </head>
 <body>
@@ -215,7 +214,11 @@
                         parent.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
                         parent.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
                         tab.classList.add('active');
-                        document.getElementById(`${tab.dataset.sub}-reports`).classList.add('active');
+                        const targetId = `${tab.dataset.sub}-reports`;
+                        document.getElementById(targetId).classList.add('active');
+                        
+                        console.log('Переключение на:', tab.dataset.sub);
+                        
                         if (tab.dataset.sub === 'pending') loadPendingReports();
                         if (tab.dataset.sub === 'completed') loadCompletedReports();
                     });
@@ -254,9 +257,7 @@
                     
                     if (error) throw error;
                     
-                    console.log('=== loadPendingReports ===');
-                    console.log('Загружено отчётов в НА ПРОВЕРКЕ:', data?.length);
-                    console.log('Отчёты (только pending):', data?.map(r => ({ number: r.report_number, status: r.status })));
+                    console.log('На проверке (pending):', data?.length);
                     
                     if (!data || data.length === 0) {
                         container.innerHTML = '<div class="empty-state">Нет отчётов на проверке</div>';
@@ -280,7 +281,7 @@
                     }
                     container.innerHTML = html;
                 } catch (error) {
-                    console.error('Ошибка загрузки pending:', error);
+                    console.error('Ошибка:', error);
                     container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
                 }
             }
@@ -298,9 +299,7 @@
                     
                     if (error) throw error;
                     
-                    console.log('=== loadCompletedReports ===');
-                    console.log('Загружено отчётов в ПРОВЕРЕННЫЕ:', data?.length);
-                    console.log('Отчёты (только confirmed):', data?.map(r => ({ number: r.report_number, status: r.status })));
+                    console.log('Проверенные (confirmed):', data?.length);
                     
                     if (!data || data.length === 0) {
                         container.innerHTML = '<div class="empty-state">Нет проверенных отчётов</div>';
@@ -324,7 +323,7 @@
                     }
                     container.innerHTML = html;
                 } catch (error) {
-                    console.error('Ошибка загрузки completed:', error);
+                    console.error('Ошибка:', error);
                     container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
                 }
             }
@@ -386,7 +385,7 @@
                     }
                     container.innerHTML = html;
                 } catch (error) {
-                    console.error('Ошибка загрузки задач:', error);
+                    console.error('Ошибка:', error);
                     container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
                 }
             }
