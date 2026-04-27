@@ -138,7 +138,7 @@
             <div id="tab-materials" class="tab-content"><div id="materials-container"></div></div>
             <div id="tab-checklist" class="tab-content"></div>
             <div id="tab-issues" class="tab-content"></div>
-            <div id="tab-report" class="tab-content"><div class="info-card"><h3>📑 Отчет</h3><p>Загрузка...</p></div></div>
+           <div id="tab-report" class="tab-content"></div>
         </div>
         <div id="axis-detail-page" class="fullscreen-modal hidden"></div>
         <div id="action-overlay" class="action-overlay hidden"></div>
@@ -186,7 +186,7 @@
             }
 
             function setupFilters() { document.querySelectorAll('.filter-btn').forEach(function(btn) { btn.addEventListener('click', function() { document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); currentFilter = btn.dataset.filter; renderProjects(); }); }); }
-            function setupTabs() { document.querySelectorAll('.tab').forEach(function(t) { t.addEventListener('click', function() { document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); }); document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); }); t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active'); if (t.dataset.tab === 'progress') loadProgressTab(); if (t.dataset.tab === 'history') loadHistoryTab(); if (t.dataset.tab === 'materials') loadMaterialsTab(); if (t.dataset.tab === 'checklist') loadChecklist();if (t.dataset.tab === 'expenses') loadExpenses();if (t.dataset.tab === 'issues') loadIssues(); }); }); }
+            function setupTabs() { document.querySelectorAll('.tab').forEach(function(t) { t.addEventListener('click', function() { document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); }); document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); }); t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active'); if (t.dataset.tab === 'progress') loadProgressTab(); if (t.dataset.tab === 'history') loadHistoryTab(); if (t.dataset.tab === 'materials') loadMaterialsTab(); if (t.dataset.tab === 'checklist') loadChecklist();if (t.dataset.tab === 'expenses') loadExpenses();if (t.dataset.tab === 'issues') loadIssues();if (t.dataset.tab === 'report') loadReports(); }); }); }
             function setupTabsScroll() { const tabsContainer = document.getElementById('tabs-container'); const scrollLeft = document.getElementById('scroll-left'); const scrollRight = document.getElementById('scroll-right'); if (!tabsContainer) return; function updateArrows() { if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0); if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1); } if (scrollLeft) scrollLeft.addEventListener('click', function() { tabsContainer.scrollBy({ left: -200, behavior: 'smooth' }); }); if (scrollRight) scrollRight.addEventListener('click', function() { tabsContainer.scrollBy({ left: 200, behavior: 'smooth' }); }); tabsContainer.addEventListener('scroll', updateArrows); window.addEventListener('resize', updateArrows); setTimeout(updateArrows, 300); setTimeout(updateArrows, 600); }
             function setupModals() { document.getElementById('close-form-modal').onclick = function() { document.getElementById('form-modal').classList.add('hidden'); }; document.getElementById('close-edit-modal').onclick = function() { document.getElementById('edit-modal').classList.add('hidden'); }; document.getElementById('action-overlay').onclick = closeActionMenu; }
 
@@ -1846,6 +1846,350 @@ async function openAddIssueForm() {
         else { document.getElementById('form-modal').classList.add('hidden'); loadIssues(); showMessage('✅ Проблема создана', 'success'); }
     };
 }
+            // ============================================================
+// ===== ОТЧЁТЫ (ПОЛНАЯ ВЕРСИЯ) =====
+// ============================================================
+
+let currentReportId = null;
+
+async function loadReports() {
+    const container = document.getElementById('tab-report');
+    container.innerHTML = '<div class="loading">Загрузка отчётов...</div>';
+    
+    // Загружаем список отчётов
+    const { data, error } = await supabase
+        .from('object_reports')
+        .select('*')
+        .eq('project_id', currentProjectId)
+        .order('report_date', { ascending: false });
+    
+    if (error) {
+        container.innerHTML = `<div class="info-card"><p class="error">Ошибка: ${error.message}</p></div>`;
+        return;
+    }
+    
+    const reports = data || [];
+    
+    // Получаем следующий номер отчёта
+    const nextNumber = reports.length > 0 ? Math.max(...reports.map(r => r.report_number || 0)) + 1 : 1;
+    
+    // Загружаем оси для формы
+    const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
+    let axesList = [];
+    if (blocks && blocks.length) {
+        const blockIds = blocks.map(b => b.id);
+        const { data: axes } = await supabase.from('axes').select('name').in('block_id', blockIds);
+        axesList = axes || [];
+    }
+    
+    let html = `
+        <div class="info-card">
+            <h3 style="margin-bottom: 20px;">📝 Создать новый отчёт</h3>
+            
+            <div class="form-group">
+                <label>📅 Дата отчёта</label>
+                <input type="date" id="report-date" value="${new Date().toISOString().split('T')[0]}">
+            </div>
+            
+            <div class="form-group">
+                <label>🔢 Номер отчёта</label>
+                <input type="text" id="report-number" value="№${nextNumber}" disabled style="background: #F8FAFC;">
+            </div>
+            
+            <div class="form-group">
+                <label>📍 Выберите оси для отчёта *</label>
+                <div id="report-axes-list" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;">
+    `;
+    
+    axesList.forEach(axis => {
+        html += `
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" class="report-axis-cb" value="${axis.name}" data-name="${axis.name}">
+                <span>${axis.name}</span>
+            </label>
+        `;
+    });
+    
+    html += `
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>📝 Описание отчёта</label>
+                <textarea id="report-description" rows="4" placeholder="Опишите выполненные работы за период..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label><input type="checkbox" id="report-has-issues" style="width: auto; margin-right: 8px;"> ⚠️ В отчёте описаны проблемы</label>
+            </div>
+            
+            <div class="form-group">
+                <label>📸 Фото по осям (обязательно для каждой выбранной оси)</label>
+                <div id="report-photo-fields"></div>
+            </div>
+            
+            <button class="btn-primary" id="submit-report-btn">📤 Отправить отчёт</button>
+        </div>
+        
+        <div class="info-card">
+            <h3 style="margin-bottom: 16px;">📋 История отчётов</h3>
+            <div id="reports-list"></div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+    
+    // Обработчик выбора осей — показываем поля для фото
+    document.querySelectorAll('.report-axis-cb').forEach(cb => {
+        cb.addEventListener('change', renderPhotoFields);
+    });
+    
+    function renderPhotoFields() {
+        const selectedAxes = Array.from(document.querySelectorAll('.report-axis-cb:checked')).map(cb => cb.value);
+        const photoContainer = document.getElementById('report-photo-fields');
+        
+        if (selectedAxes.length === 0) {
+            photoContainer.innerHTML = '<p style="color: #64748B; font-size: 13px;">Выберите оси для отчёта</p>';
+            return;
+        }
+        
+        let html = '<div style="margin-top: 12px;">';
+        selectedAxes.forEach(axis => {
+            html += `
+                <div class="axis-photo-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #F8FAFC; border-radius: 14px; margin-bottom: 10px;">
+                    <span style="width: 80px; font-weight: 600;">📍 ${axis}</span>
+                    <input type="file" class="photo-input" data-axis="${axis}" accept="image/*" capture="environment" style="flex: 1; padding: 8px;">
+                    <img class="photo-preview" data-axis="${axis}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 10px; display: none;">
+                </div>
+            `;
+        });
+        html += '</div>';
+        photoContainer.innerHTML = html;
+        
+        // Обработчики предпросмотра фото
+        document.querySelectorAll('.photo-input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                const axis = input.dataset.axis;
+                const preview = document.querySelector(`.photo-preview[data-axis="${axis}"]`);
+                if (file && preview) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        preview.src = ev.target.result;
+                        preview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+    }
+    
+    // Отправка отчёта
+    document.getElementById('submit-report-btn').addEventListener('click', async () => {
+        const reportDate = document.getElementById('report-date').value;
+        const description = document.getElementById('report-description').value.trim();
+        const hasIssues = document.getElementById('report-has-issues').checked;
+        const selectedAxes = Array.from(document.querySelectorAll('.report-axis-cb:checked')).map(cb => cb.value);
+        
+        if (selectedAxes.length === 0) {
+            alert('Выберите хотя бы одну ось для отчёта');
+            return;
+        }
+        
+        // Проверяем, что для каждой оси есть фото
+        const photoInputs = document.querySelectorAll('.photo-input');
+        const missingPhotos = [];
+        for (const input of photoInputs) {
+            if (!input.files || !input.files[0]) {
+                missingPhotos.push(input.dataset.axis);
+            }
+        }
+        
+        if (missingPhotos.length > 0) {
+            alert(`Добавьте фото для осей: ${missingPhotos.join(', ')}`);
+            return;
+        }
+        
+        // Загружаем фото
+        const photos = [];
+        for (const input of photoInputs) {
+            const axis = input.dataset.axis;
+            const file = input.files[0];
+            if (file) {
+                const fileName = `reports/${currentProjectId}/${Date.now()}_${axis}_${file.name}`;
+                const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
+                if (!uploadError) {
+                    const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+                    photos.push({ axis, url: urlData.publicUrl });
+                }
+            }
+        }
+        
+        // Сохраняем отчёт
+        const { data: newReport, error: insertError } = await supabase
+            .from('object_reports')
+            .insert({
+                report_number: nextNumber,
+                project_id: currentProjectId,
+                report_date: reportDate,
+                axes_selected: selectedAxes,
+                description: description,
+                has_issues: hasIssues,
+                photos: photos,
+                status: 'pending',
+                created_by: currentUser?.id,
+                created_by_name: currentUser?.full_name,
+                created_by_role: currentRole,
+                created_at: new Date()
+            })
+            .select('id')
+            .single();
+        
+        if (insertError) {
+            alert('Ошибка: ' + insertError.message);
+            return;
+        }
+        
+        // Диалог подтверждения
+        const confirmed = confirm(
+            '✅ Отчёт сохранён!\n\n' +
+            'Проверьте:\n' +
+            '• Сроки ГПР сдвинуты (если требуется)\n' +
+            '• Письма заказчику отправлены (если требуется)\n\n' +
+            'Нажмите OK, если всё сделано. Или Отмена, чтобы напомнить позже.'
+        );
+        
+        if (confirmed) {
+            await supabase
+                .from('object_reports')
+                .update({ 
+                    status: 'confirmed',
+                    letters_sent: true,
+                    schedule_shifted: true
+                })
+                .eq('id', newReport.id);
+            
+            // Создаём задачу для руководителя
+            await supabase.from('tasks').insert({
+                project_id: currentProjectId,
+                report_id: newReport.id,
+                type: 'report',
+                title: `📑 Отчёт №${nextNumber} от ${reportDate}`,
+                description: description.substring(0, 200),
+                status: 'pending',
+                priority: hasIssues ? 'high' : 'medium',
+                created_by: currentUser?.id
+            });
+            
+            showMessage('✅ Отчёт подтверждён. Задача создана.', 'success');
+        } else {
+            showMessage('📋 Отчёт сохранён. Не забудьте позже подтвердить сдвиги и письма.', 'info');
+        }
+        
+        loadReports();
+    });
+    
+    // Рендер списка отчётов
+    function renderReportsList() {
+        const listContainer = document.getElementById('reports-list');
+        
+        if (reports.length === 0) {
+            listContainer.innerHTML = '<p style="color: #64748B; text-align: center; padding: 20px;">Нет отчётов</p>';
+            return;
+        }
+        
+        let html = '';
+        for (const report of reports) {
+            const statusIcon = report.status === 'confirmed' ? '✅' : '⏳';
+            const statusText = report.status === 'confirmed' ? 'Письма отправлены, сроки сдвинуты' : 'Ожидает подтверждения';
+            const hasIssuesIcon = report.has_issues ? '⚠️' : '📋';
+            
+            html += `
+                <div class="gpr-item" style="margin-bottom: 12px; cursor: pointer;" onclick="viewReportDetails('${report.id}')">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                        <div>
+                            <strong>📄 ОТЧЁТ №${report.report_number} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong>
+                            ${report.has_issues ? '<span style="background:#FEE2E2; color:#991B1B; padding:2px 8px; border-radius:20px; font-size:10px; margin-left:8px;">⚠️ Проблемы</span>' : ''}
+                        </div>
+                        <span style="font-size: 12px;">${statusIcon} ${statusText}</span>
+                    </div>
+                    <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">
+                        📍 Оси: ${report.axes_selected.join(', ')} | 📸 Фото: ${report.photos?.length || 0} шт.
+                    </div>
+                    <div style="font-size: 13px; margin-bottom: 6px;">📝 ${report.description?.substring(0, 100)}${report.description?.length > 100 ? '...' : ''}</div>
+                    <div style="font-size: 11px; color: #64748B;">👤 ${report.created_by_name || '—'} (${report.created_by_role === 'manager' ? 'Руководитель' : 'ИТР'})</div>
+                    <div style="font-size: 11px; color: #94A3B8;">📅 ${new Date(report.created_at).toLocaleString()}</div>
+                </div>
+            `;
+        }
+        listContainer.innerHTML = html;
+    }
+    
+    renderReportsList();
+}
+
+// ========== ПРОСМОТР ДЕТАЛЕЙ ОТЧЁТА ==========
+window.viewReportDetails = async function(reportId) {
+    const { data: report, error } = await supabase
+        .from('object_reports')
+        .select('*')
+        .eq('id', reportId)
+        .single();
+    
+    if (error || !report) {
+        alert('Ошибка загрузки отчёта');
+        return;
+    }
+    
+    const statusText = report.status === 'confirmed' ? '✅ Письма отправлены, сроки ГПР сдвинуты' : '⏳ Ожидает подтверждения';
+    
+    let photosHtml = '';
+    if (report.photos && report.photos.length) {
+        photosHtml = '<div style="margin-top: 12px;"><h4>📸 Фото по осям:</h4><div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;">';
+        report.photos.forEach(photo => {
+            photosHtml += `
+                <div style="text-align: center;">
+                    <img src="${photo.url}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 12px; cursor: pointer;" onclick="window.open('${photo.url}', '_blank')">
+                    <div style="font-size: 11px; margin-top: 4px;">📍 ${photo.axis}</div>
+                </div>
+            `;
+        });
+        photosHtml += '</div></div>';
+    }
+    
+    const modalHtml = `
+        <div style="max-height: 70vh; overflow-y: auto;">
+            <div style="margin-bottom: 16px;">
+                <strong>📄 Отчёт №${report.report_number} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong>
+                <span style="display: block; font-size: 13px; color: #64748B; margin-top: 4px;">${statusText}</span>
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <strong>📍 Оси:</strong> ${report.axes_selected.join(', ')}
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <strong>📝 Описание:</strong><br>
+                <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-top: 4px;">${escapeHtml(report.description || '—')}</div>
+            </div>
+            
+            ${report.has_issues ? `<div style="margin-bottom: 12px;"><span style="background:#FEE2E2; color:#991B1B; padding:4px 12px; border-radius:20px; font-size:12px;">⚠️ В отчёте описаны проблемы</span></div>` : ''}
+            
+            ${photosHtml}
+            
+            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">
+                <div>👤 Создал: ${report.created_by_name || '—'} (${report.created_by_role === 'manager' ? 'Руководитель' : 'ИТР'})</div>
+                <div>📅 ${new Date(report.created_at).toLocaleString()}</div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('form-modal-title').textContent = '📄 Детали отчёта';
+    document.getElementById('form-modal-content').innerHTML = modalHtml;
+    document.getElementById('form-modal').classList.remove('hidden');
+};
+
+// ===== КОНЕЦ РАЗДЕЛА ОТЧЁТЫ =====
             init();
         })();
     </script>
