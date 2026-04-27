@@ -2009,18 +2009,16 @@ async function loadReports() {
             return;
         }
         
-        // Загружаем фото (очищаем имя файла от пробелов и кириллицы)
+        // Загружаем фото (очищаем имя файла)
 const photos = [];
 for (const input of photoInputs) {
     const axis = input.dataset.axis;
     const file = input.files[0];
     if (file) {
-        // Очищаем имя файла: убираем пробелы, кириллицу, оставляем только латиницу и цифры
-        const cleanName = file.name
-            .replace(/[^a-zA-Z0-9.-]/g, '_')
-            .replace(/[_]+/g, '_');
-        const timestamp = Date.now();
-        const fileName = `${currentProjectId}/${timestamp}_${axis}_${cleanName}`;
+        // Очищаем имя файла: только латиница, цифры, точка
+        const ext = file.name.split('.').pop();
+        const cleanName = Date.now() + '_' + axis.replace(/[^a-zA-Z0-9]/g, '_') + '.' + ext;
+        const fileName = `${currentProjectId}/${cleanName}`;
         
         console.log('Загружаем:', fileName);
         
@@ -2033,6 +2031,7 @@ for (const input of photoInputs) {
             photos.push({ axis, url: urlData.publicUrl });
         }
     }
+}
 }
         
         // Сохраняем отчёт
