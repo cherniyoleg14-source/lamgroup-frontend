@@ -107,14 +107,14 @@
             <button class="main-tab" data-main="letters-issues">✉️ Письма и проблемы</button>
         </div>
         
-        <!-- ОТЧЁТЫ -->
+        <!-- ОТЧЁТЫ (рабочая версия) -->
         <div id="main-reports" class="main-tab-content active">
             <div class="sub-tabs">
                 <button class="sub-tab active" data-sub="pending">⏳ На проверке</button>
-                <button class="sub-tab" data-sub="confirmed">✅ Проверенные</button>
+                <button class="sub-tab" data-sub="completed">✅ Проверенные</button>
             </div>
             <div id="pending-reports" class="sub-content active"></div>
-            <div id="confirmed-reports" class="sub-content"></div>
+            <div id="completed-reports" class="sub-content"></div>
         </div>
         
         <!-- ВСЕ ЗАДАЧИ -->
@@ -221,7 +221,7 @@
                 setupTaskFilters();
                 setupModals();
                 await loadPendingReports();
-                await loadConfirmedReports();
+                await loadCompletedReports();
                 await loadTasksTasks();
                 await loadExpensesFinance();
                 await loadOrdersFinance();
@@ -250,7 +250,7 @@
                         
                         if (tab.dataset.main === 'reports') {
                             loadPendingReports();
-                            loadConfirmedReports();
+                            loadCompletedReports();
                         }
                         if (tab.dataset.main === 'all-tasks') {
                             loadTasksTasks();
@@ -279,7 +279,7 @@
                         document.querySelectorAll('#main-reports .sub-content').forEach(c => c.classList.remove('active'));
                         tab.classList.add('active');
                         if (tab.dataset.sub === 'pending') loadPendingReports();
-                        if (tab.dataset.sub === 'confirmed') loadConfirmedReports();
+                        if (tab.dataset.sub === 'completed') loadCompletedReports();
                     });
                 });
                 
@@ -326,7 +326,7 @@
                 }
             }
             
-            // ========== ОТЧЁТЫ ==========
+            // ========== ОТЧЁТЫ (РАБОЧАЯ ВЕРСИЯ) ==========
             async function loadPendingReports() {
                 const container = document.getElementById('pending-reports');
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
@@ -351,8 +351,8 @@
                 } catch (error) { container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`; }
             }
             
-            async function loadConfirmedReports() {
-                const container = document.getElementById('confirmed-reports');
+            async function loadCompletedReports() {
+                const container = document.getElementById('completed-reports');
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
                 try {
                     const { data, error } = await supabase
@@ -392,7 +392,7 @@
                     document.getElementById('mark-report-reviewed')?.addEventListener('click', async () => {
                         await supabase.from('object_reports').update({ status: 'confirmed', reviewed_by: currentUser?.id, reviewed_by_name: currentUser?.full_name }).eq('id', reportId);
                         document.getElementById('report-modal').classList.add('hidden');
-                        loadPendingReports(); loadConfirmedReports();
+                        loadPendingReports(); loadCompletedReports();
                         showMessage('Отчёт проверен', 'success');
                     });
                 }
