@@ -1847,10 +1847,9 @@ async function openAddIssueForm() {
     };
 }
             // ============================================================
-// ===== ОТЧЁТЫ (ПОЛНАЯ ВЕРСИЯ) =====
 // ============================================================
-
-let currentReportId = null;
+// ===== ОТЧЁТЫ (ПОЛНАЯ ВЕРСИЯ С ОТОБРАЖЕНИЕМ ФОТО) =====
+// ============================================================
 
 async function loadReports() {
     const container = document.getElementById('tab-report');
@@ -1953,9 +1952,9 @@ async function loadReports() {
             return;
         }
         
-        let html = '<div style="margin-top: 12px;">';
+        let fieldsHtml = '<div style="margin-top: 12px;">';
         selectedAxes.forEach(axis => {
-            html += `
+            fieldsHtml += `
                 <div class="axis-photo-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #F8FAFC; border-radius: 14px; margin-bottom: 10px;">
                     <span style="width: 80px; font-weight: 600;">📍 ${axis}</span>
                     <input type="file" class="photo-input" data-axis="${axis}" accept="image/*" capture="environment" style="flex: 1; padding: 8px;">
@@ -1963,8 +1962,8 @@ async function loadReports() {
                 </div>
             `;
         });
-        html += '</div>';
-        photoContainer.innerHTML = html;
+        fieldsHtml += '</div>';
+        photoContainer.innerHTML = fieldsHtml;
         
         // Обработчики предпросмотра фото
         document.querySelectorAll('.photo-input').forEach(input => {
@@ -2089,7 +2088,7 @@ async function loadReports() {
         loadReports();
     });
     
-    // Рендер списка отчётов
+    // Рендер списка отчётов с фото
     function renderReportsList() {
         const listContainer = document.getElementById('reports-list');
         
@@ -2102,7 +2101,12 @@ async function loadReports() {
         for (const report of reports) {
             const statusIcon = report.status === 'confirmed' ? '✅' : '⏳';
             const statusText = report.status === 'confirmed' ? 'Письма отправлены, сроки сдвинуты' : 'Ожидает подтверждения';
-            const hasIssuesIcon = report.has_issues ? '⚠️' : '📋';
+            
+            // Получаем фото для предпросмотра (первые 3)
+            const photos = report.photos || [];
+            const photoThumbs = photos.slice(0, 3).map(p => 
+                `<img src="${p.url}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="event.stopPropagation(); window.open('${p.url}', '_blank')">`
+            ).join('');
             
             html += `
                 <div class="gpr-item" style="margin-bottom: 12px; cursor: pointer;" onclick="viewReportDetails('${report.id}')">
@@ -2114,9 +2118,10 @@ async function loadReports() {
                         <span style="font-size: 12px;">${statusIcon} ${statusText}</span>
                     </div>
                     <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">
-                        📍 Оси: ${report.axes_selected.join(', ')} | 📸 Фото: ${report.photos?.length || 0} шт.
+                        📍 Оси: ${report.axes_selected?.join(', ') || '—'} | 📸 Фото: ${photos.length} шт.
                     </div>
-                    <div style="font-size: 13px; margin-bottom: 6px;">📝 ${report.description?.substring(0, 100)}${report.description?.length > 100 ? '...' : ''}</div>
+                    ${photoThumbs ? `<div style="display: flex; gap: 6px; margin: 8px 0;">${photoThumbs}</div>` : ''}
+                    <div style="font-size: 13px; margin-bottom: 6px;">📝 ${(report.description || '').substring(0, 100)}${(report.description || '').length > 100 ? '...' : ''}</div>
                     <div style="font-size: 11px; color: #64748B;">👤 ${report.created_by_name || '—'} (${report.created_by_role === 'manager' ? 'Руководитель' : 'ИТР'})</div>
                     <div style="font-size: 11px; color: #94A3B8;">📅 ${new Date(report.created_at).toLocaleString()}</div>
                 </div>
@@ -2128,7 +2133,7 @@ async function loadReports() {
     renderReportsList();
 }
 
-// ========== ПРОСМОТР ДЕТАЛЕЙ ОТЧЁТА ==========
+// ========== ПРОСМОТР ДЕТАЛЕЙ ОТЧЁТА С ФОТО ==========
 window.viewReportDetails = async function(reportId) {
     const { data: report, error } = await supabase
         .from('object_reports')
@@ -2143,14 +2148,15 @@ window.viewReportDetails = async function(reportId) {
     
     const statusText = report.status === 'confirmed' ? '✅ Письма отправлены, сроки ГПР сдвинуты' : '⏳ Ожидает подтверждения';
     
+    // Фото в большом размере
     let photosHtml = '';
     if (report.photos && report.photos.length) {
-        photosHtml = '<div style="margin-top: 12px;"><h4>📸 Фото по осям:</h4><div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;">';
+        photosHtml = '<div style="margin-top: 16px;"><h4>📸 Фото по осям:</h4><div style="display: flex; flex-direction: column; gap: 16px; margin-top: 12px;">';
         report.photos.forEach(photo => {
             photosHtml += `
-                <div style="text-align: center;">
-                    <img src="${photo.url}" style="width: 120px; height: 120px; object-fit: cover; border-radius: 12px; cursor: pointer;" onclick="window.open('${photo.url}', '_blank')">
-                    <div style="font-size: 11px; margin-top: 4px;">📍 ${photo.axis}</div>
+                <div style="background: #F8FAFC; border-radius: 16px; padding: 12px;">
+                    <div style="font-weight: 600; margin-bottom: 8px;">📍 ${photo.axis}</div>
+                    <img src="${photo.url}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 12px; cursor: pointer;" onclick="window.open('${photo.url}', '_blank')">
                 </div>
             `;
         });
@@ -2160,26 +2166,26 @@ window.viewReportDetails = async function(reportId) {
     const modalHtml = `
         <div style="max-height: 70vh; overflow-y: auto;">
             <div style="margin-bottom: 16px;">
-                <strong>📄 Отчёт №${report.report_number} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong>
-                <span style="display: block; font-size: 13px; color: #64748B; margin-top: 4px;">${statusText}</span>
+                <strong style="font-size: 18px;">📄 Отчёт №${report.report_number} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong>
+                <div style="font-size: 13px; color: #64748B; margin-top: 6px;">${statusText}</div>
             </div>
             
             <div style="margin-bottom: 12px;">
-                <strong>📍 Оси:</strong> ${report.axes_selected.join(', ')}
+                <strong>📍 Оси:</strong> ${report.axes_selected?.join(', ') || '—'}
             </div>
             
-            <div style="margin-bottom: 12px;">
-                <strong>📝 Описание:</strong><br>
-                <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-top: 4px;">${escapeHtml(report.description || '—')}</div>
+            <div style="margin-bottom: 16px;">
+                <strong>📝 Описание:</strong>
+                <div style="background: #F8FAFC; padding: 14px; border-radius: 14px; margin-top: 6px; line-height: 1.5;">${escapeHtml(report.description || '—')}</div>
             </div>
             
             ${report.has_issues ? `<div style="margin-bottom: 12px;"><span style="background:#FEE2E2; color:#991B1B; padding:4px 12px; border-radius:20px; font-size:12px;">⚠️ В отчёте описаны проблемы</span></div>` : ''}
             
             ${photosHtml}
             
-            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">
                 <div>👤 Создал: ${report.created_by_name || '—'} (${report.created_by_role === 'manager' ? 'Руководитель' : 'ИТР'})</div>
-                <div>📅 ${new Date(report.created_at).toLocaleString()}</div>
+                <div>📅 Дата создания: ${new Date(report.created_at).toLocaleString()}</div>
             </div>
         </div>
     `;
