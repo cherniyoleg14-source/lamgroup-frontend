@@ -52,7 +52,6 @@
         
         .btn-small { padding: 6px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
         .btn-confirm { background: #D1FAE5; color: #065F46; }
-        .btn-primary-bg { background: #0F172A; color: white; }
         
         .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 24px; color: #64748B; }
         .loading { text-align: center; padding: 60px 20px; color: #64748B; }
@@ -71,6 +70,7 @@
         label { font-weight: 600; color: #475569; font-size: 12px; display: block; margin-bottom: 6px; }
         textarea, input, select { width: 100%; padding: 12px; border: 1.5px solid #E2E8F0; border-radius: 14px; font-size: 14px; font-family: inherit; }
         .btn-primary { width: 100%; background: linear-gradient(135deg, #0F172A, #1E293B); color: white; padding: 14px; border-radius: 14px; font-weight: 700; border: none; cursor: pointer; margin-top: 10px; }
+        .btn-success { background: #10B981; }
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -90,8 +90,8 @@
         
         <div id="main-reports" class="main-tab-content active">
             <div class="sub-tabs">
-                <button class="sub-tab active" data-sub="pending-reports">⏳ На проверке</button>
-                <button class="sub-tab" data-sub="completed-reports">✅ Проверенные</button>
+                <button class="sub-tab active" data-sub="pending">⏳ На проверке</button>
+                <button class="sub-tab" data-sub="completed">✅ Проверенные</button>
             </div>
             <div id="pending-reports" class="sub-content active"></div>
             <div id="completed-reports" class="sub-content"></div>
@@ -191,6 +191,13 @@
                         document.querySelectorAll('.main-tab-content').forEach(c => c.classList.remove('active'));
                         tab.classList.add('active');
                         document.getElementById(`main-${tab.dataset.main}`).classList.add('active');
+                        if (tab.dataset.main === 'reports') {
+                            loadPendingReports();
+                            loadCompletedReports();
+                        }
+                        if (tab.dataset.main === 'all-tasks') {
+                            loadAllTasks();
+                        }
                     });
                 });
             }
@@ -202,9 +209,9 @@
                         parent.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
                         parent.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
                         tab.classList.add('active');
-                        document.getElementById(tab.dataset.sub).classList.add('active');
-                        if (tab.dataset.sub === 'pending-reports') loadPendingReports();
-                        if (tab.dataset.sub === 'completed-reports') loadCompletedReports();
+                        document.getElementById(`${tab.dataset.sub}-reports`).classList.add('active');
+                        if (tab.dataset.sub === 'pending') loadPendingReports();
+                        if (tab.dataset.sub === 'completed') loadCompletedReports();
                     });
                 });
             }
@@ -232,239 +239,271 @@
                 const container = document.getElementById('pending-reports');
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
                 
-                let query = supabase
-                    .from('object_reports')
-                    .select('*, projects(name)')
-                    .eq('status', 'pending')
-                    .order('report_date', { ascending: false });
-                
-                if (currentRole !== 'manager') {
-                    const { data: userProjects } = await supabase
-                        .from('projects')
-                        .select('id')
-                        .eq('responsible_worker_id', currentUser?.id);
-                    const projectIds = userProjects?.map(p => p.id) || [];
-                    if (projectIds.length > 0) {
-                        query = query.in('project_id', projectIds);
-                    } else {
+                try {
+                    let query = supabase
+                        .from('object_reports')
+                        .select('*, projects(name)')
+                        .eq('status', 'pending')
+                        .order('report_date', { ascending: false });
+                    
+                    if (currentRole !== 'manager') {
+                        const { data: userProjects } = await supabase
+                            .from('projects')
+                            .select('id')
+                            .eq('responsible_worker_id', currentUser?.id);
+                        const projectIds = userProjects?.map(p => p.id) || [];
+                        if (projectIds.length > 0) {
+                            query = query.in('project_id', projectIds);
+                        } else {
+                            container.innerHTML = '<div class="empty-state">Нет отчётов на проверке</div>';
+                            return;
+                        }
+                    }
+                    
+                    const { data, error } = await query;
+                    if (error) throw error;
+                    
+                    if (!data || data.length === 0) {
                         container.innerHTML = '<div class="empty-state">Нет отчётов на проверке</div>';
                         return;
                     }
-                }
-                
-                const { data, error } = await query;
-                if (error) { container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`; return; }
-                if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Нет отчётов на проверке</div>'; return; }
-                
-                let html = '';
-                for (const report of data) {
-                    const reportNumber = report.report_number || '—';
-                    html += `
-                        <div class="task-card" onclick="viewReport('${report.id}')">
-                            <div class="task-header">
-                                <span class="task-type type-report">📑 Отчёт №${reportNumber}</span>
-                                <span class="task-status status-pending">⏳ На проверке</span>
+                    
+                    let html = '';
+                    for (const report of data) {
+                        const reportNumber = report.report_number || '—';
+                        html += `
+                            <div class="task-card" onclick="viewReport('${report.id}')">
+                                <div class="task-header">
+                                    <span class="task-type type-report">📑 Отчёт №${reportNumber}</span>
+                                    <span class="task-status status-pending">⏳ На проверке</span>
+                                </div>
+                                <div class="task-title">${escapeHtml(report.projects?.name || '—')}</div>
+                                <div class="task-description">📅 ${new Date(report.report_date).toLocaleDateString('ru-RU')}<br>📝 ${(report.description || '').substring(0, 80)}${(report.description || '').length > 80 ? '...' : ''}</div>
+                                <div class="task-meta"><span>👤 ${report.created_by_name || '—'}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewReport('${report.id}')">👁️ Просмотреть</span></div>
                             </div>
-                            <div class="task-title">${escapeHtml(report.projects?.name || '—')}</div>
-                            <div class="task-description">📅 ${new Date(report.report_date).toLocaleDateString('ru-RU')}<br>📝 ${(report.description || '').substring(0, 80)}${(report.description || '').length > 80 ? '...' : ''}</div>
-                            <div class="task-meta"><span>👤 ${report.created_by_name || '—'}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewReport('${report.id}')">👁️ Просмотреть</span></div>
-                        </div>
-                    `;
+                        `;
+                    }
+                    container.innerHTML = html;
+                } catch (error) {
+                    console.error('Ошибка загрузки pending:', error);
+                    container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
                 }
-                container.innerHTML = html;
             }
             
             async function loadCompletedReports() {
                 const container = document.getElementById('completed-reports');
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
                 
-                let query = supabase
-                    .from('object_reports')
-                    .select('*, projects(name)')
-                    .eq('status', 'confirmed')
-                    .order('report_date', { ascending: false });
-                
-                if (currentRole !== 'manager') {
-                    const { data: userProjects } = await supabase
-                        .from('projects')
-                        .select('id')
-                        .eq('responsible_worker_id', currentUser?.id);
-                    const projectIds = userProjects?.map(p => p.id) || [];
-                    if (projectIds.length > 0) {
-                        query = query.in('project_id', projectIds);
-                    } else {
+                try {
+                    let query = supabase
+                        .from('object_reports')
+                        .select('*, projects(name)')
+                        .eq('status', 'confirmed')
+                        .order('report_date', { ascending: false });
+                    
+                    if (currentRole !== 'manager') {
+                        const { data: userProjects } = await supabase
+                            .from('projects')
+                            .select('id')
+                            .eq('responsible_worker_id', currentUser?.id);
+                        const projectIds = userProjects?.map(p => p.id) || [];
+                        if (projectIds.length > 0) {
+                            query = query.in('project_id', projectIds);
+                        } else {
+                            container.innerHTML = '<div class="empty-state">Нет проверенных отчётов</div>';
+                            return;
+                        }
+                    }
+                    
+                    const { data, error } = await query;
+                    if (error) throw error;
+                    
+                    if (!data || data.length === 0) {
                         container.innerHTML = '<div class="empty-state">Нет проверенных отчётов</div>';
                         return;
                     }
-                }
-                
-                const { data, error } = await query;
-                if (error) { container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`; return; }
-                if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Нет проверенных отчётов</div>'; return; }
-                
-                let html = '';
-                for (const report of data) {
-                    const reportNumber = report.report_number || '—';
-                    html += `
-                        <div class="task-card" onclick="viewReport('${report.id}')">
-                            <div class="task-header">
-                                <span class="task-type type-report">📑 Отчёт №${reportNumber}</span>
-                                <span class="task-status status-completed">✅ Проверен</span>
+                    
+                    let html = '';
+                    for (const report of data) {
+                        const reportNumber = report.report_number || '—';
+                        html += `
+                            <div class="task-card" onclick="viewReport('${report.id}')">
+                                <div class="task-header">
+                                    <span class="task-type type-report">📑 Отчёт №${reportNumber}</span>
+                                    <span class="task-status status-completed">✅ Проверен</span>
+                                </div>
+                                <div class="task-title">${escapeHtml(report.projects?.name || '—')}</div>
+                                <div class="task-description">📅 ${new Date(report.report_date).toLocaleDateString('ru-RU')}<br>📝 ${(report.description || '').substring(0, 80)}${(report.description || '').length > 80 ? '...' : ''}</div>
+                                <div class="task-meta"><span>👤 ${report.created_by_name || '—'}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewReport('${report.id}')">👁️ Просмотреть</span></div>
                             </div>
-                            <div class="task-title">${escapeHtml(report.projects?.name || '—')}</div>
-                            <div class="task-description">📅 ${new Date(report.report_date).toLocaleDateString('ru-RU')}<br>📝 ${(report.description || '').substring(0, 80)}${(report.description || '').length > 80 ? '...' : ''}</div>
-                            <div class="task-meta"><span>👤 ${report.created_by_name || '—'}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewReport('${report.id}')">👁️ Просмотреть</span></div>
-                        </div>
-                    `;
+                        `;
+                    }
+                    container.innerHTML = html;
+                } catch (error) {
+                    console.error('Ошибка загрузки completed:', error);
+                    container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
                 }
-                container.innerHTML = html;
             }
             
             async function loadAllTasks(filter = 'all') {
                 const container = document.getElementById('all-tasks-list');
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
                 
-                let query = supabase
-                    .from('report_tasks')
-                    .select('*, object_reports!inner(report_number, report_date, projects(name))')
-                    .order('created_at', { ascending: false });
-                
-                if (filter !== 'all') {
-                    query = query.eq('status', filter);
-                }
-                
-                if (currentRole !== 'manager') {
-                    query = query.eq('assigned_to', currentUser?.id);
-                }
-                
-                const { data, error } = await query;
-                if (error) { container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`; return; }
-                if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Нет задач</div>'; return; }
-                
-                const statusMap = {
-                    pending: { text: '⏳ Ожидается', class: 'status-pending' },
-                    in_progress: { text: '🔵 В работе', class: 'status-in-progress' },
-                    completed: { text: '✅ Сделано', class: 'status-completed' }
-                };
-                
-                let html = '';
-                for (const task of data) {
-                    const status = statusMap[task.status] || statusMap.pending;
-                    const report = task.object_reports;
-                    html += `
-                        <div class="task-card" onclick="viewTask('${task.id}')">
-                            <div class="task-header">
-                                <span class="task-type type-task">📌 Задача</span>
-                                <span class="task-status ${status.class}">${status.text}</span>
+                try {
+                    let query = supabase
+                        .from('report_tasks')
+                        .select('*, object_reports!inner(report_number, report_date, projects(name))')
+                        .order('created_at', { ascending: false });
+                    
+                    if (filter !== 'all') {
+                        query = query.eq('status', filter);
+                    }
+                    
+                    if (currentRole !== 'manager') {
+                        query = query.eq('assigned_to', currentUser?.id);
+                    }
+                    
+                    const { data, error } = await query;
+                    if (error) throw error;
+                    
+                    if (!data || data.length === 0) {
+                        container.innerHTML = '<div class="empty-state">Нет задач</div>';
+                        return;
+                    }
+                    
+                    const statusMap = {
+                        pending: { text: '⏳ Ожидается', class: 'status-pending' },
+                        in_progress: { text: '🔵 В работе', class: 'status-in-progress' },
+                        completed: { text: '✅ Сделано', class: 'status-completed' }
+                    };
+                    
+                    let html = '';
+                    for (const task of data) {
+                        const status = statusMap[task.status] || statusMap.pending;
+                        const report = task.object_reports;
+                        html += `
+                            <div class="task-card" onclick="viewTask('${task.id}')">
+                                <div class="task-header">
+                                    <span class="task-type type-task">📌 Задача</span>
+                                    <span class="task-status ${status.class}">${status.text}</span>
+                                </div>
+                                <div class="task-title">${escapeHtml(task.title)}</div>
+                                <div class="task-description">
+                                    📄 Отчёт №${report?.report_number || '—'} от ${report?.report_date ? new Date(report.report_date).toLocaleDateString('ru-RU') : '—'}<br>
+                                    🏗️ ${escapeHtml(report?.projects?.name || '—')}<br>
+                                    👤 Назначена: ${task.assigned_to_name || '—'}
+                                </div>
+                                <div class="task-meta">
+                                    <span>📅 ${new Date(task.created_at).toLocaleDateString('ru-RU')}</span>
+                                    <span class="btn-small btn-confirm" onclick="event.stopPropagation();viewTask('${task.id}')">👁️ Открыть</span>
+                                </div>
                             </div>
-                            <div class="task-title">${escapeHtml(task.title)}</div>
-                            <div class="task-description">
-                                📄 Отчёт №${report?.report_number || '—'} от ${report?.report_date ? new Date(report.report_date).toLocaleDateString('ru-RU') : '—'}<br>
-                                🏗️ ${escapeHtml(report?.projects?.name || '—')}<br>
-                                👤 Назначена: ${task.assigned_to_name || '—'}
-                            </div>
-                            <div class="task-meta">
-                                <span>📅 ${new Date(task.created_at).toLocaleDateString('ru-RU')}</span>
-                                <span class="btn-small btn-confirm" onclick="event.stopPropagation();viewTask('${task.id}')">👁️ Открыть</span>
-                            </div>
-                        </div>
-                    `;
+                        `;
+                    }
+                    container.innerHTML = html;
+                } catch (error) {
+                    console.error('Ошибка загрузки задач:', error);
+                    container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
                 }
-                container.innerHTML = html;
             }
             
             window.viewReport = async function(reportId) {
                 currentReportId = reportId;
-                const { data: report, error } = await supabase
-                    .from('object_reports')
-                    .select('*, projects(name)')
-                    .eq('id', reportId)
-                    .single();
-                
-                if (error) { alert('Ошибка загрузки'); return; }
-                
-                const { data: tasks } = await supabase
-                    .from('report_tasks')
-                    .select('*')
-                    .eq('report_id', reportId)
-                    .order('created_at', { ascending: false });
-                
-                const reportNumber = report.report_number || '—';
-                const axesText = report.axes_selected?.join(', ') || '—';
-                const photos = report.photos || [];
-                
-                let photosHtml = '';
-                if (photos.length > 0) {
-                    photosHtml = '<div style="margin-top: 16px;"><strong>📸 Фото:</strong><div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">';
-                    photos.forEach(photo => {
-                        photosHtml += `<img src="${photo.url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; cursor: pointer;" onclick="window.open('${photo.url}', '_blank')">`;
-                    });
-                    photosHtml += '</div></div>';
-                }
-                
-                let tasksHtml = '';
-                if (tasks && tasks.length > 0) {
-                    tasksHtml = '<div style="margin-top: 20px;"><strong>📋 Задачи по отчёту:</strong><div style="margin-top: 10px;">';
-                    tasks.forEach(task => {
-                        const statusIcon = task.status === 'completed' ? '✅' : (task.status === 'in_progress' ? '🔵' : '🟡');
-                        tasksHtml += `
-                            <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-bottom: 8px; cursor: pointer;" onclick="viewTask('${task.id}')">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span><strong>${escapeHtml(task.title)}</strong></span>
-                                    <span>${statusIcon} ${task.status === 'completed' ? 'Выполнена' : (task.status === 'in_progress' ? 'В работе' : 'Ожидается')}</span>
+                try {
+                    const { data: report, error } = await supabase
+                        .from('object_reports')
+                        .select('*, projects(name)')
+                        .eq('id', reportId)
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    const { data: tasks } = await supabase
+                        .from('report_tasks')
+                        .select('*')
+                        .eq('report_id', reportId)
+                        .order('created_at', { ascending: false });
+                    
+                    const reportNumber = report.report_number || '—';
+                    const axesText = report.axes_selected?.join(', ') || '—';
+                    const photos = report.photos || [];
+                    
+                    let photosHtml = '';
+                    if (photos.length > 0) {
+                        photosHtml = '<div style="margin-top: 16px;"><strong>📸 Фото:</strong><div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">';
+                        photos.forEach(photo => {
+                            photosHtml += `<img src="${photo.url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; cursor: pointer;" onclick="window.open('${photo.url}', '_blank')">`;
+                        });
+                        photosHtml += '</div></div>';
+                    }
+                    
+                    let tasksHtml = '';
+                    if (tasks && tasks.length > 0) {
+                        tasksHtml = '<div style="margin-top: 20px;"><strong>📋 Задачи по отчёту:</strong><div style="margin-top: 10px;">';
+                        tasks.forEach(task => {
+                            const statusIcon = task.status === 'completed' ? '✅' : (task.status === 'in_progress' ? '🔵' : '🟡');
+                            tasksHtml += `
+                                <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-bottom: 8px; cursor: pointer;" onclick="event.stopPropagation();viewTask('${task.id}')">
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <span><strong>${escapeHtml(task.title)}</strong></span>
+                                        <span>${statusIcon} ${task.status === 'completed' ? 'Выполнена' : (task.status === 'in_progress' ? 'В работе' : 'Ожидается')}</span>
+                                    </div>
+                                    <div style="font-size: 12px; color: #64748B;">👤 ${task.assigned_to_name || '—'} | 📅 ${new Date(task.created_at).toLocaleDateString('ru-RU')}</div>
                                 </div>
-                                <div style="font-size: 12px; color: #64748B;">👤 ${task.assigned_to_name || '—'} | 📅 ${new Date(task.created_at).toLocaleDateString('ru-RU')}</div>
+                            `;
+                        });
+                        tasksHtml += '</div></div>';
+                    }
+                    
+                    let createTaskHtml = '';
+                    if (currentRole === 'manager') {
+                        const { data: users } = await supabase.from('users').select('id, full_name, role').in('role', ['worker', 'manager']);
+                        let usersHtml = '<select id="new-task-assigned" style="width:100%; padding:10px; border-radius:12px;">';
+                        users?.forEach(u => {
+                            usersHtml += `<option value="${u.id}" data-name="${u.full_name}">${u.full_name} (${u.role === 'manager' ? 'Руководитель' : 'ИТР'})</option>`;
+                        });
+                        usersHtml += '</select>';
+                        
+                        createTaskHtml = `
+                            <div style="margin-top: 20px; padding-top: 16px; border-top: 2px solid #E2E8F0;">
+                                <strong>✏️ Создать новую задачу</strong>
+                                <div class="form-group" style="margin-top: 12px;"><label>Название задачи</label><input type="text" id="new-task-title" placeholder="Например: Доработать отчёт"></div>
+                                <div class="form-group"><label>Описание</label><textarea id="new-task-desc" rows="2" placeholder="Что нужно сделать..."></textarea></div>
+                                <div class="form-group"><label>Назначить</label>${usersHtml}</div>
+                                <div class="row-2">
+                                    <div class="form-group"><label>Приоритет</label><select id="new-task-priority"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option></select></div>
+                                    <div class="form-group"><label>Статус</label><select id="new-task-status"><option value="pending">Ожидается</option><option value="in_progress">В работе</option><option value="completed">Сделано</option></select></div>
+                                </div>
+                                <button class="btn-primary" id="create-task-from-report" style="margin-top: 0;">📋 Создать задачу</button>
                             </div>
                         `;
-                    });
-                    tasksHtml += '</div></div>';
-                }
-                
-                let createTaskHtml = '';
-                if (currentRole === 'manager') {
-                    const { data: users } = await supabase.from('users').select('id, full_name, role').in('role', ['worker', 'manager']);
-                    let usersHtml = '<select id="new-task-assigned" style="width:100%; padding:10px; border-radius:12px;">';
-                    users?.forEach(u => {
-                        usersHtml += `<option value="${u.id}" data-name="${u.full_name}">${u.full_name} (${u.role === 'manager' ? 'Руководитель' : 'ИТР'})</option>`;
-                    });
-                    usersHtml += '</select>';
+                    }
                     
-                    createTaskHtml = `
-                        <div style="margin-top: 20px; padding-top: 16px; border-top: 2px solid #E2E8F0;">
-                            <strong>✏️ Создать новую задачу</strong>
-                            <div class="form-group" style="margin-top: 12px;"><label>Название задачи</label><input type="text" id="new-task-title" placeholder="Например: Доработать отчёт"></div>
-                            <div class="form-group"><label>Описание</label><textarea id="new-task-desc" rows="2" placeholder="Что нужно сделать..."></textarea></div>
-                            <div class="form-group"><label>Назначить</label>${usersHtml}</div>
-                            <div class="row-2">
-                                <div class="form-group"><label>Приоритет</label><select id="new-task-priority"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option></select></div>
-                                <div class="form-group"><label>Статус</label><select id="new-task-status"><option value="pending">Ожидается</option><option value="in_progress">В работе</option><option value="completed">Сделано</option></select></div>
-                            </div>
-                            <button class="btn-primary" id="create-task-from-report" style="margin-top: 0;">📋 Создать задачу</button>
+                    const modalHtml = `
+                        <div>
+                            <div style="margin-bottom: 12px;"><strong>📄 Отчёт №${reportNumber} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong></div>
+                            <div style="margin-bottom: 8px;">🏗️ ${escapeHtml(report.projects?.name || '—')}</div>
+                            <div style="margin-bottom: 8px;">📍 Оси: ${axesText}</div>
+                            <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-bottom: 12px;">📝 ${escapeHtml(report.description || '—')}</div>
+                            ${report.has_issues ? '<div style="margin-bottom: 12px;"><span style="background:#FEE2E2; color:#991B1B; padding:4px 12px; border-radius:20px;">⚠️ В отчёте описаны проблемы</span></div>' : ''}
+                            ${photosHtml}
+                            ${tasksHtml}
+                            ${createTaskHtml}
+                            ${currentRole === 'manager' && report.status === 'pending' ? `<button class="btn-primary btn-success" id="mark-report-reviewed" style="margin-top: 16px;">✅ Отметить проверенным</button>` : ''}
+                            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">👤 Создал: ${report.created_by_name || '—'}</div>
                         </div>
                     `;
-                }
-                
-                const modalHtml = `
-                    <div>
-                        <div style="margin-bottom: 12px;"><strong>📄 Отчёт №${reportNumber} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong></div>
-                        <div style="margin-bottom: 8px;">🏗️ ${escapeHtml(report.projects?.name || '—')}</div>
-                        <div style="margin-bottom: 8px;">📍 Оси: ${axesText}</div>
-                        <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-bottom: 12px;">📝 ${escapeHtml(report.description || '—')}</div>
-                        ${report.has_issues ? '<div style="margin-bottom: 12px;"><span style="background:#FEE2E2; color:#991B1B; padding:4px 12px; border-radius:20px;">⚠️ В отчёте описаны проблемы</span></div>' : ''}
-                        ${photosHtml}
-                        ${tasksHtml}
-                        ${createTaskHtml}
-                        ${currentRole === 'manager' && report.status === 'pending' ? `<button class="btn-primary" id="mark-report-reviewed" style="margin-top: 16px; background: #10B981;">✅ Отметить проверенным</button>` : ''}
-                        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">👤 Создал: ${report.created_by_name || '—'}</div>
-                    </div>
-                `;
-                
-                document.getElementById('report-modal-body').innerHTML = modalHtml;
-                document.getElementById('report-modal').classList.remove('hidden');
-                
-                if (currentRole === 'manager') {
-                    document.getElementById('create-task-from-report')?.addEventListener('click', () => createTaskForReport(reportId));
-                    document.getElementById('mark-report-reviewed')?.addEventListener('click', () => markReportReviewed(reportId));
+                    
+                    document.getElementById('report-modal-body').innerHTML = modalHtml;
+                    document.getElementById('report-modal').classList.remove('hidden');
+                    
+                    if (currentRole === 'manager') {
+                        document.getElementById('create-task-from-report')?.addEventListener('click', () => createTaskForReport(reportId));
+                        document.getElementById('mark-report-reviewed')?.addEventListener('click', () => markReportReviewed(reportId));
+                    }
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    alert('Ошибка загрузки отчёта');
                 }
             };
             
@@ -498,16 +537,21 @@
                 } else {
                     showMessage('✅ Задача создана', 'success');
                     document.getElementById('report-modal').classList.add('hidden');
-                    loadPendingReports();
-                    loadCompletedReports();
-                    loadAllTasks();
+                    await loadPendingReports();
+                    await loadCompletedReports();
+                    await loadAllTasks();
                 }
             }
             
             async function markReportReviewed(reportId) {
                 const { error } = await supabase
                     .from('object_reports')
-                    .update({ status: 'confirmed', reviewed_by: currentUser?.id, reviewed_by_name: currentUser?.full_name, manager_response_at: new Date() })
+                    .update({ 
+                        status: 'confirmed', 
+                        reviewed_by: currentUser?.id, 
+                        reviewed_by_name: currentUser?.full_name, 
+                        manager_response_at: new Date() 
+                    })
                     .eq('id', reportId);
                 
                 if (error) {
@@ -522,58 +566,66 @@
             }
             
             window.viewTask = async function(taskId) {
-                const { data: task, error } = await supabase
-                    .from('report_tasks')
-                    .select('*, object_reports!inner(report_number, report_date, projects(name))')
-                    .eq('id', taskId)
-                    .single();
-                
-                if (error) { alert('Ошибка загрузки'); return; }
-                
-                const report = task.object_reports;
-                
-                const modalHtml = `
-                    <div>
-                        <div style="margin-bottom: 12px;"><strong>📌 ${escapeHtml(task.title)}</strong></div>
-                        <div style="margin-bottom: 8px;">📄 Отчёт №${report?.report_number || '—'} от ${report?.report_date ? new Date(report.report_date).toLocaleDateString('ru-RU') : '—'}</div>
-                        <div style="margin-bottom: 8px;">🏗️ ${escapeHtml(report?.projects?.name || '—')}</div>
-                        <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-bottom: 12px;">📝 ${escapeHtml(task.description || '—')}</div>
-                        <div style="margin-bottom: 8px;">👤 Назначена: ${task.assigned_to_name || '—'}</div>
-                        <div style="margin-bottom: 8px;">👤 Создал: ${task.created_by_name || '—'}</div>
-                        <div class="form-group"><label>Статус</label>
-                            <select id="task-status-update">
-                                <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>⏳ Ожидается</option>
-                                <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>🔵 В работе</option>
-                                <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>✅ Сделано</option>
-                            </select>
+                try {
+                    const { data: task, error } = await supabase
+                        .from('report_tasks')
+                        .select('*, object_reports!inner(report_number, report_date, projects(name))')
+                        .eq('id', taskId)
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    const report = task.object_reports;
+                    
+                    const modalHtml = `
+                        <div>
+                            <div style="margin-bottom: 12px;"><strong>📌 ${escapeHtml(task.title)}</strong></div>
+                            <div style="margin-bottom: 8px;">📄 Отчёт №${report?.report_number || '—'} от ${report?.report_date ? new Date(report.report_date).toLocaleDateString('ru-RU') : '—'}</div>
+                            <div style="margin-bottom: 8px;">🏗️ ${escapeHtml(report?.projects?.name || '—')}</div>
+                            <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-bottom: 12px;">📝 ${escapeHtml(task.description || '—')}</div>
+                            <div style="margin-bottom: 8px;">👤 Назначена: ${task.assigned_to_name || '—'}</div>
+                            <div style="margin-bottom: 8px;">👤 Создал: ${task.created_by_name || '—'}</div>
+                            <div class="form-group"><label>Статус</label>
+                                <select id="task-status-update">
+                                    <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>⏳ Ожидается</option>
+                                    <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>🔵 В работе</option>
+                                    <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>✅ Сделано</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label>Комментарий (при завершении)</label><textarea id="task-comment" rows="2">${escapeHtml(task.comment || '')}</textarea></div>
+                            <button class="btn-primary" id="update-task-status">💾 Обновить статус</button>
                         </div>
-                        <div class="form-group"><label>Комментарий (при завершении)</label><textarea id="task-comment" rows="2">${escapeHtml(task.comment || '')}</textarea></div>
-                        <button class="btn-primary" id="update-task-status">💾 Обновить статус</button>
-                    </div>
-                `;
-                
-                document.getElementById('task-modal-title').textContent = `📌 ${task.title.substring(0, 40)}`;
-                document.getElementById('task-modal-body').innerHTML = modalHtml;
-                document.getElementById('task-modal').classList.remove('hidden');
-                
-                document.getElementById('update-task-status').onclick = async () => {
-                    const newStatus = document.getElementById('task-status-update').value;
-                    const comment = document.getElementById('task-comment').value;
+                    `;
                     
-                    const updateData = { status: newStatus, updated_at: new Date() };
-                    if (newStatus === 'completed') updateData.completed_at = new Date();
-                    if (comment) updateData.comment = comment;
+                    document.getElementById('task-modal-title').textContent = `📌 ${task.title.substring(0, 40)}`;
+                    document.getElementById('task-modal-body').innerHTML = modalHtml;
+                    document.getElementById('task-modal').classList.remove('hidden');
                     
-                    const { error } = await supabase.from('report_tasks').update(updateData).eq('id', taskId);
-                    if (error) {
-                        showMessage('Ошибка: ' + error.message, 'error');
-                    } else {
-                        showMessage('Статус обновлён', 'success');
-                        document.getElementById('task-modal').classList.add('hidden');
-                        loadAllTasks();
-                        if (currentReportId) viewReport(currentReportId);
-                    }
-                };
+                    document.getElementById('update-task-status').onclick = async () => {
+                        const newStatus = document.getElementById('task-status-update').value;
+                        const comment = document.getElementById('task-comment').value;
+                        
+                        const updateData = { 
+                            status: newStatus, 
+                            updated_at: new Date(),
+                            comment: comment || null
+                        };
+                        if (newStatus === 'completed') updateData.completed_at = new Date();
+                        
+                        const { error } = await supabase.from('report_tasks').update(updateData).eq('id', taskId);
+                        if (error) {
+                            showMessage('Ошибка: ' + error.message, 'error');
+                        } else {
+                            showMessage('Статус обновлён', 'success');
+                            document.getElementById('task-modal').classList.add('hidden');
+                            await loadAllTasks();
+                            if (currentReportId) await window.viewReport(currentReportId);
+                        }
+                    };
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    alert('Ошибка загрузки задачи');
+                }
             };
             
             window.loadAllTasks = loadAllTasks;
