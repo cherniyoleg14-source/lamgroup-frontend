@@ -75,6 +75,11 @@
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        /* ДИАГНОСТИКА - показываем границы вкладок */
+#pending-reports { border: 3px solid #F59E0B; min-height: 100px; }
+#completed-reports { border: 3px solid #10B981; min-height: 100px; }
+.sub-content { display: none; }
+.sub-content.active { display: block; }
     </style>
 </head>
 <body>
