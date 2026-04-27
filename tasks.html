@@ -40,20 +40,10 @@
         .task-type { padding: 4px 12px; border-radius: 30px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
         .type-report { background: #F3E8FF; color: #6B21A8; }
         .type-task { background: #DBEAFE; color: #1E40AF; }
-        .type-expense { background: #FEF3C7; color: #92400E; }
-        .type-order { background: #D1FAE5; color: #065F46; }
-        .type-advance { background: #F3E8FF; color: #6B21A8; }
-        .type-letter { background: #FEE2E2; color: #991B1B; }
-        .type-issue { background: #FFEDD5; color: #9A3412; }
         
         .task-status { padding: 4px 12px; border-radius: 30px; font-size: 11px; font-weight: 600; }
         .status-pending { background: #FEF3C7; color: #92400E; }
-        .status-in-progress { background: #DBEAFE; color: #1E40AF; }
         .status-completed { background: #D1FAE5; color: #065F46; }
-        
-        .priority-high { border-left: 4px solid #EF4444; }
-        .priority-medium { border-left: 4px solid #F59E0B; }
-        .priority-low { border-left: 4px solid #10B981; }
         
         .task-title { font-size: 16px; font-weight: 700; color: #0F172A; margin-bottom: 8px; }
         .task-description { font-size: 13px; color: #64748B; margin-bottom: 10px; line-height: 1.4; }
@@ -61,10 +51,6 @@
         
         .btn-small { padding: 6px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
         .btn-confirm { background: #D1FAE5; color: #065F46; }
-        .btn-warning { background: #FEF3C7; color: #92400E; }
-        .btn-danger { background: #FEE2E2; color: #991B1B; }
-        
-        .create-btn { background: linear-gradient(135deg, #0F172A, #1E293B); color: white; padding: 14px; border-radius: 16px; font-weight: 700; cursor: pointer; border: none; width: 100%; margin-bottom: 20px; }
         
         .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 24px; color: #64748B; }
         .loading { text-align: center; padding: 60px 20px; color: #64748B; }
@@ -85,10 +71,14 @@
         .btn-primary { width: 100%; background: linear-gradient(135deg, #0F172A, #1E293B); color: white; padding: 14px; border-radius: 14px; font-weight: 700; border: none; cursor: pointer; margin-top: 10px; }
         .btn-success { background: #10B981; }
         .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .radio-group { display: flex; gap: 20px; align-items: center; }
-        .radio-group label { display: flex; align-items: center; gap: 6px; font-weight: normal; text-transform: none; margin-bottom: 0; }
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* ДИАГНОСТИКА */
+        #pending-reports { border: 3px solid #F59E0B; min-height: 100px; }
+        #completed-reports { border: 3px solid #10B981; min-height: 100px; }
+        .sub-content { display: none; }
+        .sub-content.active { display: block; }
     </style>
 </head>
 <body>
@@ -100,57 +90,18 @@
         
         <div class="main-tabs">
             <button class="main-tab active" data-main="reports">📑 Отчёты</button>
-            <button class="main-tab" data-main="my-tasks">📋 Мои задачи</button>
-            <button class="main-tab" data-main="finance">💰 Финансы</button>
-            <button class="main-tab" data-main="payment-plan">📊 План оплат</button>
-            <button class="main-tab" data-main="letters-issues">✉️ Письма и проблемы</button>
             <button class="main-tab" data-main="all-tasks">⚠️ Все задачи</button>
         </div>
         
-        <!-- ОТЧЁТЫ -->
         <div id="main-reports" class="main-tab-content active">
             <div class="sub-tabs">
                 <button class="sub-tab active" data-sub="pending">⏳ На проверке</button>
-                <button class="sub-tab" data-sub="confirmed">✅ Проверенные</button>
+                <button class="sub-tab" data-sub="completed">✅ Проверенные</button>
             </div>
             <div id="pending-reports" class="sub-content active"></div>
-            <div id="confirmed-reports" class="sub-content"></div>
+            <div id="completed-reports" class="sub-content"></div>
         </div>
         
-        <!-- Мои задачи -->
-        <div id="main-my-tasks" class="main-tab-content">
-            <button class="create-btn" id="create-task-btn">➕ Создать задачу</button>
-            <div id="my-tasks-list"></div>
-        </div>
-        
-        <!-- Финансы -->
-        <div id="main-finance" class="main-tab-content">
-            <div class="sub-tabs">
-                <button class="sub-tab active" data-sub="expenses">💰 Расходы</button>
-                <button class="sub-tab" data-sub="orders">📋 Наряды</button>
-                <button class="sub-tab" data-sub="advances">💸 Авансы</button>
-            </div>
-            <div id="expenses-list" class="sub-content active"></div>
-            <div id="orders-list" class="sub-content"></div>
-            <div id="advances-list" class="sub-content"></div>
-        </div>
-        
-        <!-- План оплат -->
-        <div id="main-payment-plan" class="main-tab-content">
-            <div id="payment-plan-list"></div>
-        </div>
-        
-        <!-- Письма и проблемы -->
-        <div id="main-letters-issues" class="main-tab-content">
-            <div class="sub-tabs">
-                <button class="sub-tab active" data-sub="letters">✉️ Письма</button>
-                <button class="sub-tab" data-sub="issues">⚠️ Проблемы</button>
-            </div>
-            <div id="letters-list" class="sub-content active"></div>
-            <div id="issues-list-all" class="sub-content"></div>
-        </div>
-        
-        <!-- Все задачи -->
         <div id="main-all-tasks" class="main-tab-content">
             <div class="filter-bar">
                 <button class="filter-chip active" data-task-filter="all">Все</button>
@@ -164,18 +115,6 @@
         <div id="message" class="message"></div>
     </div>
     
-    <!-- Модальное окно создания задачи -->
-    <div id="task-create-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span class="modal-title">📝 Новая задача</span>
-                <button class="close-btn" id="close-create-modal">&times;</button>
-            </div>
-            <div id="task-create-body"></div>
-        </div>
-    </div>
-    
-    <!-- Модальное окно просмотра отчёта -->
     <div id="report-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -186,14 +125,13 @@
         </div>
     </div>
     
-    <!-- Модальное окно просмотра/редактирования задачи -->
-    <div id="task-view-modal" class="modal hidden">
+    <div id="task-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <span class="modal-title" id="task-view-title">📌 Задача</span>
-                <button class="close-btn" id="close-view-modal">&times;</button>
+                <span class="modal-title" id="task-modal-title">📌 Задача</span>
+                <button class="close-btn" id="close-task-modal">&times;</button>
             </div>
-            <div id="task-view-body"></div>
+            <div id="task-modal-body"></div>
         </div>
     </div>
 
@@ -212,6 +150,7 @@
             
             let currentUser = null;
             let currentRole = 'worker';
+            let currentReportId = null;
             
             function showMessage(text, type) {
                 const msg = document.getElementById('message');
@@ -237,15 +176,8 @@
                 setupTaskFilters();
                 setupModals();
                 await loadPendingReports();
-                await loadConfirmedReports();
-                await loadMyTasks();
-                await loadExpensesList();
-                await loadOrdersList();
-                await loadAdvancesList();
-                await loadPaymentPlan();
-                await loadLettersList();
-                await loadIssuesList();
-                await loadAllTasksList();
+                await loadCompletedReports();
+                await loadAllTasks();
             }
             
             async function loadUser() {
@@ -264,43 +196,31 @@
                         document.querySelectorAll('.main-tab-content').forEach(c => c.classList.remove('active'));
                         tab.classList.add('active');
                         document.getElementById(`main-${tab.dataset.main}`).classList.add('active');
-                        const mainTab = tab.dataset.main;
-                        if (mainTab === 'reports') { loadPendingReports(); loadConfirmedReports(); }
-                        if (mainTab === 'my-tasks') loadMyTasks();
-                        if (mainTab === 'finance') { loadExpensesList(); loadOrdersList(); loadAdvancesList(); }
-                        if (mainTab === 'payment-plan') loadPaymentPlan();
-                        if (mainTab === 'letters-issues') { loadLettersList(); loadIssuesList(); }
-                        if (mainTab === 'all-tasks') loadAllTasksList();
+                        if (tab.dataset.main === 'reports') {
+                            loadPendingReports();
+                            loadCompletedReports();
+                        }
+                        if (tab.dataset.main === 'all-tasks') {
+                            loadAllTasks();
+                        }
                     });
                 });
             }
             
             function setupSubTabs() {
-                document.querySelectorAll('#main-reports .sub-tab').forEach(tab => {
+                document.querySelectorAll('.sub-tab').forEach(tab => {
                     tab.addEventListener('click', () => {
-                        document.querySelectorAll('#main-reports .sub-tab').forEach(t => t.classList.remove('active'));
-                        document.querySelectorAll('#main-reports .sub-content').forEach(c => c.classList.remove('active'));
+                        const parent = tab.closest('.main-tab-content');
+                        parent.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+                        parent.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
                         tab.classList.add('active');
+                        const targetId = `${tab.dataset.sub}-reports`;
+                        document.getElementById(targetId).classList.add('active');
+                        
+                        console.log('Переключение на:', tab.dataset.sub);
+                        
                         if (tab.dataset.sub === 'pending') loadPendingReports();
-                        if (tab.dataset.sub === 'confirmed') loadConfirmedReports();
-                    });
-                });
-                
-                document.querySelectorAll('#main-finance .sub-tab').forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        document.querySelectorAll('#main-finance .sub-tab').forEach(t => t.classList.remove('active'));
-                        document.querySelectorAll('#main-finance .sub-content').forEach(c => c.classList.remove('active'));
-                        tab.classList.add('active');
-                        document.getElementById(`${tab.dataset.sub}-list`).classList.add('active');
-                    });
-                });
-                
-                document.querySelectorAll('#main-letters-issues .sub-tab').forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        document.querySelectorAll('#main-letters-issues .sub-tab').forEach(t => t.classList.remove('active'));
-                        document.querySelectorAll('#main-letters-issues .sub-content').forEach(c => c.classList.remove('active'));
-                        tab.classList.add('active');
-                        document.getElementById(`${tab.dataset.sub}-list`).classList.add('active');
+                        if (tab.dataset.sub === 'completed') loadCompletedReports();
                     });
                 });
             }
@@ -310,31 +230,24 @@
                     chip.addEventListener('click', () => {
                         document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
                         chip.classList.add('active');
-                        loadAllTasksList(chip.dataset.taskFilter);
+                        loadAllTasks(chip.dataset.taskFilter);
                     });
                 });
             }
             
             function setupModals() {
-                const createModal = document.getElementById('task-create-modal');
-                const viewModal = document.getElementById('task-view-modal');
                 const reportModal = document.getElementById('report-modal');
-                
-                document.getElementById('close-create-modal').onclick = () => createModal.classList.add('hidden');
-                document.getElementById('close-view-modal').onclick = () => viewModal.classList.add('hidden');
+                const taskModal = document.getElementById('task-modal');
                 document.getElementById('close-report-modal').onclick = () => reportModal.classList.add('hidden');
-                
-                createModal.onclick = (e) => { if (e.target === createModal) createModal.classList.add('hidden'); };
-                viewModal.onclick = (e) => { if (e.target === viewModal) viewModal.classList.add('hidden'); };
+                document.getElementById('close-task-modal').onclick = () => taskModal.classList.add('hidden');
                 reportModal.onclick = (e) => { if (e.target === reportModal) reportModal.classList.add('hidden'); };
-                
-                document.getElementById('create-task-btn').onclick = () => openCreateTaskForm();
+                taskModal.onclick = (e) => { if (e.target === taskModal) taskModal.classList.add('hidden'); };
             }
             
-            // ========== ОТЧЁТЫ ==========
             async function loadPendingReports() {
                 const container = document.getElementById('pending-reports');
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
+                
                 try {
                     const { data, error } = await supabase
                         .from('object_reports')
@@ -343,6 +256,9 @@
                         .order('report_date', { ascending: false });
                     
                     if (error) throw error;
+                    
+                    console.log('На проверке (pending):', data?.length);
+                    
                     if (!data || data.length === 0) {
                         container.innerHTML = '<div class="empty-state">Нет отчётов на проверке</div>';
                         return;
@@ -350,30 +266,30 @@
                     
                     let html = '';
                     for (const report of data) {
+                        const reportNumber = report.report_number || '—';
                         html += `
                             <div class="task-card" onclick="viewReport('${report.id}')">
                                 <div class="task-header">
-                                    <span class="task-type type-report">📑 Отчёт №${report.report_number || '—'}</span>
+                                    <span class="task-type type-report">📑 Отчёт №${reportNumber}</span>
                                     <span class="task-status status-pending">⏳ На проверке</span>
                                 </div>
                                 <div class="task-title">${escapeHtml(report.projects?.name || '—')}</div>
-                                <div class="task-description">📅 ${new Date(report.report_date).toLocaleDateString('ru-RU')}<br>📝 ${(report.description || '').substring(0, 80)}</div>
-                                <div class="task-meta">
-                                    <span>👤 ${report.created_by_name || '—'}</span>
-                                    <span class="btn-small btn-confirm" onclick="event.stopPropagation();viewReport('${report.id}')">👁️ Просмотреть</span>
-                                </div>
+                                <div class="task-description">📅 ${new Date(report.report_date).toLocaleDateString('ru-RU')}<br>📝 ${(report.description || '').substring(0, 80)}${(report.description || '').length > 80 ? '...' : ''}</div>
+                                <div class="task-meta"><span>👤 ${report.created_by_name || '—'}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewReport('${report.id}')">👁️ Просмотреть</span></div>
                             </div>
                         `;
                     }
                     container.innerHTML = html;
                 } catch (error) {
+                    console.error('Ошибка:', error);
                     container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
                 }
             }
             
-            async function loadConfirmedReports() {
-                const container = document.getElementById('confirmed-reports');
+            async function loadCompletedReports() {
+                const container = document.getElementById('completed-reports');
                 container.innerHTML = '<div class="loading">Загрузка...</div>';
+                
                 try {
                     const { data, error } = await supabase
                         .from('object_reports')
@@ -382,6 +298,9 @@
                         .order('report_date', { ascending: false });
                     
                     if (error) throw error;
+                    
+                    console.log('Проверенные (confirmed):', data?.length);
+                    
                     if (!data || data.length === 0) {
                         container.innerHTML = '<div class="empty-state">Нет проверенных отчётов</div>';
                         return;
@@ -389,349 +308,310 @@
                     
                     let html = '';
                     for (const report of data) {
+                        const reportNumber = report.report_number || '—';
                         html += `
                             <div class="task-card" onclick="viewReport('${report.id}')">
                                 <div class="task-header">
-                                    <span class="task-type type-report">📑 Отчёт №${report.report_number || '—'}</span>
+                                    <span class="task-type type-report">📑 Отчёт №${reportNumber}</span>
                                     <span class="task-status status-completed">✅ Проверен</span>
                                 </div>
                                 <div class="task-title">${escapeHtml(report.projects?.name || '—')}</div>
-                                <div class="task-description">📅 ${new Date(report.report_date).toLocaleDateString('ru-RU')}<br>📝 ${(report.description || '').substring(0, 80)}</div>
+                                <div class="task-description">📅 ${new Date(report.report_date).toLocaleDateString('ru-RU')}<br>📝 ${(report.description || '').substring(0, 80)}${(report.description || '').length > 80 ? '...' : ''}</div>
+                                <div class="task-meta"><span>👤 ${report.created_by_name || '—'}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewReport('${report.id}')">👁️ Просмотреть</span></div>
+                            </div>
+                        `;
+                    }
+                    container.innerHTML = html;
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
+                }
+            }
+            
+            async function loadAllTasks(filter = 'all') {
+                const container = document.getElementById('all-tasks-list');
+                container.innerHTML = '<div class="loading">Загрузка...</div>';
+                
+                try {
+                    let query = supabase
+                        .from('report_tasks')
+                        .select('*, object_reports!inner(report_number, report_date, projects(name))')
+                        .order('created_at', { ascending: false });
+                    
+                    if (filter !== 'all') {
+                        query = query.eq('status', filter);
+                    }
+                    
+                    if (currentRole !== 'manager') {
+                        query = query.eq('assigned_to', currentUser?.id);
+                    }
+                    
+                    const { data, error } = await query;
+                    if (error) throw error;
+                    
+                    if (!data || data.length === 0) {
+                        container.innerHTML = '<div class="empty-state">Нет задач</div>';
+                        return;
+                    }
+                    
+                    const statusMap = {
+                        pending: { text: '⏳ Ожидается', class: 'status-pending' },
+                        in_progress: { text: '🔵 В работе', class: 'status-in-progress' },
+                        completed: { text: '✅ Сделано', class: 'status-completed' }
+                    };
+                    
+                    let html = '';
+                    for (const task of data) {
+                        const status = statusMap[task.status] || statusMap.pending;
+                        const report = task.object_reports;
+                        html += `
+                            <div class="task-card" onclick="viewTask('${task.id}')">
+                                <div class="task-header">
+                                    <span class="task-type type-task">📌 Задача</span>
+                                    <span class="task-status ${status.class}">${status.text}</span>
+                                </div>
+                                <div class="task-title">${escapeHtml(task.title)}</div>
+                                <div class="task-description">
+                                    📄 Отчёт №${report?.report_number || '—'} от ${report?.report_date ? new Date(report.report_date).toLocaleDateString('ru-RU') : '—'}<br>
+                                    🏗️ ${escapeHtml(report?.projects?.name || '—')}<br>
+                                    👤 Назначена: ${task.assigned_to_name || '—'}
+                                </div>
                                 <div class="task-meta">
-                                    <span>👤 ${report.created_by_name || '—'}</span>
-                                    <span class="btn-small btn-confirm" onclick="event.stopPropagation();viewReport('${report.id}')">👁️ Просмотреть</span>
+                                    <span>📅 ${new Date(task.created_at).toLocaleDateString('ru-RU')}</span>
+                                    <span class="btn-small btn-confirm" onclick="event.stopPropagation();viewTask('${task.id}')">👁️ Открыть</span>
                                 </div>
                             </div>
                         `;
                     }
                     container.innerHTML = html;
                 } catch (error) {
+                    console.error('Ошибка:', error);
                     container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
                 }
             }
             
             window.viewReport = async function(reportId) {
-                const { data: report } = await supabase
-                    .from('object_reports')
-                    .select('*, projects(name)')
-                    .eq('id', reportId)
-                    .single();
-                
-                if (!report) return;
-                
-                const modalHtml = `
-                    <div>
-                        <div style="margin-bottom: 12px;"><strong>📄 Отчёт №${report.report_number} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong></div>
-                        <div style="margin-bottom: 8px;">🏗️ ${report.projects?.name || '—'}</div>
-                        <div style="margin-bottom: 8px;">📍 Оси: ${report.axes_selected?.join(', ') || '—'}</div>
-                        <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-bottom: 12px;">📝 ${escapeHtml(report.description || '—')}</div>
-                        ${report.has_issues ? '<div style="margin-bottom: 12px;"><span style="background:#FEE2E2; color:#991B1B; padding:4px 12px; border-radius:20px;">⚠️ В отчёте описаны проблемы</span></div>' : ''}
-                        ${report.photos?.length ? `<div>📸 Фото: ${report.photos.length} шт.</div>` : ''}
-                        ${currentRole === 'manager' && report.status === 'pending' ? `<button class="btn-primary btn-success" id="mark-report-reviewed" style="margin-top: 16px;">✅ Отметить проверенным</button>` : ''}
-                        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">👤 Создал: ${report.created_by_name || '—'}</div>
-                    </div>
-                `;
-                
-                document.getElementById('report-modal-body').innerHTML = modalHtml;
-                document.getElementById('report-modal').classList.remove('hidden');
-                
-                if (currentRole === 'manager' && report.status === 'pending') {
-                    document.getElementById('mark-report-reviewed')?.addEventListener('click', async () => {
-                        await supabase
-                            .from('object_reports')
-                            .update({ status: 'confirmed', reviewed_by: currentUser?.id, reviewed_by_name: currentUser?.full_name })
-                            .eq('id', reportId);
-                        document.getElementById('report-modal').classList.add('hidden');
-                        loadPendingReports();
-                        loadConfirmedReports();
-                        showMessage('✅ Отчёт проверен', 'success');
-                    });
+                currentReportId = reportId;
+                try {
+                    const { data: report, error } = await supabase
+                        .from('object_reports')
+                        .select('*, projects(name)')
+                        .eq('id', reportId)
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    const { data: tasks } = await supabase
+                        .from('report_tasks')
+                        .select('*')
+                        .eq('report_id', reportId)
+                        .order('created_at', { ascending: false });
+                    
+                    const reportNumber = report.report_number || '—';
+                    const axesText = report.axes_selected?.join(', ') || '—';
+                    const photos = report.photos || [];
+                    const isPending = report.status === 'pending';
+                    
+                    let photosHtml = '';
+                    if (photos.length > 0) {
+                        photosHtml = '<div style="margin-top: 16px;"><strong>📸 Фото:</strong><div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">';
+                        photos.forEach(photo => {
+                            photosHtml += `<img src="${photo.url}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 12px; cursor: pointer;" onclick="window.open('${photo.url}', '_blank')">`;
+                        });
+                        photosHtml += '</div></div>';
+                    }
+                    
+                    let tasksHtml = '';
+                    if (tasks && tasks.length > 0) {
+                        tasksHtml = '<div style="margin-top: 20px;"><strong>📋 Задачи по отчёту:</strong><div style="margin-top: 10px;">';
+                        tasks.forEach(task => {
+                            const statusIcon = task.status === 'completed' ? '✅' : (task.status === 'in_progress' ? '🔵' : '🟡');
+                            tasksHtml += `
+                                <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-bottom: 8px; cursor: pointer;" onclick="event.stopPropagation();viewTask('${task.id}')">
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <span><strong>${escapeHtml(task.title)}</strong></span>
+                                        <span>${statusIcon} ${task.status === 'completed' ? 'Выполнена' : (task.status === 'in_progress' ? 'В работе' : 'Ожидается')}</span>
+                                    </div>
+                                    <div style="font-size: 12px; color: #64748B;">👤 ${task.assigned_to_name || '—'} | 📅 ${new Date(task.created_at).toLocaleDateString('ru-RU')}</div>
+                                </div>
+                            `;
+                        });
+                        tasksHtml += '</div></div>';
+                    }
+                    
+                    let createTaskHtml = '';
+                    if (currentRole === 'manager') {
+                        const { data: users } = await supabase.from('users').select('id, full_name, role').in('role', ['worker', 'manager']);
+                        let usersHtml = '<select id="new-task-assigned" style="width:100%; padding:10px; border-radius:12px;">';
+                        users?.forEach(u => {
+                            usersHtml += `<option value="${u.id}" data-name="${u.full_name}">${u.full_name} (${u.role === 'manager' ? 'Руководитель' : 'ИТР'})</option>`;
+                        });
+                        usersHtml += '</select>';
+                        
+                        createTaskHtml = `
+                            <div style="margin-top: 20px; padding-top: 16px; border-top: 2px solid #E2E8F0;">
+                                <strong>✏️ Создать новую задачу</strong>
+                                <div class="form-group" style="margin-top: 12px;"><label>Название задачи</label><input type="text" id="new-task-title" placeholder="Например: Доработать отчёт"></div>
+                                <div class="form-group"><label>Описание</label><textarea id="new-task-desc" rows="2" placeholder="Что нужно сделать..."></textarea></div>
+                                <div class="form-group"><label>Назначить</label>${usersHtml}</div>
+                                <div class="row-2">
+                                    <div class="form-group"><label>Приоритет</label><select id="new-task-priority"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option></select></div>
+                                    <div class="form-group"><label>Статус</label><select id="new-task-status"><option value="pending">Ожидается</option><option value="in_progress">В работе</option><option value="completed">Сделано</option></select></div>
+                                </div>
+                                <button class="btn-primary" id="create-task-from-report" style="margin-top: 0;">📋 Создать задачу</button>
+                            </div>
+                        `;
+                    }
+                    
+                    const modalHtml = `
+                        <div>
+                            <div style="margin-bottom: 12px;"><strong>📄 Отчёт №${reportNumber} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong></div>
+                            <div style="margin-bottom: 8px;">🏗️ ${escapeHtml(report.projects?.name || '—')}</div>
+                            <div style="margin-bottom: 8px;">📍 Оси: ${axesText}</div>
+                            <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-bottom: 12px;">📝 ${escapeHtml(report.description || '—')}</div>
+                            ${report.has_issues ? '<div style="margin-bottom: 12px;"><span style="background:#FEE2E2; color:#991B1B; padding:4px 12px; border-radius:20px;">⚠️ В отчёте описаны проблемы</span></div>' : ''}
+                            ${photosHtml}
+                            ${tasksHtml}
+                            ${createTaskHtml}
+                            ${currentRole === 'manager' && isPending ? `<button class="btn-primary btn-success" id="mark-report-reviewed" style="margin-top: 16px;">✅ Отметить проверенным</button>` : ''}
+                            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #E2E8F0; font-size: 12px; color: #64748B;">👤 Создал: ${report.created_by_name || '—'}</div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('report-modal-body').innerHTML = modalHtml;
+                    document.getElementById('report-modal').classList.remove('hidden');
+                    
+                    if (currentRole === 'manager') {
+                        document.getElementById('create-task-from-report')?.addEventListener('click', () => createTaskForReport(reportId));
+                        document.getElementById('mark-report-reviewed')?.addEventListener('click', () => markReportReviewed(reportId));
+                    }
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    alert('Ошибка загрузки отчёта');
                 }
             };
             
-            // ========== МОИ ЗАДАЧИ ==========
-            async function loadMyTasks() {
-                const container = document.getElementById('my-tasks-list');
-                container.innerHTML = '<div class="loading">Загрузка...</div>';
-                let query = supabase.from('custom_tasks').select('*, projects(name)').or(`created_by.eq.${currentUser?.id},responsible_ids.cs.{${currentUser?.id}}`).order('created_at', { ascending: false });
-                const { data, error } = await query;
-                if (error) { container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`; return; }
-                if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Нет задач</div>'; return; }
-                const priorityClass = { high: 'priority-high', medium: 'priority-medium', low: 'priority-low' };
-                const priorityText = { high: '🔴 Высокий', medium: '🟡 Средний', low: '🟢 Низкий' };
-                const statusMap = { pending: { text: '⏳ Ожидается', class: 'status-pending' }, in_progress: { text: '🔵 В работе', class: 'status-in-progress' }, completed: { text: '✅ Сделано', class: 'status-completed' } };
-                let html = '';
-                for (const task of data) {
-                    const status = statusMap[task.status] || statusMap.pending;
-                    html += `<div class="task-card ${priorityClass[task.priority] || ''}" onclick="viewTask('${task.id}')">
-                        <div class="task-header"><span class="task-type type-task">📌 Задача</span><span class="task-status ${status.class}">${status.text}</span></div>
-                        <div class="task-title">${escapeHtml(task.title)}</div>
-                        <div class="task-description">${priorityText[task.priority] || '🟡 Средний'} ${task.projects?.name ? ` | 🏗️ ${escapeHtml(task.projects.name)}` : ''}</div>
-                        <div class="task-meta"><span>👤 Кому: ${task.responsible_names?.[0] || '—'}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewTask('${task.id}')">👁️ Открыть</span></div>
-                    </div>`;
+            async function createTaskForReport(reportId) {
+                const title = document.getElementById('new-task-title')?.value.trim();
+                const description = document.getElementById('new-task-desc')?.value.trim();
+                const assignedSelect = document.getElementById('new-task-assigned');
+                const assignedTo = assignedSelect?.value;
+                const assignedToName = assignedSelect?.selectedOptions[0]?.text.split(' (')[0] || '';
+                const priority = document.getElementById('new-task-priority')?.value;
+                const status = document.getElementById('new-task-status')?.value;
+                
+                if (!title) { alert('Введите название задачи'); return; }
+                if (!assignedTo) { alert('Выберите ответственного'); return; }
+                
+                const { error } = await supabase.from('report_tasks').insert({
+                    report_id: reportId,
+                    title: title,
+                    description: description || null,
+                    assigned_to: assignedTo,
+                    assigned_to_name: assignedToName,
+                    created_by: currentUser?.id,
+                    created_by_name: currentUser?.full_name,
+                    priority: priority || 'medium',
+                    status: status || 'pending',
+                    created_at: new Date()
+                });
+                
+                if (error) {
+                    showMessage('Ошибка: ' + error.message, 'error');
+                } else {
+                    showMessage('✅ Задача создана', 'success');
+                    document.getElementById('report-modal').classList.add('hidden');
+                    await loadPendingReports();
+                    await loadCompletedReports();
+                    await loadAllTasks();
                 }
-                container.innerHTML = html;
             }
             
-            async function openCreateTaskForm() {
-                const today = new Date().toISOString().split('T')[0];
-                const defaultDeadline = new Date(); defaultDeadline.setDate(defaultDeadline.getDate() + 7);
-                const { data: projects } = await supabase.from('projects').select('id, name').order('name');
-                let projectsHtml = '<option value="">— Не выбрано —</option>';
-                projects?.forEach(p => { projectsHtml += `<option value="${p.id}">${escapeHtml(p.name)}</option>`; });
-                const { data: users } = await supabase.from('users').select('id, full_name, role').order('full_name');
-                let usersHtml = '<select id="task-responsible" required><option value="">Выберите</option>';
-                users?.forEach(u => { usersHtml += `<option value="${u.id}" data-name="${u.full_name}">${u.full_name} (${u.role === 'manager' ? 'Руководитель' : 'ИТР'})</option>`; });
-                usersHtml += '</select>';
-                const modalHtml = `
-                    <div class="form-group"><label>📅 Дата создания</label><input type="text" value="${today}" disabled style="background:#F8FAFC;"></div>
-                    <div class="form-group"><label>📅 Дата завершения *</label><input type="date" id="task-deadline" value="${defaultDeadline.toISOString().split('T')[0]}" required></div>
-                    <div class="form-group"><label>📝 Название задачи *</label><input type="text" id="task-title" placeholder="Например: Согласовать смету" required></div>
-                    <div class="form-group"><label>📄 Описание</label><textarea id="task-description" rows="3" placeholder="Подробное описание..."></textarea></div>
-                    <div class="form-group"><label>🏗️ Объект</label><select id="task-project">${projectsHtml}</select></div>
-                    <div class="form-group"><label>👤 Кому назначить *</label>${usersHtml}</div>
-                    <div class="form-group"><label>🎯 Приоритет</label><div class="radio-group"><label><input type="radio" name="priority" value="low"> 🟢 Низкий</label><label><input type="radio" name="priority" value="medium" checked> 🟡 Средний</label><label><input type="radio" name="priority" value="high"> 🔴 Высокий</label></div></div>
-                    <div class="form-group"><label>📊 Статус</label><div class="radio-group"><label><input type="radio" name="status" value="pending" checked> ⏳ Ожидается</label><label><input type="radio" name="status" value="in_progress"> 🔵 В работе</label><label><input type="radio" name="status" value="completed"> ✅ Сделано</label></div></div>
-                    <button class="btn-primary" id="save-task-btn">📤 Создать задачу</button>
-                `;
-                document.getElementById('task-create-body').innerHTML = modalHtml;
-                document.getElementById('task-create-modal').classList.remove('hidden');
-                document.getElementById('save-task-btn').onclick = async () => {
-                    const title = document.getElementById('task-title').value.trim();
-                    const deadline = document.getElementById('task-deadline').value;
-                    const projectId = document.getElementById('task-project').value || null;
-                    const responsibleId = document.getElementById('task-responsible').value;
-                    const responsibleName = document.getElementById('task-responsible').selectedOptions[0]?.dataset.name || '';
-                    const priority = document.querySelector('input[name="priority"]:checked')?.value;
-                    const status = document.querySelector('input[name="status"]:checked')?.value;
-                    if (!title || !deadline || !responsibleId) { alert('Заполните обязательные поля'); return; }
-                    const { error } = await supabase.from('custom_tasks').insert({ title: title, description: document.getElementById('task-description').value || null, deadline: deadline, project_id: projectId, responsible_ids: [responsibleId], responsible_names: [responsibleName], priority: priority || 'medium', status: status || 'pending', created_by: currentUser?.id, created_by_name: currentUser?.full_name, created_at: new Date() });
-                    if (error) { showMessage('Ошибка: ' + error.message, 'error'); } else { showMessage('✅ Задача создана', 'success'); document.getElementById('task-create-modal').classList.add('hidden'); loadMyTasks(); loadAllTasksList(); }
-                };
+            async function markReportReviewed(reportId) {
+                const { error } = await supabase
+                    .from('object_reports')
+                    .update({ 
+                        status: 'confirmed', 
+                        reviewed_by: currentUser?.id, 
+                        reviewed_by_name: currentUser?.full_name, 
+                        manager_response_at: new Date() 
+                    })
+                    .eq('id', reportId);
+                
+                if (error) {
+                    showMessage('Ошибка: ' + error.message, 'error');
+                } else {
+                    showMessage('✅ Отчёт проверен', 'success');
+                    document.getElementById('report-modal').classList.add('hidden');
+                    await loadPendingReports();
+                    await loadCompletedReports();
+                }
             }
             
             window.viewTask = async function(taskId) {
-                const { data: task } = await supabase.from('custom_tasks').select('*, projects(name)').eq('id', taskId).single();
-                if (!task) return;
-                const modalHtml = `
-                    <div><strong>📌 ${escapeHtml(task.title)}</strong></div>
-                    <div>📅 Создана: ${new Date(task.created_at).toLocaleDateString('ru-RU')}</div>
-                    <div>📅 Завершить до: ${task.deadline ? new Date(task.deadline).toLocaleDateString('ru-RU') : '—'}</div>
-                    ${task.projects?.name ? `<div>🏗️ Объект: ${escapeHtml(task.projects.name)}</div>` : ''}
-                    <div style="background:#F8FAFC; padding:12px; margin:12px 0;">📝 ${escapeHtml(task.description || '—')}</div>
-                    <div>👤 Кому: ${task.responsible_names?.[0] || '—'}</div>
-                    <div>👤 Создал: ${task.created_by_name || '—'}</div>
-                    <div class="form-group"><label>Статус</label><select id="task-status-update"><option value="pending" ${task.status === 'pending' ? 'selected' : ''}>⏳ Ожидается</option><option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>🔵 В работе</option><option value="completed" ${task.status === 'completed' ? 'selected' : ''}>✅ Сделано</option></select></div>
-                    <button class="btn-primary" id="update-task-status">💾 Обновить статус</button>
-                `;
-                document.getElementById('task-view-body').innerHTML = modalHtml;
-                document.getElementById('task-view-modal').classList.remove('hidden');
-                document.getElementById('update-task-status').onclick = async () => {
-                    const newStatus = document.getElementById('task-status-update').value;
-                    await supabase.from('custom_tasks').update({ status: newStatus, updated_at: new Date() }).eq('id', taskId);
-                    showMessage('Статус обновлён', 'success');
-                    document.getElementById('task-view-modal').classList.add('hidden');
-                    loadMyTasks(); loadAllTasksList();
-                };
+                try {
+                    const { data: task, error } = await supabase
+                        .from('report_tasks')
+                        .select('*, object_reports!inner(report_number, report_date, projects(name))')
+                        .eq('id', taskId)
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    const report = task.object_reports;
+                    
+                    const modalHtml = `
+                        <div>
+                            <div style="margin-bottom: 12px;"><strong>📌 ${escapeHtml(task.title)}</strong></div>
+                            <div style="margin-bottom: 8px;">📄 Отчёт №${report?.report_number || '—'} от ${report?.report_date ? new Date(report.report_date).toLocaleDateString('ru-RU') : '—'}</div>
+                            <div style="margin-bottom: 8px;">🏗️ ${escapeHtml(report?.projects?.name || '—')}</div>
+                            <div style="background: #F8FAFC; padding: 12px; border-radius: 14px; margin-bottom: 12px;">📝 ${escapeHtml(task.description || '—')}</div>
+                            <div style="margin-bottom: 8px;">👤 Назначена: ${task.assigned_to_name || '—'}</div>
+                            <div style="margin-bottom: 8px;">👤 Создал: ${task.created_by_name || '—'}</div>
+                            <div class="form-group"><label>Статус</label>
+                                <select id="task-status-update">
+                                    <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>⏳ Ожидается</option>
+                                    <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>🔵 В работе</option>
+                                    <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>✅ Сделано</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label>Комментарий (при завершении)</label><textarea id="task-comment" rows="2">${escapeHtml(task.comment || '')}</textarea></div>
+                            <button class="btn-primary" id="update-task-status">💾 Обновить статус</button>
+                        </div>
+                    `;
+                    
+                    document.getElementById('task-modal-title').textContent = `📌 ${task.title.substring(0, 40)}`;
+                    document.getElementById('task-modal-body').innerHTML = modalHtml;
+                    document.getElementById('task-modal').classList.remove('hidden');
+                    
+                    document.getElementById('update-task-status').onclick = async () => {
+                        const newStatus = document.getElementById('task-status-update').value;
+                        const comment = document.getElementById('task-comment').value;
+                        
+                        const updateData = { 
+                            status: newStatus, 
+                            updated_at: new Date(),
+                            comment: comment || null
+                        };
+                        if (newStatus === 'completed') updateData.completed_at = new Date();
+                        
+                        const { error } = await supabase.from('report_tasks').update(updateData).eq('id', taskId);
+                        if (error) {
+                            showMessage('Ошибка: ' + error.message, 'error');
+                        } else {
+                            showMessage('Статус обновлён', 'success');
+                            document.getElementById('task-modal').classList.add('hidden');
+                            await loadAllTasks();
+                            if (currentReportId) await window.viewReport(currentReportId);
+                        }
+                    };
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    alert('Ошибка загрузки задачи');
+                }
             };
             
-            // ========== ФИНАНСЫ ==========
-            async function loadExpensesList() {
-                const container = document.getElementById('expenses-list');
-                container.innerHTML = '<div class="loading">Загрузка...</div>';
-                let query = supabase.from('expenses').select('*, projects(name)').eq('payment_status', 'pending').order('date', { ascending: false });
-                if (currentRole !== 'manager') {
-                    const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
-                    const projectIds = userProjects?.map(p => p.id) || [];
-                    if (projectIds.length) query = query.in('project_id', projectIds);
-                    else { container.innerHTML = '<div class="empty-state">Нет расходов</div>'; return; }
-                }
-                const { data, error } = await query;
-                if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет расходов на оплату</div>'; return; }
-                let html = '';
-                for (const exp of data) {
-                    html += `<div class="task-card"><div class="task-header"><span class="task-type type-expense">💰 Расход</span><span class="task-status status-pending">⏳ Ожидает</span></div>
-                        <div class="task-title">${exp.projects?.name || '—'}</div><div class="task-description">${escapeHtml(exp.name)} — ${Number(exp.amount).toLocaleString()} ₸</div>
-                        <div class="task-meta"><span>📅 ${exp.date ? new Date(exp.date).toLocaleDateString('ru-RU') : '—'}</span>
-                        ${currentRole === 'manager' ? `<button class="btn-small btn-confirm" onclick="markExpensePaid('${exp.id}')">✅ Оплатить</button>` : ''}</div>
-                    </div>`;
-                }
-                container.innerHTML = html;
-            }
-            
-            window.markExpensePaid = async (expenseId) => {
-                await supabase.from('expenses').update({ payment_status: 'paid', updated_at: new Date() }).eq('id', expenseId);
-                loadExpensesList(); loadPaymentPlan();
-                showMessage('Расход оплачен', 'success');
-            };
-            
-            async function loadOrdersList() {
-                const container = document.getElementById('orders-list');
-                container.innerHTML = '<div class="loading">Загрузка...</div>';
-                let query = supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status', 'pending_foreman').order('created_at', { ascending: false });
-                if (currentRole !== 'manager') {
-                    const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
-                    const projectIds = userProjects?.map(p => p.id) || [];
-                    if (projectIds.length) query = query.in('project_id', projectIds);
-                    else { container.innerHTML = '<div class="empty-state">Нет нарядов</div>'; return; }
-                }
-                const { data, error } = await query;
-                if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет нарядов на утверждение</div>'; return; }
-                let html = '';
-                for (const order of data) {
-                    html += `<div class="task-card"><div class="task-header"><span class="task-type type-order">📋 Наряд</span><span class="task-status status-pending">⏳ Ожидает</span></div>
-                        <div class="task-title">${order.projects?.name || '—'}</div><div class="task-description">👷 ${order.brigades?.name || '—'} | ${escapeHtml(order.work_type)}<br>💰 ${Number(order.total_amount).toLocaleString()} ₸</div>
-                        <div class="task-meta"><span>📅 ${new Date(order.created_at).toLocaleDateString('ru-RU')}</span>
-                        ${currentRole === 'manager' ? `<button class="btn-small btn-confirm" onclick="approveOrder('${order.id}')">✅ Утвердить</button>` : ''}</div>
-                    </div>`;
-                }
-                container.innerHTML = html;
-            }
-            
-            window.approveOrder = async (orderId) => {
-                await supabase.from('work_orders').update({ status: 'approved', approved_at: new Date() }).eq('id', orderId);
-                loadOrdersList();
-                showMessage('Наряд утверждён', 'success');
-            };
-            
-            async function loadAdvancesList() {
-                const container = document.getElementById('advances-list');
-                container.innerHTML = '<div class="loading">Загрузка...</div>';
-                let query = supabase.from('advances').select('*, projects(name), brigades(name)').eq('status', 'pending').order('created_at', { ascending: false });
-                if (currentRole !== 'manager') {
-                    const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
-                    const projectIds = userProjects?.map(p => p.id) || [];
-                    if (projectIds.length) query = query.in('project_id', projectIds);
-                    else { container.innerHTML = '<div class="empty-state">Нет авансов</div>'; return; }
-                }
-                const { data, error } = await query;
-                if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет авансов на утверждение</div>'; return; }
-                let html = '';
-                for (const advance of data) {
-                    html += `<div class="task-card"><div class="task-header"><span class="task-type type-advance">💰 Аванс</span><span class="task-status status-pending">⏳ Ожидает</span></div>
-                        <div class="task-title">${advance.projects?.name || '—'}</div><div class="task-description">👷 ${advance.brigades?.name || '—'}<br>💰 Сумма: ${Number(advance.amount).toLocaleString()} ₸</div>
-                        <div class="task-meta"><span>📅 ${new Date(advance.created_at).toLocaleDateString('ru-RU')}</span>
-                        ${currentRole === 'manager' ? `<button class="btn-small btn-confirm" onclick="approveAdvance('${advance.id}')">✅ Утвердить</button>` : ''}</div>
-                    </div>`;
-                }
-                container.innerHTML = html;
-            }
-            
-            window.approveAdvance = async (advanceId) => {
-                await supabase.from('advances').update({ status: 'approved', approved_by: currentUser?.id, approved_at: new Date() }).eq('id', advanceId);
-                loadAdvancesList();
-                showMessage('Аванс утверждён', 'success');
-            };
-            
-            async function loadPaymentPlan() {
-                const container = document.getElementById('payment-plan-list');
-                container.innerHTML = '<div class="loading">Загрузка...</div>';
-                let query = supabase.from('expenses').select('*, projects(name)').eq('payment_status', 'pending').order('planned_payment_date', { ascending: true });
-                if (currentRole !== 'manager') {
-                    const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
-                    const projectIds = userProjects?.map(p => p.id) || [];
-                    if (projectIds.length) query = query.in('project_id', projectIds);
-                    else { container.innerHTML = '<div class="empty-state">Нет планов оплат</div>'; return; }
-                }
-                const { data, error } = await query;
-                if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет планов оплат</div>'; return; }
-                let html = '';
-                for (const exp of data) {
-                    html += `<div class="task-card"><div class="task-header"><span class="task-type type-expense">💰 Платёж</span><span class="task-status status-pending">⏳ Ожидает</span></div>
-                        <div class="task-title">${exp.projects?.name || '—'}</div><div class="task-description">${escapeHtml(exp.name)} — ${Number(exp.amount).toLocaleString()} ₸<br>🏢 ${escapeHtml(exp.supplier || '—')}</div>
-                        <div class="task-meta"><span>📅 План: ${exp.planned_payment_date ? new Date(exp.planned_payment_date).toLocaleDateString('ru-RU') : '—'}</span>
-                        ${currentRole === 'manager' ? `<button class="btn-small btn-confirm" onclick="markExpensePaid('${exp.id}')">✅ Оплатить</button>` : ''}</div>
-                    </div>`;
-                }
-                container.innerHTML = html;
-            }
-            
-            // ========== ПИСЬМА И ПРОБЛЕМЫ ==========
-            async function loadLettersList() {
-                const container = document.getElementById('letters-list');
-                container.innerHTML = '<div class="loading">Загрузка...</div>';
-                let query = supabase.from('letters').select('*, projects(name)').eq('status', 'sent_to_office').order('created_at', { ascending: false });
-                if (currentRole !== 'manager') {
-                    const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
-                    const projectIds = userProjects?.map(p => p.id) || [];
-                    if (projectIds.length) query = query.in('project_id', projectIds);
-                    else { container.innerHTML = '<div class="empty-state">Нет писем</div>'; return; }
-                }
-                const { data, error } = await query;
-                if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет писем</div>'; return; }
-                let html = '';
-                for (const letter of data) {
-                    html += `<div class="task-card" onclick="viewLetter('${letter.id}')"><div class="task-header"><span class="task-type type-letter">✉️ Письмо</span><span class="task-status status-pending">⏳ Требуется отправка</span></div>
-                        <div class="task-title">${letter.projects?.name || '—'}</div><div class="task-description">📄 ${escapeHtml(letter.letter_number_full)}<br>📝 ${escapeHtml(letter.delay_description || '—')}</div>
-                        <div class="task-meta"><span>📅 ${new Date(letter.created_at).toLocaleDateString('ru-RU')}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();markLetterSent('${letter.id}')">📨 Отправить</span></div>
-                    </div>`;
-                }
-                container.innerHTML = html;
-            }
-            
-            async function loadIssuesList() {
-                const container = document.getElementById('issues-list-all');
-                container.innerHTML = '<div class="loading">Загрузка...</div>';
-                let query = supabase.from('project_issues').select('*, projects(name)').in('status', ['open', 'in_progress', 'overdue']).order('created_at', { ascending: false });
-                if (currentRole !== 'manager') {
-                    const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
-                    const projectIds = userProjects?.map(p => p.id) || [];
-                    if (projectIds.length) query = query.in('project_id', projectIds);
-                    else { container.innerHTML = '<div class="empty-state">Нет проблем</div>'; return; }
-                }
-                const { data, error } = await query;
-                if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет проблем</div>'; return; }
-                let html = '';
-                for (const issue of data) {
-                    html += `<div class="task-card" onclick="viewIssue('${issue.id}')"><div class="task-header"><span class="task-type type-issue">⚠️ Проблема</span><span class="task-status status-pending">${issue.priority === 'high' ? '🔴' : issue.priority === 'medium' ? '🟡' : '🟢'} ${issue.status === 'overdue' ? 'Просрочена' : (issue.status === 'in_progress' ? 'В работе' : 'Открыта')}</span></div>
-                        <div class="task-title">${issue.projects?.name || '—'}</div><div class="task-description">📝 ${escapeHtml(issue.title)}<br>${escapeHtml(issue.description?.substring(0, 80) || '')}</div>
-                        <div class="task-meta"><span>👤 ${issue.created_by_name || '—'}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewIssue('${issue.id}')">👁️ Просмотреть</span></div>
-                    </div>`;
-                }
-                container.innerHTML = html;
-            }
-            
-            window.markLetterSent = async (letterId) => {
-                await supabase.from('letters').update({ status: 'sent_to_customer', sent_to_customer: true }).eq('id', letterId);
-                loadLettersList();
-                showMessage('Письмо отмечено как отправленное', 'success');
-            };
-            
-            window.viewLetter = async (letterId) => {
-                const { data: letter } = await supabase.from('letters').select('*, projects(name)').eq('id', letterId).single();
-                alert(`Письмо №${letter?.letter_number_full}\nОбъект: ${letter?.projects?.name}\nПричина: ${letter?.delay_description}`);
-            };
-            
-            window.viewIssue = async (issueId) => {
-                const { data: issue } = await supabase.from('project_issues').select('*').eq('id', issueId).single();
-                alert(`Проблема: ${issue?.title}\n${issue?.description}\nСтатус: ${issue?.status}\nПриоритет: ${issue?.priority}`);
-            };
-            
-            async function loadAllTasksList(filter = 'all') {
-                const container = document.getElementById('all-tasks-list');
-                container.innerHTML = '<div class="loading">Загрузка...</div>';
-                let query = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false });
-                if (filter !== 'all') query = query.eq('status', filter);
-                if (currentRole !== 'manager') query = query.or(`created_by.eq.${currentUser?.id},responsible_ids.cs.{${currentUser?.id}}`);
-                const { data, error } = await query;
-                if (error || !data?.length) { container.innerHTML = '<div class="empty-state">Нет задач</div>'; return; }
-                const priorityClass = { high: 'priority-high', medium: 'priority-medium', low: 'priority-low' };
-                const priorityText = { high: '🔴 Высокий', medium: '🟡 Средний', low: '🟢 Низкий' };
-                const statusMap = { pending: { text: '⏳ Ожидается', class: 'status-pending' }, in_progress: { text: '🔵 В работе', class: 'status-in-progress' }, completed: { text: '✅ Сделано', class: 'status-completed' } };
-                let html = '';
-                for (const task of data) {
-                    const status = statusMap[task.status] || statusMap.pending;
-                    html += `<div class="task-card ${priorityClass[task.priority] || ''}" onclick="viewTask('${task.id}')">
-                        <div class="task-header"><span class="task-type type-task">📌 Задача</span><span class="task-status ${status.class}">${status.text}</span></div>
-                        <div class="task-title">${escapeHtml(task.title)}</div>
-                        <div class="task-description">${priorityText[task.priority] || '🟡 Средний'} ${task.projects?.name ? ` | 🏗️ ${escapeHtml(task.projects.name)}` : ''} | 👤 ${task.responsible_names?.[0] || '—'}</div>
-                        <div class="task-meta"><span>📅 ${new Date(task.created_at).toLocaleDateString('ru-RU')}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewTask('${task.id}')">👁️ Открыть</span></div>
-                    </div>`;
-                }
-                container.innerHTML = html;
-            }
-            
-            window.loadAllTasksList = loadAllTasksList;
+            window.loadAllTasks = loadAllTasks;
             init();
         })();
     </script>
