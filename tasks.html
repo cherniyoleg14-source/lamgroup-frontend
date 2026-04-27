@@ -6,323 +6,307 @@
     <title>Задачи | LamGroup</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, sans-serif; background: #f5f7fa; padding: 16px; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: #F8FAFC; padding: 16px; min-height: 100vh; }
         .container { max-width: 600px; margin: 0 auto; }
-        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        h1 { font-size: 26px; font-weight: 800; color: #1a2e4b; display: flex; align-items: center; gap: 8px; }
-        .role-badge { background: #e2e8f0; color: #1a2e4b; padding: 6px 14px; border-radius: 30px; font-size: 14px; font-weight: 600; }
-        .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; overflow-x: auto; }
-        .tab { padding: 10px 16px; background: none; border: none; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; }
-        .tab.active { color: #1a2e4b; border-bottom-color: #1a2e4b; }
+        
+        .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #0F172A, #1E293B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .role-badge { background: #E2E8F0; color: #0F172A; padding: 8px 16px; border-radius: 40px; font-size: 13px; font-weight: 600; }
+        
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #E2E8F0; overflow-x: auto; }
+        .tab { padding: 12px 20px; background: none; border: none; font-size: 14px; font-weight: 600; color: #64748B; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .tab.active { color: #0F172A; border-bottom-color: #F59E0B; }
+        
         .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .tasks-list { display: flex; flex-direction: column; gap: 12px; }
-        .task-card { background: white; border-radius: 20px; padding: 18px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #edf2f7; cursor: pointer; transition: all 0.2s; }
-        .task-card.completed { opacity: 0.7; background: #f8fafc; cursor: default; }
-        .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .task-type { padding: 4px 10px; border-radius: 30px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
-        .type-report { background: #f3e8ff; color: #6b21a8; } .type-letter { background: #fef3c7; color: #92400e; } .type-problem { background: #fee2e2; color: #991b1b; } .type-order { background: #dbeafe; color: #1e40af; } .type-payment { background: #d1fae5; color: #065f46; }
-        .task-status { padding: 4px 10px; border-radius: 30px; font-size: 11px; font-weight: 600; }
-        .status-pending { background: #fef3c7; color: #92400e; } .status-completed { background: #e2e8f0; color: #475569; }
-        .task-title { font-size: 16px; font-weight: 700; color: #1a2e4b; margin-bottom: 8px; }
-        .task-description { font-size: 14px; color: #64748b; margin-bottom: 12px; }
-        .task-meta { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: #94a3b8; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
-        .empty-state { text-align: center; padding: 40px; background: white; border-radius: 20px; color: #64748b; }
-        .loading { text-align: center; padding: 40px; color: #64748b; }
-        .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; }
-        .filter-btn { padding: 6px 14px; border-radius: 30px; font-size: 13px; border: 1px solid #d1d5db; background: white; cursor: pointer; }
-        .filter-btn.active { background: #1a2e4b; color: white; border-color: #1a2e4b; }
-        .count-badge { background: #1a2e4b; color: white; padding: 2px 8px; border-radius: 20px; font-size: 12px; margin-left: 6px; }
-        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .modal.hidden { display: none !important; }
-        .modal-content { background: white; border-radius: 24px; padding: 24px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-title { font-size: 20px; font-weight: 700; color: #1a2e4b; }
-        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; }
-        .checklist-item { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #f1f5f9; }
-        .checklist-item input { width: 22px; height: 22px; accent-color: #1a2e4b; }
-        .btn-primary { width: 100%; background: #1a2e4b; color: white; padding: 16px; border-radius: 16px; font-weight: 700; border: none; cursor: pointer; margin-top: 20px; }
-        .btn-copy { background: #10b981; color: white; padding: 14px; border-radius: 14px; font-weight: 600; border: none; cursor: pointer; width: 100%; margin-bottom: 10px; }
-        .action-buttons { display: flex; gap: 10px; margin-top: 16px; }
-        .action-buttons .btn-primary { flex: 2; margin-top: 0; }
-        .action-buttons .btn-secondary { flex: 1; margin-top: 0; background: #f1f5f9; color: #1a2e4b; padding: 14px; border-radius: 14px; font-weight: 600; border: 1px solid #e2e8f0; cursor: pointer; text-align: center; }
-        .letter-preview { background: #f8fafc; border-radius: 16px; padding: 20px; margin: 16px 0; border: 1px solid #e2e8f0; font-family: 'Times New Roman', serif; }
-        .letter-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1a2e4b; padding-bottom: 15px; }
-        .letter-logo { font-size: 28px; font-weight: 800; color: #1a2e4b; letter-spacing: 6px; text-align: center; margin-bottom: 5px; }
-        .letter-subtitle { font-size: 12px; letter-spacing: 8px; text-align: center; color: #F59E0B; font-weight: 600; margin-bottom: 10px; }
-        .letter-date { text-align: right; margin-bottom: 16px; font-size: 13px; color: #475569; }
-        .letter-to { margin-bottom: 16px; font-size: 14px; }
-        .letter-subject { font-weight: 700; margin-bottom: 16px; font-size: 15px; text-align: center; text-transform: uppercase; }
-        .letter-body { font-size: 14px; line-height: 1.6; margin-bottom: 24px; }
-        .letter-signature { margin-top: 24px; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .task-card { background: white; border-radius: 20px; padding: 18px; margin-bottom: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); border: 1px solid #F1F5F9; transition: all 0.2s; }
+        .task-card:active { transform: scale(0.99); }
+        
+        .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .task-type { padding: 4px 12px; border-radius: 30px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .type-report { background: #F3E8FF; color: #6B21A8; }
+        .type-payment { background: #FEF3C7; color: #92400E; }
+        .type-letter { background: #DBEAFE; color: #1E40AF; }
+        .type-problem { background: #FEE2E2; color: #991B1B; }
+        
+        .task-status { padding: 4px 12px; border-radius: 30px; font-size: 11px; font-weight: 600; }
+        .status-pending { background: #FEF3C7; color: #92400E; }
+        .status-confirmed { background: #D1FAE5; color: #065F46; }
+        
+        .task-title { font-size: 16px; font-weight: 700; color: #0F172A; margin-bottom: 8px; }
+        .task-description { font-size: 14px; color: #64748B; margin-bottom: 12px; line-height: 1.4; }
+        .task-meta { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #94A3B8; padding-top: 12px; border-top: 1px solid #F1F5F9; margin-top: 8px; }
+        
+        .btn-small { padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-confirm { background: #D1FAE5; color: #065F46; }
+        .btn-confirm:active { background: #A7F3D0; }
+        
+        .empty-state { text-align: center; padding: 60px 20px; background: white; border-radius: 24px; color: #64748B; }
+        .loading { text-align: center; padding: 60px 20px; color: #64748B; }
+        
+        .message { padding: 14px; border-radius: 14px; margin: 16px 0; display: none; font-weight: 500; }
+        .message.success { background: #D1FAE5; color: #065F46; display: block; }
+        .message.error { background: #FEE2E2; color: #991B1B; display: block; }
+        
+        .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .filter-chip { padding: 6px 14px; border-radius: 30px; font-size: 13px; font-weight: 600; border: 1px solid #E2E8F0; background: white; cursor: pointer; transition: all 0.2s; }
+        .filter-chip.active { background: #0F172A; color: white; border-color: #0F172A; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="app-header">
-            <h1>📋 Задачи <span id="total-count" class="count-badge">0</span></h1>
+            <h1>📋 Задачи</h1>
             <span class="role-badge" id="role-badge">Загрузка...</span>
         </div>
         
         <div class="tabs">
-            <button class="tab active" data-tab="all">Все</button>
-            <button class="tab" data-tab="reports">📑 Отчеты</button>
-            <button class="tab" data-tab="letters">✉️ Письма</button>
-            <button class="tab" data-tab="problems">⚠️ Проблемы</button>
-            <button class="tab" data-tab="orders">📋 Наряды</button>
+            <button class="tab active" data-tab="reports">📑 Отчёты</button>
             <button class="tab" data-tab="payments">💰 План оплат</button>
         </div>
         
-        <div class="filter-bar">
-            <button class="filter-btn active" data-filter="all">Все</button>
-            <button class="filter-btn" data-filter="my">Мои</button>
-            <button class="filter-btn" data-filter="pending">Ожидают</button>
+        <div id="tab-reports" class="tab-content active">
+            <div id="reports-list"></div>
         </div>
         
-        <div id="tab-all" class="tab-content active"><div id="all-tasks" class="tasks-list"></div></div>
-        <div id="tab-reports" class="tab-content"><div id="reports-tasks" class="tasks-list"></div></div>
-        <div id="tab-letters" class="tab-content"><div id="letters-tasks" class="tasks-list"></div></div>
-        <div id="tab-problems" class="tab-content"><div id="problems-tasks" class="tasks-list"></div></div>
-        <div id="tab-orders" class="tab-content"><div id="orders-tasks" class="tasks-list"></div></div>
-        <div id="tab-payments" class="tab-content"><div id="payments-tasks" class="tasks-list"></div></div>
-    </div>
-
-    <div id="report-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header"><span class="modal-title">📑 Детали отчета</span><button class="close-btn" id="close-report-modal">&times;</button></div>
-            <div id="modal-report-info"></div>
-            <div class="checklist-item"><input type="checkbox" id="modal-letter-sent"><label>✉️ Письмо отправлено</label></div>
-            <div class="checklist-item"><input type="checkbox" id="modal-schedule-shifted"><label>⏰ Срок сдвинут</label></div>
-            <button class="btn-primary" id="save-report-task">Сохранить</button>
+        <div id="tab-payments" class="tab-content">
+            <div id="payments-list"></div>
         </div>
-    </div>
-
-    <div id="letter-modal" class="modal hidden">
-        <div class="modal-content" style="max-width:800px">
-            <div class="modal-header"><span class="modal-title">📧 Письмо заказчику</span><button class="close-btn" id="close-letter-modal">&times;</button></div>
-            <div id="letter-content"></div>
-            <button class="btn-copy" id="copy-letter-btn">📋 Копировать текст письма</button>
-            <button class="btn-copy" id="print-letter-btn" style="background:#8b5cf6;margin-top:8px">🖨️ Распечатать</button>
-            <div class="action-buttons">
-                <button class="btn-primary" id="mark-letter-sent">✅ Отметить как отправленное</button>
-                <button class="btn-secondary" id="close-letter-btn-2">Закрыть</button>
-            </div>
-        </div>
+        
+        <div id="message" class="message"></div>
     </div>
 
     <script>
         (function() {
-            const tg = window.Telegram.WebApp; tg.expand(); tg.ready();
+            const tg = window.Telegram.WebApp;
+            tg.expand();
+            tg.ready();
+            
             const SUPABASE_URL = 'https://owagntywpiymqhbfoxye.supabase.co';
             const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YWdudHl3cGl5bXFoYmZveHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTg5MDUsImV4cCI6MjA5MTg5NDkwNX0.p-3xAhbFgH5lcGnbBfkcQQFVza_Yc2qoY6VBlhmmFGg';
             const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             
-            let userId = tg.initDataUnsafe?.user?.id || 531738802;
-            let currentUser = null, currentRole = 'worker', currentFilter = 'all', allTasks = [];
-            let currentTaskId = null, currentLetterText = '';
+            let userId = tg.initDataUnsafe?.user?.id;
+            if (!userId) { alert('Ошибка авторизации'); return; }
+            
+            let currentUser = null;
+            let currentRole = 'worker';
+            
+            function showMessage(text, type) {
+                const msg = document.getElementById('message');
+                msg.textContent = text;
+                msg.className = `message ${type}`;
+                setTimeout(() => msg.className = 'message', 3000);
+            }
+            
+            async function init() {
+                await loadUser();
+                setupTabs();
+                loadReports();
+                loadPayments();
+            }
             
             async function loadUser() {
                 const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
-                if (data) { currentUser = data; currentRole = data.role; }
+                if (data) {
+                    currentUser = data;
+                    currentRole = data.role;
+                }
                 document.getElementById('role-badge').textContent = currentRole === 'manager' ? 'Руководитель' : 'ИТР';
             }
             
-            async function loadAllTasks() {
-                document.querySelectorAll('.tasks-list').forEach(c => c.innerHTML = '<div class="loading">Загрузка...</div>');
-                
-                const { data: tasks, error } = await supabase
-                    .from('tasks')
-                    .select('*, projects(name), object_reports(*)')
-                    .order('created_at', { ascending: false });
-                
-                if (error) { console.error('Ошибка загрузки задач:', error); return; }
-                
-                const projectIds = [...new Set((tasks || []).map(t => t.project_id).filter(Boolean))];
-                let projectsMap = {};
-                const reportIds = (tasks || []).filter(t => t.type === 'report').map(t => t.report_id).filter(Boolean);
-                let reportsMap = {};
-                
-                if (reportIds.length > 0) {
-                    const { data: reports } = await supabase.from('object_reports').select('*').in('id', reportIds);
-                    (reports || []).forEach(r => { reportsMap[r.id] = r; });
-                }
-
-                const letterTaskIds = (tasks || []).filter(t => t.type === 'letter').map(t => t.id);
-                let lettersMap = {};
-                if (letterTaskIds.length > 0) {
-                    const { data: letters } = await supabase.from('letters').select('*, projects(customer_company_name, customer_director_name, customer_bin, customer_legal_address, name)');
-                    (letters || []).forEach(l => { lettersMap[l.id] = l; });
-                }
-                
-                allTasks = (tasks || []).map(t => ({
-                    ...t,
-                    projects: projectsMap[t.project_id] || null,
-                    object_reports: reportsMap[t.report_id] || null,
-                    letters: lettersMap[t.id] || null,
-                    typeName: t.type === 'report' ? '📑 Отчет' : t.type === 'letter' ? '✉️ Письмо' : t.type === 'problem' ? '⚠️ Проблема' : t.type === 'order' ? '📋 Наряд' : '💰 Платёж',
-                    typeClass: t.type === 'report' ? 'type-report' : t.type === 'letter' ? 'type-letter' : t.type === 'problem' ? 'type-problem' : t.type === 'order' ? 'type-order' : 'type-payment'
-                }));
-                
-                document.getElementById('total-count').textContent = allTasks.length;
-                renderAllLists();
-            }
-            
-            function renderAllLists() {
-                renderTasks('all-tasks', allTasks);
-                renderTasks('reports-tasks', allTasks.filter(t => t.type === 'report'));
-                renderTasks('letters-tasks', allTasks.filter(t => t.type === 'letter'));
-                renderTasks('problems-tasks', allTasks.filter(t => t.type === 'problem'));
-                renderTasks('orders-tasks', allTasks.filter(t => t.type === 'order'));
-                renderTasks('payments-tasks', allTasks.filter(t => t.type === 'payment'));
-            }
-            
-            function renderTasks(containerId, tasks) {
-                const container = document.getElementById(containerId);
-                let filtered = tasks;
-                if (currentFilter === 'my') filtered = tasks.filter(t => t.responsible_ids?.includes(currentUser?.id) || t.created_by === currentUser?.id);
-                else if (currentFilter === 'pending') filtered = tasks.filter(t => t.status === 'pending');
-                if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">✅ Нет задач</div>'; return; }
-                
-                container.innerHTML = filtered.map(t => {
-                    const isCompleted = t.status === 'completed';
-                    const report = t.object_reports;
-                    let title = t.title, meta = '';
-                    
-                    if (t.type === 'report' && report) {
-                        title = `Отчет №${report.id?.slice(-6) || '—'}`;
-                        meta = `📅 ${report.report_date ? new Date(report.report_date).toLocaleDateString('ru-RU') : '—'} | 🏗️ ${t.projects?.name || '—'} | 👤 ${report.created_by_name || '—'}`;
-                    } else if (t.type === 'letter') {
-                        title = t.title;
-                        meta = `🏗️ ${t.projects?.name || '—'} | 📅 ${t.created_at ? new Date(t.created_at).toLocaleDateString('ru-RU') : '—'}`;
-                    } else if (t.type === 'order') {
-                        title = `Наряд: ${t.title}`;
-                        meta = `🏗️ ${t.projects?.name || '—'} | 📅 ${t.created_at ? new Date(t.created_at).toLocaleDateString('ru-RU') : '—'}`;
-                    } else {
-                        meta = `🏗️ ${t.projects?.name || '—'} | 📅 ${t.created_at ? new Date(t.created_at).toLocaleDateString('ru-RU') : '—'}`;
-                    }
-                    
-                    return `<div class="task-card ${isCompleted ? 'completed' : ''}" data-id="${t.id}" data-type="${t.type}" data-completed="${isCompleted}">
-                        <div class="task-header"><span class="task-type ${t.typeClass}">${t.typeName}</span><span class="task-status ${t.status === 'completed' ? 'status-completed' : 'status-pending'}">${t.status === 'completed' ? '✅ Выполнено' : '⏳ Ожидает'}</span></div>
-                        <div class="task-title">${title}</div>
-                        <div class="task-description">${t.description || ''}</div>
-                        <div class="task-meta"><span>${meta}</span></div>
-                    </div>`;
-                }).join('');
-                
-                container.querySelectorAll('.task-card').forEach(card => {
-                    card.addEventListener('click', (e) => {
-                        if (e.target.tagName === 'BUTTON') return;
-                        if (card.dataset.completed === 'true') return;
-                        if (card.dataset.type === 'report') openReportModal(card.dataset.id);
-                        if (card.dataset.type === 'letter') openLetterModal(card.dataset.id);
+            function setupTabs() {
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                        tab.classList.add('active');
+                        const tabName = tab.dataset.tab;
+                        document.getElementById(`tab-${tabName}`).classList.add('active');
+                        
+                        if (tabName === 'reports') loadReports();
+                        if (tabName === 'payments') loadPayments();
                     });
                 });
             }
             
-            async function openReportModal(taskId) {
-                currentTaskId = taskId; const task = allTasks.find(t => t.id === taskId); if (!task?.object_reports) return; const report = task.object_reports;
-                document.getElementById('modal-report-info').innerHTML = `<p><strong>№ отчета:</strong> ${report.id?.slice(-6)}</p><p><strong>Дата:</strong> ${report.report_date ? new Date(report.report_date).toLocaleDateString('ru-RU') : '—'}</p><p><strong>Объект:</strong> ${task.projects?.name}</p><p><strong>Подал:</strong> ${report.created_by_name} (${report.created_by_role==='manager'?'Рук.':'ИТР'})</p><p><strong>Отставание:</strong> +${report.delay_days} дн.</p><p><strong>Описание:</strong> ${report.description}</p>`;
-                document.getElementById('modal-letter-sent').checked = task.letter_sent; document.getElementById('modal-schedule-shifted').checked = task.schedule_shifted;
-                document.getElementById('report-modal').classList.remove('hidden');
+            // ========== ОТЧЁТЫ ==========
+            async function loadReports() {
+                const container = document.getElementById('reports-list');
+                container.innerHTML = '<div class="loading">Загрузка отчётов...</div>';
+                
+                // Загружаем отчёты, требующие подтверждения (status = 'pending')
+                let query = supabase
+                    .from('object_reports')
+                    .select('*, projects(name)')
+                    .eq('status', 'pending')
+                    .order('report_date', { ascending: false });
+                
+                // Если не руководитель - только свои объекты
+                if (currentRole !== 'manager') {
+                    const { data: userProjects } = await supabase
+                        .from('projects')
+                        .select('id')
+                        .eq('responsible_worker_id', currentUser?.id);
+                    const projectIds = userProjects?.map(p => p.id) || [];
+                    if (projectIds.length > 0) {
+                        query = query.in('project_id', projectIds);
+                    } else {
+                        container.innerHTML = '<div class="empty-state">Нет отчётов на подтверждении</div>';
+                        return;
+                    }
+                }
+                
+                const { data, error } = await query;
+                
+                if (error) {
+                    container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
+                    return;
+                }
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="empty-state">Нет отчётов на подтверждении</div>';
+                    return;
+                }
+                
+                let html = '';
+                for (const report of data) {
+                    const photosCount = report.photos?.length || 0;
+                    html += `
+                        <div class="task-card" data-id="${report.id}">
+                            <div class="task-header">
+                                <span class="task-type type-report">📑 Отчёт №${report.report_number}</span>
+                                <span class="task-status status-pending">⏳ Ожидает подтверждения</span>
+                            </div>
+                            <div class="task-title">${escapeHtml(report.projects?.name || '—')}</div>
+                            <div class="task-description">
+                                📅 ${new Date(report.report_date).toLocaleDateString('ru-RU')}<br>
+                                📍 Оси: ${report.axes_selected?.join(', ') || '—'}<br>
+                                📸 Фото: ${photosCount} шт.<br>
+                                ${report.has_issues ? '⚠️ В отчёте описаны проблемы<br>' : ''}
+                                📝 ${(report.description || '').substring(0, 100)}${(report.description || '').length > 100 ? '...' : ''}
+                            </div>
+                            <div class="task-meta">
+                                <span>👤 ${report.created_by_name || '—'}</span>
+                                <button class="btn-small btn-confirm" onclick="confirmReport('${report.id}')">✅ Подтвердить</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
             }
             
-            function openLetterModal(taskId) {
-                currentTaskId = taskId;
-                var task = allTasks.find(function(t) { return t.id === taskId; });
-                if (!task) return;
+            window.confirmReport = async function(reportId) {
+                const { error } = await supabase
+                    .from('object_reports')
+                    .update({ status: 'confirmed', letters_sent: true, schedule_shifted: true })
+                    .eq('id', reportId);
                 
-                var projectName = task.projects?.name || 'Объект';
-                var today = new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-                var delayInfo = task.description || 'Сдвиг сроков производства работ';
-                var letterNumber = task.title.match(/№(.*?):/) ? task.title.match(/№(.*?):/)[1] : (taskId.slice(-6) + '-Р');
+                if (error) {
+                    showMessage('Ошибка: ' + error.message, 'error');
+                } else {
+                    showMessage('✅ Отчёт подтверждён', 'success');
+                    loadReports();
+                }
+            };
+            
+            // ========== ПЛАН ОПЛАТ ==========
+            async function loadPayments() {
+                const container = document.getElementById('payments-list');
+                container.innerHTML = '<div class="loading">Загрузка платежей...</div>';
                 
-                var companyName = 'ТОО «Lamgroup Construction»';
-                var companyBIN = '100740008625';
-                var companyAddress = 'г. Алматы, ул. Сатпаева, 90/1, офис 301';
-                var directorName = 'Ким В.Г.';
+                // Загружаем расходы со статусом pending
+                let query = supabase
+                    .from('expenses')
+                    .select('*, projects(name)')
+                    .eq('payment_status', 'pending')
+                    .order('date', { ascending: false });
                 
-                supabase.from('letters').select('*, projects!inner(customer_company_name, customer_director_name, customer_bin, customer_legal_address, name)').eq('project_id', task.project_id).order('created_at', {ascending: false}).limit(1).then(function(res) {
-                    var letter = res.data && res.data.length > 0 ? res.data[0] : null;
-                    var customerCompany = letter?.projects?.customer_company_name || '_______________________';
-                    var customerDirector = letter?.projects?.customer_director_name || '_______________________';
-                    var customerBIN = letter?.projects?.customer_bin || '';
-                    var customerAddress = letter?.projects?.customer_legal_address || '';
-                    
-                    if (letter) {
-                        letterNumber = letter.letter_number_full || letterNumber;
-                        delayInfo = letter.delay_description || delayInfo;
+                // Если не руководитель - только свои объекты
+                if (currentRole !== 'manager') {
+                    const { data: userProjects } = await supabase
+                        .from('projects')
+                        .select('id')
+                        .eq('responsible_worker_id', currentUser?.id);
+                    const projectIds = userProjects?.map(p => p.id) || [];
+                    if (projectIds.length > 0) {
+                        query = query.in('project_id', projectIds);
+                    } else {
+                        container.innerHTML = '<div class="empty-state">Нет платежей на согласовании</div>';
+                        return;
                     }
-                    
-                    var letterHtml = '<div class="letter-preview">';
-                    letterHtml += '<div class="letter-logo">LAMGROUP</div>';
-                    letterHtml += '<div class="letter-subtitle">CONSTRUCTION</div>';
-                    letterHtml += '<div style="text-align:center;margin-bottom:10px"><strong>'+companyName+'</strong><br><small>БИН: '+companyBIN+' • '+companyAddress+'</small></div>';
-                    letterHtml += '<div style="text-align:right;margin:15px 0">Исх. № '+letterNumber+' от '+today+'</div>';
-                    letterHtml += '<div style="margin:10px 0"><strong>Кому:</strong> '+customerDirector+'<br>Директору '+customerCompany;
-                    if (customerBIN) letterHtml += '<br>БИН: '+customerBIN;
-                    if (customerAddress) letterHtml += '<br>'+customerAddress;
-                    letterHtml += '</div>';
-                    letterHtml += '<div style="text-align:center;font-weight:700;margin:15px 0;text-transform:uppercase">УВЕДОМЛЕНИЕ о переносе сроков работ</div>';
-                    letterHtml += '<div style="margin:15px 0"><p>Уважаемый(ая) '+customerDirector+'.</p><p>Настоящим уведомляем Вас о переносе сроков выполнения работ по объекту: <strong>'+projectName+'</strong></p>';
-                    letterHtml += '<p>В связи с: '+delayInfo+'</p>';
-                    if (letter && letter.delay_days) {
-                        letterHtml += '<p>Сроки выполнения работ переносятся на <strong>+'+letter.delay_days+' дней</strong>.</p>';
-                    }
-                    letterHtml += '<p>Просим принять данную информацию к сведению.</p></div>';
-                    letterHtml += '<div style="margin-top:30px"><p>С уважением,</p><p>Директор '+companyName+'</p><p><br></p><p>_______________________ '+directorName+'</p></div>';
-                    letterHtml += '</div>';
-                    
-                    currentLetterText = letterHtml.replace(/<[^>]*>/g, '');
-                    document.getElementById('letter-content').innerHTML = letterHtml;
-                    document.getElementById('letter-modal').classList.remove('hidden');
+                }
+                
+                const { data, error } = await query;
+                
+                if (error) {
+                    container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`;
+                    return;
+                }
+                
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="empty-state">Нет платежей на согласовании</div>';
+                    return;
+                }
+                
+                let html = '';
+                for (const expense of data) {
+                    html += `
+                        <div class="task-card" data-id="${expense.id}">
+                            <div class="task-header">
+                                <span class="task-type type-payment">💰 Платёж</span>
+                                <span class="task-status status-pending">⏳ Ожидает оплаты</span>
+                            </div>
+                            <div class="task-title">${escapeHtml(expense.projects?.name || '—')}</div>
+                            <div class="task-description">
+                                <strong>${escapeHtml(expense.name)}</strong><br>
+                                📅 ${expense.date ? new Date(expense.date).toLocaleDateString('ru-RU') : '—'}<br>
+                                💰 Сумма: ${Number(expense.amount).toLocaleString()} ₸<br>
+                                ${expense.supplier ? `🏢 Поставщик: ${escapeHtml(expense.supplier)}<br>` : ''}
+                                ${expense.is_urgent ? '🚨 СРОЧНЫЙ ПЛАТЁЖ<br>' : ''}
+                                💳 ${expense.payment_method === 'cash' ? 'Наличка' : 'Безнал'}
+                            </div>
+                            <div class="task-meta">
+                                <span>👤 Создал: ${expense.created_by_name || '—'}</span>
+                                <button class="btn-small btn-confirm" onclick="confirmPayment('${expense.id}')">✅ Отметить оплаченным</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+            }
+            
+            window.confirmPayment = async function(expenseId) {
+                const { error } = await supabase
+                    .from('expenses')
+                    .update({ payment_status: 'paid', accountant_status: 'paid', sent_to_accountant: true, updated_at: new Date() })
+                    .eq('id', expenseId);
+                
+                if (error) {
+                    showMessage('Ошибка: ' + error.message, 'error');
+                } else {
+                    showMessage('✅ Платёж отмечен оплаченным', 'success');
+                    loadPayments();
+                }
+            };
+            
+            function escapeHtml(text) {
+                if (!text) return '';
+                return String(text).replace(/[&<>]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    return m;
                 });
             }
             
-            document.getElementById('copy-letter-btn').onclick = function() {
-                navigator.clipboard?.writeText(currentLetterText).then(function() { alert('✅ Текст письма скопирован!'); }).catch(function() { alert('❌ Не удалось скопировать'); });
-            };
-            
-            document.getElementById('print-letter-btn').onclick = function() {
-                var printWindow = window.open('', '_blank', 'width=800,height=600');
-                var letterContent = document.getElementById('letter-content').innerHTML;
-                printWindow.document.write('<html><head><meta charset="UTF-8"><title>Письмо</title>');
-                printWindow.document.write('<style>');
-                printWindow.document.write('body { font-family: "Times New Roman", serif; padding: 30px; max-width: 800px; margin: 0 auto; }');
-                printWindow.document.write('.letter-logo { font-size: 28px; font-weight: 800; color: #1a2e4b; letter-spacing: 6px; text-align: center; margin-bottom: 5px; }');
-                printWindow.document.write('.letter-subtitle { font-size: 12px; letter-spacing: 8px; text-align: center; color: #F59E0B; font-weight: 600; margin-bottom: 10px; }');
-                printWindow.document.write('</style></head><body>');
-                printWindow.document.write(letterContent);
-                printWindow.document.write('</body></html>');
-                printWindow.document.close();
-                setTimeout(function() { printWindow.print(); }, 500);
-            };
-            
-            document.getElementById('mark-letter-sent').onclick = async function() {
-                if (!currentTaskId) return;
-                await supabase.from('tasks').update({ status: 'completed', letter_sent: true }).eq('id', currentTaskId);
-                document.getElementById('letter-modal').classList.add('hidden');
-                loadAllTasks();
-                alert('✅ Письмо отмечено как отправленное');
-            };
-            
-            document.getElementById('close-report-modal').onclick = function() { document.getElementById('report-modal').classList.add('hidden'); };
-            document.getElementById('close-letter-modal').onclick = function() { document.getElementById('letter-modal').classList.add('hidden'); };
-            document.getElementById('close-letter-btn-2').onclick = function() { document.getElementById('letter-modal').classList.add('hidden'); };
-            
-            document.getElementById('save-report-task').onclick = async function() {
-                if (!document.getElementById('modal-letter-sent').checked || !document.getElementById('modal-schedule-shifted').checked) { alert('Отметьте обе галочки'); return; }
-                await supabase.from('tasks').update({ letter_sent: true, schedule_shifted: true, status: 'completed' }).eq('id', currentTaskId);
-                document.getElementById('report-modal').classList.add('hidden');
-                loadAllTasks();
-            };
-            
-            function setupTabs() { document.querySelectorAll('.tab').forEach(function(t) { t.onclick = function() { document.querySelectorAll('.tab').forEach(function(x) { x.classList.remove('active'); }); document.querySelectorAll('.tab-content').forEach(function(x) { x.classList.remove('active'); }); t.classList.add('active'); document.getElementById('tab-'+t.dataset.tab).classList.add('active'); }; }); }
-            function setupFilters() { document.querySelectorAll('.filter-btn').forEach(function(btn) { btn.onclick = function() { document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); currentFilter = btn.dataset.filter; renderAllLists(); }; }); }
-            
-            async function init() { await loadUser(); await loadAllTasks(); setupTabs(); setupFilters(); }
             init();
         })();
     </script>
