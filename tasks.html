@@ -117,7 +117,7 @@
             <div id="confirmed-reports" class="sub-content"></div>
         </div>
         
-        <!-- ВСЕ ЗАДАЧИ (с кнопкой создания) -->
+        <!-- ВСЕ ЗАДАЧИ -->
         <div id="main-all-tasks" class="main-tab-content">
             <button class="create-btn" id="create-task-btn-main">➕ Создать задачу</button>
             <div class="filter-bar">
@@ -409,7 +409,11 @@
                 if (currentRole !== 'manager') query = query.or(`created_by.eq.${currentUser?.id},responsible_ids.cs.{${currentUser?.id}}`);
                 
                 const { data, error } = await query;
-                if (error) { container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`; return; }
+                if (error) { 
+                    console.error('Ошибка загрузки задач:', error);
+                    container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`; 
+                    return; 
+                }
                 if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Нет задач</div>'; return; }
                 
                 const priorityClass = { high: 'priority-high', medium: 'priority-medium', low: 'priority-low' };
@@ -492,8 +496,15 @@
                         created_at: new Date()
                     });
                     
-                    if (error) { showMessage('Ошибка: ' + error.message, 'error'); }
-                    else { showMessage('✅ Задача создана', 'success'); document.getElementById('task-modal').classList.add('hidden'); loadTasksTasks(); }
+                    if (error) { 
+                        showMessage('Ошибка: ' + error.message, 'error');
+                        console.error('Ошибка создания задачи:', error);
+                    }
+                    else { 
+                        showMessage('✅ Задача создана', 'success'); 
+                        document.getElementById('task-modal').classList.add('hidden'); 
+                        loadTasksTasks(); 
+                    }
                 };
             }
             
