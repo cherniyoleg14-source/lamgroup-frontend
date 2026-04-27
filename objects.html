@@ -1848,7 +1848,7 @@ async function openAddIssueForm() {
 }
             // ============================================================
 // ============================================================
-// ===== ОТЧЁТЫ (ПОЛНАЯ ВЕРСИЯ С ОТОБРАЖЕНИЕМ ФОТО) =====
+// ===== ОТЧЁТЫ (ИСПРАВЛЕННАЯ ВЕРСИЯ) =====
 // ============================================================
 
 async function loadReports() {
@@ -1938,7 +1938,7 @@ async function loadReports() {
     
     container.innerHTML = html;
     
-    // Обработчик выбора осей — показываем поля для фото
+    // Обработчик выбора осей
     document.querySelectorAll('.report-axis-cb').forEach(cb => {
         cb.addEventListener('change', renderPhotoFields);
     });
@@ -1965,7 +1965,6 @@ async function loadReports() {
         fieldsHtml += '</div>';
         photoContainer.innerHTML = fieldsHtml;
         
-        // Обработчики предпросмотра фото
         document.querySelectorAll('.photo-input').forEach(input => {
             input.addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -1995,7 +1994,6 @@ async function loadReports() {
             return;
         }
         
-        // Проверяем, что для каждой оси есть фото
         const photoInputs = document.querySelectorAll('.photo-input');
         const missingPhotos = [];
         for (const input of photoInputs) {
@@ -2009,7 +2007,6 @@ async function loadReports() {
             return;
         }
         
-        // Загружаем фото (очищаем имя файла)
         const photos = [];
         for (const input of photoInputs) {
             const axis = input.dataset.axis;
@@ -2018,8 +2015,6 @@ async function loadReports() {
                 const ext = file.name.split('.').pop();
                 const cleanName = Date.now() + '_' + axis.replace(/[^a-zA-Z0-9]/g, '_') + '.' + ext;
                 const fileName = `${currentProjectId}/${cleanName}`;
-                
-                console.log('Загружаем:', fileName);
                 
                 const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
                 if (uploadError) {
@@ -2032,7 +2027,6 @@ async function loadReports() {
             }
         }
         
-        // Сохраняем отчёт (статус ВСЕГДА 'pending')
         const { data: newReport, error: insertError } = await supabase
             .from('object_reports')
             .insert({
@@ -2043,7 +2037,7 @@ async function loadReports() {
                 description: description,
                 has_issues: hasIssues,
                 photos: photos,
-                status: 'pending',   // ← ВАЖНО: всегда 'pending'
+                status: 'pending',
                 created_by: currentUser?.id,
                 created_by_name: currentUser?.full_name,
                 created_by_role: currentRole,
@@ -2057,14 +2051,11 @@ async function loadReports() {
             return;
         }
         
-        // Показываем сообщение без изменения статуса
         showMessage('✅ Отчёт отправлен на проверку руководителю.', 'success');
-        
-        // Перезагружаем список отчётов
         loadReports();
     });
     
-    // Рендер списка отчётов с фото
+    // Рендер списка отчётов
     function renderReportsList() {
         const listContainer = document.getElementById('reports-list');
         
@@ -2075,10 +2066,7 @@ async function loadReports() {
         
         let html = '';
         for (const report of reports) {
-            const statusIcon = report.status === 'confirmed' ? '✅' : '⏳';
-            const statusText = report.status === 'confirmed' ? 'Проверен' : 'На проверке';
-            
-            // Получаем фото для предпросмотра (первые 3)
+            const isConfirmed = report.status === 'confirmed';
             const photos = report.photos || [];
             const photoThumbs = photos.slice(0, 3).map(p => 
                 `<img src="${p.url}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="event.stopPropagation(); window.open('${p.url}', '_blank')">`
@@ -2091,7 +2079,7 @@ async function loadReports() {
                             <strong>📄 ОТЧЁТ №${report.report_number} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong>
                             ${report.has_issues ? '<span style="background:#FEE2E2; color:#991B1B; padding:2px 8px; border-radius:20px; font-size:10px; margin-left:8px;">⚠️ Проблемы</span>' : ''}
                         </div>
-                        <span style="font-size: 12px; padding: 4px 10px; border-radius: 20px; background: ${report.status === 'confirmed' ? '#D1FAE5' : '#FEF3C7'}; color: ${report.status === 'confirmed' ? '#065F46' : '#92400E'};">${statusIcon} ${statusText}</span>
+                        <span style="font-size: 12px; padding: 4px 10px; border-radius: 20px; background: ${isConfirmed ? '#D1FAE5' : '#FEF3C7'}; color: ${isConfirmed ? '#065F46' : '#92400E'};">${isConfirmed ? '✅ Проверен' : '⏳ На проверке'}</span>
                     </div>
                     <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">
                         📍 Оси: ${report.axes_selected?.join(', ') || '—'} | 📸 Фото: ${photos.length} шт.
@@ -2107,34 +2095,7 @@ async function loadReports() {
     }
     
     renderReportsList();
-}    
-    function renderReportsList() {
-        const listContainer = document.getElementById('reports-list');
-        if (reports.length === 0) { listContainer.innerHTML = '<p style="color: #64748B; text-align: center; padding: 20px;">Нет отчётов</p>'; return; }
-        let html = '';
-        for (const report of reports) {
-            const statusIcon = report.status === 'confirmed' ? '✅' : '⏳';
-            const statusText = report.status === 'confirmed' ? 'Письма отправлены, сроки сдвинуты' : 'Ожидает подтверждения';
-            const photos = report.photos || [];
-            const photoThumbs = photos.slice(0, 3).map(p => `<img src="${p.url}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="event.stopPropagation(); window.open('${p.url}', '_blank')">`).join('');
-            html += `<div class="gpr-item" style="margin-bottom: 12px; cursor: pointer;" onclick="viewReportDetails('${report.id}')">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                    <div><strong>📄 ОТЧЁТ №${report.report_number} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong>${report.has_issues ? '<span style="background:#FEE2E2; color:#991B1B; padding:2px 8px; border-radius:20px; font-size:10px; margin-left:8px;">⚠️ Проблемы</span>' : ''}</div>
-                    <span style="font-size: 12px;">${statusIcon} ${statusText}</span>
-                </div>
-                <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">📍 Оси: ${report.axes_selected?.join(', ') || '—'} | 📸 Фото: ${photos.length} шт.</div>
-                ${photoThumbs ? `<div style="display: flex; gap: 6px; margin: 8px 0;">${photoThumbs}</div>` : ''}
-                <div style="font-size: 13px; margin-bottom: 6px;">📝 ${(report.description || '').substring(0, 100)}${(report.description || '').length > 100 ? '...' : ''}</div>
-                <div style="font-size: 11px; color: #64748B;">👤 ${report.created_by_name || '—'} (${report.created_by_role === 'manager' ? 'Руководитель' : 'ИТР'})</div>
-                <div style="font-size: 11px; color: #94A3B8;">📅 ${new Date(report.created_at).toLocaleString()}</div>
-            </div>`;
-        }
-        listContainer.innerHTML = html;
-    }
-    renderReportsList();
 }
-
-
 
 // ========== ПРОСМОТР ДЕТАЛЕЙ ОТЧЁТА С ФОТО ==========
 window.viewReportDetails = async function(reportId) {
@@ -2149,9 +2110,9 @@ window.viewReportDetails = async function(reportId) {
         return;
     }
     
-    const statusText = report.status === 'confirmed' ? '✅ Письма отправлены, сроки ГПР сдвинуты' : '⏳ Ожидает подтверждения';
+    const isConfirmed = report.status === 'confirmed';
+    const statusText = isConfirmed ? '✅ Письма отправлены, сроки ГПР сдвинуты' : '⏳ Ожидает подтверждения';
     
-    // Фото в большом размере
     let photosHtml = '';
     if (report.photos && report.photos.length) {
         photosHtml = '<div style="margin-top: 16px;"><h4>📸 Фото по осям:</h4><div style="display: flex; flex-direction: column; gap: 16px; margin-top: 12px;">';
@@ -2199,6 +2160,7 @@ window.viewReportDetails = async function(reportId) {
 };
 
 // ===== КОНЕЦ РАЗДЕЛА ОТЧЁТЫ =====
+
             init();
         })();
     </script>
