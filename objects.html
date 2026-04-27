@@ -1855,7 +1855,6 @@ async function loadReports() {
     const container = document.getElementById('tab-report');
     container.innerHTML = '<div class="loading">Загрузка отчётов...</div>';
     
-    // Загружаем список отчётов
     const { data, error } = await supabase
         .from('object_reports')
         .select('*')
@@ -1868,11 +1867,8 @@ async function loadReports() {
     }
     
     const reports = data || [];
-    
-    // Получаем следующий номер отчёта
     const nextNumber = reports.length > 0 ? Math.max(...reports.map(r => r.report_number || 0)) + 1 : 1;
     
-    // Загружаем оси для формы
     const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
     let axesList = [];
     if (blocks && blocks.length) {
@@ -1884,88 +1880,44 @@ async function loadReports() {
     let html = `
         <div class="info-card">
             <h3 style="margin-bottom: 20px;">📝 Создать новый отчёт</h3>
-            
-            <div class="form-group">
-                <label>📅 Дата отчёта</label>
-                <input type="date" id="report-date" value="${new Date().toISOString().split('T')[0]}">
-            </div>
-            
-            <div class="form-group">
-                <label>🔢 Номер отчёта</label>
-                <input type="text" id="report-number" value="№${nextNumber}" disabled style="background: #F8FAFC;">
-            </div>
-            
-            <div class="form-group">
-                <label>📍 Выберите оси для отчёта *</label>
-                <div id="report-axes-list" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;">
-    `;
+            <div class="form-group"><label>📅 Дата отчёта</label><input type="date" id="report-date" value="${new Date().toISOString().split('T')[0]}"></div>
+            <div class="form-group"><label>🔢 Номер отчёта</label><input type="text" id="report-number" value="№${nextNumber}" disabled style="background: #F8FAFC;"></div>
+            <div class="form-group"><label>📍 Выберите оси для отчёта *</label><div id="report-axes-list" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;">`;
     
     axesList.forEach(axis => {
-        html += `
-            <label style="display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" class="report-axis-cb" value="${axis.name}" data-name="${axis.name}">
-                <span>${axis.name}</span>
-            </label>
-        `;
+        html += `<label style="display: flex; align-items: center; gap: 8px;"><input type="checkbox" class="report-axis-cb" value="${axis.name}" data-name="${axis.name}"><span>${axis.name}</span></label>`;
     });
     
-    html += `
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label>📝 Описание отчёта</label>
-                <textarea id="report-description" rows="4" placeholder="Опишите выполненные работы за период..."></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label><input type="checkbox" id="report-has-issues" style="width: auto; margin-right: 8px;"> ⚠️ В отчёте описаны проблемы</label>
-            </div>
-            
-            <div class="form-group">
-                <label>📸 Фото по осям (обязательно для каждой выбранной оси)</label>
-                <div id="report-photo-fields"></div>
-            </div>
-            
+    html += `</div></div>
+            <div class="form-group"><label>📝 Описание отчёта</label><textarea id="report-description" rows="4" placeholder="Опишите выполненные работы за период..."></textarea></div>
+            <div class="form-group"><label><input type="checkbox" id="report-has-issues" style="width: auto; margin-right: 8px;"> ⚠️ В отчёте описаны проблемы</label></div>
+            <div class="form-group"><label>📸 Фото по осям (обязательно для каждой выбранной оси)</label><div id="report-photo-fields"></div></div>
             <button class="btn-primary" id="submit-report-btn">📤 Отправить отчёт</button>
         </div>
-        
-        <div class="info-card">
-            <h3 style="margin-bottom: 16px;">📋 История отчётов</h3>
-            <div id="reports-list"></div>
-        </div>
+        <div class="info-card"><h3 style="margin-bottom: 16px;">📋 История отчётов</h3><div id="reports-list"></div></div>
     `;
     
     container.innerHTML = html;
     
-    // Обработчик выбора осей — показываем поля для фото
-    document.querySelectorAll('.report-axis-cb').forEach(cb => {
-        cb.addEventListener('change', renderPhotoFields);
-    });
+    document.querySelectorAll('.report-axis-cb').forEach(cb => cb.addEventListener('change', renderPhotoFields));
     
     function renderPhotoFields() {
         const selectedAxes = Array.from(document.querySelectorAll('.report-axis-cb:checked')).map(cb => cb.value);
         const photoContainer = document.getElementById('report-photo-fields');
-        
         if (selectedAxes.length === 0) {
             photoContainer.innerHTML = '<p style="color: #64748B; font-size: 13px;">Выберите оси для отчёта</p>';
             return;
         }
-        
         let fieldsHtml = '<div style="margin-top: 12px;">';
         selectedAxes.forEach(axis => {
-            fieldsHtml += `
-                <div class="axis-photo-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #F8FAFC; border-radius: 14px; margin-bottom: 10px;">
-                    <span style="width: 80px; font-weight: 600;">📍 ${axis}</span>
-                    <input type="file" class="photo-input" data-axis="${axis}" accept="image/*" capture="environment" style="flex: 1; padding: 8px;">
-                    <img class="photo-preview" data-axis="${axis}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 10px; display: none;">
-                </div>
-            `;
+            fieldsHtml += `<div class="axis-photo-item" style="display: flex; align-items: center; gap: 12px; padding: 10px; background: #F8FAFC; border-radius: 14px; margin-bottom: 10px;">
+                <span style="width: 80px; font-weight: 600;">📍 ${axis}</span>
+                <input type="file" class="photo-input" data-axis="${axis}" accept="image/*" capture="environment" style="flex: 1; padding: 8px;">
+                <img class="photo-preview" data-axis="${axis}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 10px; display: none;">
+            </div>`;
         });
         fieldsHtml += '</div>';
         photoContainer.innerHTML = fieldsHtml;
-        
-        // Обработчики предпросмотра фото
         document.querySelectorAll('.photo-input').forEach(input => {
             input.addEventListener('change', (e) => {
                 const file = e.target.files[0];
@@ -1973,175 +1925,99 @@ async function loadReports() {
                 const preview = document.querySelector(`.photo-preview[data-axis="${axis}"]`);
                 if (file && preview) {
                     const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        preview.src = ev.target.result;
-                        preview.style.display = 'block';
-                    };
+                    reader.onload = (ev) => { preview.src = ev.target.result; preview.style.display = 'block'; };
                     reader.readAsDataURL(file);
                 }
             });
         });
     }
     
-    // Отправка отчёта
     document.getElementById('submit-report-btn').addEventListener('click', async () => {
         const reportDate = document.getElementById('report-date').value;
         const description = document.getElementById('report-description').value.trim();
         const hasIssues = document.getElementById('report-has-issues').checked;
         const selectedAxes = Array.from(document.querySelectorAll('.report-axis-cb:checked')).map(cb => cb.value);
         
-        if (selectedAxes.length === 0) {
-            alert('Выберите хотя бы одну ось для отчёта');
-            return;
-        }
+        if (selectedAxes.length === 0) { alert('Выберите хотя бы одну ось для отчёта'); return; }
         
-        // Проверяем, что для каждой оси есть фото
         const photoInputs = document.querySelectorAll('.photo-input');
         const missingPhotos = [];
         for (const input of photoInputs) {
-            if (!input.files || !input.files[0]) {
-                missingPhotos.push(input.dataset.axis);
+            if (!input.files || !input.files[0]) missingPhotos.push(input.dataset.axis);
+        }
+        if (missingPhotos.length > 0) { alert(`Добавьте фото для осей: ${missingPhotos.join(', ')}`); return; }
+        
+        const photos = [];
+        for (const input of photoInputs) {
+            const axis = input.dataset.axis;
+            const file = input.files[0];
+            if (file) {
+                const ext = file.name.split('.').pop();
+                const cleanName = Date.now() + '_' + axis.replace(/[^a-zA-Z0-9]/g, '_') + '.' + ext;
+                const fileName = `${currentProjectId}/${cleanName}`;
+                const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
+                if (uploadError) {
+                    console.error('Ошибка загрузки фото:', uploadError);
+                    alert('Ошибка загрузки фото: ' + uploadError.message);
+                } else {
+                    const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+                    photos.push({ axis, url: urlData.publicUrl });
+                }
             }
         }
         
-        if (missingPhotos.length > 0) {
-            alert(`Добавьте фото для осей: ${missingPhotos.join(', ')}`);
-            return;
-        }
+        const { data: newReport, error: insertError } = await supabase.from('object_reports').insert({
+            report_number: nextNumber, project_id: currentProjectId, report_date: reportDate,
+            axes_selected: selectedAxes, description: description, has_issues: hasIssues,
+            photos: photos, status: 'pending', created_by: currentUser?.id,
+            created_by_name: currentUser?.full_name, created_by_role: currentRole, created_at: new Date()
+        }).select('id').single();
         
-        // Загружаем фото (очищаем имя файла)
-const photos = [];
-for (const input of photoInputs) {
-    const axis = input.dataset.axis;
-    const file = input.files[0];
-    if (file) {
-        // Очищаем имя файла: только латиница, цифры, точка
-        const ext = file.name.split('.').pop();
-        const cleanName = Date.now() + '_' + axis.replace(/[^a-zA-Z0-9]/g, '_') + '.' + ext;
-        const fileName = `${currentProjectId}/${cleanName}`;
+        if (insertError) { alert('Ошибка: ' + insertError.message); return; }
         
-        console.log('Загружаем:', fileName);
-        
-        const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
-        if (uploadError) {
-            console.error('Ошибка загрузки фото:', uploadError);
-            alert('Ошибка загрузки фото: ' + uploadError.message);
-        } else {
-            const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-            photos.push({ axis, url: urlData.publicUrl });
-        }
-    }
-}
-
-        
-        // Сохраняем отчёт
-        const { data: newReport, error: insertError } = await supabase
-            .from('object_reports')
-            .insert({
-                report_number: nextNumber,
-                project_id: currentProjectId,
-                report_date: reportDate,
-                axes_selected: selectedAxes,
-                description: description,
-                has_issues: hasIssues,
-                photos: photos,
-                status: 'pending',
-                created_by: currentUser?.id,
-                created_by_name: currentUser?.full_name,
-                created_by_role: currentRole,
-                created_at: new Date()
-            })
-            .select('id')
-            .single();
-        
-        if (insertError) {
-            alert('Ошибка: ' + insertError.message);
-            return;
-        }
-        
-        // Диалог подтверждения
-        const confirmed = confirm(
-            '✅ Отчёт сохранён!\n\n' +
-            'Проверьте:\n' +
-            '• Сроки ГПР сдвинуты (если требуется)\n' +
-            '• Письма заказчику отправлены (если требуется)\n\n' +
-            'Нажмите OK, если всё сделано. Или Отмена, чтобы напомнить позже.'
-        );
+        const confirmed = confirm('✅ Отчёт сохранён!\n\nПроверьте:\n• Сроки ГПР сдвинуты (если требуется)\n• Письма заказчику отправлены (если требуется)\n\nНажмите OK, если всё сделано. Или Отмена, чтобы напомнить позже.');
         
         if (confirmed) {
-            await supabase
-                .from('object_reports')
-                .update({ 
-                    status: 'confirmed',
-                    letters_sent: true,
-                    schedule_shifted: true
-                })
-                .eq('id', newReport.id);
-            
-            // Создаём задачу для руководителя
+            await supabase.from('object_reports').update({ status: 'confirmed', letters_sent: true, schedule_shifted: true }).eq('id', newReport.id);
             await supabase.from('tasks').insert({
-                project_id: currentProjectId,
-                report_id: newReport.id,
-                type: 'report',
-                title: `📑 Отчёт №${nextNumber} от ${reportDate}`,
-                description: description.substring(0, 200),
-                status: 'pending',
-                priority: hasIssues ? 'high' : 'medium',
-                created_by: currentUser?.id
+                project_id: currentProjectId, report_id: newReport.id, type: 'report',
+                title: `📑 Отчёт №${nextNumber} от ${reportDate}`, description: description.substring(0, 200),
+                status: 'pending', priority: hasIssues ? 'high' : 'medium', created_by: currentUser?.id
             });
-            
             showMessage('✅ Отчёт подтверждён. Задача создана.', 'success');
         } else {
             showMessage('📋 Отчёт сохранён. Не забудьте позже подтвердить сдвиги и письма.', 'info');
         }
-        
         loadReports();
     });
     
-    // Рендер списка отчётов с фото
     function renderReportsList() {
         const listContainer = document.getElementById('reports-list');
-        
-        if (reports.length === 0) {
-            listContainer.innerHTML = '<p style="color: #64748B; text-align: center; padding: 20px;">Нет отчётов</p>';
-            return;
-        }
-        
+        if (reports.length === 0) { listContainer.innerHTML = '<p style="color: #64748B; text-align: center; padding: 20px;">Нет отчётов</p>'; return; }
         let html = '';
         for (const report of reports) {
             const statusIcon = report.status === 'confirmed' ? '✅' : '⏳';
             const statusText = report.status === 'confirmed' ? 'Письма отправлены, сроки сдвинуты' : 'Ожидает подтверждения';
-            
-            // Получаем фото для предпросмотра (первые 3)
             const photos = report.photos || [];
-            const photoThumbs = photos.slice(0, 3).map(p => 
-                `<img src="${p.url}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="event.stopPropagation(); window.open('${p.url}', '_blank')">`
-            ).join('');
-            
-            html += `
-                <div class="gpr-item" style="margin-bottom: 12px; cursor: pointer;" onclick="viewReportDetails('${report.id}')">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                        <div>
-                            <strong>📄 ОТЧЁТ №${report.report_number} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong>
-                            ${report.has_issues ? '<span style="background:#FEE2E2; color:#991B1B; padding:2px 8px; border-radius:20px; font-size:10px; margin-left:8px;">⚠️ Проблемы</span>' : ''}
-                        </div>
-                        <span style="font-size: 12px;">${statusIcon} ${statusText}</span>
-                    </div>
-                    <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">
-                        📍 Оси: ${report.axes_selected?.join(', ') || '—'} | 📸 Фото: ${photos.length} шт.
-                    </div>
-                    ${photoThumbs ? `<div style="display: flex; gap: 6px; margin: 8px 0;">${photoThumbs}</div>` : ''}
-                    <div style="font-size: 13px; margin-bottom: 6px;">📝 ${(report.description || '').substring(0, 100)}${(report.description || '').length > 100 ? '...' : ''}</div>
-                    <div style="font-size: 11px; color: #64748B;">👤 ${report.created_by_name || '—'} (${report.created_by_role === 'manager' ? 'Руководитель' : 'ИТР'})</div>
-                    <div style="font-size: 11px; color: #94A3B8;">📅 ${new Date(report.created_at).toLocaleString()}</div>
+            const photoThumbs = photos.slice(0, 3).map(p => `<img src="${p.url}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="event.stopPropagation(); window.open('${p.url}', '_blank')">`).join('');
+            html += `<div class="gpr-item" style="margin-bottom: 12px; cursor: pointer;" onclick="viewReportDetails('${report.id}')">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                    <div><strong>📄 ОТЧЁТ №${report.report_number} от ${new Date(report.report_date).toLocaleDateString('ru-RU')}</strong>${report.has_issues ? '<span style="background:#FEE2E2; color:#991B1B; padding:2px 8px; border-radius:20px; font-size:10px; margin-left:8px;">⚠️ Проблемы</span>' : ''}</div>
+                    <span style="font-size: 12px;">${statusIcon} ${statusText}</span>
                 </div>
-            `;
+                <div style="font-size: 13px; color: #64748B; margin-bottom: 6px;">📍 Оси: ${report.axes_selected?.join(', ') || '—'} | 📸 Фото: ${photos.length} шт.</div>
+                ${photoThumbs ? `<div style="display: flex; gap: 6px; margin: 8px 0;">${photoThumbs}</div>` : ''}
+                <div style="font-size: 13px; margin-bottom: 6px;">📝 ${(report.description || '').substring(0, 100)}${(report.description || '').length > 100 ? '...' : ''}</div>
+                <div style="font-size: 11px; color: #64748B;">👤 ${report.created_by_name || '—'} (${report.created_by_role === 'manager' ? 'Руководитель' : 'ИТР'})</div>
+                <div style="font-size: 11px; color: #94A3B8;">📅 ${new Date(report.created_at).toLocaleString()}</div>
+            </div>`;
         }
         listContainer.innerHTML = html;
     }
-    
     renderReportsList();
 }
+
+
 
 // ========== ПРОСМОТР ДЕТАЛЕЙ ОТЧЁТА С ФОТО ==========
 window.viewReportDetails = async function(reportId) {
