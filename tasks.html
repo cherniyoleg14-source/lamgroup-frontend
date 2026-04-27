@@ -130,11 +130,15 @@
         </div>
         
         <div id="main-all-tasks" class="main-tab-content">
-            <div class="filter-bar">
-                <button class="filter-chip active" data-task-filter="all">Все</button>
-                <button class="filter-chip" data-task-filter="pending">⏳ Ожидается</button>
-                <button class="filter-chip" data-task-filter="in_progress">🔵 В работе</button>
-                <button class="filter-chip" data-task-filter="completed">✅ Сделано</button>
+    <button class="create-btn" id="create-task-btn-main">➕ Создать задачу</button>
+    <div class="filter-bar">
+        <button class="filter-chip active" data-task-filter="all">Все</button>
+        <button class="filter-chip" data-task-filter="pending">⏳ Ожидается</button>
+        <button class="filter-chip" data-task-filter="in_progress">🔵 В работе</button>
+        <button class="filter-chip" data-task-filter="completed">✅ Сделано</button>
+    </div>
+    <div id="custom-tasks-list"></div>
+</div>
                 <!-- ФИНАНСЫ -->
 <div id="main-finance" class="main-tab-content">
     <div class="sub-tabs">
@@ -228,6 +232,13 @@
                 await loadPendingReports();
                 await loadCompletedReports();
                 await loadAllTasks();
+                await loadExpensesFinance();
+    await loadOrdersFinance();
+    await loadAdvancesFinance();
+    await loadPaymentPlanFinance();
+    await loadLettersList();
+    await loadIssuesList();
+                await loadCustomTasks();
             }
             
             async function loadUser() {
@@ -252,8 +263,8 @@
                 loadCompletedReports();
             }
             if (tab.dataset.main === 'all-tasks') {
-                loadAllTasks();
-            }
+    loadCustomTasks();  // вместо loadAllTasks()
+}
             if (tab.dataset.main === 'finance') {
                 loadExpensesFinance();
                 loadOrdersFinance();
@@ -269,32 +280,61 @@
 }
             
             function setupSubTabs() {
-                document.querySelectorAll('.sub-tab').forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        const parent = tab.closest('.main-tab-content');
-                        parent.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
-                        parent.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
-                        tab.classList.add('active');
-                        const targetId = `${tab.dataset.sub}-reports`;
-                        document.getElementById(targetId).classList.add('active');
-                        
-                        console.log('Переключение на:', tab.dataset.sub);
-                        
-                        if (tab.dataset.sub === 'pending') loadPendingReports();
-                        if (tab.dataset.sub === 'completed') loadCompletedReports();
-                    });
-                });
-            }
+    // Для отчётов
+    document.querySelectorAll('#main-reports .sub-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('#main-reports .sub-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#main-reports .sub-content').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            if (tab.dataset.sub === 'pending') loadPendingReports();
+            if (tab.dataset.sub === 'completed') loadCompletedReports();
+        });
+    });
+    
+    // Для финансов
+    const financeSubTabs = document.querySelectorAll('#main-finance .sub-tab');
+    if (financeSubTabs.length) {
+        financeSubTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('#main-finance .sub-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('#main-finance .sub-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                const targetId = `finance-${tab.dataset.sub}`;
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) targetEl.classList.add('active');
+                if (tab.dataset.sub === 'expenses') loadExpensesFinance();
+                if (tab.dataset.sub === 'orders') loadOrdersFinance();
+                if (tab.dataset.sub === 'advances') loadAdvancesFinance();
+                if (tab.dataset.sub === 'payment-plan') loadPaymentPlanFinance();
+            });
+        });
+    }
+    
+    // Для писем и проблем
+    const lettersTabs = document.querySelectorAll('#main-letters-issues .sub-tab');
+    if (lettersTabs.length) {
+        lettersTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('#main-letters-issues .sub-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('#main-letters-issues .sub-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.sub}-list`).classList.add('active');
+                if (tab.dataset.sub === 'letters') loadLettersList();
+                if (tab.dataset.sub === 'issues') loadIssuesList();
+            });
+        });
+    }
+}
             
             function setupTaskFilters() {
-                document.querySelectorAll('.filter-chip').forEach(chip => {
-                    chip.addEventListener('click', () => {
-                        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-                        chip.classList.add('active');
-                        loadAllTasks(chip.dataset.taskFilter);
-                    });
-                });
-            }
+    document.querySelectorAll('#main-all-tasks .filter-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            document.querySelectorAll('#main-all-tasks .filter-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            loadCustomTasks(chip.dataset.taskFilter);
+        });
+    });
+}
             
             function setupModals() {
                 const reportModal = document.getElementById('report-modal');
@@ -303,6 +343,10 @@
                 document.getElementById('close-task-modal').onclick = () => taskModal.classList.add('hidden');
                 reportModal.onclick = (e) => { if (e.target === reportModal) reportModal.classList.add('hidden'); };
                 taskModal.onclick = (e) => { if (e.target === taskModal) taskModal.classList.add('hidden'); };
+                const createBtn = document.getElementById('create-task-btn-main');
+if (createBtn) {
+    createBtn.onclick = () => openCreateTaskForm();
+}
             }
             
             async function loadPendingReports() {
@@ -878,6 +922,145 @@ if (lettersSubTabs.length) {
         });
     });
 }
+            // ========== ЗАДАЧИ (custom_tasks) ==========
+async function loadCustomTasks(filter = 'all') {
+    const container = document.getElementById('custom-tasks-list');
+    if (!container) return;
+    container.innerHTML = '<div class="loading">Загрузка...</div>';
+    
+    let query = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false });
+    if (filter !== 'all') query = query.eq('status', filter);
+    if (currentRole !== 'manager') query = query.or(`created_by.eq.${currentUser?.id},responsible_ids.cs.{${currentUser?.id}}`);
+    
+    const { data, error } = await query;
+    if (error) { 
+        console.error('Ошибка загрузки:', error);
+        container.innerHTML = `<div class="empty-state">Ошибка: ${error.message}</div>`; 
+        return; 
+    }
+    if (!data || data.length === 0) { container.innerHTML = '<div class="empty-state">Нет задач</div>'; return; }
+    
+    const priorityClass = { high: 'priority-high', medium: 'priority-medium', low: 'priority-low' };
+    const priorityText = { high: '🔴 Высокий', medium: '🟡 Средний', low: '🟢 Низкий' };
+    const statusMap = { pending: { text: '⏳ Ожидается', class: 'status-pending' }, in_progress: { text: '🔵 В работе', class: 'status-in-progress' }, completed: { text: '✅ Сделано', class: 'status-completed' } };
+    
+    let html = '';
+    for (const task of data) {
+        const status = statusMap[task.status] || statusMap.pending;
+        const today = new Date();
+        const deadline = task.deadline ? new Date(task.deadline) : null;
+        let daysLeft = '';
+        if (deadline && task.status !== 'completed') {
+            const diff = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+            daysLeft = diff < 0 ? `<span style="color:#EF4444;">⚠️ Просрочено на ${Math.abs(diff)} дн.</span>` :
+                       diff <= 3 ? `<span style="color:#F59E0B;">⏰ Осталось ${diff} дн.</span>` : '';
+        }
+        const responsibleNames = task.responsible_names?.join(', ') || '—';
+        
+        html += `<div class="task-card ${priorityClass[task.priority] || ''}" onclick="viewCustomTask('${task.id}')">
+            <div class="task-header"><span class="task-type type-task">📌 Задача</span><span class="task-status ${status.class}">${status.text}</span></div>
+            <div class="task-title">${escapeHtml(task.title)}</div>
+            <div class="task-description">${priorityText[task.priority] || '🟡 Средний'} ${task.projects?.name ? ` | 🏗️ ${escapeHtml(task.projects.name)}` : ''} | 👤 ${responsibleNames} ${daysLeft ? ` | ${daysLeft}` : ''}</div>
+            <div class="task-meta"><span>📅 ${new Date(task.created_at).toLocaleDateString('ru-RU')}</span><span class="btn-small btn-confirm" onclick="event.stopPropagation();viewCustomTask('${task.id}')">👁️ Открыть</span></div>
+        </div>`;
+    }
+    container.innerHTML = html;
+}
+
+async function openCreateTaskForm() {
+    const today = new Date().toISOString().split('T')[0];
+    const defaultDeadline = new Date(); defaultDeadline.setDate(defaultDeadline.getDate() + 7);
+    
+    const { data: projects } = await supabase.from('projects').select('id, name').order('name');
+    let projectsHtml = '<option value="">— Не выбрано —</option>';
+    projects?.forEach(p => { projectsHtml += `<option value="${p.id}">${escapeHtml(p.name)}</option>`; });
+    
+    const { data: users } = await supabase.from('users').select('id, full_name, role').order('full_name');
+    let usersHtml = '<select id="task-responsible" multiple size="5" style="width:100%; padding:10px; border-radius:14px; min-height:120px;">';
+    users?.forEach(u => {
+        usersHtml += `<option value="${u.id}" data-name="${u.full_name}">${u.full_name} (${u.role === 'manager' ? 'Руководитель' : 'ИТР'})</option>`;
+    });
+    usersHtml += '</select><p style="font-size:12px; color:#64748B;">(для выбора нескольких зажмите Ctrl или Cmd)</p>';
+    
+    const modalHtml = `
+        <div class="form-group"><label>📅 Дата создания</label><input type="text" value="${today}" disabled style="background:#F8FAFC;"></div>
+        <div class="form-group"><label>📅 Дата завершения *</label><input type="date" id="task-deadline" value="${defaultDeadline.toISOString().split('T')[0]}" required></div>
+        <div class="form-group"><label>📝 Название задачи *</label><input type="text" id="task-title" placeholder="Например: Согласовать смету" required></div>
+        <div class="form-group"><label>📄 Описание</label><textarea id="task-description" rows="3" placeholder="Подробное описание..."></textarea></div>
+        <div class="form-group"><label>🏗️ Объект</label><select id="task-project">${projectsHtml}</select></div>
+        <div class="form-group"><label>👤 Кому назначить (можно нескольких) *</label>${usersHtml}</div>
+        <div class="form-group"><label>🎯 Приоритет</label><div class="radio-group"><label><input type="radio" name="priority" value="low"> 🟢 Низкий</label><label><input type="radio" name="priority" value="medium" checked> 🟡 Средний</label><label><input type="radio" name="priority" value="high"> 🔴 Высокий</label></div></div>
+        <div class="form-group"><label>📊 Статус</label><div class="radio-group"><label><input type="radio" name="status" value="pending" checked> ⏳ Ожидается</label><label><input type="radio" name="status" value="in_progress"> 🔵 В работе</label><label><input type="radio" name="status" value="completed"> ✅ Сделано</label></div></div>
+        <button class="btn-primary" id="save-custom-task-btn">📤 Создать задачу</button>
+    `;
+    
+    document.getElementById('task-modal-body').innerHTML = modalHtml;
+    document.getElementById('task-modal').classList.remove('hidden');
+    document.getElementById('task-modal-title').textContent = '📝 Новая задача';
+    
+    document.getElementById('save-custom-task-btn').onclick = async () => {
+        const title = document.getElementById('task-title').value.trim();
+        const deadline = document.getElementById('task-deadline').value;
+        const projectId = document.getElementById('task-project').value || null;
+        const responsibleSelect = document.getElementById('task-responsible');
+        const responsibleIds = Array.from(responsibleSelect.selectedOptions).map(opt => opt.value).filter(v => v);
+        const responsibleNames = Array.from(responsibleSelect.selectedOptions).map(opt => opt.dataset.name || opt.text.split(' (')[0]);
+        const priority = document.querySelector('input[name="priority"]:checked')?.value;
+        const status = document.querySelector('input[name="status"]:checked')?.value;
+        
+        if (!title || !deadline) { alert('Заполните название и дату'); return; }
+        if (!responsibleIds.length) { alert('Выберите ответственного'); return; }
+        
+        const { error } = await supabase.from('custom_tasks').insert({
+            title: title, description: document.getElementById('task-description').value || null,
+            deadline: deadline, project_id: projectId,
+            responsible_ids: responsibleIds, responsible_names: responsibleNames,
+            priority: priority || 'medium', status: status || 'pending',
+            created_by: currentUser?.id, created_by_name: currentUser?.full_name,
+            created_at: new Date()
+        });
+        
+        if (error) { 
+            showMessage('Ошибка: ' + error.message, 'error');
+            console.error('Ошибка создания:', error);
+        } else { 
+            showMessage('✅ Задача создана', 'success'); 
+            document.getElementById('task-modal').classList.add('hidden'); 
+            loadCustomTasks(); 
+        }
+    };
+}
+
+window.viewCustomTask = async function(taskId) {
+    const { data: task } = await supabase.from('custom_tasks').select('*, projects(name)').eq('id', taskId).single();
+    if (!task) return;
+    const responsibleList = task.responsible_names?.map(n => `<li>${escapeHtml(n)}</li>`).join('') || '—';
+    const modalHtml = `
+        <div><strong>📌 ${escapeHtml(task.title)}</strong></div>
+        <div>📅 Создана: ${new Date(task.created_at).toLocaleDateString('ru-RU')}</div>
+        <div>📅 Завершить до: ${task.deadline ? new Date(task.deadline).toLocaleDateString('ru-RU') : '—'}</div>
+        ${task.projects?.name ? `<div>🏗️ Объект: ${escapeHtml(task.projects.name)}</div>` : ''}
+        <div style="background:#F8FAFC; padding:12px; margin:12px 0;">📝 ${escapeHtml(task.description || '—')}</div>
+        <div><strong>👥 Кому назначена:</strong><ul class="responsible-list">${responsibleList}</ul></div>
+        <div>👤 Создал: ${task.created_by_name || '—'}</div>
+        <div class="form-group"><label>Статус</label><select id="custom-task-status-update">
+            <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>⏳ Ожидается</option>
+            <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>🔵 В работе</option>
+            <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>✅ Сделано</option>
+        </select></div>
+        <button class="btn-primary" id="update-custom-task-status">💾 Обновить статус</button>
+    `;
+    document.getElementById('task-modal-body').innerHTML = modalHtml;
+    document.getElementById('task-modal-title').textContent = `📌 ${task.title.substring(0, 40)}`;
+    document.getElementById('task-modal').classList.remove('hidden');
+    document.getElementById('update-custom-task-status').onclick = async () => {
+        const newStatus = document.getElementById('custom-task-status-update').value;
+        await supabase.from('custom_tasks').update({ status: newStatus, updated_at: new Date() }).eq('id', taskId);
+        showMessage('Статус обновлён', 'success');
+        document.getElementById('task-modal').classList.add('hidden');
+        loadCustomTasks();
+    };
+};
             init();
         })();
     </script>
