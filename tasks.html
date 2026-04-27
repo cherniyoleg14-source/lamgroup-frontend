@@ -767,10 +767,18 @@ async function loadOrdersFinance() {
 }
 
 window.approveOrderFinance = async (orderId) => {
-    await supabase.from('work_orders').update({ status: 'approved', approved_at: new Date() }).eq('id', orderId);
-    loadOrdersFinance();           // обновить список на утверждение
-    loadPaymentPlanFinance();      // добавить в план оплат
-    showMessage('Наряд утверждён', 'success');
+    const { error } = await supabase
+        .from('work_orders')
+        .update({ status: 'approved', approved_at: new Date() })
+        .eq('id', orderId);
+    
+    if (error) {
+        showMessage('Ошибка: ' + error.message, 'error');
+    } else {
+        showMessage('✅ Наряд утверждён', 'success');
+        loadOrdersFinance();           // обновить список на утверждение
+        loadPaymentPlanFinance();      // добавить в план оплат
+    }
 };
 
 async function loadAdvancesFinance() {
@@ -798,10 +806,18 @@ async function loadAdvancesFinance() {
 }
 
 window.approveAdvanceFinance = async (advanceId) => {
-    await supabase.from('advances').update({ status: 'approved', approved_by: currentUser?.id, approved_at: new Date() }).eq('id', advanceId);
-    loadAdvancesFinance();         // обновить список на утверждение
-    loadPaymentPlanFinance();      // добавить в план оплат
-    showMessage('Аванс утверждён', 'success');
+    const { error } = await supabase
+        .from('advances')
+        .update({ status: 'approved', approved_by: currentUser?.id, approved_at: new Date() })
+        .eq('id', advanceId);
+    
+    if (error) {
+        showMessage('Ошибка: ' + error.message, 'error');
+    } else {
+        showMessage('✅ Аванс утверждён', 'success');
+        loadAdvancesFinance();         // обновить список на утверждение
+        loadPaymentPlanFinance();      // добавить в план оплат
+    }
 };
 
 async function loadPaymentPlanFinance() {
@@ -816,18 +832,17 @@ async function loadPaymentPlanFinance() {
         supabase.from('advances').select('*, projects(name), brigades(name)').eq('status', 'approved')
     ]);
     
-    const expenses = expensesRes.data || [];
-    const orders = ordersRes.data || [];
-    const advances = advancesRes.data || [];
+    let expenses = expensesRes.data || [];
+    let orders = ordersRes.data || [];
+    let advances = advancesRes.data || [];
     
     // Фильтрация по правам (если не руководитель)
     if (currentRole !== 'manager') {
         const { data: userProjects } = await supabase.from('projects').select('id').eq('responsible_worker_id', currentUser?.id);
         const projectIds = userProjects?.map(p => p.id) || [];
-        const filterByProject = (item) => projectIds.includes(item.project_id);
-        expenses = expenses.filter(filterByProject);
-        orders = orders.filter(filterByProject);
-        advances = advances.filter(filterByProject);
+        expenses = expenses.filter(exp => projectIds.includes(exp.project_id));
+        orders = orders.filter(order => projectIds.includes(order.project_id));
+        advances = advances.filter(adv => projectIds.includes(adv.project_id));
     }
     
     if (expenses.length === 0 && orders.length === 0 && advances.length === 0) {
@@ -839,7 +854,8 @@ async function loadPaymentPlanFinance() {
     
     // Расходы (оплаченные)
     for (const exp of expenses) {
-        html += `<div class="task-card"><div class="task-header"><span class="task-type type-expense">✅ Оплачено</span><span class="task-status status-completed">Оплачено</span></div>
+        html += `<div class="task-card">
+            <div class="task-header"><span class="task-type type-expense">💰 Оплачено</span><span class="task-status status-completed">Оплачено</span></div>
             <div class="task-title">${exp.projects?.name || '—'}</div>
             <div class="task-description">${escapeHtml(exp.name)} — ${Number(exp.amount).toLocaleString()} ₸<br>🏢 ${escapeHtml(exp.supplier || '—')}<br>📅 ${exp.date ? new Date(exp.date).toLocaleDateString('ru-RU') : '—'}</div>
             <div class="task-meta"><span>👤 ${exp.created_by_name || '—'}</span></div>
@@ -848,7 +864,8 @@ async function loadPaymentPlanFinance() {
     
     // Наряды (утверждённые)
     for (const order of orders) {
-        html += `<div class="task-card"><div class="task-header"><span class="task-type type-order">✅ Наряд утверждён</span><span class="task-status status-completed">Утверждён</span></div>
+        html += `<div class="task-card">
+            <div class="task-header"><span class="task-type type-order">📋 Наряд утверждён</span><span class="task-status status-completed">Утверждён</span></div>
             <div class="task-title">${order.projects?.name || '—'}</div>
             <div class="task-description">👷 ${order.brigades?.name || '—'} | ${escapeHtml(order.work_type)}<br>💰 ${Number(order.total_amount).toLocaleString()} ₸</div>
             <div class="task-meta"><span>📅 ${new Date(order.created_at).toLocaleDateString('ru-RU')}</span></div>
@@ -857,7 +874,8 @@ async function loadPaymentPlanFinance() {
     
     // Авансы (утверждённые)
     for (const advance of advances) {
-        html += `<div class="task-card"><div class="task-header"><span class="task-type type-advance">✅ Аванс утверждён</span><span class="task-status status-completed">Утверждён</span></div>
+        html += `<div class="task-card">
+            <div class="task-header"><span class="task-type type-advance">💰 Аванс утверждён</span><span class="task-status status-completed">Утверждён</span></div>
             <div class="task-title">${advance.projects?.name || '—'}</div>
             <div class="task-description">👷 ${advance.brigades?.name || '—'}<br>💰 Сумма: ${Number(advance.amount).toLocaleString()} ₸</div>
             <div class="task-meta"><span>📅 ${new Date(advance.created_at).toLocaleDateString('ru-RU')}</span></div>
