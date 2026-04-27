@@ -769,7 +769,7 @@ async function loadOrdersFinance() {
 window.approveOrderFinance = async (orderId) => {
     const { error } = await supabase
         .from('work_orders')
-        .update({ status: 'approved', approved_at: new Date() })
+        .update({ status: 'approved' })
         .eq('id', orderId);
     
     if (error) {
@@ -808,7 +808,7 @@ async function loadAdvancesFinance() {
 window.approveAdvanceFinance = async (advanceId) => {
     const { error } = await supabase
         .from('advances')
-        .update({ status: 'approved', approved_by: currentUser?.id, approved_at: new Date() })
+        .update({ status: 'approved', approved_by: currentUser?.id })
         .eq('id', advanceId);
     
     if (error) {
