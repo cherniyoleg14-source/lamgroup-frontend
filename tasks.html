@@ -231,13 +231,6 @@
                 setupModals();
                 await loadPendingReports();
                 await loadCompletedReports();
-                await loadAllTasks();
-                await loadExpensesFinance();
-    await loadOrdersFinance();
-    await loadAdvancesFinance();
-    await loadPaymentPlanFinance();
-    await loadLettersList();
-    await loadIssuesList();
                 await loadCustomTasks();
             }
             
@@ -890,38 +883,7 @@ window.viewIssueDetail = async (issueId) => {
     const { data: issue } = await supabase.from('project_issues').select('*').eq('id', issueId).single();
     alert(`Проблема: ${issue?.title}\n${issue?.description}\nСтатус: ${issue?.status}\nПриоритет: ${issue?.priority}`);
 };
-            // Обработчики для подвкладок в Финансах
-const financeSubTabs = document.querySelectorAll('#main-finance .sub-tab');
-if (financeSubTabs.length) {
-    financeSubTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('#main-finance .sub-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('#main-finance .sub-content').forEach(c => c.classList.remove('active'));
-            tab.classList.add('active');
-            const targetId = `finance-${tab.dataset.sub}`;
-            document.getElementById(targetId).classList.add('active');
-            if (tab.dataset.sub === 'expenses') loadExpensesFinance();
-            if (tab.dataset.sub === 'orders') loadOrdersFinance();
-            if (tab.dataset.sub === 'advances') loadAdvancesFinance();
-            if (tab.dataset.sub === 'payment-plan') loadPaymentPlanFinance();
-        });
-    });
-}
-
-// Обработчики для подвкладок в Письмах и проблемах
-const lettersSubTabs = document.querySelectorAll('#main-letters-issues .sub-tab');
-if (lettersSubTabs.length) {
-    lettersSubTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('#main-letters-issues .sub-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('#main-letters-issues .sub-content').forEach(c => c.classList.remove('active'));
-            tab.classList.add('active');
-            document.getElementById(`${tab.dataset.sub}-list`).classList.add('active');
-            if (tab.dataset.sub === 'letters') loadLettersList();
-            if (tab.dataset.sub === 'issues') loadIssuesList();
-        });
-    });
-}
+            
             // ========== ЗАДАЧИ (custom_tasks) ==========
 async function loadCustomTasks(filter = 'all') {
     const container = document.getElementById('custom-tasks-list');
