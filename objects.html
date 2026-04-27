@@ -2010,19 +2010,25 @@ async function loadReports() {
         }
         
         // Загружаем фото
-        const photos = [];
-        for (const input of photoInputs) {
-            const axis = input.dataset.axis;
-            const file = input.files[0];
-            if (file) {
-                const fileName = `reports/${currentProjectId}/${Date.now()}_${axis}_${file.name}`;
-                const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
-                if (!uploadError) {
-                    const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-                    photos.push({ axis, url: urlData.publicUrl });
-                }
-            }
+const photos = [];
+for (const input of photoInputs) {
+    const axis = input.dataset.axis;
+    const file = input.files[0];
+    if (file) {
+        // Убираем лишнее /reports в начале
+        const fileName = `${currentProjectId}/${Date.now()}_${axis}_${file.name}`;
+        console.log('Загружаем:', fileName);
+        
+        const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
+        if (uploadError) {
+            console.error('Ошибка:', uploadError);
+            alert('Ошибка загрузки фото: ' + uploadError.message);
+        } else {
+            const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+            photos.push({ axis, url: urlData.publicUrl });
         }
+    }
+}
         
         // Сохраняем отчёт
         const { data: newReport, error: insertError } = await supabase
