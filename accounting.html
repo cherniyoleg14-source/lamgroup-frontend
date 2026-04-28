@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>План оплат | LamGroup</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F8FAFC;
+            --card: #FFFFFF;
+            --text: #0F172A;
+            --text-secondary: #64748B;
+            --border: #E2E8F0;
+            --gold: #F59E0B;
+            --primary: #0F172A;
+            --success: #10B981;
+            --danger: #EF4444;
+            --shadow: 0 4px 16px rgba(0,0,0,0.06);
+            --radius: 16px;
+            --radius-lg: 24px;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            padding: 16px;
+        }
+        .container { max-width: 700px; margin: 0 auto; }
+        
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(226,232,240,0.5);
+        }
+        
+        .app-header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0F172A, #1E293B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .badge {
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-dark { background: var(--primary); color: white; }
+        .badge-gold { background: linear-gradient(135deg, #F59E0B, #F97316); color: white; }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .kpi-card {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+        
+        .kpi-card.accent {
+            background: linear-gradient(135deg, #F59E0B, #F97316);
+            border: none;
+        }
+        
+        .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
+        .kpi-value { font-size: 28px; font-weight: 800; color: var(--text); }
+        .kpi-card.accent .kpi-label { color: rgba(255,255,255,0.7); }
+        .kpi-card.accent .kpi-value { color: white; }
+        
+        .card {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(226,232,240,0.5);
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-chip {
+            padding: 8px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .payment-item {
+            background: white;
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+        
+        .payment-item:hover { box-shadow: var(--shadow); }
+        
+        .payment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .payment-title { font-weight: 700; color: var(--text); font-size: 15px; }
+        .payment-amount { font-weight: 700; font-size: 18px; }
+        .amount-expense { color: var(--danger); }
+        
+        .payment-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .tag {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .tag-green { background: #D1FAE5; color: #065F46; }
+        .tag-yellow { background: #FEF3C7; color: #92400E; }
+        .tag-blue { background: #DBEAFE; color: #1E40AF; }
+        .tag-purple { background: #F3E8FF; color: #6B21A8; }
+        
+        .btn {
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn:active { transform: scale(0.97); }
+        .btn-success { background: #D1FAE5; color: #065F46; }
+        .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 8px; }
+        
+        .checkbox-pay {
+            width: 24px;
+            height: 24px;
+            accent-color: var(--success);
+            cursor: pointer;
+        }
+        
+        .calendar-section {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        
+        .weekday {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 8px 0;
+        }
+        
+        .calendar-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #F8FAFC;
+        }
+        
+        .calendar-day:hover { background: #E2E8F0; }
+        .calendar-day.other-month { color: #94A3B8; }
+        .calendar-day.today { background: var(--primary); color: white; font-weight: 700; }
+        .calendar-day.has-payment { border: 2px solid var(--gold); }
+        .calendar-day.has-paid { border: 2px solid var(--success); }
+        
+        .day-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-top: 2px;
+        }
+        
+        .indicator-pending { background: var(--gold); }
+        .indicator-paid { background: var(--success); }
+        
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
+        .empty-state { text-align: center; padding: 48px 20px; background: white; border-radius: var(--radius-lg); color: var(--text-secondary); border: 2px dashed var(--border); }
+        .hidden { display: none !important; }
+        .text-right { text-align: right; }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 10px 8px; background: #F8FAFC; color: var(--text-secondary); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+        td { padding: 10px 8px; border-bottom: 1px solid var(--border); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="app-header">
+            <h1>🧾 План оплат</h1>
+            <span class="badge badge-gold">LamGroup Construction</span>
+        </div>
+        
+        <!-- KPI -->
+        <div class="kpi-grid">
+            <div class="kpi-card accent">
+                <div class="kpi-label">К оплате сегодня</div>
+                <div class="kpi-value" id="kpi-today">0 ₸</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Всего к оплате</div>
+                <div class="kpi-value" id="kpi-total" style="color: var(--danger);">0 ₸</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Оплачено за месяц</div>
+                <div class="kpi-value" id="kpi-paid" style="color: var(--success);">0 ₸</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Ожидают</div>
+                <div class="kpi-value" id="kpi-pending" style="color: var(--gold);">0 ₸</div>
+            </div>
+        </div>
+        
+        <!-- Календарь -->
+        <div class="calendar-section">
+            <div class="calendar-header">
+                <span id="cal-month-year" style="font-weight:700;font-size:16px;"></span>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-sm" id="prev-month" style="background:#F1F5F9;">←</button>
+                    <button class="btn btn-sm" id="next-month" style="background:#F1F5F9;">→</button>
+                </div>
+            </div>
+            <div class="calendar-weekdays">
+                <span class="weekday">Пн</span><span class="weekday">Вт</span><span class="weekday">Ср</span>
+                <span class="weekday">Чт</span><span class="weekday">Пт</span><span class="weekday">Сб</span><span class="weekday">Вс</span>
+            </div>
+            <div class="calendar-days" id="calendar-days"></div>
+        </div>
+        
+        <!-- Фильтры -->
+        <div class="filter-bar">
+            <button class="filter-chip active" data-filter="all">Все</button>
+            <button class="filter-chip" data-filter="pending">⏳ Ожидают</button>
+            <button class="filter-chip" data-filter="paid">✅ Оплачены</button>
+            <button class="filter-chip" data-filter="expense">💰 Расходы</button>
+            <button class="filter-chip" data-filter="work_order">👷 Наряды</button>
+            <button class="filter-chip" data-filter="advance">💸 Авансы</button>
+        </div>
+        
+        <!-- Список -->
+        <div id="payments-list"><div class="loading">Загрузка...</div></div>
+    </div>
+
+<script>
+(function() {
+    const tg = window.Telegram.WebApp; tg.expand(); tg.ready();
+    const SUPABASE_URL = 'https://owagntywpiymqhbfoxye.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YWdudHl3cGl5bXFoYmZveHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTg5MDUsImV4cCI6MjA5MTg5NDkwNX0.p-3xAhbFgH5lcGnbBfkcQQFVza_Yc2qoY6VBlhmmFGg';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    let userId = tg.initDataUnsafe?.user?.id || 531738802;
+    let currentUser = null;
+    let currentFilter = 'all';
+    let allPayments = [];
+    let currentDisplayDate = new Date();
+    
+    function escapeHtml(t) { if(!t) return ''; return String(t).replace(/[&<>]/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]||c;}); }
+    function formatDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('ru-RU'); }
+    function formatMoney(a) { return (a||0).toLocaleString() + ' ₸'; }
+    
+    async function init() {
+        await loadUser();
+        await loadPayments();
+        setupFilters();
+        renderCalendar();
+    }
+    
+    async function loadUser() {
+        const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
+        if (data) currentUser = data;
+    }
+    
+    async function loadPayments() {
+        const { data } = await supabase.from('payment_schedule').select('*, projects(name)').order('planned_date', { ascending: true });
+        allPayments = data || [];
+        updateKPI();
+        renderPayments();
+        renderCalendar();
+    }
+    
+    function updateKPI() {
+        const today = new Date().toISOString().split('T')[0];
+        const todayPayments = allPayments.filter(p => p.planned_date === today && p.payment_status === 'pending');
+        const totalPending = allPayments.filter(p => p.payment_status === 'pending');
+        
+        const now = new Date();
+        const monthPaid = allPayments.filter(p => {
+            if (p.payment_status !== 'paid') return false;
+            const d = new Date(p.paid_at);
+            return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        });
+        
+        document.getElementById('kpi-today').textContent = formatMoney(todayPayments.reduce((s,p) => s + (p.amount||0), 0));
+        document.getElementById('kpi-total').textContent = formatMoney(totalPending.reduce((s,p) => s + (p.amount||0), 0));
+        document.getElementById('kpi-paid').textContent = formatMoney(monthPaid.reduce((s,p) => s + (p.amount||0), 0));
+        document.getElementById('kpi-pending').textContent = totalPending.length.toString();
+    }
+    
+    function renderPayments() {
+        const c = document.getElementById('payments-list');
+        let filtered = allPayments;
+        
+        if (currentFilter === 'pending') filtered = allPayments.filter(p => p.payment_status === 'pending');
+        else if (currentFilter === 'paid') filtered = allPayments.filter(p => p.payment_status === 'paid');
+        else if (currentFilter !== 'all') filtered = allPayments.filter(p => p.entity_type === currentFilter);
+        
+        if (!filtered.length) { c.innerHTML = '<div class="empty-state">🧾 Нет платежей</div>'; return; }
+        
+        c.innerHTML = filtered.map(p => {
+            const typeLabels = { expense: '💰 Расход', work_order: '👷 Наряд', advance: '💸 Аванс' };
+            const typeTag = { expense: 'tag-yellow', work_order: 'tag-blue', advance: 'tag-purple' };
+            const isPaid = p.payment_status === 'paid';
+            
+            return `
+            <div class="payment-item" style="${isPaid ? 'opacity:0.7;' : ''}">
+                <div class="payment-header">
+                    <div>
+                        <span class="tag ${typeTag[p.entity_type]}">${typeLabels[p.entity_type]}</span>
+                        <span class="payment-title" style="margin-left:8px;">${escapeHtml(p.description)}</span>
+                    </div>
+                    <span class="payment-amount amount-expense">${formatMoney(p.amount)}</span>
+                </div>
+                <div>
+                    <span>🏗️ ${escapeHtml(p.projects?.name||'—')}</span>
+                    <span style="margin-left:12px;">🏢 ${escapeHtml(p.contractor_name||'—')}</span>
+                </div>
+                <div class="payment-meta">
+                    <span>📅 План: ${formatDate(p.planned_date)}</span>
+                    ${isPaid ? 
+                        `<span class="tag tag-green">✅ Оплачен ${formatDate(p.paid_at)}</span>` :
+                        `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <input type="checkbox" class="checkbox-pay" data-id="${p.id}" onchange="markAsPaid('${p.id}', this)">
+                            <span>Отметить оплаченным</span>
+                        </label>`
+                    }
+                </div>
+            </div>`;
+        }).join('');
+    }
+    
+    window.markAsPaid = async function(id, checkbox) {
+        if (!checkbox.checked) return;
+        if (!confirm('✅ Подтвердите оплату этого платежа?')) {
+            checkbox.checked = false;
+            return;
+        }
+        
+        const { error } = await supabase.from('payment_schedule').update({
+            payment_status: 'paid',
+            paid_by: currentUser?.full_name || 'Бухгалтер',
+            paid_at: new Date()
+        }).eq('id', id);
+        
+        if (error) {
+            alert('Ошибка: ' + error.message);
+            checkbox.checked = false;
+        } else {
+            // Обновляем статус в исходной таблице
+            const payment = allPayments.find(p => p.id === id);
+            if (payment) {
+                if (payment.entity_type === 'expense') {
+                    await supabase.from('expenses').update({ payment_status: 'paid', payment_date: new Date().toISOString().split('T')[0] }).eq('id', payment.entity_id);
+                } else if (payment.entity_type === 'work_order') {
+                    await supabase.from('work_orders').update({ payment_status: 'paid', payment_date: new Date().toISOString().split('T')[0] }).eq('id', payment.entity_id);
+                } else if (payment.entity_type === 'advance') {
+                    await supabase.from('advances').update({ status: 'paid' }).eq('id', payment.entity_id);
+                }
+            }
+            loadPayments();
+        }
+    };
+    
+    function renderCalendar() {
+        const year = currentDisplayDate.getFullYear();
+        const month = currentDisplayDate.getMonth();
+        const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+        document.getElementById('cal-month-year').textContent = months[month] + ' ' + year;
+        
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        let startDay = firstDay.getDay() || 7;
+        const today = new Date();
+        
+        const paymentsByDate = {};
+        allPayments.forEach(p => {
+            const d = p.planned_date;
+            if (!paymentsByDate[d]) paymentsByDate[d] = { pending: 0, paid: 0 };
+            if (p.payment_status === 'paid') paymentsByDate[d].paid += p.amount;
+            else paymentsByDate[d].pending += p.amount;
+        });
+        
+        let html = '';
+        for (let i = 1; i < startDay; i++) {
+            const prev = new Date(year, month, 1 - (startDay - i));
+            html += renderDay(prev, true, paymentsByDate);
+        }
+        for (let d = 1; d <= lastDay.getDate(); d++) {
+            html += renderDay(new Date(year, month, d), false, paymentsByDate);
+        }
+        const total = Math.ceil((startDay - 1 + lastDay.getDate()) / 7) * 7;
+        for (let i = startDay + lastDay.getDate() - 1; i < total; i++) {
+            const next = new Date(year, month + 1, i - (startDay + lastDay.getDate() - 1) + 1);
+            html += renderDay(next, true, paymentsByDate);
+        }
+        document.getElementById('calendar-days').innerHTML = html;
+    }
+    
+    function renderDay(date, isOther, paymentsByDate) {
+        const ds = date.toISOString().split('T')[0];
+        const isToday = date.toDateString() === new Date().toDateString();
+        const info = paymentsByDate[ds] || { pending: 0, paid: 0 };
+        
+        let cls = '';
+        if (isOther) cls += ' other-month';
+        if (isToday) cls += ' today';
+        if (info.paid > 0 && info.pending > 0) cls += ' has-payment';
+        else if (info.pending > 0) cls += ' has-payment';
+        else if (info.paid > 0) cls += ' has-paid';
+        
+        let indicators = '';
+        if (info.pending > 0) indicators += `<div class="day-indicator indicator-pending"></div>`;
+        if (info.paid > 0) indicators += `<div class="day-indicator indicator-paid"></div>`;
+        
+        return `<div class="calendar-day${cls}" onclick="showDayPayments('${ds}')">
+            <span>${date.getDate()}</span>
+            ${indicators}
+        </div>`;
+    }
+    
+    window.showDayPayments = function(ds) {
+        currentFilter = 'all';
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        document.querySelector('.filter-chip[data-filter="all"]').classList.add('active');
+        
+        const dayPayments = allPayments.filter(p => p.planned_date === ds);
+        const c = document.getElementById('payments-list');
+        
+        if (!dayPayments.length) {
+            c.innerHTML = '<div class="empty-state">Нет платежей на ' + formatDate(ds) + '</div>';
+            return;
+        }
+        
+        c.innerHTML = '<div class="card"><h4 style="margin-bottom:16px;">📅 Платежи на ' + formatDate(ds) + '</h4>' + 
+            dayPayments.map(p => `
+            <div class="payment-item">
+                <div class="payment-header">
+                    <span class="payment-title">${escapeHtml(p.description)}</span>
+                    <span class="payment-amount amount-expense">${formatMoney(p.amount)}</span>
+                </div>
+                <div>🏢 ${escapeHtml(p.contractor_name||'—')}</div>
+                <div class="payment-meta">
+                    <span class="tag ${p.payment_status==='paid'?'tag-green':'tag-yellow'}">${p.payment_status==='paid'?'✅ Оплачен':'⏳ Ожидает'}</span>
+                </div>
+            </div>
+        `).join('') + '</div>';
+    };
+    
+    function setupFilters() {
+        document.querySelectorAll('.filter-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                currentFilter = this.dataset.filter;
+                renderPayments();
+            });
+        });
+        
+        document.getElementById('prev-month').addEventListener('click', () => {
+            currentDisplayDate.setMonth(currentDisplayDate.getMonth() - 1);
+            renderCalendar();
+        });
+        document.getElementById('next-month').addEventListener('click', () => {
+            currentDisplayDate.setMonth(currentDisplayDate.getMonth() + 1);
+            renderCalendar();
+        });
+    }
+    
+    init();
+})();
+</script>
+</body>
+</html>
