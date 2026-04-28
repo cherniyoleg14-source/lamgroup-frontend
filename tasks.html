@@ -11,293 +11,61 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #F8FAFC;
-            --card: #FFFFFF;
-            --text: #0F172A;
-            --text-secondary: #64748B;
-            --border: #E2E8F0;
-            --gold: #F59E0B;
-            --primary: #0F172A;
-            --success: #10B981;
-            --danger: #EF4444;
-            --warning: #F59E0B;
-            --info: #3B82F6;
-            --shadow: 0 4px 16px rgba(0,0,0,0.06);
-            --radius: 16px;
-            --radius-lg: 24px;
+            --bg: #F8FAFC; --card: #FFFFFF; --text: #0F172A; --text-secondary: #64748B;
+            --border: #E2E8F0; --gold: #F59E0B; --primary: #0F172A; --success: #10B981;
+            --danger: #EF4444; --warning: #F59E0B; --info: #3B82F6;
+            --shadow: 0 4px 16px rgba(0,0,0,0.06); --radius: 16px; --radius-lg: 24px;
         }
-        
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-            padding: 16px;
-        }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%); min-height: 100vh; -webkit-font-smoothing: antialiased; padding: 16px; }
         .container { max-width: 600px; margin: 0 auto; }
-        
-        .app-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            margin-bottom: 20px;
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(226,232,240,0.5);
-        }
-        
-        .app-header h1 {
-            font-size: 24px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #0F172A, #1E293B);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            letter-spacing: -0.5px;
-        }
-        
+        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; margin-bottom: 20px; background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: var(--radius-lg); box-shadow: var(--shadow); border: 1px solid rgba(226,232,240,0.5); }
+        .app-header h1 { font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #0F172A, #1E293B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; }
         .badge { padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; }
         .badge-dark { background: var(--primary); color: white; }
-        
         .tabs-wrapper { position: relative; margin-bottom: 20px; }
-        
-        .tabs {
-            display: flex;
-            gap: 4px;
-            border-bottom: 2px solid var(--border);
-            overflow-x: auto;
-            scroll-behavior: smooth;
-            scrollbar-width: none;
-            padding-bottom: 6px;
-        }
-        
+        .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none; padding-bottom: 6px; }
         .tabs::-webkit-scrollbar { display: none; }
-        
-        .tab {
-            padding: 10px 16px;
-            background: none;
-            border: none;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            cursor: pointer;
-            white-space: nowrap;
-            border-bottom: 3px solid transparent;
-            transition: all 0.2s;
-        }
-        
+        .tab { padding: 10px 16px; background: none; border: none; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
         .tab.active { color: var(--text); border-bottom-color: var(--gold); }
-        
-        .scroll-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 32px;
-            height: 32px;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            z-index: 10;
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text);
-        }
-        
-        .scroll-arrow.left { left: -16px; }
-        .scroll-arrow.right { right: -16px; }
-        .scroll-arrow.hidden { display: none; }
-        
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        
+        .scroll-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; background: white; border: 1px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 10; font-size: 14px; font-weight: 700; color: var(--text); }
+        .scroll-arrow.left { left: -16px; } .scroll-arrow.right { right: -16px; } .scroll-arrow.hidden { display: none; }
+        .tab-content { display: none; } .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        
         .sub-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-        
-        .sub-tab {
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-size: 12px;
-            font-weight: 600;
-            border: 1px solid var(--border);
-            background: white;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: all 0.2s;
-        }
-        
+        .sub-tab { padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: white; cursor: pointer; color: var(--text-secondary); transition: all 0.2s; }
         .sub-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
-        
         .filter-bar { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
-        
-        .filter-chip {
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-size: 12px;
-            font-weight: 600;
-            border: 1px solid var(--border);
-            background: white;
-            cursor: pointer;
-            color: var(--text-secondary);
-            transition: all 0.2s;
-        }
-        
+        .filter-chip { padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: white; cursor: pointer; color: var(--text-secondary); transition: all 0.2s; }
         .filter-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
-        
-        .card {
-            background: var(--card);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            margin-bottom: 16px;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(226,232,240,0.5);
-        }
-        
-        .sub-content { display: none; }
-        .sub-content.active { display: block; }
-        
-        .task-card {
-            background: white;
-            border-radius: var(--radius);
-            padding: 16px;
-            margin-bottom: 10px;
-            border: 1px solid var(--border);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .task-card:hover { box-shadow: var(--shadow); }
-        .task-card:active { transform: scale(0.98); }
-        .task-card.priority-high { border-left: 4px solid var(--danger); }
-        .task-card.priority-medium { border-left: 4px solid var(--warning); }
-        .task-card.priority-low { border-left: 4px solid var(--success); }
-        
+        .card { background: var(--card); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow); border: 1px solid rgba(226,232,240,0.5); }
+        .sub-content { display: none; } .sub-content.active { display: block; }
+        .task-card { background: white; border-radius: var(--radius); padding: 16px; margin-bottom: 10px; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+        .task-card:hover { box-shadow: var(--shadow); } .task-card:active { transform: scale(0.98); }
+        .task-card.priority-high { border-left: 4px solid var(--danger); } .task-card.priority-medium { border-left: 4px solid var(--warning); } .task-card.priority-low { border-left: 4px solid var(--success); }
         .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
         .task-title { font-size: 15px; font-weight: 700; color: var(--text); }
         .task-description { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.4; }
         .task-meta { display: flex; justify-content: space-between; font-size: 11px; color: #94A3B8; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
-        
         .tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .tag-green { background: #D1FAE5; color: #065F46; }
-        .tag-yellow { background: #FEF3C7; color: #92400E; }
-        .tag-red { background: #FEE2E2; color: #991B1B; }
-        .tag-blue { background: #DBEAFE; color: #1E40AF; }
-        .tag-purple { background: #F3E8FF; color: #6B21A8; }
-        
-        .type-tag {
-            padding: 3px 10px;
-            border-radius: 30px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        
-        .type-report_review { background: #F3E8FF; color: #6B21A8; }
-        .type-issue { background: #FEE2E2; color: #991B1B; }
-        .type-order_review { background: #D1FAE5; color: #065F46; }
-        .type-payment { background: #FEF3C7; color: #92400E; }
-        .type-letter { background: #DBEAFE; color: #1E40AF; }
-        .type-task { background: #F1F5F9; color: #475569; }
-        
-        .btn {
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .btn:active { transform: scale(0.97); }
-        .btn-primary { background: linear-gradient(135deg, #0F172A, #1E293B); color: white; width: 100%; padding: 14px; border-radius: 14px; }
-        .btn-success { background: #D1FAE5; color: #065F46; }
-        .btn-danger { background: #FEE2E2; color: #991B1B; }
-        .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 8px; }
-        .btn-outline { background: white; border: 1.5px solid var(--border); color: var(--text); }
-        
-        .form-group { margin-bottom: 16px; }
-        .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
-        .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 14px; font-size: 14px; background: white; font-family: inherit; transition: all 0.2s; }
-        .form-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
-        
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .hidden { display: none !important; }
-        .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
-        .empty-state { text-align: center; padding: 48px 20px; background: white; border-radius: var(--radius-lg); color: var(--text-secondary); border: 2px dashed var(--border); }
-        
-        .modal {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15,23,42,0.6);
-            backdrop-filter: blur(4px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-        }
-        
-        .modal-content {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            max-width: 520px;
-            width: 92%;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-        }
-        
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .modal-title { font-size: 20px; font-weight: 800; color: var(--text); }
-        .modal-close { width: 36px; height: 36px; border-radius: 50%; background: #F1F5F9; border: none; font-size: 18px; cursor: pointer; }
-        
-        .calc-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
-        .calc-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
-        .calc-table td:last-child { text-align: right; font-weight: 600; }
-        .calc-table .total-row { background: #F8FAFC; font-weight: 700; font-size: 15px; }
-        .calc-table .negative { color: var(--danger); }
-        
-        .message {
-            position: fixed;
-            top: 20px; left: 50%; transform: translateX(-50%); z-index: 99999;
-            padding: 14px 24px; border-radius: 14px; font-weight: 600; font-size: 14px;
-            max-width: 90%; text-align: center; transition: all 0.3s ease; opacity: 0; pointer-events: none;
-        }
-        .message.success { background: #D1FAE5; color: #065F46; border: 2px solid #A7F3D0; opacity: 1; }
-        .message.error { background: #FEE2E2; color: #991B1B; border: 2px solid #FECACA; opacity: 1; }
-        
-        .file-upload-area {
-            border: 2px dashed var(--border);
-            border-radius: 14px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .file-upload-area:hover { border-color: var(--gold); background: #FFFBEB; }
-        
-        .file-upload-area.has-file { border-color: var(--success); background: #F0FDF4; }
+        .tag-green { background: #D1FAE5; color: #065F46; } .tag-yellow { background: #FEF3C7; color: #92400E; } .tag-red { background: #FEE2E2; color: #991B1B; } .tag-blue { background: #DBEAFE; color: #1E40AF; } .tag-purple { background: #F3E8FF; color: #6B21A8; }
+        .type-tag { padding: 3px 10px; border-radius: 30px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .type-report_review { background: #F3E8FF; color: #6B21A8; } .type-issue { background: #FEE2E2; color: #991B1B; } .type-order_review { background: #D1FAE5; color: #065F46; } .type-payment { background: #FEF3C7; color: #92400E; } .type-letter { background: #DBEAFE; color: #1E40AF; } .type-task { background: #F1F5F9; color: #475569; }
+        .btn { padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn:active { transform: scale(0.97); } .btn-primary { background: linear-gradient(135deg, #0F172A, #1E293B); color: white; width: 100%; padding: 14px; border-radius: 14px; } .btn-success { background: #D1FAE5; color: #065F46; } .btn-danger { background: #FEE2E2; color: #991B1B; } .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 8px; } .btn-outline { background: white; border: 1.5px solid var(--border); color: var(--text); }
+        .form-group { margin-bottom: 16px; } .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; } .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 14px; font-size: 14px; background: white; font-family: inherit; transition: all 0.2s; } .form-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .hidden { display: none !important; }
+        .loading { text-align: center; padding: 40px; color: var(--text-secondary); } .empty-state { text-align: center; padding: 48px 20px; background: white; border-radius: var(--radius-lg); color: var(--text-secondary); border: 2px dashed var(--border); }
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10000; }
+        .modal-content { background: white; border-radius: var(--radius-lg); padding: 24px; max-width: 520px; width: 92%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; } .modal-title { font-size: 20px; font-weight: 800; color: var(--text); } .modal-close { width: 36px; height: 36px; border-radius: 50%; background: #F1F5F9; border: none; font-size: 18px; cursor: pointer; }
+        .calc-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; } .calc-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); } .calc-table td:last-child { text-align: right; font-weight: 600; } .calc-table .total-row { background: #F8FAFC; font-weight: 700; font-size: 15px; } .calc-table .negative { color: var(--danger); }
+        .message { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; padding: 14px 24px; border-radius: 14px; font-weight: 600; font-size: 14px; max-width: 90%; text-align: center; transition: all 0.3s ease; opacity: 0; pointer-events: none; } .message.success { background: #D1FAE5; color: #065F46; border: 2px solid #A7F3D0; opacity: 1; } .message.error { background: #FEE2E2; color: #991B1B; border: 2px solid #FECACA; opacity: 1; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="app-header">
-            <h1>📋 Задачи</h1>
-            <span class="badge badge-dark" id="role-badge">Загрузка...</span>
-        </div>
-        
+        <div class="app-header"><h1>📋 Задачи</h1><span class="badge badge-dark" id="role-badge">Загрузка...</span></div>
         <div class="tabs-wrapper">
             <div class="scroll-arrow left hidden" id="scroll-left">◀</div>
             <div class="tabs" id="tabs-container">
@@ -308,64 +76,25 @@
             </div>
             <div class="scroll-arrow right" id="scroll-right">▶</div>
         </div>
-        
-        <!-- Отчёты -->
         <div id="tab-reports" class="tab-content active">
-            <div class="sub-tabs">
-                <button class="sub-tab active" data-sub="pending-reports">⏳ На проверке</button>
-                <button class="sub-tab" data-sub="completed-reports">✅ Проверенные</button>
-            </div>
-            <div id="sub-pending-reports" class="sub-content active"></div>
-            <div id="sub-completed-reports" class="sub-content"></div>
+            <div class="sub-tabs"><button class="sub-tab active" data-sub="pending-reports">⏳ На проверке</button><button class="sub-tab" data-sub="completed-reports">✅ Проверенные</button></div>
+            <div id="sub-pending-reports" class="sub-content active"></div><div id="sub-completed-reports" class="sub-content"></div>
         </div>
-        
-        <!-- Все задачи -->
         <div id="tab-all-tasks" class="tab-content">
             <button class="btn btn-primary" id="create-task-btn" style="margin-bottom:16px;">➕ Создать задачу</button>
-            <div class="filter-bar">
-                <button class="filter-chip active" data-filter="all">Все</button>
-                <button class="filter-chip" data-filter="pending">⏳ Ожидают</button>
-                <button class="filter-chip" data-filter="in_progress">🔵 В работе</button>
-                <button class="filter-chip" data-filter="completed">✅ Готово</button>
-            </div>
+            <div class="filter-bar"><button class="filter-chip active" data-filter="all">Все</button><button class="filter-chip" data-filter="pending">⏳ Ожидают</button><button class="filter-chip" data-filter="in_progress">🔵 В работе</button><button class="filter-chip" data-filter="completed">✅ Готово</button></div>
             <div id="all-tasks-list"></div>
         </div>
-        
-        <!-- Финансы -->
         <div id="tab-finance" class="tab-content">
-            <div class="sub-tabs">
-                <button class="sub-tab active" data-sub="finance-expenses">💰 Расходы</button>
-                <button class="sub-tab" data-sub="finance-orders">📋 Наряды</button>
-                <button class="sub-tab" data-sub="finance-advances">💸 Авансы</button>
-                <button class="sub-tab" data-sub="finance-plan">📊 Утверждённые</button>
-            </div>
-            <div id="sub-finance-expenses" class="sub-content active"></div>
-            <div id="sub-finance-orders" class="sub-content"></div>
-            <div id="sub-finance-advances" class="sub-content"></div>
-            <div id="sub-finance-plan" class="sub-content"></div>
+            <div class="sub-tabs"><button class="sub-tab active" data-sub="finance-expenses">💰 Расходы</button><button class="sub-tab" data-sub="finance-orders">📋 Наряды</button><button class="sub-tab" data-sub="finance-advances">💸 Авансы</button><button class="sub-tab" data-sub="finance-plan">📊 Утверждённые</button></div>
+            <div id="sub-finance-expenses" class="sub-content active"></div><div id="sub-finance-orders" class="sub-content"></div><div id="sub-finance-advances" class="sub-content"></div><div id="sub-finance-plan" class="sub-content"></div>
         </div>
-        
-        <!-- Письма и проблемы -->
         <div id="tab-letters-issues" class="tab-content">
-            <div class="sub-tabs">
-                <button class="sub-tab active" data-sub="letters-list">✉️ Письма</button>
-                <button class="sub-tab" data-sub="issues-list">⚠️ Проблемы</button>
-            </div>
-            <div id="sub-letters-list" class="sub-content active"></div>
-            <div id="sub-issues-list" class="sub-content"></div>
+            <div class="sub-tabs"><button class="sub-tab active" data-sub="letters-list">✉️ Письма</button><button class="sub-tab" data-sub="issues-list">⚠️ Проблемы</button></div>
+            <div id="sub-letters-list" class="sub-content active"></div><div id="sub-issues-list" class="sub-content"></div>
         </div>
     </div>
-    
-    <div id="modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span class="modal-title" id="modal-title">Форма</span>
-                <button class="modal-close" id="modal-close">✕</button>
-            </div>
-            <div id="modal-content"></div>
-        </div>
-    </div>
-    
+    <div id="modal" class="modal hidden"><div class="modal-content"><div class="modal-header"><span class="modal-title" id="modal-title">Форма</span><button class="modal-close" id="modal-close">✕</button></div><div id="modal-content"></div></div></div>
     <div id="message" class="message"></div>
 
 <script>
@@ -374,7 +103,6 @@
     const SUPABASE_URL = 'https://owagntywpiymqhbfoxye.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YWdudHl3cGl5bXFoYmZveHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTg5MDUsImV4cCI6MjA5MTg5NDkwNX0.p-3xAhbFgH5lcGnbBfkcQQFVza_Yc2qoY6VBlhmmFGg';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    
     let userId = tg.initDataUnsafe?.user?.id || 531738802;
     let currentUser = null, currentRole = 'worker', currentTaskFilter = 'all';
     
@@ -382,190 +110,56 @@
     function formatDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'}); }
     function formatDateShort(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('ru-RU'); }
     function formatMoney(a) { return (a||0).toLocaleString() + ' ₸'; }
+    function showMessage(text, type) { const msg = document.getElementById('message'); msg.textContent = text; msg.className = 'message ' + type; setTimeout(function() { msg.className = 'message'; }, 3000); }
     
-    function showMessage(text, type) {
-        const msg = document.getElementById('message');
-        msg.textContent = text;
-        msg.className = 'message ' + type;
-        setTimeout(function() { msg.className = 'message'; }, 3000);
-    }
+    async function init() { await loadUser(); setupTabs(); setupTabsScroll(); setupSubTabs(); setupFilters(); setupModals(); loadAll(); }
+    async function loadUser() { const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single(); if (data) { currentUser = data; currentRole = data.role; } document.getElementById('role-badge').textContent = currentRole === 'manager' ? '👑 Руководитель' : currentRole === 'worker' ? '👷 ИТР' : '🧾 Бухгалтер'; }
     
-    async function init() {
-        await loadUser();
-        setupTabs();
-        setupTabsScroll();
-        setupSubTabs();
-        setupFilters();
-        setupModals();
-        loadAll();
-    }
+    function setupTabs() { document.querySelectorAll('#tabs-container .tab').forEach(tab => { tab.addEventListener('click', function() { document.querySelectorAll('#tabs-container .tab').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); this.classList.add('active'); document.getElementById('tab-' + this.dataset.tab).classList.add('active'); loadAll(); }); }); }
     
-    async function loadUser() {
-        const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
-        if (data) { currentUser = data; currentRole = data.role; }
-        document.getElementById('role-badge').textContent = currentRole === 'manager' ? '👑 Руководитель' : currentRole === 'worker' ? '👷 ИТР' : '🧾 Бухгалтер';
-    }
+    function setupTabsScroll() { const tabsContainer = document.getElementById('tabs-container'); const scrollLeft = document.getElementById('scroll-left'); const scrollRight = document.getElementById('scroll-right'); if (!tabsContainer) return; function updateArrows() { if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0); if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1); } if (scrollLeft) scrollLeft.addEventListener('click', function() { tabsContainer.scrollBy({ left: -200, behavior: 'smooth' }); }); if (scrollRight) scrollRight.addEventListener('click', function() { tabsContainer.scrollBy({ left: 200, behavior: 'smooth' }); }); tabsContainer.addEventListener('scroll', updateArrows); window.addEventListener('resize', updateArrows); setTimeout(updateArrows, 300); }
     
-    function setupTabs() {
-        document.querySelectorAll('#tabs-container .tab').forEach(tab => {
-            tab.addEventListener('click', function() {
-                document.querySelectorAll('#tabs-container .tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                document.getElementById('tab-' + this.dataset.tab).classList.add('active');
-                loadAll();
-            });
-        });
-    }
+    function setupSubTabs() { document.querySelectorAll('.sub-tab').forEach(st => { st.addEventListener('click', function() { const parent = this.closest('.tab-content'); parent.querySelectorAll('.sub-tab').forEach(s => s.classList.remove('active')); parent.querySelectorAll('.sub-content').forEach(s => s.classList.remove('active')); this.classList.add('active'); const targetId = 'sub-' + this.dataset.sub; const target = document.getElementById(targetId); if (target) target.classList.add('active'); loadAll(); }); }); }
     
-    function setupTabsScroll() {
-        const tabsContainer = document.getElementById('tabs-container');
-        const scrollLeft = document.getElementById('scroll-left');
-        const scrollRight = document.getElementById('scroll-right');
-        if (!tabsContainer) return;
-        function updateArrows() {
-            if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0);
-            if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1);
-        }
-        if (scrollLeft) scrollLeft.addEventListener('click', function() { tabsContainer.scrollBy({ left: -200, behavior: 'smooth' }); });
-        if (scrollRight) scrollRight.addEventListener('click', function() { tabsContainer.scrollBy({ left: 200, behavior: 'smooth' }); });
-        tabsContainer.addEventListener('scroll', updateArrows);
-        window.addEventListener('resize', updateArrows);
-        setTimeout(updateArrows, 300);
-    }
+    function setupFilters() { document.querySelectorAll('.filter-chip').forEach(chip => { chip.addEventListener('click', function() { document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active')); this.classList.add('active'); currentTaskFilter = this.dataset.filter; loadAllTasks(); }); }); document.getElementById('create-task-btn')?.addEventListener('click', openCreateTaskForm); }
     
-    function setupSubTabs() {
-        document.querySelectorAll('.sub-tab').forEach(st => {
-            st.addEventListener('click', function() {
-                const parent = this.closest('.tab-content');
-                parent.querySelectorAll('.sub-tab').forEach(s => s.classList.remove('active'));
-                parent.querySelectorAll('.sub-content').forEach(s => s.classList.remove('active'));
-                this.classList.add('active');
-                const targetId = 'sub-' + this.dataset.sub;
-                const target = document.getElementById(targetId);
-                if (target) target.classList.add('active');
-                loadAll();
-            });
-        });
-    }
+    function setupModals() { document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal').classList.add('hidden')); document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); }); }
     
-    function setupFilters() {
-        document.querySelectorAll('.filter-chip').forEach(chip => {
-            chip.addEventListener('click', function() {
-                document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                currentTaskFilter = this.dataset.filter;
-                loadAllTasks();
-            });
-        });
-        document.getElementById('create-task-btn')?.addEventListener('click', openCreateTaskForm);
-    }
-    
-    function setupModals() {
-        document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal').classList.add('hidden'));
-        document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
-    }
-    
-    function openModal(title, content, onSave) {
-        document.getElementById('modal-title').textContent = title;
-        document.getElementById('modal-content').innerHTML = content;
-        document.getElementById('modal').classList.remove('hidden');
-        if (onSave) {
-            const saveBtn = document.createElement('button');
-            saveBtn.className = 'btn btn-primary';
-            saveBtn.textContent = '💾 Сохранить';
-            saveBtn.style.marginTop = '16px';
-            saveBtn.addEventListener('click', onSave);
-            document.getElementById('modal-content').appendChild(saveBtn);
-        }
-    }
+    function openModal(title, content) { document.getElementById('modal-title').textContent = title; document.getElementById('modal-content').innerHTML = content; document.getElementById('modal').classList.remove('hidden'); }
     
     const typeLabels = { 'report_review': '📑 Отчёт', 'issue': '⚠️ Проблема', 'order_review': '📋 Наряд', 'payment': '💰 Платёж', 'letter': '✉️ Письмо', 'task': '📌 Задача' };
     const statusLabels = { 'pending': '⏳ Ожидает', 'in_progress': '🔵 В работе', 'completed': '✅ Сделано' };
     const statusTags = { 'pending': 'tag-yellow', 'in_progress': 'tag-blue', 'completed': 'tag-green' };
     
-    function loadAll() {
-        loadPendingReports();
-        loadCompletedReports();
-        loadAllTasks();
-        loadFinanceExpenses();
-        loadFinanceOrders();
-        loadFinanceAdvances();
-        loadFinancePlan();
-        loadLetters();
-        loadIssues();
-    }
+    function loadAll() { loadPendingReports(); loadCompletedReports(); loadAllTasks(); loadFinanceExpenses(); loadFinanceOrders(); loadFinanceAdvances(); loadFinancePlan(); loadLetters(); loadIssues(); }
     
     // ========== ОТЧЁТЫ ==========
     async function loadPendingReports() {
-        const c = document.getElementById('sub-pending-reports');
-        c.innerHTML = '<div class="loading"></div>';
+        const c = document.getElementById('sub-pending-reports'); c.innerHTML = '<div class="loading"></div>';
         const { data } = await supabase.from('object_reports').select('*, projects(name)').eq('status', 'pending').order('report_date', { ascending: false });
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет отчётов на проверке</div>'; return; }
-        c.innerHTML = data.map(r => `
-            <div class="task-card" onclick="viewReportDetail('${r.id}')">
-                <div class="task-header">
-                    <span class="type-tag type-report_review">📑 Отчёт №${r.report_number||'—'}</span>
-                    <span class="tag tag-yellow">⏳ На проверке</span>
-                </div>
-                <div class="task-title">${escapeHtml(r.projects?.name||'—')}</div>
-                <div class="task-description">📅 ${formatDate(r.report_date)} | 📝 ${(r.description||'').substring(0,80)}</div>
-                <div class="task-meta"><span>👤 ${r.created_by_name||'—'}</span></div>
-            </div>
-        `).join('');
+        c.innerHTML = data.map(r => `<div class="task-card" onclick="viewReportDetail('${r.id}')"><div class="task-header"><span class="type-tag type-report_review">📑 Отчёт №${r.report_number||'—'}</span><span class="tag tag-yellow">⏳ На проверке</span></div><div class="task-title">${escapeHtml(r.projects?.name||'—')}</div><div class="task-description">📅 ${formatDate(r.report_date)} | 📝 ${(r.description||'').substring(0,80)}</div><div class="task-meta"><span>👤 ${r.created_by_name||'—'}</span></div></div>`).join('');
     }
     
     async function loadCompletedReports() {
-        const c = document.getElementById('sub-completed-reports');
-        c.innerHTML = '<div class="loading"></div>';
+        const c = document.getElementById('sub-completed-reports'); c.innerHTML = '<div class="loading"></div>';
         const { data } = await supabase.from('object_reports').select('*, projects(name)').eq('status', 'confirmed').order('report_date', { ascending: false });
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет проверенных отчётов</div>'; return; }
-        c.innerHTML = data.map(r => `
-            <div class="task-card" onclick="viewReportDetail('${r.id}')">
-                <div class="task-header">
-                    <span class="type-tag type-report_review">📑 Отчёт №${r.report_number||'—'}</span>
-                    <span class="tag tag-green">✅ Проверен</span>
-                </div>
-                <div class="task-title">${escapeHtml(r.projects?.name||'—')}</div>
-                <div class="task-description">📅 ${formatDate(r.report_date)}</div>
-                <div class="task-meta"><span>👤 ${r.created_by_name||'—'}</span></div>
-            </div>
-        `).join('');
+        c.innerHTML = data.map(r => `<div class="task-card" onclick="viewReportDetail('${r.id}')"><div class="task-header"><span class="type-tag type-report_review">📑 Отчёт №${r.report_number||'—'}</span><span class="tag tag-green">✅ Проверен</span></div><div class="task-title">${escapeHtml(r.projects?.name||'—')}</div><div class="task-description">📅 ${formatDate(r.report_date)}</div><div class="task-meta"><span>👤 ${r.created_by_name||'—'}</span></div></div>`).join('');
     }
     
     window.viewReportDetail = async function(id) {
         const { data: r } = await supabase.from('object_reports').select('*, projects(name)').eq('id', id).single();
         if (!r) return;
         const photos = r.photos || [];
-        let html = `<div style="margin-bottom:12px;"><strong>📄 Отчёт №${r.report_number||'—'} от ${formatDate(r.report_date)}</strong></div>`;
-        html += `<div>🏗️ ${escapeHtml(r.projects?.name||'—')}</div>`;
-        html += `<div>📍 Оси: ${(r.axes_selected||[]).join(', ')||'—'}</div>`;
-        html += `<div style="background:#F8FAFC;padding:12px;border-radius:12px;margin:12px 0;">📝 ${escapeHtml(r.description||'—')}</div>`;
-        if (photos.length) {
-            html += '<div class="filter-bar">';
-            photos.forEach(p => { html += `<img src="${p.url}" style="width:80px;height:80px;object-fit:cover;border-radius:12px;cursor:pointer;" onclick="window.open('${p.url}','_blank')">`; });
-            html += '</div>';
-        }
-        if (r.status === 'pending' && currentRole === 'manager') {
-            html += `<button class="btn btn-success" onclick="confirmReport('${r.id}')" style="margin-top:12px;width:100%;">✅ Отметить проверенным</button>`;
-        }
-        // Кнопка "Создать задачу по отчёту"
-        html += `<hr style="margin:16px 0;border-color:var(--border);"><h4 style="margin-bottom:12px;">📋 Создать задачу по отчёту</h4>`;
-        html += `<div class="form-group"><label class="form-label">Название задачи</label><input type="text" id="report-task-title" class="form-input" value="Доработать отчёт №${r.report_number||'—'}"></div>`;
-        html += `<div class="form-group"><label class="form-label">Описание</label><textarea id="report-task-desc" class="form-input" rows="2">По отчёту от ${formatDate(r.report_date)}</textarea></div>`;
-        html += `<div class="form-group"><label class="form-label">Ответственный</label><select id="report-task-responsible" class="form-input"></select></div>`;
-        html += `<div class="form-group"><label class="form-label">📎 Прикрепить файлы</label><input type="file" id="report-task-files" class="form-input" multiple accept=".pdf,.jpg,.jpeg,.png"></div>`;
-        html += `<button class="btn btn-primary" id="create-report-task-btn">📤 Создать задачу</button>`;
-        
+        let html = `<div style="margin-bottom:12px;"><strong>📄 Отчёт №${r.report_number||'—'} от ${formatDate(r.report_date)}</strong></div><div>🏗️ ${escapeHtml(r.projects?.name||'—')}</div><div>📍 Оси: ${(r.axes_selected||[]).join(', ')||'—'}</div><div style="background:#F8FAFC;padding:12px;border-radius:12px;margin:12px 0;">📝 ${escapeHtml(r.description||'—')}</div>`;
+        if (photos.length) { html += '<div class="filter-bar">'; photos.forEach(p => { html += `<img src="${p.url}" style="width:80px;height:80px;object-fit:cover;border-radius:12px;cursor:pointer;" onclick="window.open('${p.url}','_blank')">`; }); html += '</div>'; }
+        if (r.status === 'pending' && currentRole === 'manager') { html += `<button class="btn btn-success" onclick="confirmReport('${r.id}')" style="margin-top:12px;width:100%;">✅ Отметить проверенным</button>`; }
+        html += `<hr style="margin:16px 0;border-color:var(--border);"><h4 style="margin-bottom:12px;">📋 Создать задачу по отчёту</h4><div class="form-group"><label class="form-label">Название задачи</label><input type="text" id="report-task-title" class="form-input" value="Доработать отчёт №${r.report_number||'—'}"></div><div class="form-group"><label class="form-label">Описание</label><textarea id="report-task-desc" class="form-input" rows="2">По отчёту от ${formatDate(r.report_date)}</textarea></div><div class="form-group"><label class="form-label">Ответственный</label><select id="report-task-responsible" class="form-input"></select></div><div class="form-group"><label class="form-label">📎 Прикрепить файлы</label><input type="file" id="report-task-files" class="form-input" multiple accept=".pdf,.jpg,.jpeg,.png"></div><button class="btn btn-primary" id="create-report-task-btn">📤 Создать задачу</button>`;
         openModal('📑 Отчёт №' + (r.report_number||'—'), html);
-        
-        // Загружаем список пользователей для выбора ответственного
         const { data: users } = await supabase.from('users').select('id,full_name,role').in('role',['manager','worker']).order('full_name');
         const sel = document.getElementById('report-task-responsible');
-        if (sel && users) {
-            sel.innerHTML = users.map(u => `<option value="${u.id}">${u.full_name} (${u.role==='manager'?'Руководитель':'ИТР'})</option>`).join('');
-        }
-        
+        if (sel && users) { sel.innerHTML = users.map(u => `<option value="${u.id}">${u.full_name} (${u.role==='manager'?'Руководитель':'ИТР'})</option>`).join(''); }
         const createBtn = document.getElementById('create-report-task-btn');
         if (createBtn) {
             createBtn.onclick = async function() {
@@ -574,296 +168,119 @@
                 const respId = document.getElementById('report-task-responsible').value;
                 const respName = document.getElementById('report-task-responsible').selectedOptions[0]?.text||'';
                 if (!title) { alert('Введите название задачи'); return; }
-                
-                // Загрузка файлов
                 const files = document.getElementById('report-task-files').files;
                 const fileUrls = [];
                 for (const file of files) {
-                    const fileName = 'tasks/' + Date.now() + '_' + file.name;
-                    const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
-                    if (!uploadError) {
-                        const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-                        fileUrls.push({ name: file.name, url: urlData.publicUrl });
-                    }
+                    const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                    const fileName = 'tasks/' + Date.now() + '_' + cleanName;
+                    const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: false });
+                    if (!uploadError) { const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName); fileUrls.push({ name: file.name, url: urlData.publicUrl }); }
                 }
-                
-                await supabase.from('custom_tasks').insert({
-                    project_id: r.project_id,
-                    title: '📑 ' + title,
-                    description: desc + (fileUrls.length ? '\n\n📎 Файлы: ' + fileUrls.map(f => f.name).join(', ') : ''),
-                    status: 'pending',
-                    priority: 'high',
-                    type: 'report_review',
-                    responsible_ids: [respId],
-                    responsible_names: [respName],
-                    created_by: currentUser?.id,
-                    created_by_name: currentUser?.full_name,
-                    created_at: new Date(),
-                    files: fileUrls
-                });
-                
-                document.getElementById('modal').classList.add('hidden');
-                showMessage('✅ Задача создана','success');
-                loadAll();
+                await supabase.from('custom_tasks').insert({ project_id: r.project_id, title: '📑 ' + title, description: desc + (fileUrls.length ? '\n\n📎 Файлы: ' + fileUrls.map(f => f.name).join(', ') : ''), status: 'pending', priority: 'high', type: 'report_review', responsible_ids: [respId], responsible_names: [respName], created_by: currentUser?.id, created_by_name: currentUser?.full_name, created_at: new Date(), files: fileUrls });
+                document.getElementById('modal').classList.add('hidden'); showMessage('✅ Задача создана','success'); loadAll();
             };
         }
     };
     
-    window.confirmReport = async function(id) {
-        await supabase.from('object_reports').update({status:'confirmed',reviewed_by:currentUser?.id,reviewed_by_name:currentUser?.full_name}).eq('id',id);
-        document.getElementById('modal').classList.add('hidden');
-        showMessage('✅ Отчёт проверен','success');
-        loadAll();
-    };
+    window.confirmReport = async function(id) { await supabase.from('object_reports').update({status:'confirmed',reviewed_by:currentUser?.id,reviewed_by_name:currentUser?.full_name}).eq('id',id); document.getElementById('modal').classList.add('hidden'); showMessage('✅ Отчёт проверен','success'); loadAll(); };
     
     // ========== ВСЕ ЗАДАЧИ ==========
     async function loadAllTasks() {
-        const c = document.getElementById('all-tasks-list');
-        c.innerHTML = '<div class="loading"></div>';
+        const c = document.getElementById('all-tasks-list'); c.innerHTML = '<div class="loading"></div>';
         let query = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false });
         if (currentTaskFilter !== 'all') query = query.eq('status', currentTaskFilter);
         if (currentRole !== 'manager') query = query.or(`created_by.eq.${currentUser?.id},responsible_ids.cs.{${currentUser?.id}}`);
         const { data } = await query;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет задач</div>'; return; }
-        c.innerHTML = data.map(t => {
-            const typeLabel = typeLabels[t.type] || '📌 Задача';
-            const statusLabel = statusLabels[t.status] || t.status;
-            const statusTag = statusTags[t.status] || 'tag-yellow';
-            const priorityClass = t.priority === 'high' ? 'priority-high' : t.priority === 'medium' ? 'priority-medium' : 'priority-low';
-            return `
-            <div class="task-card ${priorityClass}" onclick="viewTaskDetail('${t.id}')">
-                <div class="task-header">
-                    <span class="type-tag type-${t.type||'task'}">${typeLabel}</span>
-                    <span class="tag ${statusTag}">${statusLabel}</span>
-                </div>
-                <div class="task-title">${escapeHtml(t.title)}</div>
-                <div class="task-description">${escapeHtml((t.description||'').substring(0,100))}</div>
-                ${t.projects?.name ? `<div style="font-size:12px;color:var(--text-secondary);">🏗️ ${escapeHtml(t.projects.name)}</div>` : ''}
-                <div class="task-meta"><span>📅 ${formatDateShort(t.created_at)}</span><span>👤 ${escapeHtml(t.created_by_name||'—')}</span></div>
-            </div>`;
-        }).join('');
+        c.innerHTML = data.map(t => { const typeLabel = typeLabels[t.type] || '📌 Задача'; const statusLabel = statusLabels[t.status] || t.status; const st = statusTags[t.status] || 'tag-yellow'; const pc = t.priority === 'high' ? 'priority-high' : t.priority === 'medium' ? 'priority-medium' : 'priority-low'; return `<div class="task-card ${pc}" onclick="viewTaskDetail('${t.id}')"><div class="task-header"><span class="type-tag type-${t.type||'task'}">${typeLabel}</span><span class="tag ${st}">${statusLabel}</span></div><div class="task-title">${escapeHtml(t.title)}</div><div class="task-description">${escapeHtml((t.description||'').substring(0,100))}</div>${t.projects?.name ? `<div style="font-size:12px;color:var(--text-secondary);">🏗️ ${escapeHtml(t.projects.name)}</div>` : ''}<div class="task-meta"><span>📅 ${formatDateShort(t.created_at)}</span><span>👤 ${escapeHtml(t.created_by_name||'—')}</span></div></div>`; }).join('');
     }
     
     window.viewTaskDetail = async function(id) {
         const { data: t } = await supabase.from('custom_tasks').select('*, projects(name)').eq('id', id).single();
         if (!t) return;
-        let html = `<div style="margin-bottom:12px;"><strong>${escapeHtml(t.title)}</strong></div>`;
-        html += `<div style="background:#F8FAFC;padding:12px;border-radius:12px;margin:8px 0;">📝 ${escapeHtml(t.description||'—')}</div>`;
+        let html = `<div style="margin-bottom:12px;"><strong>${escapeHtml(t.title)}</strong></div><div style="background:#F8FAFC;padding:12px;border-radius:12px;margin:8px 0;">📝 ${escapeHtml(t.description||'—')}</div>`;
         if (t.projects?.name) html += `<div>🏗️ ${escapeHtml(t.projects.name)}</div>`;
         html += `<div>👤 Создал: ${t.created_by_name||'—'} | 📅 ${formatDate(t.created_at)}</div>`;
-        if (t.files && t.files.length) {
-            html += '<div class="filter-bar" style="margin-top:12px;">';
-            t.files.forEach(f => { html += `<a href="${f.url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">📎 ${escapeHtml(f.name)}</a>`; });
-            html += '</div>';
-        }
-        html += `<div class="form-group" style="margin-top:16px;"><label class="form-label">Статус</label><select id="task-status" class="form-input"><option value="pending" ${t.status==='pending'?'selected':''}>⏳ Ожидает</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>🔵 В работе</option><option value="completed" ${t.status==='completed'?'selected':''}>✅ Сделано</option></select></div>`;
-        html += `<button class="btn btn-primary" id="update-task-btn">💾 Обновить</button>`;
+        if (t.files && t.files.length) { html += '<div class="filter-bar" style="margin-top:12px;">'; t.files.forEach(f => { html += `<a href="${f.url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">📎 ${escapeHtml(f.name)}</a>`; }); html += '</div>'; }
+        html += `<div class="form-group" style="margin-top:16px;"><label class="form-label">Статус</label><select id="task-status" class="form-input"><option value="pending" ${t.status==='pending'?'selected':''}>⏳ Ожидает</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>🔵 В работе</option><option value="completed" ${t.status==='completed'?'selected':''}>✅ Сделано</option></select></div><button class="btn btn-primary" id="update-task-btn">💾 Обновить</button>`;
         openModal('📌 Задача', html);
-        document.getElementById('update-task-btn').onclick = async function() {
-            await supabase.from('custom_tasks').update({status:document.getElementById('task-status').value,updated_at:new Date()}).eq('id',id);
-            document.getElementById('modal').classList.add('hidden');
-            showMessage('✅ Обновлено','success');
-            loadAllTasks();
-        };
+        document.getElementById('update-task-btn').onclick = async function() { await supabase.from('custom_tasks').update({status:document.getElementById('task-status').value,updated_at:new Date()}).eq('id',id); document.getElementById('modal').classList.add('hidden'); showMessage('✅ Обновлено','success'); loadAllTasks(); };
     };
     
     async function openCreateTaskForm() {
         const { data: projects } = await supabase.from('projects').select('id,name').order('name');
         const { data: users } = await supabase.from('users').select('id,full_name').order('full_name');
-        let html = `
-            <div class="form-group"><label class="form-label">Название *</label><input type="text" id="ct-title" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Описание</label><textarea id="ct-desc" class="form-input" rows="2"></textarea></div>
-            <div class="form-group"><label class="form-label">Объект</label><select id="ct-project" class="form-input"><option value="">—</option>${(projects||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Приоритет</label><select id="ct-priority" class="form-input"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option></select></div>
-            <div class="form-group"><label class="form-label">Ответственный</label><select id="ct-responsible" class="form-input">${(users||[]).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">📎 Файлы</label><input type="file" id="ct-files" class="form-input" multiple></div>
-            <button class="btn btn-primary" id="save-ct-btn">📤 Создать</button>
-        `;
+        let html = `<div class="form-group"><label class="form-label">Название *</label><input type="text" id="ct-title" class="form-input"></div><div class="form-group"><label class="form-label">Описание</label><textarea id="ct-desc" class="form-input" rows="2"></textarea></div><div class="form-group"><label class="form-label">Объект</label><select id="ct-project" class="form-input"><option value="">—</option>${(projects||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Приоритет</label><select id="ct-priority" class="form-input"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option></select></div><div class="form-group"><label class="form-label">Ответственный</label><select id="ct-responsible" class="form-input">${(users||[]).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">📎 Файлы</label><input type="file" id="ct-files" class="form-input" multiple></div><button class="btn btn-primary" id="save-ct-btn">📤 Создать</button>`;
         openModal('➕ Новая задача', html);
         document.getElementById('save-ct-btn').onclick = async function() {
             const title = document.getElementById('ct-title').value.trim();
             if (!title) { alert('Введите название'); return; }
             const respId = document.getElementById('ct-responsible').value;
             const respName = document.getElementById('ct-responsible').selectedOptions[0]?.text||'';
-            
             const files = document.getElementById('ct-files').files;
             const fileUrls = [];
             for (const file of files) {
-                const fileName = 'tasks/' + Date.now() + '_' + file.name;
-                const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
-                if (!uploadError) {
-                    const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-                    fileUrls.push({ name: file.name, url: urlData.publicUrl });
-                }
+                const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                const fileName = 'tasks/' + Date.now() + '_' + cleanName;
+                const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: false });
+                if (!uploadError) { const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName); fileUrls.push({ name: file.name, url: urlData.publicUrl }); }
             }
-            
-            await supabase.from('custom_tasks').insert({
-                project_id: document.getElementById('ct-project').value||null,
-                title, description: document.getElementById('ct-desc').value,
-                priority: document.getElementById('ct-priority').value,
-                responsible_ids: [respId], responsible_names: [respName],
-                status: 'pending', type: 'task',
-                created_by: currentUser?.id, created_by_name: currentUser?.full_name,
-                created_at: new Date(), files: fileUrls
-            });
-            document.getElementById('modal').classList.add('hidden');
-            showMessage('✅ Задача создана','success');
-            loadAllTasks();
+            await supabase.from('custom_tasks').insert({ project_id: document.getElementById('ct-project').value||null, title, description: document.getElementById('ct-desc').value, priority: document.getElementById('ct-priority').value, responsible_ids: [respId], responsible_names: [respName], status: 'pending', type: 'task', created_by: currentUser?.id, created_by_name: currentUser?.full_name, created_at: new Date(), files: fileUrls });
+            document.getElementById('modal').classList.add('hidden'); showMessage('✅ Задача создана','success'); loadAllTasks();
         };
+    }
+    
+    // ========== ФУНКЦИЯ ЗАГРУЗКИ ФАЙЛА (общая) ==========
+    async function uploadFile(file, folder) {
+        const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const fileName = folder + '/' + Date.now() + '_' + cleanName;
+        const { data, error } = await supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: false });
+        if (error) throw new Error('Ошибка загрузки: ' + error.message);
+        const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+        return { url: urlData.publicUrl, name: file.name };
     }
     
     // ========== ФИНАНСЫ: РАСХОДЫ ==========
     async function loadFinanceExpenses() {
-        const c = document.getElementById('sub-finance-expenses');
-        c.innerHTML = '<div class="loading"></div>';
+        const c = document.getElementById('sub-finance-expenses'); c.innerHTML = '<div class="loading"></div>';
         let q = supabase.from('expenses').select('*, projects(name)').eq('payment_status','pending').order('date',{ascending:false});
-        if (currentRole !== 'manager') {
-            const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id);
-            const ids = up?.map(p=>p.id)||[];
-            if (ids.length) q = q.in('project_id',ids);
-        }
+        if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет расходов на утверждении</div>'; return; }
-        c.innerHTML = data.map(e => `
-            <div class="task-card" onclick="openExpenseCard('${e.id}')">
-                <div class="task-header">
-                    <span class="type-tag type-payment">💰 Расход</span>
-                    <span class="tag tag-yellow">⏳ Ожидает</span>
-                </div>
-                <div class="task-title">${escapeHtml(e.name)} — ${formatMoney(e.amount)}</div>
-                <div class="task-description">🏗️ ${escapeHtml(e.projects?.name||'—')} | 🏢 ${escapeHtml(e.supplier||'—')}</div>
-                <div class="task-meta"><span>📅 ${formatDateShort(e.date)}</span></div>
-            </div>
-        `).join('');
+        c.innerHTML = data.map(e => `<div class="task-card" onclick="openExpenseCard('${e.id}')"><div class="task-header"><span class="type-tag type-payment">💰 Расход</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(e.name)} — ${formatMoney(e.amount)}</div><div class="task-description">🏗️ ${escapeHtml(e.projects?.name||'—')} | 🏢 ${escapeHtml(e.supplier||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(e.date)}</span></div></div>`).join('');
     }
     
-        window.openExpenseCard = async function(id) {
+    window.openExpenseCard = async function(id) {
         const { data: e } = await supabase.from('expenses').select('*, projects(name)').eq('id',id).single();
         if (!e) return;
-        
-        let html = `
-            <div style="margin-bottom:12px;"><strong>💰 ${escapeHtml(e.name)}</strong></div>
-            <div>🏗️ Объект: ${escapeHtml(e.projects?.name||'—')}</div>
-            <div>💰 Сумма: <strong>${formatMoney(e.amount)}</strong></div>
-            <div>🏢 Поставщик: ${escapeHtml(e.supplier||'—')}</div>
-            <div>📅 Дата: ${formatDate(e.date)}</div>
-            <div>💳 Оплата: ${e.payment_method==='cash'?'Наличка':'Безнал'}</div>
-            ${e.invoice_file_url ? `<div style="margin-top:8px;">📎 <a href="${e.invoice_file_url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">${escapeHtml(e.invoice_file_name||'Счёт')}</a></div>` : ''}
-            <div class="form-group" style="margin-top:16px;"><label class="form-label">📎 Прикрепить счёт</label><input type="file" id="exp-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
-            <div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="exp-comment" class="form-input" rows="2">${escapeHtml(e.comment||'')}</textarea></div>
-        `;
-        
-        html += `<div style="display:flex;gap:10px;margin-top:16px;">`;
-        html += `<button class="btn btn-outline" id="save-expense-btn" style="flex:1;">💾 Сохранить</button>`;
-        if (currentRole === 'manager') {
-            html += `<button class="btn btn-success" id="approve-expense-btn" style="flex:1;">✅ Утвердить оплату</button>`;
-        }
+        let html = `<div style="margin-bottom:12px;"><strong>💰 ${escapeHtml(e.name)}</strong></div><div>🏗️ Объект: ${escapeHtml(e.projects?.name||'—')}</div><div>💰 Сумма: <strong>${formatMoney(e.amount)}</strong></div><div>🏢 Поставщик: ${escapeHtml(e.supplier||'—')}</div><div>📅 Дата: ${formatDate(e.date)}</div><div>💳 Оплата: ${e.payment_method==='cash'?'Наличка':'Безнал'}</div>${e.invoice_file_url ? `<div style="margin-top:8px;">📎 <a href="${e.invoice_file_url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">${escapeHtml(e.invoice_file_name||'Счёт')}</a></div>` : ''}<div class="form-group" style="margin-top:16px;"><label class="form-label">📎 Прикрепить счёт</label><input type="file" id="exp-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div><div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="exp-comment" class="form-input" rows="2">${escapeHtml(e.comment||'')}</textarea></div>`;
+        html += `<div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-outline" id="save-expense-btn" style="flex:1;">💾 Сохранить</button>`;
+        if (currentRole === 'manager') { html += `<button class="btn btn-success" id="approve-expense-btn" style="flex:1;">✅ Утвердить оплату</button>`; }
         html += `</div>`;
-        
         openModal('💰 Карточка расхода', html);
         
-        // Сохранить
         const saveBtn = document.getElementById('save-expense-btn');
-        if (saveBtn) {
-            saveBtn.onclick = async function() {
-                const fileInput = document.getElementById('exp-invoice-file');
-                let invoiceUrl = e.invoice_file_url;
-                let invoiceName = e.invoice_file_name;
-                
-                if (fileInput && fileInput.files[0]) {
-                    const file = fileInput.files[0];
-                    invoiceName = file.name;
-                    const fileName = 'invoices/' + Date.now() + '_' + file.name;
-                    const { error } = await supabase.storage.from('reports').upload(fileName, file);
-                    if (!error) {
-                        const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-                        invoiceUrl = urlData.publicUrl;
-                    }
-                }
-                
-                await supabase.from('expenses').update({
-                    invoice_file_url: invoiceUrl,
-                    invoice_file_name: invoiceName,
-                    comment: document.getElementById('exp-comment').value
-                }).eq('id', id);
-                
-                document.getElementById('modal').classList.add('hidden');
-                showMessage('✅ Данные сохранены','success');
-                loadAll();
-            };
-        }
+        if (saveBtn) { saveBtn.onclick = async function() { saveBtn.textContent = '⏳ Сохранение...'; saveBtn.disabled = true; try { const fileInput = document.getElementById('exp-invoice-file'); let updateData = { comment: document.getElementById('exp-comment').value }; if (fileInput && fileInput.files[0]) { const result = await uploadFile(fileInput.files[0], 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error } = await supabase.from('expenses').update(updateData).eq('id', id); if (error) throw error; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Данные сохранены','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); saveBtn.textContent = '💾 Сохранить'; saveBtn.disabled = false; } }; }
         
-        // Утвердить
         const approveBtn = document.getElementById('approve-expense-btn');
-        if (approveBtn) {
-            approveBtn.onclick = async function() {
-                if (!confirm('✅ Утвердить расход? Он попадёт в план оплат.')) return;
-                
-                // Сначала сохраняем файл
-                const fileInput = document.getElementById('exp-invoice-file');
-                let invoiceUrl = e.invoice_file_url;
-                let invoiceName = e.invoice_file_name;
-                
-                if (fileInput && fileInput.files[0]) {
-                    const file = fileInput.files[0];
-                    invoiceName = file.name;
-                    const fileName = 'invoices/' + Date.now() + '_' + file.name;
-                    const { error } = await supabase.storage.from('reports').upload(fileName, file);
-                    if (!error) {
-                        const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-                        invoiceUrl = urlData.publicUrl;
-                    }
-                }
-                
-                await supabase.from('expenses').update({
-                    payment_status: 'approved',
-                    approved_by: currentUser?.id,
-                    approved_at: new Date(),
-                    invoice_file_url: invoiceUrl,
-                    invoice_file_name: invoiceName,
-                    comment: document.getElementById('exp-comment').value
-                }).eq('id', id);
-                
-                document.getElementById('modal').classList.add('hidden');
-                showMessage('✅ Расход утверждён','success');
-                loadAll();
-            };
-        }
+        if (approveBtn) { approveBtn.onclick = async function() { if (!confirm('✅ Утвердить расход? Он попадёт в план оплат.')) return; approveBtn.textContent = '⏳ Утверждение...'; approveBtn.disabled = true; try { const fileInput = document.getElementById('exp-invoice-file'); let updateData = { payment_status: 'approved', approved_by: currentUser?.id, approved_at: new Date(), comment: document.getElementById('exp-comment').value }; if (fileInput && fileInput.files[0]) { const result = await uploadFile(fileInput.files[0], 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error } = await supabase.from('expenses').update(updateData).eq('id', id); if (error) throw error; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Расход утверждён','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); approveBtn.textContent = '✅ Утвердить оплату'; approveBtn.disabled = false; } }; }
     };
     
     // ========== ФИНАНСЫ: НАРЯДЫ ==========
     async function loadFinanceOrders() {
-        const c = document.getElementById('sub-finance-orders');
-        c.innerHTML = '<div class="loading"></div>';
+        const c = document.getElementById('sub-finance-orders'); c.innerHTML = '<div class="loading"></div>';
         let q = supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status','pending').order('created_at',{ascending:false});
-        if (currentRole !== 'manager') {
-            const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id);
-            const ids = up?.map(p=>p.id)||[];
-            if (ids.length) q = q.in('project_id',ids);
-        }
+        if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет нарядов на утверждении</div>'; return; }
-        c.innerHTML = data.map(o => `
-            <div class="task-card" onclick="openOrderCard('${o.id}')">
-                <div class="task-header">
-                    <span class="type-tag type-order_review">📋 Наряд</span>
-                    <span class="tag tag-yellow">⏳ Ожидает</span>
-                </div>
-                <div class="task-title">${escapeHtml(o.work_type||'Наряд')} — ${formatMoney(o.total_amount)}</div>
-                <div class="task-description">👷 ${escapeHtml(o.brigades?.name||'—')} | 🏗️ ${escapeHtml(o.projects?.name||'—')}</div>
-                <div class="task-meta"><span>📅 ${formatDateShort(o.created_at?.split('T')[0])}</span></div>
-            </div>
-        `).join('');
+        c.innerHTML = data.map(o => `<div class="task-card" onclick="openOrderCard('${o.id}')"><div class="task-header"><span class="type-tag type-order_review">📋 Наряд</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(o.work_type||'Наряд')} — ${formatMoney(o.total_amount)}</div><div class="task-description">👷 ${escapeHtml(o.brigades?.name||'—')} | 🏗️ ${escapeHtml(o.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(o.created_at?.split('T')[0])}</span></div></div>`).join('');
     }
     
-        window.openOrderCard = async function(id) {
+    window.openOrderCard = async function(id) {
         const { data: o } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('id',id).single();
         if (!o) return;
-        
-        // Получаем данные из ГПР и авансы
         const { data: stages } = await supabase.from('axis_work_stages').select('*').eq('brigade_id', o.brigade_id);
         const { data: advances } = await supabase.from('advances').select('*').eq('brigade_id', o.brigade_id).eq('project_id', o.project_id);
-        
         const sumWork = stages?.reduce((s,st) => s + (st.total_cost||0), 0) || o.total_amount || 0;
         const sumAdvance = advances?.filter(a => a.status === 'approved').reduce((s,a) => s + (a.amount||0), 0) || 0;
         const sumDone = (o.actual_volume || o.volume || 0) * (o.price || 0) || o.total_amount || 0;
@@ -872,418 +289,101 @@
         const toPay = sumDone - sumAdvance - guarantee;
         const advanceForward = toPay < 0 ? Math.abs(toPay) : 0;
         const finalPay = Math.max(0, toPay);
-        
         const hasAvr = o.avr_url ? true : false;
         const hasInvoice = o.invoice_file_url ? true : false;
         
-        let html = `
-            <div style="margin-bottom:12px;"><strong>📋 Наряд: ${escapeHtml(o.work_type||'—')}</strong></div>
-            <div>👷 Бригада: ${escapeHtml(o.brigades?.name||'—')}</div>
-            <div>🏗️ Объект: ${escapeHtml(o.projects?.name||'—')}</div>
-            <div>📍 Ось: ${escapeHtml(o.axis_name||'—')}</div>
-            <div>📐 Объём: ${o.volume||0} | Факт: ${o.actual_volume||0} | Цена: ${o.price||0} ₸</div>
-            
-            <table class="calc-table" style="margin-top:16px;">
-                <tr><td>📊 Сумма работ (ГПР)</td><td>${formatMoney(sumWork)}</td></tr>
-                <tr><td>💸 Сумма аванса</td><td>${formatMoney(sumAdvance)}</td></tr>
-                <tr><td>✅ Выполнено</td><td>${formatMoney(sumDone)}</td></tr>
-                <tr><td>📐 Остаток</td><td>${formatMoney(remain)}</td></tr>
-                <tr><td>🔒 Удержание 10% (гарантийные)</td><td class="negative">-${formatMoney(guarantee)}</td></tr>
-                ${advanceForward > 0 ? `<tr style="background:#FEF2F2;"><td>⚠️ Аванс вперёд</td><td class="negative">${formatMoney(advanceForward)}</td></tr>` : ''}
-                <tr class="total-row"><td>💳 К ВЫПЛАТЕ</td><td style="color:${finalPay>0?'var(--success)':'var(--danger)'};font-size:16px;">${formatMoney(finalPay)}</td></tr>
-            </table>
-            ${advanceForward > 0 ? '<div class="tag tag-red" style="margin-top:8px;display:inline-block;">⚠️ Выплата с Авансом</div>' : ''}
-            
-            <div style="margin-top:20px;padding-top:16px;border-top:2px solid var(--border);">
-                <h4 style="margin-bottom:12px;">📎 Документы</h4>
-                ${o.avr_url ? `<div style="margin-bottom:8px;">📎 АВР: <a href="${o.avr_url}" target="_blank" class="tag tag-green" style="text-decoration:none;">Просмотреть</a></div>` : ''}
-                ${o.invoice_file_url ? `<div style="margin-bottom:8px;">📎 Счёт-фактура: <a href="${o.invoice_file_url}" target="_blank" class="tag tag-green" style="text-decoration:none;">${escapeHtml(o.invoice_file_name||'Просмотреть')}</a></div>` : ''}
-                
-                <div class="form-group"><label class="form-label">📎 АВР ${hasAvr?'✅':'(обязательно)'}</label><input type="file" id="order-avr-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
-                <div class="form-group"><label class="form-label">📎 Счёт-фактура ${hasInvoice?'✅':'(обязательно)'}</label><input type="file" id="order-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
-                <div class="form-group"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="order-bill-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
-                <div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="order-comment" class="form-input" rows="2">${escapeHtml(o.comment||'')}</textarea></div>
-            </div>
-        `;
+        let html = `<div style="margin-bottom:12px;"><strong>📋 Наряд: ${escapeHtml(o.work_type||'—')}</strong></div><div>👷 Бригада: ${escapeHtml(o.brigades?.name||'—')}</div><div>🏗️ Объект: ${escapeHtml(o.projects?.name||'—')}</div><div>📍 Ось: ${escapeHtml(o.axis_name||'—')}</div><div>📐 Объём: ${o.volume||0} | Факт: ${o.actual_volume||0} | Цена: ${o.price||0} ₸</div>
+        <table class="calc-table" style="margin-top:16px;"><tr><td>📊 Сумма работ (ГПР)</td><td>${formatMoney(sumWork)}</td></tr><tr><td>💸 Сумма аванса</td><td>${formatMoney(sumAdvance)}</td></tr><tr><td>✅ Выполнено</td><td>${formatMoney(sumDone)}</td></tr><tr><td>📐 Остаток</td><td>${formatMoney(remain)}</td></tr><tr><td>🔒 Удержание 10% (гарантийные)</td><td class="negative">-${formatMoney(guarantee)}</td></tr>${advanceForward > 0 ? `<tr style="background:#FEF2F2;"><td>⚠️ Аванс вперёд</td><td class="negative">${formatMoney(advanceForward)}</td></tr>` : ''}<tr class="total-row"><td>💳 К ВЫПЛАТЕ</td><td style="color:${finalPay>0?'var(--success)':'var(--danger)'};font-size:16px;">${formatMoney(finalPay)}</td></tr></table>${advanceForward > 0 ? '<div class="tag tag-red" style="margin-top:8px;display:inline-block;">⚠️ Выплата с Авансом</div>' : ''}
+        <div style="margin-top:20px;padding-top:16px;border-top:2px solid var(--border);"><h4 style="margin-bottom:12px;">📎 Документы</h4>${o.avr_url ? `<div style="margin-bottom:8px;">📎 АВР: <a href="${o.avr_url}" target="_blank" class="tag tag-green" style="text-decoration:none;">Просмотреть</a></div>` : ''}${o.invoice_file_url ? `<div style="margin-bottom:8px;">📎 Счёт-фактура: <a href="${o.invoice_file_url}" target="_blank" class="tag tag-green" style="text-decoration:none;">${escapeHtml(o.invoice_file_name||'Просмотреть')}</a></div>` : ''}
+        <div class="form-group"><label class="form-label">📎 АВР ${hasAvr?'✅':'(обязательно)'}</label><input type="file" id="order-avr-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div><div class="form-group"><label class="form-label">📎 Счёт-фактура ${hasInvoice?'✅':'(обязательно)'}</label><input type="file" id="order-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div><div class="form-group"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="order-bill-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div><div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="order-comment" class="form-input" rows="2">${escapeHtml(o.comment||'')}</textarea></div></div>`;
         
-        // Кнопки: Сохранить (всегда) + Утвердить (только руководитель)
-        html += `<div style="display:flex;gap:10px;margin-top:16px;">`;
-        html += `<button class="btn btn-outline" id="save-order-btn" style="flex:1;">💾 Сохранить</button>`;
-        if (currentRole === 'manager') {
-            html += `<button class="btn btn-success" id="approve-order-btn" style="flex:1;">✅ Утвердить</button>`;
-        }
+        html += `<div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-outline" id="save-order-btn" style="flex:1;">💾 Сохранить</button>`;
+        if (currentRole === 'manager') { html += `<button class="btn btn-success" id="approve-order-btn" style="flex:1;">✅ Утвердить</button>`; }
         html += `</div>`;
-        
         openModal('📋 Карточка наряда', html);
         
-        // Кнопка СОХРАНИТЬ
+        // СОХРАНИТЬ
         const saveBtn = document.getElementById('save-order-btn');
-        if (saveBtn) {
-            saveBtn.onclick = async function() {
-                saveBtn.textContent = '⏳ Сохранение...';
-                saveBtn.disabled = true;
-                
-                try {
-                    const avrFile = document.getElementById('order-avr-file').files[0];
-                    const invFile = document.getElementById('order-invoice-file').files[0];
-                    const billFile = document.getElementById('order-bill-file').files[0];
-                    const comment = document.getElementById('order-comment').value;
-                    
-                    let avrUrl = o.avr_url;
-                    let invUrl = o.invoice_file_url;
-                    let invName = o.invoice_file_name;
-                    
-                    if (avrFile) {
-                        const fileName = 'avr/' + Date.now() + '_' + avrFile.name;
-                        const { error } = await supabase.storage.from('reports').upload(fileName, avrFile);
-                        if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl(fileName); avrUrl = data.publicUrl; }
-                    }
-                    if (invFile) {
-                        invName = invFile.name;
-                        const fileName = 'invoices/' + Date.now() + '_' + invFile.name;
-                        const { error } = await supabase.storage.from('reports').upload(fileName, invFile);
-                        if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl(fileName); invUrl = data.publicUrl; }
-                    }
-                    
-                    const { error: updateError } = await supabase.from('work_orders').update({
-                        avr_url: avrUrl,
-                        invoice_file_url: invUrl,
-                        invoice_file_name: invName,
-                        comment: comment
-                    }).eq('id', id);
-                    
-                    if (updateError) throw updateError;
-                    
-                    showMessage('✅ Данные сохранены','success');
-                    document.getElementById('modal').classList.add('hidden');
-                    loadAll();
-                } catch(err) {
-                    showMessage('Ошибка: ' + err.message, 'error');
-                    saveBtn.textContent = '💾 Сохранить';
-                    saveBtn.disabled = false;
-                }
-            };
-        }
+        if (saveBtn) { saveBtn.onclick = async function() { saveBtn.textContent = '⏳ Сохранение...'; saveBtn.disabled = true; try { const avrFile = document.getElementById('order-avr-file').files[0]; const invFile = document.getElementById('order-invoice-file').files[0]; let updateData = { comment: document.getElementById('order-comment').value }; if (avrFile) { const result = await uploadFile(avrFile, 'avr'); updateData.avr_url = result.url; } if (invFile) { const result = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error: updateError } = await supabase.from('work_orders').update(updateData).eq('id', id); if (updateError) throw updateError; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Данные сохранены','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); saveBtn.textContent = '💾 Сохранить'; saveBtn.disabled = false; } }; }
         
-        // Кнопка УТВЕРДИТЬ
+        // УТВЕРДИТЬ
         const approveBtn = document.getElementById('approve-order-btn');
-        if (approveBtn) {
-            approveBtn.onclick = async function() {
-                // Проверяем наличие файлов
-                const avrFile = document.getElementById('order-avr-file').files[0];
-                const invFile = document.getElementById('order-invoice-file').files[0];
-                
-                if (!avrFile && !o.avr_url) {
-                    showMessage('❌ Загрузите АВР перед утверждением','error');
-                    return;
-                }
-                if (!invFile && !o.invoice_file_url) {
-                    showMessage('❌ Загрузите Счёт-фактуру перед утверждением','error');
-                    return;
-                }
-                
-                if (!confirm('✅ Утвердить наряд? После утверждения он попадёт в план оплат.')) return;
-                
-                approveBtn.textContent = '⏳ Утверждение...';
-                approveBtn.disabled = true;
-                
-                try {
-                    // Сначала сохраняем файлы если есть
-                    let avrUrl = o.avr_url;
-                    let invUrl = o.invoice_file_url;
-                    let invName = o.invoice_file_name;
-                    
-                    if (avrFile) {
-                        const fileName = 'avr/' + Date.now() + '_' + avrFile.name;
-                        const { error } = await supabase.storage.from('reports').upload(fileName, avrFile);
-                        if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl(fileName); avrUrl = data.publicUrl; }
-                    }
-                    if (invFile) {
-                        invName = invFile.name;
-                        const fileName = 'invoices/' + Date.now() + '_' + invFile.name;
-                        const { error } = await supabase.storage.from('reports').upload(fileName, invFile);
-                        if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl(fileName); invUrl = data.publicUrl; }
-                    }
-                    
-                    const { error: updateError } = await supabase.from('work_orders').update({
-                        status: 'approved',
-                        approved_by: currentUser?.id,
-                        approved_by_name: currentUser?.full_name,
-                        approved_at: new Date(),
-                        avr_url: avrUrl,
-                        invoice_file_url: invUrl,
-                        invoice_file_name: invName,
-                        comment: document.getElementById('order-comment').value
-                    }).eq('id', id);
-                    
-                    if (updateError) throw updateError;
-                    
-                    document.getElementById('modal').classList.add('hidden');
-                    showMessage('✅ Наряд утверждён и отправлен в план оплат','success');
-                    loadAll();
-                } catch(err) {
-                    showMessage('Ошибка: ' + err.message, 'error');
-                    approveBtn.textContent = '✅ Утвердить';
-                    approveBtn.disabled = false;
-                }
-            };
-        }
+        if (approveBtn) { approveBtn.onclick = async function() { const avrFile = document.getElementById('order-avr-file').files[0]; const invFile = document.getElementById('order-invoice-file').files[0]; if (!avrFile && !o.avr_url) { showMessage('❌ Загрузите АВР перед утверждением','error'); return; } if (!invFile && !o.invoice_file_url) { showMessage('❌ Загрузите Счёт-фактуру перед утверждением','error'); return; } if (!confirm('✅ Утвердить наряд? После утверждения он попадёт в план оплат.')) return; approveBtn.textContent = '⏳ Утверждение...'; approveBtn.disabled = true; try { let updateData = { status: 'approved', approved_by: currentUser?.id, approved_at: new Date(), comment: document.getElementById('order-comment').value }; if (avrFile) { const result = await uploadFile(avrFile, 'avr'); updateData.avr_url = result.url; } if (invFile) { const result = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error: updateError } = await supabase.from('work_orders').update(updateData).eq('id', id); if (updateError) throw updateError; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Наряд утверждён и отправлен в план оплат','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); approveBtn.textContent = '✅ Утвердить'; approveBtn.disabled = false; } }; }
     };
     
     // ========== ФИНАНСЫ: АВАНСЫ ==========
     async function loadFinanceAdvances() {
-        const c = document.getElementById('sub-finance-advances');
-        c.innerHTML = '<div class="loading"></div>';
+        const c = document.getElementById('sub-finance-advances'); c.innerHTML = '<div class="loading"></div>';
         let q = supabase.from('advances').select('*, projects(name), brigades(name)').eq('status','pending').order('created_at',{ascending:false});
-        if (currentRole !== 'manager') {
-            const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id);
-            const ids = up?.map(p=>p.id)||[];
-            if (ids.length) q = q.in('project_id',ids);
-        }
+        if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет авансов</div>'; return; }
-        c.innerHTML = data.map(a => `
-            <div class="task-card" onclick="openAdvanceCard('${a.id}')">
-                <div class="task-header">
-                    <span class="type-tag type-payment">💸 Аванс</span>
-                    <span class="tag tag-yellow">⏳ Ожидает</span>
-                </div>
-                <div class="task-title">Аванс — ${formatMoney(a.amount)}</div>
-                <div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div>
-                <div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span></div>
-            </div>
-        `).join('');
+        c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-payment">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">Аванс — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span></div></div>`).join('');
     }
     
-        window.openAdvanceCard = async function(id) {
+    window.openAdvanceCard = async function(id) {
         const { data: a } = await supabase.from('advances').select('*, projects(name), brigades(name)').eq('id',id).single();
         if (!a) return;
-        
-        let html = `
-            <div style="margin-bottom:12px;"><strong>💸 Аванс</strong></div>
-            <div>👷 Бригада: ${escapeHtml(a.brigades?.name||'—')}</div>
-            <div>🏗️ Объект: ${escapeHtml(a.projects?.name||'—')}</div>
-            <div>💰 Сумма: <strong>${formatMoney(a.amount)}</strong></div>
-            <div>📊 Договор: ${formatMoney(a.total_contract)}</div>
-            <div>📊 Выплачено ранее: ${formatMoney(a.previous_payments)}</div>
-            <div>📊 Остаток: ${formatMoney(a.remaining)}</div>
-            ${a.invoice_file_url ? `<div style="margin-top:8px;">📎 <a href="${a.invoice_file_url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">${escapeHtml(a.invoice_file_name||'Счёт')}</a></div>` : ''}
-            <div class="form-group" style="margin-top:16px;"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="adv-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
-            <div class="form-group"><label class="form-label">📎 Счёт-фактура</label><input type="file" id="adv-bill-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
-            <div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="adv-comment" class="form-input" rows="2">${escapeHtml(a.comment||'')}</textarea></div>
-        `;
-        
-        html += `<div style="display:flex;gap:10px;margin-top:16px;">`;
-        html += `<button class="btn btn-outline" id="save-advance-btn" style="flex:1;">💾 Сохранить</button>`;
-        if (currentRole === 'manager') {
-            html += `<button class="btn btn-success" id="approve-advance-btn" style="flex:1;">✅ Утвердить аванс</button>`;
-        }
+        let html = `<div style="margin-bottom:12px;"><strong>💸 Аванс</strong></div><div>👷 Бригада: ${escapeHtml(a.brigades?.name||'—')}</div><div>🏗️ Объект: ${escapeHtml(a.projects?.name||'—')}</div><div>💰 Сумма: <strong>${formatMoney(a.amount)}</strong></div><div>📊 Договор: ${formatMoney(a.total_contract)}</div><div>📊 Выплачено ранее: ${formatMoney(a.previous_payments)}</div><div>📊 Остаток: ${formatMoney(a.remaining)}</div>${a.invoice_file_url ? `<div style="margin-top:8px;">📎 <a href="${a.invoice_file_url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">${escapeHtml(a.invoice_file_name||'Счёт')}</a></div>` : ''}<div class="form-group" style="margin-top:16px;"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="adv-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div><div class="form-group"><label class="form-label">📎 Счёт-фактура</label><input type="file" id="adv-bill-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div><div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="adv-comment" class="form-input" rows="2">${escapeHtml(a.comment||'')}</textarea></div>`;
+        html += `<div style="display:flex;gap:10px;margin-top:16px;"><button class="btn btn-outline" id="save-advance-btn" style="flex:1;">💾 Сохранить</button>`;
+        if (currentRole === 'manager') { html += `<button class="btn btn-success" id="approve-advance-btn" style="flex:1;">✅ Утвердить аванс</button>`; }
         html += `</div>`;
-        
         openModal('💸 Карточка аванса', html);
         
-        // Сохранить
         const saveBtn = document.getElementById('save-advance-btn');
-        if (saveBtn) {
-            saveBtn.onclick = async function() {
-                const invFile = document.getElementById('adv-invoice-file').files[0];
-                let invUrl = a.invoice_file_url;
-                let invName = a.invoice_file_name;
-                
-                if (invFile) {
-                    invName = invFile.name;
-                    const fileName = 'invoices/' + Date.now() + '_' + invFile.name;
-                    const { error } = await supabase.storage.from('reports').upload(fileName, invFile);
-                    if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl(fileName); invUrl = data.publicUrl; }
-                }
-                
-                await supabase.from('advances').update({
-                    invoice_file_url: invUrl,
-                    invoice_file_name: invName,
-                    comment: document.getElementById('adv-comment').value
-                }).eq('id', id);
-                
-                document.getElementById('modal').classList.add('hidden');
-                showMessage('✅ Данные сохранены','success');
-                loadAll();
-            };
-        }
+        if (saveBtn) { saveBtn.onclick = async function() { saveBtn.textContent = '⏳ Сохранение...'; saveBtn.disabled = true; try { const invFile = document.getElementById('adv-invoice-file').files[0]; let updateData = { comment: document.getElementById('adv-comment').value }; if (invFile) { const result = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error } = await supabase.from('advances').update(updateData).eq('id', id); if (error) throw error; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Данные сохранены','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); saveBtn.textContent = '💾 Сохранить'; saveBtn.disabled = false; } }; }
         
-        // Утвердить
         const approveBtn = document.getElementById('approve-advance-btn');
-        if (approveBtn) {
-            approveBtn.onclick = async function() {
-                if (!confirm('✅ Утвердить аванс? Он попадёт в план оплат.')) return;
-                
-                const invFile = document.getElementById('adv-invoice-file').files[0];
-                let invUrl = a.invoice_file_url;
-                let invName = a.invoice_file_name;
-                
-                if (invFile) {
-                    invName = invFile.name;
-                    const fileName = 'invoices/' + Date.now() + '_' + invFile.name;
-                    const { error } = await supabase.storage.from('reports').upload(fileName, invFile);
-                    if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl(fileName); invUrl = data.publicUrl; }
-                }
-                
-                await supabase.from('advances').update({
-                    status: 'approved',
-                    approved_by: currentUser?.id,
-                    approved_at: new Date(),
-                    invoice_file_url: invUrl,
-                    invoice_file_name: invName,
-                    comment: document.getElementById('adv-comment').value
-                }).eq('id', id);
-                
-                document.getElementById('modal').classList.add('hidden');
-                showMessage('✅ Аванс утверждён','success');
-                loadAll();
-            };
-        }
+        if (approveBtn) { approveBtn.onclick = async function() { if (!confirm('✅ Утвердить аванс? Он попадёт в план оплат.')) return; approveBtn.textContent = '⏳ Утверждение...'; approveBtn.disabled = true; try { const invFile = document.getElementById('adv-invoice-file').files[0]; let updateData = { status: 'approved', approved_by: currentUser?.id, approved_at: new Date(), comment: document.getElementById('adv-comment').value }; if (invFile) { const result = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error } = await supabase.from('advances').update(updateData).eq('id', id); if (error) throw error; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Аванс утверждён','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); approveBtn.textContent = '✅ Утвердить аванс'; approveBtn.disabled = false; } }; }
     };
     
     // ========== ФИНАНСЫ: УТВЕРЖДЁННЫЕ ==========
     async function loadFinancePlan() {
-        const c = document.getElementById('sub-finance-plan');
-        c.innerHTML = '<div class="loading"></div>';
-        const [eR, oR, aR] = await Promise.all([
-            supabase.from('expenses').select('*, projects(name)').or('payment_status.eq.approved,payment_status.eq.paid').order('date',{ascending:false}),
-            supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status','approved').order('created_at',{ascending:false}),
-            supabase.from('advances').select('*, projects(name), brigades(name)').eq('status','approved').order('created_at',{ascending:false})
-        ]);
-        const all = [
-            ...(eR.data||[]).map(e=>({...e,itemType:'expense',displayAmount:e.amount,displayName:e.name})),
-            ...(oR.data||[]).map(o=>({...o,itemType:'order',displayAmount:o.total_amount,displayName:o.work_type||'Наряд'})),
-            ...(aR.data||[]).map(a=>({...a,itemType:'advance',displayAmount:a.amount,displayName:'Аванс'}))
-        ];
+        const c = document.getElementById('sub-finance-plan'); c.innerHTML = '<div class="loading"></div>';
+        const [eR, oR, aR] = await Promise.all([ supabase.from('expenses').select('*, projects(name)').or('payment_status.eq.approved,payment_status.eq.paid').order('date',{ascending:false}), supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status','approved').order('created_at',{ascending:false}), supabase.from('advances').select('*, projects(name), brigades(name)').eq('status','approved').order('created_at',{ascending:false}) ]);
+        const all = [ ...(eR.data||[]).map(e=>({...e,itemType:'expense',displayAmount:e.amount,displayName:e.name})), ...(oR.data||[]).map(o=>({...o,itemType:'order',displayAmount:o.total_amount,displayName:o.work_type||'Наряд'})), ...(aR.data||[]).map(a=>({...a,itemType:'advance',displayAmount:a.amount,displayName:'Аванс'})) ];
         if (!all.length) { c.innerHTML = '<div class="empty-state">Нет утверждённых операций</div>'; return; }
-        c.innerHTML = all.map(item => {
-            const isPaid = item.payment_status === 'paid' || item.status === 'paid';
-            const typeLabel = item.itemType==='expense'?'💰 Расход':item.itemType==='order'?'📋 Наряд':'💸 Аванс';
-            const typeTag = item.itemType==='expense'?'type-payment':item.itemType==='order'?'type-order_review':'type-payment';
-            return `
-            <div class="task-card" onclick="openApprovedCard('${item.itemType}','${item.id}')">
-                <div class="task-header">
-                    <span class="type-tag ${typeTag}">${typeLabel}</span>
-                    <span class="tag ${isPaid?'tag-green':'tag-blue'}">${isPaid?'💳 Оплачен':'✅ Утверждён'}</span>
-                </div>
-                <div class="task-title">${escapeHtml(item.displayName)} — ${formatMoney(item.displayAmount)}</div>
-                <div class="task-description">🏗️ ${escapeHtml(item.projects?.name||'—')} ${item.brigades?.name?'| 👷 '+escapeHtml(item.brigades.name):''}</div>
-                <div class="task-meta"><span>📅 ${formatDateShort(item.approved_at||item.date)}</span></div>
-            </div>`;
-        }).join('');
+        c.innerHTML = all.map(item => { const isPaid = item.payment_status === 'paid' || item.status === 'paid'; const tl = item.itemType==='expense'?'💰 Расход':item.itemType==='order'?'📋 Наряд':'💸 Аванс'; const tt = item.itemType==='expense'?'type-payment':item.itemType==='order'?'type-order_review':'type-payment'; return `<div class="task-card" onclick="openApprovedCard('${item.itemType}','${item.id}')"><div class="task-header"><span class="type-tag ${tt}">${tl}</span><span class="tag ${isPaid?'tag-green':'tag-blue'}">${isPaid?'💳 Оплачен':'✅ Утверждён'}</span></div><div class="task-title">${escapeHtml(item.displayName)} — ${formatMoney(item.displayAmount)}</div><div class="task-description">🏗️ ${escapeHtml(item.projects?.name||'—')} ${item.brigades?.name?'| 👷 '+escapeHtml(item.brigades.name):''}</div><div class="task-meta"><span>📅 ${formatDateShort(item.approved_at||item.date)}</span></div></div>`; }).join('');
     }
     
     window.openApprovedCard = async function(type, id) {
         if (type === 'expense') {
-            const { data: e } = await supabase.from('expenses').select('*, projects(name)').eq('id',id).single();
-            if (!e) return;
-            let html = `<div><strong>💰 ${escapeHtml(e.name)}</strong></div>`;
-            html += `<div>🏗️ ${escapeHtml(e.projects?.name||'—')}</div>`;
-            html += `<div>💰 ${formatMoney(e.amount)} | ${e.payment_status==='paid'?'💳 Оплачен':'✅ Утверждён'}</div>`;
-            if (e.invoice_file_url) html += `<div style="margin-top:8px;">📎 <a href="${e.invoice_file_url}" target="_blank">${escapeHtml(e.invoice_file_name||'Счёт')}</a></div>`;
-            if (currentRole === 'manager') {
-                html += `<div class="form-group" style="margin-top:12px;"><label class="form-label">Статус</label><select id="approved-status" class="form-input"><option value="approved" ${e.payment_status==='approved'?'selected':''}>✅ Утверждён</option><option value="paid" ${e.payment_status==='paid'?'selected':''}>💳 Оплачен</option></select></div>`;
-                html += `<button class="btn btn-primary" id="save-approved-btn">💾 Сохранить</button>`;
-            }
+            const { data: e } = await supabase.from('expenses').select('*, projects(name)').eq('id',id).single(); if (!e) return;
+            let html = `<div><strong>💰 ${escapeHtml(e.name)}</strong></div><div>🏗️ ${escapeHtml(e.projects?.name||'—')}</div><div>💰 ${formatMoney(e.amount)} | ${e.payment_status==='paid'?'💳 Оплачен':'✅ Утверждён'}</div>${e.invoice_file_url ? `<div style="margin-top:8px;">📎 <a href="${e.invoice_file_url}" target="_blank">${escapeHtml(e.invoice_file_name||'Счёт')}</a></div>` : ''}`;
+            if (currentRole === 'manager') { html += `<div class="form-group" style="margin-top:12px;"><label class="form-label">Статус</label><select id="approved-status" class="form-input"><option value="approved" ${e.payment_status==='approved'?'selected':''}>✅ Утверждён</option><option value="paid" ${e.payment_status==='paid'?'selected':''}>💳 Оплачен</option></select></div><button class="btn btn-primary" id="save-approved-btn">💾 Сохранить</button>`; }
             openModal('💰 Расход', html);
             const saveBtn = document.getElementById('save-approved-btn');
-            if (saveBtn) {
-                saveBtn.onclick = async function() {
-                    await supabase.from('expenses').update({payment_status:document.getElementById('approved-status').value}).eq('id',id);
-                    document.getElementById('modal').classList.add('hidden');
-                    showMessage('✅ Обновлено','success');
-                    loadAll();
-                };
-            }
+            if (saveBtn) { saveBtn.onclick = async function() { await supabase.from('expenses').update({payment_status:document.getElementById('approved-status').value}).eq('id',id); document.getElementById('modal').classList.add('hidden'); showMessage('✅ Обновлено','success'); loadAll(); }; }
         } else {
-            const { data: o } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('id',id).single();
-            if (!o) return;
-            let html = `<div><strong>📋 ${escapeHtml(o.work_type||'Наряд')}</strong></div>`;
-            html += `<div>👷 ${escapeHtml(o.brigades?.name||'—')} | 🏗️ ${escapeHtml(o.projects?.name||'—')}</div>`;
-            html += `<div>💰 ${formatMoney(o.total_amount)} | ${o.payment_status==='paid'?'💳 Выплачен':'✅ Утверждён'}</div>`;
-            if (o.invoice_file_url) html += `<div style="margin-top:8px;">📎 <a href="${o.invoice_file_url}" target="_blank">${escapeHtml(o.invoice_file_name||'Счёт')}</a></div>`;
-            if (currentRole === 'manager') {
-                html += `<div class="form-group" style="margin-top:12px;"><label class="form-label">Статус</label><select id="approved-status" class="form-input"><option value="approved" ${o.payment_status!=='paid'?'selected':''}>✅ Утверждён</option><option value="paid" ${o.payment_status==='paid'?'selected':''}>💳 Оплачен</option></select></div>`;
-                html += `<button class="btn btn-primary" id="save-approved-btn">💾 Сохранить</button>`;
-            }
+            const { data: o } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('id',id).single(); if (!o) return;
+            let html = `<div><strong>📋 ${escapeHtml(o.work_type||'Наряд')}</strong></div><div>👷 ${escapeHtml(o.brigades?.name||'—')} | 🏗️ ${escapeHtml(o.projects?.name||'—')}</div><div>💰 ${formatMoney(o.total_amount)} | ${o.payment_status==='paid'?'💳 Выплачен':'✅ Утверждён'}</div>${o.invoice_file_url ? `<div style="margin-top:8px;">📎 <a href="${o.invoice_file_url}" target="_blank">${escapeHtml(o.invoice_file_name||'Счёт')}</a></div>` : ''}`;
+            if (currentRole === 'manager') { html += `<div class="form-group" style="margin-top:12px;"><label class="form-label">Статус</label><select id="approved-status" class="form-input"><option value="approved" ${o.payment_status!=='paid'?'selected':''}>✅ Утверждён</option><option value="paid" ${o.payment_status==='paid'?'selected':''}>💳 Оплачен</option></select></div><button class="btn btn-primary" id="save-approved-btn">💾 Сохранить</button>`; }
             openModal('📋 Наряд', html);
             const saveBtn = document.getElementById('save-approved-btn');
-            if (saveBtn) {
-                saveBtn.onclick = async function() {
-                    const newStatus = document.getElementById('approved-status').value;
-                    await supabase.from('work_orders').update({
-                        payment_status: newStatus,
-                        payment_date: newStatus==='paid'?new Date().toISOString().split('T')[0]:null
-                    }).eq('id',id);
-                    document.getElementById('modal').classList.add('hidden');
-                    showMessage('✅ Обновлено','success');
-                    loadAll();
-                };
-            }
+            if (saveBtn) { saveBtn.onclick = async function() { const newStatus = document.getElementById('approved-status').value; await supabase.from('work_orders').update({ payment_status: newStatus, payment_date: newStatus==='paid'?new Date().toISOString().split('T')[0]:null }).eq('id',id); document.getElementById('modal').classList.add('hidden'); showMessage('✅ Обновлено','success'); loadAll(); }; }
         }
     };
     
     // ========== ПИСЬМА ==========
     async function loadLetters() {
-        const c = document.getElementById('sub-letters-list');
-        c.innerHTML = '<div class="loading"></div>';
+        const c = document.getElementById('sub-letters-list'); c.innerHTML = '<div class="loading"></div>';
         let q = supabase.from('letters').select('*, projects(name)').eq('status','sent_to_office').order('created_at',{ascending:false});
-        if (currentRole !== 'manager') {
-            const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id);
-            const ids = up?.map(p=>p.id)||[];
-            if (ids.length) q = q.in('project_id',ids);
-        }
+        if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет писем</div>'; return; }
-        c.innerHTML = data.map(l => `
-            <div class="task-card">
-                <div class="task-header">
-                    <span class="type-tag type-letter">✉️ Письмо</span>
-                    <span class="tag tag-yellow">⏳ К отправке</span>
-                </div>
-                <div class="task-title">№${escapeHtml(l.letter_number_full)} — ${escapeHtml(l.projects?.name||'—')}</div>
-                <div class="task-description">${escapeHtml(l.delay_description||'—')}</div>
-                <div class="task-meta">
-                    <span>📅 ${formatDateShort(l.created_at?.split('T')[0])}</span>
-                    <button class="btn btn-success btn-sm" onclick="event.stopPropagation();markLetterSent('${l.id}')">📨 Отправить</button>
-                </div>
-            </div>
-        `).join('');
+        c.innerHTML = data.map(l => `<div class="task-card"><div class="task-header"><span class="type-tag type-letter">✉️ Письмо</span><span class="tag tag-yellow">⏳ К отправке</span></div><div class="task-title">№${escapeHtml(l.letter_number_full)} — ${escapeHtml(l.projects?.name||'—')}</div><div class="task-description">${escapeHtml(l.delay_description||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(l.created_at?.split('T')[0])}</span><button class="btn btn-success btn-sm" onclick="event.stopPropagation();markLetterSent('${l.id}')">📨 Отправить</button></div></div>`).join('');
     }
     
-    window.markLetterSent = async function(id) {
-        await supabase.from('letters').update({status:'sent_to_customer',sent_to_customer:true}).eq('id',id);
-        showMessage('✅ Письмо отправлено','success');
-        loadLetters();
-    };
+    window.markLetterSent = async function(id) { await supabase.from('letters').update({status:'sent_to_customer',sent_to_customer:true}).eq('id',id); showMessage('✅ Письмо отправлено','success'); loadLetters(); };
     
     // ========== ПРОБЛЕМЫ ==========
     async function loadIssues() {
-        const c = document.getElementById('sub-issues-list');
-        c.innerHTML = '<div class="loading"></div>';
+        const c = document.getElementById('sub-issues-list'); c.innerHTML = '<div class="loading"></div>';
         let q = supabase.from('project_issues').select('*, projects(name)').in('status',['open','in_progress','overdue']).order('created_at',{ascending:false});
-        if (currentRole !== 'manager') {
-            const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id);
-            const ids = up?.map(p=>p.id)||[];
-            if (ids.length) q = q.in('project_id',ids);
-        }
+        if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет проблем</div>'; return; }
-        c.innerHTML = data.map(issue => {
-            const statusIcon = {open:'🟡',in_progress:'🔵',overdue:'🔴'}[issue.status]||'🟡';
-            const tagClass = issue.status==='overdue'?'tag-red':issue.status==='in_progress'?'tag-blue':'tag-yellow';
-            return `
-            <div class="task-card priority-${issue.priority||'medium'}">
-                <div class="task-header">
-                    <span class="type-tag type-issue">⚠️ Проблема</span>
-                    <span class="tag ${tagClass}">${statusIcon} ${issue.status==='overdue'?'Просрочена':issue.status==='in_progress'?'В работе':'Открыта'}</span>
-                </div>
-                <div class="task-title">${escapeHtml(issue.title)}</div>
-                <div class="task-description">🏗️ ${escapeHtml(issue.projects?.name||'—')} | ${escapeHtml((issue.description||'').substring(0,80))}</div>
-                <div class="task-meta"><span>👤 ${issue.created_by_name||'—'}</span></div>
-            </div>`;
-        }).join('');
+        c.innerHTML = data.map(issue => { const si = {open:'🟡',in_progress:'🔵',overdue:'🔴'}[issue.status]||'🟡'; const tc = issue.status==='overdue'?'tag-red':issue.status==='in_progress'?'tag-blue':'tag-yellow'; return `<div class="task-card priority-${issue.priority||'medium'}"><div class="task-header"><span class="type-tag type-issue">⚠️ Проблема</span><span class="tag ${tc}">${si} ${issue.status==='overdue'?'Просрочена':issue.status==='in_progress'?'В работе':'Открыта'}</span></div><div class="task-title">${escapeHtml(issue.title)}</div><div class="task-description">🏗️ ${escapeHtml(issue.projects?.name||'—')} | ${escapeHtml((issue.description||'').substring(0,80))}</div><div class="task-meta"><span>👤 ${issue.created_by_name||'—'}</span></div></div>`; }).join('');
     }
     
     init();
