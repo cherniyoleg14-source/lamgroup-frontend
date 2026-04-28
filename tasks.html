@@ -737,9 +737,10 @@
         `).join('');
     }
     
-    window.openExpenseCard = async function(id) {
+        window.openExpenseCard = async function(id) {
         const { data: e } = await supabase.from('expenses').select('*, projects(name)').eq('id',id).single();
         if (!e) return;
+        
         let html = `
             <div style="margin-bottom:12px;"><strong>💰 ${escapeHtml(e.name)}</strong></div>
             <div>🏗️ Объект: ${escapeHtml(e.projects?.name||'—')}</div>
@@ -749,27 +750,66 @@
             <div>💳 Оплата: ${e.payment_method==='cash'?'Наличка':'Безнал'}</div>
             ${e.invoice_file_url ? `<div style="margin-top:8px;">📎 <a href="${e.invoice_file_url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">${escapeHtml(e.invoice_file_name||'Счёт')}</a></div>` : ''}
             <div class="form-group" style="margin-top:16px;"><label class="form-label">📎 Прикрепить счёт</label><input type="file" id="exp-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
+            <div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="exp-comment" class="form-input" rows="2">${escapeHtml(e.comment||'')}</textarea></div>
         `;
         
+        html += `<div style="display:flex;gap:10px;margin-top:16px;">`;
+        html += `<button class="btn btn-outline" id="save-expense-btn" style="flex:1;">💾 Сохранить</button>`;
         if (currentRole === 'manager') {
-            html += `<button class="btn btn-success" id="approve-expense-btn" style="width:100%;margin-top:12px;">✅ Утвердить оплату</button>`;
+            html += `<button class="btn btn-success" id="approve-expense-btn" style="flex:1;">✅ Утвердить оплату</button>`;
         }
+        html += `</div>`;
         
         openModal('💰 Карточка расхода', html);
         
-        const approveBtn = document.getElementById('approve-expense-btn');
-        if (approveBtn) {
-            approveBtn.onclick = async function() {
-                // Загрузка файла если есть
+        // Сохранить
+        const saveBtn = document.getElementById('save-expense-btn');
+        if (saveBtn) {
+            saveBtn.onclick = async function() {
                 const fileInput = document.getElementById('exp-invoice-file');
                 let invoiceUrl = e.invoice_file_url;
                 let invoiceName = e.invoice_file_name;
+                
                 if (fileInput && fileInput.files[0]) {
                     const file = fileInput.files[0];
                     invoiceName = file.name;
                     const fileName = 'invoices/' + Date.now() + '_' + file.name;
-                    const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
-                    if (!uploadError) {
+                    const { error } = await supabase.storage.from('reports').upload(fileName, file);
+                    if (!error) {
+                        const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+                        invoiceUrl = urlData.publicUrl;
+                    }
+                }
+                
+                await supabase.from('expenses').update({
+                    invoice_file_url: invoiceUrl,
+                    invoice_file_name: invoiceName,
+                    comment: document.getElementById('exp-comment').value
+                }).eq('id', id);
+                
+                document.getElementById('modal').classList.add('hidden');
+                showMessage('✅ Данные сохранены','success');
+                loadAll();
+            };
+        }
+        
+        // Утвердить
+        const approveBtn = document.getElementById('approve-expense-btn');
+        if (approveBtn) {
+            approveBtn.onclick = async function() {
+                if (!confirm('✅ Утвердить расход? Он попадёт в план оплат.')) return;
+                
+                // Сначала сохраняем файл
+                const fileInput = document.getElementById('exp-invoice-file');
+                let invoiceUrl = e.invoice_file_url;
+                let invoiceName = e.invoice_file_name;
+                
+                if (fileInput && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    invoiceName = file.name;
+                    const fileName = 'invoices/' + Date.now() + '_' + file.name;
+                    const { error } = await supabase.storage.from('reports').upload(fileName, file);
+                    if (!error) {
                         const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
                         invoiceUrl = urlData.publicUrl;
                     }
@@ -780,7 +820,8 @@
                     approved_by: currentUser?.id,
                     approved_at: new Date(),
                     invoice_file_url: invoiceUrl,
-                    invoice_file_name: invoiceName
+                    invoice_file_name: invoiceName,
+                    comment: document.getElementById('exp-comment').value
                 }).eq('id', id);
                 
                 document.getElementById('modal').classList.add('hidden');
@@ -815,7 +856,7 @@
         `).join('');
     }
     
-    window.openOrderCard = async function(id) {
+        window.openOrderCard = async function(id) {
         const { data: o } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('id',id).single();
         if (!o) return;
         
@@ -823,9 +864,9 @@
         const { data: stages } = await supabase.from('axis_work_stages').select('*').eq('brigade_id', o.brigade_id);
         const { data: advances } = await supabase.from('advances').select('*').eq('brigade_id', o.brigade_id).eq('project_id', o.project_id);
         
-        const sumWork = stages?.reduce((s,st) => s + (st.total_cost||0), 0) || o.total_amount;
+        const sumWork = stages?.reduce((s,st) => s + (st.total_cost||0), 0) || o.total_amount || 0;
         const sumAdvance = advances?.filter(a => a.status === 'approved').reduce((s,a) => s + (a.amount||0), 0) || 0;
-        const sumDone = o.actual_volume * (o.price || 0) || o.total_amount;
+        const sumDone = (o.actual_volume || o.volume || 0) * (o.price || 0) || o.total_amount || 0;
         const remain = sumWork - sumDone;
         const guarantee = Math.round(sumDone * 0.10);
         const toPay = sumDone - sumAdvance - guarantee;
@@ -834,13 +875,13 @@
         
         const hasAvr = o.avr_url ? true : false;
         const hasInvoice = o.invoice_file_url ? true : false;
-        const canApprove = hasAvr && hasInvoice;
         
         let html = `
             <div style="margin-bottom:12px;"><strong>📋 Наряд: ${escapeHtml(o.work_type||'—')}</strong></div>
             <div>👷 Бригада: ${escapeHtml(o.brigades?.name||'—')}</div>
             <div>🏗️ Объект: ${escapeHtml(o.projects?.name||'—')}</div>
             <div>📍 Ось: ${escapeHtml(o.axis_name||'—')}</div>
+            <div>📐 Объём: ${o.volume||0} | Факт: ${o.actual_volume||0} | Цена: ${o.price||0} ₸</div>
             
             <table class="calc-table" style="margin-top:16px;">
                 <tr><td>📊 Сумма работ (ГПР)</td><td>${formatMoney(sumWork)}</td></tr>
@@ -848,68 +889,143 @@
                 <tr><td>✅ Выполнено</td><td>${formatMoney(sumDone)}</td></tr>
                 <tr><td>📐 Остаток</td><td>${formatMoney(remain)}</td></tr>
                 <tr><td>🔒 Удержание 10% (гарантийные)</td><td class="negative">-${formatMoney(guarantee)}</td></tr>
-                ${advanceForward > 0 ? `<tr><td>⚠️ Аванс вперёд</td><td class="negative">${formatMoney(advanceForward)}</td></tr>` : ''}
-                <tr class="total-row"><td>💳 К ВЫПЛАТЕ</td><td style="color:${finalPay>0?'var(--success)':'var(--danger)'};">${formatMoney(finalPay)}</td></tr>
+                ${advanceForward > 0 ? `<tr style="background:#FEF2F2;"><td>⚠️ Аванс вперёд</td><td class="negative">${formatMoney(advanceForward)}</td></tr>` : ''}
+                <tr class="total-row"><td>💳 К ВЫПЛАТЕ</td><td style="color:${finalPay>0?'var(--success)':'var(--danger)'};font-size:16px;">${formatMoney(finalPay)}</td></tr>
             </table>
-            ${advanceForward > 0 ? '<div class="tag tag-red" style="margin-top:8px;">⚠️ Выплата с Авансом</div>' : ''}
+            ${advanceForward > 0 ? '<div class="tag tag-red" style="margin-top:8px;display:inline-block;">⚠️ Выплата с Авансом</div>' : ''}
             
-            <div style="margin-top:16px;">
-                <div class="form-group"><label class="form-label">📎 АВР (обязательно) ${hasAvr?'✅':''}</label><input type="file" id="order-avr-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
-                <div class="form-group"><label class="form-label">📎 Счёт-фактура (обязательно) ${hasInvoice?'✅':''}</label><input type="file" id="order-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
+            <div style="margin-top:20px;padding-top:16px;border-top:2px solid var(--border);">
+                <h4 style="margin-bottom:12px;">📎 Документы</h4>
+                ${o.avr_url ? `<div style="margin-bottom:8px;">📎 АВР: <a href="${o.avr_url}" target="_blank" class="tag tag-green" style="text-decoration:none;">Просмотреть</a></div>` : ''}
+                ${o.invoice_file_url ? `<div style="margin-bottom:8px;">📎 Счёт-фактура: <a href="${o.invoice_file_url}" target="_blank" class="tag tag-green" style="text-decoration:none;">${escapeHtml(o.invoice_file_name||'Просмотреть')}</a></div>` : ''}
+                
+                <div class="form-group"><label class="form-label">📎 АВР ${hasAvr?'✅':'(обязательно)'}</label><input type="file" id="order-avr-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
+                <div class="form-group"><label class="form-label">📎 Счёт-фактура ${hasInvoice?'✅':'(обязательно)'}</label><input type="file" id="order-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
                 <div class="form-group"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="order-bill-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
+                <div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="order-comment" class="form-input" rows="2">${escapeHtml(o.comment||'')}</textarea></div>
             </div>
-            ${!canApprove ? '<p style="color:var(--danger);font-size:12px;margin-top:8px;">⚠️ Загрузите АВР и Счёт-фактуру для утверждения</p>' : ''}
         `;
         
+        // Кнопки: Сохранить (всегда) + Утвердить (только руководитель)
+        html += `<div style="display:flex;gap:10px;margin-top:16px;">`;
+        html += `<button class="btn btn-outline" id="save-order-btn" style="flex:1;">💾 Сохранить</button>`;
         if (currentRole === 'manager') {
-            html += `<button class="btn btn-success" id="approve-order-btn" style="width:100%;margin-top:12px;" ${!canApprove?'disabled':''}>✅ Утвердить наряд</button>`;
+            html += `<button class="btn btn-success" id="approve-order-btn" style="flex:1;">✅ Утвердить</button>`;
         }
+        html += `</div>`;
         
         openModal('📋 Карточка наряда', html);
         
+        // Кнопка СОХРАНИТЬ
+        const saveBtn = document.getElementById('save-order-btn');
+        if (saveBtn) {
+            saveBtn.onclick = async function() {
+                saveBtn.textContent = '⏳ Сохранение...';
+                saveBtn.disabled = true;
+                
+                try {
+                    const avrFile = document.getElementById('order-avr-file').files[0];
+                    const invFile = document.getElementById('order-invoice-file').files[0];
+                    const billFile = document.getElementById('order-bill-file').files[0];
+                    const comment = document.getElementById('order-comment').value;
+                    
+                    let avrUrl = o.avr_url;
+                    let invUrl = o.invoice_file_url;
+                    let invName = o.invoice_file_name;
+                    
+                    if (avrFile) {
+                        const fileName = 'avr/' + Date.now() + '_' + avrFile.name;
+                        const { error } = await supabase.storage.from('reports').upload(fileName, avrFile);
+                        if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl(fileName); avrUrl = data.publicUrl; }
+                    }
+                    if (invFile) {
+                        invName = invFile.name;
+                        const fileName = 'invoices/' + Date.now() + '_' + invFile.name;
+                        const { error } = await supabase.storage.from('reports').upload(fileName, invFile);
+                        if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl(fileName); invUrl = data.publicUrl; }
+                    }
+                    
+                    const { error: updateError } = await supabase.from('work_orders').update({
+                        avr_url: avrUrl,
+                        invoice_file_url: invUrl,
+                        invoice_file_name: invName,
+                        comment: comment
+                    }).eq('id', id);
+                    
+                    if (updateError) throw updateError;
+                    
+                    showMessage('✅ Данные сохранены','success');
+                    document.getElementById('modal').classList.add('hidden');
+                    loadAll();
+                } catch(err) {
+                    showMessage('Ошибка: ' + err.message, 'error');
+                    saveBtn.textContent = '💾 Сохранить';
+                    saveBtn.disabled = false;
+                }
+            };
+        }
+        
+        // Кнопка УТВЕРДИТЬ
         const approveBtn = document.getElementById('approve-order-btn');
         if (approveBtn) {
             approveBtn.onclick = async function() {
-                if (!canApprove) {
-                    // Проверяем загруженные файлы
-                    const avrFile = document.getElementById('order-avr-file').files[0];
-                    const invFile = document.getElementById('order-invoice-file').files[0];
-                    if (!avrFile && !hasAvr) { alert('Загрузите АВР'); return; }
-                    if (!invFile && !hasInvoice) { alert('Загрузите Счёт-фактуру'); return; }
-                }
-                
-                // Загрузка файлов
-                let avrUrl = o.avr_url;
-                let invUrl = o.invoice_file_url;
-                let invName = o.invoice_file_name;
-                
+                // Проверяем наличие файлов
                 const avrFile = document.getElementById('order-avr-file').files[0];
                 const invFile = document.getElementById('order-invoice-file').files[0];
                 
-                if (avrFile) {
-                    const { error } = await supabase.storage.from('reports').upload('avr/'+Date.now()+'_'+avrFile.name, avrFile);
-                    if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl('avr/'+Date.now()+'_'+avrFile.name); avrUrl = data.publicUrl; }
+                if (!avrFile && !o.avr_url) {
+                    showMessage('❌ Загрузите АВР перед утверждением','error');
+                    return;
                 }
-                if (invFile) {
-                    invName = invFile.name;
-                    const { error } = await supabase.storage.from('reports').upload('invoices/'+Date.now()+'_'+invFile.name, invFile);
-                    if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl('invoices/'+Date.now()+'_'+invFile.name); invUrl = data.publicUrl; }
+                if (!invFile && !o.invoice_file_url) {
+                    showMessage('❌ Загрузите Счёт-фактуру перед утверждением','error');
+                    return;
                 }
                 
-                await supabase.from('work_orders').update({
-                    status: 'approved',
-                    approved_by: currentUser?.id,
-                    approved_at: new Date(),
-                    avr_url: avrUrl,
-                    invoice_file_url: invUrl,
-                    invoice_file_name: invName,
-                    actual_volume: o.actual_volume,
-                    total_amount: finalPay || o.total_amount
-                }).eq('id', id);
+                if (!confirm('✅ Утвердить наряд? После утверждения он попадёт в план оплат.')) return;
                 
-                document.getElementById('modal').classList.add('hidden');
-                showMessage('✅ Наряд утверждён','success');
-                loadAll();
+                approveBtn.textContent = '⏳ Утверждение...';
+                approveBtn.disabled = true;
+                
+                try {
+                    // Сначала сохраняем файлы если есть
+                    let avrUrl = o.avr_url;
+                    let invUrl = o.invoice_file_url;
+                    let invName = o.invoice_file_name;
+                    
+                    if (avrFile) {
+                        const fileName = 'avr/' + Date.now() + '_' + avrFile.name;
+                        const { error } = await supabase.storage.from('reports').upload(fileName, avrFile);
+                        if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl(fileName); avrUrl = data.publicUrl; }
+                    }
+                    if (invFile) {
+                        invName = invFile.name;
+                        const fileName = 'invoices/' + Date.now() + '_' + invFile.name;
+                        const { error } = await supabase.storage.from('reports').upload(fileName, invFile);
+                        if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl(fileName); invUrl = data.publicUrl; }
+                    }
+                    
+                    const { error: updateError } = await supabase.from('work_orders').update({
+                        status: 'approved',
+                        approved_by: currentUser?.id,
+                        approved_by_name: currentUser?.full_name,
+                        approved_at: new Date(),
+                        avr_url: avrUrl,
+                        invoice_file_url: invUrl,
+                        invoice_file_name: invName,
+                        comment: document.getElementById('order-comment').value
+                    }).eq('id', id);
+                    
+                    if (updateError) throw updateError;
+                    
+                    document.getElementById('modal').classList.add('hidden');
+                    showMessage('✅ Наряд утверждён и отправлен в план оплат','success');
+                    loadAll();
+                } catch(err) {
+                    showMessage('Ошибка: ' + err.message, 'error');
+                    approveBtn.textContent = '✅ Утвердить';
+                    approveBtn.disabled = false;
+                }
             };
         }
     };
@@ -939,11 +1055,9 @@
         `).join('');
     }
     
-    window.openAdvanceCard = async function(id) {
+        window.openAdvanceCard = async function(id) {
         const { data: a } = await supabase.from('advances').select('*, projects(name), brigades(name)').eq('id',id).single();
         if (!a) return;
-        
-        const hasInvoice = a.invoice_file_url ? true : false;
         
         let html = `
             <div style="margin-bottom:12px;"><strong>💸 Аванс</strong></div>
@@ -954,28 +1068,62 @@
             <div>📊 Выплачено ранее: ${formatMoney(a.previous_payments)}</div>
             <div>📊 Остаток: ${formatMoney(a.remaining)}</div>
             ${a.invoice_file_url ? `<div style="margin-top:8px;">📎 <a href="${a.invoice_file_url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">${escapeHtml(a.invoice_file_name||'Счёт')}</a></div>` : ''}
-            <div class="form-group" style="margin-top:16px;"><label class="form-label">📎 Счёт на оплату ${hasInvoice?'✅':'(обязательно)'}</label><input type="file" id="adv-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
+            <div class="form-group" style="margin-top:16px;"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="adv-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
             <div class="form-group"><label class="form-label">📎 Счёт-фактура</label><input type="file" id="adv-bill-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
+            <div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="adv-comment" class="form-input" rows="2">${escapeHtml(a.comment||'')}</textarea></div>
         `;
         
+        html += `<div style="display:flex;gap:10px;margin-top:16px;">`;
+        html += `<button class="btn btn-outline" id="save-advance-btn" style="flex:1;">💾 Сохранить</button>`;
         if (currentRole === 'manager') {
-            html += `<button class="btn btn-success" id="approve-advance-btn" style="width:100%;margin-top:12px;">✅ Утвердить аванс</button>`;
+            html += `<button class="btn btn-success" id="approve-advance-btn" style="flex:1;">✅ Утвердить аванс</button>`;
         }
+        html += `</div>`;
         
         openModal('💸 Карточка аванса', html);
         
+        // Сохранить
+        const saveBtn = document.getElementById('save-advance-btn');
+        if (saveBtn) {
+            saveBtn.onclick = async function() {
+                const invFile = document.getElementById('adv-invoice-file').files[0];
+                let invUrl = a.invoice_file_url;
+                let invName = a.invoice_file_name;
+                
+                if (invFile) {
+                    invName = invFile.name;
+                    const fileName = 'invoices/' + Date.now() + '_' + invFile.name;
+                    const { error } = await supabase.storage.from('reports').upload(fileName, invFile);
+                    if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl(fileName); invUrl = data.publicUrl; }
+                }
+                
+                await supabase.from('advances').update({
+                    invoice_file_url: invUrl,
+                    invoice_file_name: invName,
+                    comment: document.getElementById('adv-comment').value
+                }).eq('id', id);
+                
+                document.getElementById('modal').classList.add('hidden');
+                showMessage('✅ Данные сохранены','success');
+                loadAll();
+            };
+        }
+        
+        // Утвердить
         const approveBtn = document.getElementById('approve-advance-btn');
         if (approveBtn) {
             approveBtn.onclick = async function() {
-                const invFile = document.getElementById('adv-invoice-file').files[0];
-                if (!invFile && !hasInvoice) { alert('Загрузите счёт на оплату'); return; }
+                if (!confirm('✅ Утвердить аванс? Он попадёт в план оплат.')) return;
                 
+                const invFile = document.getElementById('adv-invoice-file').files[0];
                 let invUrl = a.invoice_file_url;
                 let invName = a.invoice_file_name;
+                
                 if (invFile) {
                     invName = invFile.name;
-                    const { error } = await supabase.storage.from('reports').upload('invoices/'+Date.now()+'_'+invFile.name, invFile);
-                    if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl('invoices/'+Date.now()+'_'+invFile.name); invUrl = data.publicUrl; }
+                    const fileName = 'invoices/' + Date.now() + '_' + invFile.name;
+                    const { error } = await supabase.storage.from('reports').upload(fileName, invFile);
+                    if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl(fileName); invUrl = data.publicUrl; }
                 }
                 
                 await supabase.from('advances').update({
@@ -983,7 +1131,8 @@
                     approved_by: currentUser?.id,
                     approved_at: new Date(),
                     invoice_file_url: invUrl,
-                    invoice_file_name: invName
+                    invoice_file_name: invName,
+                    comment: document.getElementById('adv-comment').value
                 }).eq('id', id);
                 
                 document.getElementById('modal').classList.add('hidden');
