@@ -61,14 +61,7 @@
             letter-spacing: -0.5px;
         }
         
-        .badge {
-            padding: 6px 14px;
-            border-radius: 30px;
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-        }
-        
+        .badge { padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; }
         .badge-dark { background: var(--primary); color: white; }
         
         .tabs-wrapper { position: relative; margin-bottom: 20px; }
@@ -98,10 +91,7 @@
             transition: all 0.2s;
         }
         
-        .tab.active {
-            color: var(--text);
-            border-bottom-color: var(--gold);
-        }
+        .tab.active { color: var(--text); border-bottom-color: var(--gold); }
         
         .scroll-arrow {
             position: absolute;
@@ -130,17 +120,9 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         
-        .sub-tabs {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
+        .sub-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
         
         .sub-tab {
             padding: 6px 14px;
@@ -154,18 +136,9 @@
             transition: all 0.2s;
         }
         
-        .sub-tab.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
+        .sub-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        .filter-bar {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-        }
+        .filter-bar { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
         
         .filter-chip {
             padding: 6px 14px;
@@ -179,11 +152,7 @@
             transition: all 0.2s;
         }
         
-        .filter-chip.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
+        .filter-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
         
         .card {
             background: var(--card);
@@ -209,31 +178,16 @@
         
         .task-card:hover { box-shadow: var(--shadow); }
         .task-card:active { transform: scale(0.98); }
-        
         .task-card.priority-high { border-left: 4px solid var(--danger); }
         .task-card.priority-medium { border-left: 4px solid var(--warning); }
         .task-card.priority-low { border-left: 4px solid var(--success); }
         
-        .task-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        
+        .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
         .task-title { font-size: 15px; font-weight: 700; color: var(--text); }
         .task-description { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.4; }
         .task-meta { display: flex; justify-content: space-between; font-size: 11px; color: #94A3B8; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
         
-        .tag {
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        
+        .tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         .tag-green { background: #D1FAE5; color: #065F46; }
         .tag-yellow { background: #FEF3C7; color: #92400E; }
         .tag-red { background: #FEE2E2; color: #991B1B; }
@@ -246,7 +200,6 @@
             font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.3px;
         }
         
         .type-report_review { background: #F3E8FF; color: #6B21A8; }
@@ -267,49 +220,21 @@
         }
         
         .btn:active { transform: scale(0.97); }
-        .btn-primary { background: linear-gradient(135deg, #0F172A, #1E293B); color: white; width: 100%; padding: 14px; }
+        .btn-primary { background: linear-gradient(135deg, #0F172A, #1E293B); color: white; width: 100%; padding: 14px; border-radius: 14px; }
         .btn-success { background: #D1FAE5; color: #065F46; }
+        .btn-danger { background: #FEE2E2; color: #991B1B; }
         .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 8px; }
+        .btn-outline { background: white; border: 1.5px solid var(--border); color: var(--text); }
         
         .form-group { margin-bottom: 16px; }
-        .form-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: block;
-            margin-bottom: 6px;
-        }
-        
-        .form-input {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1.5px solid var(--border);
-            border-radius: 14px;
-            font-size: 14px;
-            background: white;
-            font-family: inherit;
-            transition: all 0.2s;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: var(--gold);
-            box-shadow: 0 0 0 3px rgba(245,158,11,0.1);
-        }
+        .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+        .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 14px; font-size: 14px; background: white; font-family: inherit; transition: all 0.2s; }
+        .form-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .hidden { display: none !important; }
         .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
-        .empty-state {
-            text-align: center;
-            padding: 48px 20px;
-            background: white;
-            border-radius: var(--radius-lg);
-            color: var(--text-secondary);
-            border: 2px dashed var(--border);
-        }
+        .empty-state { text-align: center; padding: 48px 20px; background: white; border-radius: var(--radius-lg); color: var(--text-secondary); border: 2px dashed var(--border); }
         
         .modal {
             position: fixed;
@@ -326,51 +251,44 @@
             background: white;
             border-radius: var(--radius-lg);
             padding: 24px;
-            max-width: 500px;
-            width: 90%;
+            max-width: 520px;
+            width: 92%;
             max-height: 85vh;
             overflow-y: auto;
             box-shadow: 0 20px 40px rgba(0,0,0,0.15);
         }
         
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .modal-title { font-size: 20px; font-weight: 800; color: var(--text); }
+        .modal-close { width: 36px; height: 36px; border-radius: 50%; background: #F1F5F9; border: none; font-size: 18px; cursor: pointer; }
         
-        .modal-close {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: #F1F5F9;
-            border: none;
-            font-size: 18px;
-            cursor: pointer;
-        }
+        .calc-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+        .calc-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+        .calc-table td:last-child { text-align: right; font-weight: 600; }
+        .calc-table .total-row { background: #F8FAFC; font-weight: 700; font-size: 15px; }
+        .calc-table .negative { color: var(--danger); }
         
         .message {
             position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 99999;
-            padding: 14px 24px;
-            border-radius: 14px;
-            font-weight: 600;
-            font-size: 14px;
-            max-width: 90%;
-            text-align: center;
-            transition: all 0.3s ease;
-            opacity: 0;
-            pointer-events: none;
+            top: 20px; left: 50%; transform: translateX(-50%); z-index: 99999;
+            padding: 14px 24px; border-radius: 14px; font-weight: 600; font-size: 14px;
+            max-width: 90%; text-align: center; transition: all 0.3s ease; opacity: 0; pointer-events: none;
         }
-        
         .message.success { background: #D1FAE5; color: #065F46; border: 2px solid #A7F3D0; opacity: 1; }
         .message.error { background: #FEE2E2; color: #991B1B; border: 2px solid #FECACA; opacity: 1; }
+        
+        .file-upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .file-upload-area:hover { border-color: var(--gold); background: #FFFBEB; }
+        
+        .file-upload-area.has-file { border-color: var(--success); background: #F0FDF4; }
     </style>
 </head>
 <body>
@@ -463,6 +381,7 @@
     function escapeHtml(t) { if(!t) return ''; return String(t).replace(/[&<>]/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]||c;}); }
     function formatDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'}); }
     function formatDateShort(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('ru-RU'); }
+    function formatMoney(a) { return (a||0).toLocaleString() + ' ₸'; }
     
     function showMessage(text, type) {
         const msg = document.getElementById('message');
@@ -484,7 +403,7 @@
     async function loadUser() {
         const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
         if (data) { currentUser = data; currentRole = data.role; }
-        document.getElementById('role-badge').textContent = currentRole === 'manager' ? '👑 Руководитель' : '👷 ИТР';
+        document.getElementById('role-badge').textContent = currentRole === 'manager' ? '👑 Руководитель' : currentRole === 'worker' ? '👷 ИТР' : '🧾 Бухгалтер';
     }
     
     function setupTabs() {
@@ -504,12 +423,10 @@
         const scrollLeft = document.getElementById('scroll-left');
         const scrollRight = document.getElementById('scroll-right');
         if (!tabsContainer) return;
-        
         function updateArrows() {
             if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0);
             if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1);
         }
-        
         if (scrollLeft) scrollLeft.addEventListener('click', function() { tabsContainer.scrollBy({ left: -200, behavior: 'smooth' }); });
         if (scrollRight) scrollRight.addEventListener('click', function() { tabsContainer.scrollBy({ left: 200, behavior: 'smooth' }); });
         tabsContainer.addEventListener('scroll', updateArrows);
@@ -541,7 +458,6 @@
                 loadAllTasks();
             });
         });
-        
         document.getElementById('create-task-btn')?.addEventListener('click', openCreateTaskForm);
     }
     
@@ -550,32 +466,23 @@
         document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
     }
     
-    function openModal(title, content) {
+    function openModal(title, content, onSave) {
         document.getElementById('modal-title').textContent = title;
         document.getElementById('modal-content').innerHTML = content;
         document.getElementById('modal').classList.remove('hidden');
+        if (onSave) {
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'btn btn-primary';
+            saveBtn.textContent = '💾 Сохранить';
+            saveBtn.style.marginTop = '16px';
+            saveBtn.addEventListener('click', onSave);
+            document.getElementById('modal-content').appendChild(saveBtn);
+        }
     }
     
-    const typeLabels = {
-        'report_review': '📑 Отчёт',
-        'issue': '⚠️ Проблема',
-        'order_review': '📋 Наряд',
-        'payment': '💰 Платёж',
-        'letter': '✉️ Письмо',
-        'task': '📌 Задача'
-    };
-    
-    const statusLabels = {
-        'pending': '⏳ Ожидает',
-        'in_progress': '🔵 В работе',
-        'completed': '✅ Сделано'
-    };
-    
-    const statusTags = {
-        'pending': 'tag-yellow',
-        'in_progress': 'tag-blue',
-        'completed': 'tag-green'
-    };
+    const typeLabels = { 'report_review': '📑 Отчёт', 'issue': '⚠️ Проблема', 'order_review': '📋 Наряд', 'payment': '💰 Платёж', 'letter': '✉️ Письмо', 'task': '📌 Задача' };
+    const statusLabels = { 'pending': '⏳ Ожидает', 'in_progress': '🔵 В работе', 'completed': '✅ Сделано' };
+    const statusTags = { 'pending': 'tag-yellow', 'in_progress': 'tag-blue', 'completed': 'tag-green' };
     
     function loadAll() {
         loadPendingReports();
@@ -598,7 +505,7 @@
         c.innerHTML = data.map(r => `
             <div class="task-card" onclick="viewReportDetail('${r.id}')">
                 <div class="task-header">
-                    <span><span class="type-tag type-report_review">📑 Отчёт</span> №${r.report_number||'—'}</span>
+                    <span class="type-tag type-report_review">📑 Отчёт №${r.report_number||'—'}</span>
                     <span class="tag tag-yellow">⏳ На проверке</span>
                 </div>
                 <div class="task-title">${escapeHtml(r.projects?.name||'—')}</div>
@@ -616,7 +523,7 @@
         c.innerHTML = data.map(r => `
             <div class="task-card" onclick="viewReportDetail('${r.id}')">
                 <div class="task-header">
-                    <span><span class="type-tag type-report_review">📑 Отчёт</span> №${r.report_number||'—'}</span>
+                    <span class="type-tag type-report_review">📑 Отчёт №${r.report_number||'—'}</span>
                     <span class="tag tag-green">✅ Проверен</span>
                 </div>
                 <div class="task-title">${escapeHtml(r.projects?.name||'—')}</div>
@@ -640,9 +547,66 @@
             html += '</div>';
         }
         if (r.status === 'pending' && currentRole === 'manager') {
-            html += `<button class="btn btn-success" onclick="confirmReport('${r.id}')" style="margin-top:12px;">✅ Отметить проверенным</button>`;
+            html += `<button class="btn btn-success" onclick="confirmReport('${r.id}')" style="margin-top:12px;width:100%;">✅ Отметить проверенным</button>`;
         }
-        openModal('📑 Детали отчёта', html);
+        // Кнопка "Создать задачу по отчёту"
+        html += `<hr style="margin:16px 0;border-color:var(--border);"><h4 style="margin-bottom:12px;">📋 Создать задачу по отчёту</h4>`;
+        html += `<div class="form-group"><label class="form-label">Название задачи</label><input type="text" id="report-task-title" class="form-input" value="Доработать отчёт №${r.report_number||'—'}"></div>`;
+        html += `<div class="form-group"><label class="form-label">Описание</label><textarea id="report-task-desc" class="form-input" rows="2">По отчёту от ${formatDate(r.report_date)}</textarea></div>`;
+        html += `<div class="form-group"><label class="form-label">Ответственный</label><select id="report-task-responsible" class="form-input"></select></div>`;
+        html += `<div class="form-group"><label class="form-label">📎 Прикрепить файлы</label><input type="file" id="report-task-files" class="form-input" multiple accept=".pdf,.jpg,.jpeg,.png"></div>`;
+        html += `<button class="btn btn-primary" id="create-report-task-btn">📤 Создать задачу</button>`;
+        
+        openModal('📑 Отчёт №' + (r.report_number||'—'), html);
+        
+        // Загружаем список пользователей для выбора ответственного
+        const { data: users } = await supabase.from('users').select('id,full_name,role').in('role',['manager','worker']).order('full_name');
+        const sel = document.getElementById('report-task-responsible');
+        if (sel && users) {
+            sel.innerHTML = users.map(u => `<option value="${u.id}">${u.full_name} (${u.role==='manager'?'Руководитель':'ИТР'})</option>`).join('');
+        }
+        
+        const createBtn = document.getElementById('create-report-task-btn');
+        if (createBtn) {
+            createBtn.onclick = async function() {
+                const title = document.getElementById('report-task-title').value.trim();
+                const desc = document.getElementById('report-task-desc').value.trim();
+                const respId = document.getElementById('report-task-responsible').value;
+                const respName = document.getElementById('report-task-responsible').selectedOptions[0]?.text||'';
+                if (!title) { alert('Введите название задачи'); return; }
+                
+                // Загрузка файлов
+                const files = document.getElementById('report-task-files').files;
+                const fileUrls = [];
+                for (const file of files) {
+                    const fileName = 'tasks/' + Date.now() + '_' + file.name;
+                    const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
+                    if (!uploadError) {
+                        const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+                        fileUrls.push({ name: file.name, url: urlData.publicUrl });
+                    }
+                }
+                
+                await supabase.from('custom_tasks').insert({
+                    project_id: r.project_id,
+                    title: '📑 ' + title,
+                    description: desc + (fileUrls.length ? '\n\n📎 Файлы: ' + fileUrls.map(f => f.name).join(', ') : ''),
+                    status: 'pending',
+                    priority: 'high',
+                    type: 'report_review',
+                    responsible_ids: [respId],
+                    responsible_names: [respName],
+                    created_by: currentUser?.id,
+                    created_by_name: currentUser?.full_name,
+                    created_at: new Date(),
+                    files: fileUrls
+                });
+                
+                document.getElementById('modal').classList.add('hidden');
+                showMessage('✅ Задача создана','success');
+                loadAll();
+            };
+        }
     };
     
     window.confirmReport = async function(id) {
@@ -652,7 +616,7 @@
         loadAll();
     };
     
-    // ========== ВСЕ ЗАДАЧИ (custom_tasks) ==========
+    // ========== ВСЕ ЗАДАЧИ ==========
     async function loadAllTasks() {
         const c = document.getElementById('all-tasks-list');
         c.innerHTML = '<div class="loading"></div>';
@@ -674,10 +638,8 @@
                 </div>
                 <div class="task-title">${escapeHtml(t.title)}</div>
                 <div class="task-description">${escapeHtml((t.description||'').substring(0,100))}</div>
-                <div class="task-meta">
-                    <span>📅 ${formatDateShort(t.created_at)}</span>
-                    <span>👤 ${escapeHtml(t.created_by_name||'—')}</span>
-                </div>
+                ${t.projects?.name ? `<div style="font-size:12px;color:var(--text-secondary);">🏗️ ${escapeHtml(t.projects.name)}</div>` : ''}
+                <div class="task-meta"><span>📅 ${formatDateShort(t.created_at)}</span><span>👤 ${escapeHtml(t.created_by_name||'—')}</span></div>
             </div>`;
         }).join('');
     }
@@ -686,9 +648,14 @@
         const { data: t } = await supabase.from('custom_tasks').select('*, projects(name)').eq('id', id).single();
         if (!t) return;
         let html = `<div style="margin-bottom:12px;"><strong>${escapeHtml(t.title)}</strong></div>`;
-        html += `<div>📝 ${escapeHtml(t.description||'—')}</div>`;
+        html += `<div style="background:#F8FAFC;padding:12px;border-radius:12px;margin:8px 0;">📝 ${escapeHtml(t.description||'—')}</div>`;
         if (t.projects?.name) html += `<div>🏗️ ${escapeHtml(t.projects.name)}</div>`;
-        html += `<div>👤 Создал: ${t.created_by_name||'—'}</div>`;
+        html += `<div>👤 Создал: ${t.created_by_name||'—'} | 📅 ${formatDate(t.created_at)}</div>`;
+        if (t.files && t.files.length) {
+            html += '<div class="filter-bar" style="margin-top:12px;">';
+            t.files.forEach(f => { html += `<a href="${f.url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">📎 ${escapeHtml(f.name)}</a>`; });
+            html += '</div>';
+        }
         html += `<div class="form-group" style="margin-top:16px;"><label class="form-label">Статус</label><select id="task-status" class="form-input"><option value="pending" ${t.status==='pending'?'selected':''}>⏳ Ожидает</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>🔵 В работе</option><option value="completed" ${t.status==='completed'?'selected':''}>✅ Сделано</option></select></div>`;
         html += `<button class="btn btn-primary" id="update-task-btn">💾 Обновить</button>`;
         openModal('📌 Задача', html);
@@ -701,7 +668,6 @@
     };
     
     async function openCreateTaskForm() {
-        const today = new Date().toISOString().split('T')[0];
         const { data: projects } = await supabase.from('projects').select('id,name').order('name');
         const { data: users } = await supabase.from('users').select('id,full_name').order('full_name');
         let html = `
@@ -710,6 +676,7 @@
             <div class="form-group"><label class="form-label">Объект</label><select id="ct-project" class="form-input"><option value="">—</option>${(projects||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
             <div class="form-group"><label class="form-label">Приоритет</label><select id="ct-priority" class="form-input"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option></select></div>
             <div class="form-group"><label class="form-label">Ответственный</label><select id="ct-responsible" class="form-input">${(users||[]).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">📎 Файлы</label><input type="file" id="ct-files" class="form-input" multiple></div>
             <button class="btn btn-primary" id="save-ct-btn">📤 Создать</button>
         `;
         openModal('➕ Новая задача', html);
@@ -718,6 +685,18 @@
             if (!title) { alert('Введите название'); return; }
             const respId = document.getElementById('ct-responsible').value;
             const respName = document.getElementById('ct-responsible').selectedOptions[0]?.text||'';
+            
+            const files = document.getElementById('ct-files').files;
+            const fileUrls = [];
+            for (const file of files) {
+                const fileName = 'tasks/' + Date.now() + '_' + file.name;
+                const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
+                if (!uploadError) {
+                    const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+                    fileUrls.push({ name: file.name, url: urlData.publicUrl });
+                }
+            }
+            
             await supabase.from('custom_tasks').insert({
                 project_id: document.getElementById('ct-project').value||null,
                 title, description: document.getElementById('ct-desc').value,
@@ -725,7 +704,7 @@
                 responsible_ids: [respId], responsible_names: [respName],
                 status: 'pending', type: 'task',
                 created_by: currentUser?.id, created_by_name: currentUser?.full_name,
-                created_at: new Date()
+                created_at: new Date(), files: fileUrls
             });
             document.getElementById('modal').classList.add('hidden');
             showMessage('✅ Задача создана','success');
@@ -733,7 +712,7 @@
         };
     }
     
-    // ========== ФИНАНСЫ ==========
+    // ========== ФИНАНСЫ: РАСХОДЫ ==========
     async function loadFinanceExpenses() {
         const c = document.getElementById('sub-finance-expenses');
         c.innerHTML = '<div class="loading"></div>';
@@ -744,29 +723,74 @@
             if (ids.length) q = q.in('project_id',ids);
         }
         const { data } = await q;
-        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет расходов</div>'; return; }
+        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет расходов на утверждении</div>'; return; }
         c.innerHTML = data.map(e => `
-            <div class="task-card">
+            <div class="task-card" onclick="openExpenseCard('${e.id}')">
                 <div class="task-header">
                     <span class="type-tag type-payment">💰 Расход</span>
                     <span class="tag tag-yellow">⏳ Ожидает</span>
                 </div>
-                <div class="task-title">${escapeHtml(e.name)} — ${(e.amount||0).toLocaleString()} ₸</div>
+                <div class="task-title">${escapeHtml(e.name)} — ${formatMoney(e.amount)}</div>
                 <div class="task-description">🏗️ ${escapeHtml(e.projects?.name||'—')} | 🏢 ${escapeHtml(e.supplier||'—')}</div>
-                <div class="task-meta">
-                    <span>📅 ${formatDateShort(e.date)}</span>
-                    ${currentRole==='manager'?`<button class="btn btn-success btn-sm" onclick="approveExpense('${e.id}')">✅ Утвердить</button>`:''}
-                </div>
+                <div class="task-meta"><span>📅 ${formatDateShort(e.date)}</span></div>
             </div>
         `).join('');
     }
     
-    window.approveExpense = async function(id) {
-        await supabase.from('expenses').update({payment_status:'approved',approved_by:currentUser?.id,approved_at:new Date()}).eq('id',id);
-        showMessage('✅ Расход утверждён','success');
-        loadAll();
+    window.openExpenseCard = async function(id) {
+        const { data: e } = await supabase.from('expenses').select('*, projects(name)').eq('id',id).single();
+        if (!e) return;
+        let html = `
+            <div style="margin-bottom:12px;"><strong>💰 ${escapeHtml(e.name)}</strong></div>
+            <div>🏗️ Объект: ${escapeHtml(e.projects?.name||'—')}</div>
+            <div>💰 Сумма: <strong>${formatMoney(e.amount)}</strong></div>
+            <div>🏢 Поставщик: ${escapeHtml(e.supplier||'—')}</div>
+            <div>📅 Дата: ${formatDate(e.date)}</div>
+            <div>💳 Оплата: ${e.payment_method==='cash'?'Наличка':'Безнал'}</div>
+            ${e.invoice_file_url ? `<div style="margin-top:8px;">📎 <a href="${e.invoice_file_url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">${escapeHtml(e.invoice_file_name||'Счёт')}</a></div>` : ''}
+            <div class="form-group" style="margin-top:16px;"><label class="form-label">📎 Прикрепить счёт</label><input type="file" id="exp-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
+        `;
+        
+        if (currentRole === 'manager') {
+            html += `<button class="btn btn-success" id="approve-expense-btn" style="width:100%;margin-top:12px;">✅ Утвердить оплату</button>`;
+        }
+        
+        openModal('💰 Карточка расхода', html);
+        
+        const approveBtn = document.getElementById('approve-expense-btn');
+        if (approveBtn) {
+            approveBtn.onclick = async function() {
+                // Загрузка файла если есть
+                const fileInput = document.getElementById('exp-invoice-file');
+                let invoiceUrl = e.invoice_file_url;
+                let invoiceName = e.invoice_file_name;
+                if (fileInput && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    invoiceName = file.name;
+                    const fileName = 'invoices/' + Date.now() + '_' + file.name;
+                    const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
+                    if (!uploadError) {
+                        const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+                        invoiceUrl = urlData.publicUrl;
+                    }
+                }
+                
+                await supabase.from('expenses').update({
+                    payment_status: 'approved',
+                    approved_by: currentUser?.id,
+                    approved_at: new Date(),
+                    invoice_file_url: invoiceUrl,
+                    invoice_file_name: invoiceName
+                }).eq('id', id);
+                
+                document.getElementById('modal').classList.add('hidden');
+                showMessage('✅ Расход утверждён','success');
+                loadAll();
+            };
+        }
     };
     
+    // ========== ФИНАНСЫ: НАРЯДЫ ==========
     async function loadFinanceOrders() {
         const c = document.getElementById('sub-finance-orders');
         c.innerHTML = '<div class="loading"></div>';
@@ -777,29 +801,120 @@
             if (ids.length) q = q.in('project_id',ids);
         }
         const { data } = await q;
-        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет нарядов</div>'; return; }
+        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет нарядов на утверждении</div>'; return; }
         c.innerHTML = data.map(o => `
-            <div class="task-card">
+            <div class="task-card" onclick="openOrderCard('${o.id}')">
                 <div class="task-header">
                     <span class="type-tag type-order_review">📋 Наряд</span>
                     <span class="tag tag-yellow">⏳ Ожидает</span>
                 </div>
-                <div class="task-title">${escapeHtml(o.work_type||'Наряд')} — ${(o.total_amount||0).toLocaleString()} ₸</div>
+                <div class="task-title">${escapeHtml(o.work_type||'Наряд')} — ${formatMoney(o.total_amount)}</div>
                 <div class="task-description">👷 ${escapeHtml(o.brigades?.name||'—')} | 🏗️ ${escapeHtml(o.projects?.name||'—')}</div>
-                <div class="task-meta">
-                    <span>📅 ${formatDateShort(o.created_at?.split('T')[0])}</span>
-                    ${currentRole==='manager'?`<button class="btn btn-success btn-sm" onclick="approveOrder('${o.id}')">✅ Утвердить</button>`:''}
-                </div>
+                <div class="task-meta"><span>📅 ${formatDateShort(o.created_at?.split('T')[0])}</span></div>
             </div>
         `).join('');
     }
     
-    window.approveOrder = async function(id) {
-        await supabase.from('work_orders').update({status:'approved',approved_by:currentUser?.id,approved_at:new Date()}).eq('id',id);
-        showMessage('✅ Наряд утверждён','success');
-        loadAll();
+    window.openOrderCard = async function(id) {
+        const { data: o } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('id',id).single();
+        if (!o) return;
+        
+        // Получаем данные из ГПР и авансы
+        const { data: stages } = await supabase.from('axis_work_stages').select('*').eq('brigade_id', o.brigade_id);
+        const { data: advances } = await supabase.from('advances').select('*').eq('brigade_id', o.brigade_id).eq('project_id', o.project_id);
+        
+        const sumWork = stages?.reduce((s,st) => s + (st.total_cost||0), 0) || o.total_amount;
+        const sumAdvance = advances?.filter(a => a.status === 'approved').reduce((s,a) => s + (a.amount||0), 0) || 0;
+        const sumDone = o.actual_volume * (o.price || 0) || o.total_amount;
+        const remain = sumWork - sumDone;
+        const guarantee = Math.round(sumDone * 0.10);
+        const toPay = sumDone - sumAdvance - guarantee;
+        const advanceForward = toPay < 0 ? Math.abs(toPay) : 0;
+        const finalPay = Math.max(0, toPay);
+        
+        const hasAvr = o.avr_url ? true : false;
+        const hasInvoice = o.invoice_file_url ? true : false;
+        const canApprove = hasAvr && hasInvoice;
+        
+        let html = `
+            <div style="margin-bottom:12px;"><strong>📋 Наряд: ${escapeHtml(o.work_type||'—')}</strong></div>
+            <div>👷 Бригада: ${escapeHtml(o.brigades?.name||'—')}</div>
+            <div>🏗️ Объект: ${escapeHtml(o.projects?.name||'—')}</div>
+            <div>📍 Ось: ${escapeHtml(o.axis_name||'—')}</div>
+            
+            <table class="calc-table" style="margin-top:16px;">
+                <tr><td>📊 Сумма работ (ГПР)</td><td>${formatMoney(sumWork)}</td></tr>
+                <tr><td>💸 Сумма аванса</td><td>${formatMoney(sumAdvance)}</td></tr>
+                <tr><td>✅ Выполнено</td><td>${formatMoney(sumDone)}</td></tr>
+                <tr><td>📐 Остаток</td><td>${formatMoney(remain)}</td></tr>
+                <tr><td>🔒 Удержание 10% (гарантийные)</td><td class="negative">-${formatMoney(guarantee)}</td></tr>
+                ${advanceForward > 0 ? `<tr><td>⚠️ Аванс вперёд</td><td class="negative">${formatMoney(advanceForward)}</td></tr>` : ''}
+                <tr class="total-row"><td>💳 К ВЫПЛАТЕ</td><td style="color:${finalPay>0?'var(--success)':'var(--danger)'};">${formatMoney(finalPay)}</td></tr>
+            </table>
+            ${advanceForward > 0 ? '<div class="tag tag-red" style="margin-top:8px;">⚠️ Выплата с Авансом</div>' : ''}
+            
+            <div style="margin-top:16px;">
+                <div class="form-group"><label class="form-label">📎 АВР (обязательно) ${hasAvr?'✅':''}</label><input type="file" id="order-avr-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
+                <div class="form-group"><label class="form-label">📎 Счёт-фактура (обязательно) ${hasInvoice?'✅':''}</label><input type="file" id="order-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
+                <div class="form-group"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="order-bill-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
+            </div>
+            ${!canApprove ? '<p style="color:var(--danger);font-size:12px;margin-top:8px;">⚠️ Загрузите АВР и Счёт-фактуру для утверждения</p>' : ''}
+        `;
+        
+        if (currentRole === 'manager') {
+            html += `<button class="btn btn-success" id="approve-order-btn" style="width:100%;margin-top:12px;" ${!canApprove?'disabled':''}>✅ Утвердить наряд</button>`;
+        }
+        
+        openModal('📋 Карточка наряда', html);
+        
+        const approveBtn = document.getElementById('approve-order-btn');
+        if (approveBtn) {
+            approveBtn.onclick = async function() {
+                if (!canApprove) {
+                    // Проверяем загруженные файлы
+                    const avrFile = document.getElementById('order-avr-file').files[0];
+                    const invFile = document.getElementById('order-invoice-file').files[0];
+                    if (!avrFile && !hasAvr) { alert('Загрузите АВР'); return; }
+                    if (!invFile && !hasInvoice) { alert('Загрузите Счёт-фактуру'); return; }
+                }
+                
+                // Загрузка файлов
+                let avrUrl = o.avr_url;
+                let invUrl = o.invoice_file_url;
+                let invName = o.invoice_file_name;
+                
+                const avrFile = document.getElementById('order-avr-file').files[0];
+                const invFile = document.getElementById('order-invoice-file').files[0];
+                
+                if (avrFile) {
+                    const { error } = await supabase.storage.from('reports').upload('avr/'+Date.now()+'_'+avrFile.name, avrFile);
+                    if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl('avr/'+Date.now()+'_'+avrFile.name); avrUrl = data.publicUrl; }
+                }
+                if (invFile) {
+                    invName = invFile.name;
+                    const { error } = await supabase.storage.from('reports').upload('invoices/'+Date.now()+'_'+invFile.name, invFile);
+                    if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl('invoices/'+Date.now()+'_'+invFile.name); invUrl = data.publicUrl; }
+                }
+                
+                await supabase.from('work_orders').update({
+                    status: 'approved',
+                    approved_by: currentUser?.id,
+                    approved_at: new Date(),
+                    avr_url: avrUrl,
+                    invoice_file_url: invUrl,
+                    invoice_file_name: invName,
+                    actual_volume: o.actual_volume,
+                    total_amount: finalPay || o.total_amount
+                }).eq('id', id);
+                
+                document.getElementById('modal').classList.add('hidden');
+                showMessage('✅ Наряд утверждён','success');
+                loadAll();
+            };
+        }
     };
     
+    // ========== ФИНАНСЫ: АВАНСЫ ==========
     async function loadFinanceAdvances() {
         const c = document.getElementById('sub-finance-advances');
         c.innerHTML = '<div class="loading"></div>';
@@ -812,48 +927,153 @@
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет авансов</div>'; return; }
         c.innerHTML = data.map(a => `
-            <div class="task-card">
+            <div class="task-card" onclick="openAdvanceCard('${a.id}')">
                 <div class="task-header">
                     <span class="type-tag type-payment">💸 Аванс</span>
                     <span class="tag tag-yellow">⏳ Ожидает</span>
                 </div>
-                <div class="task-title">Аванс — ${(a.amount||0).toLocaleString()} ₸</div>
+                <div class="task-title">Аванс — ${formatMoney(a.amount)}</div>
                 <div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div>
-                <div class="task-meta">
-                    <span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span>
-                    ${currentRole==='manager'?`<button class="btn btn-success btn-sm" onclick="approveAdvanceFinance('${a.id}')">✅ Утвердить</button>`:''}
-                </div>
+                <div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span></div>
             </div>
         `).join('');
     }
     
-    window.approveAdvanceFinance = async function(id) {
-        await supabase.from('advances').update({status:'approved',approved_by:currentUser?.id,approved_at:new Date()}).eq('id',id);
-        showMessage('✅ Аванс утверждён','success');
-        loadAll();
+    window.openAdvanceCard = async function(id) {
+        const { data: a } = await supabase.from('advances').select('*, projects(name), brigades(name)').eq('id',id).single();
+        if (!a) return;
+        
+        const hasInvoice = a.invoice_file_url ? true : false;
+        
+        let html = `
+            <div style="margin-bottom:12px;"><strong>💸 Аванс</strong></div>
+            <div>👷 Бригада: ${escapeHtml(a.brigades?.name||'—')}</div>
+            <div>🏗️ Объект: ${escapeHtml(a.projects?.name||'—')}</div>
+            <div>💰 Сумма: <strong>${formatMoney(a.amount)}</strong></div>
+            <div>📊 Договор: ${formatMoney(a.total_contract)}</div>
+            <div>📊 Выплачено ранее: ${formatMoney(a.previous_payments)}</div>
+            <div>📊 Остаток: ${formatMoney(a.remaining)}</div>
+            ${a.invoice_file_url ? `<div style="margin-top:8px;">📎 <a href="${a.invoice_file_url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">${escapeHtml(a.invoice_file_name||'Счёт')}</a></div>` : ''}
+            <div class="form-group" style="margin-top:16px;"><label class="form-label">📎 Счёт на оплату ${hasInvoice?'✅':'(обязательно)'}</label><input type="file" id="adv-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
+            <div class="form-group"><label class="form-label">📎 Счёт-фактура</label><input type="file" id="adv-bill-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>
+        `;
+        
+        if (currentRole === 'manager') {
+            html += `<button class="btn btn-success" id="approve-advance-btn" style="width:100%;margin-top:12px;">✅ Утвердить аванс</button>`;
+        }
+        
+        openModal('💸 Карточка аванса', html);
+        
+        const approveBtn = document.getElementById('approve-advance-btn');
+        if (approveBtn) {
+            approveBtn.onclick = async function() {
+                const invFile = document.getElementById('adv-invoice-file').files[0];
+                if (!invFile && !hasInvoice) { alert('Загрузите счёт на оплату'); return; }
+                
+                let invUrl = a.invoice_file_url;
+                let invName = a.invoice_file_name;
+                if (invFile) {
+                    invName = invFile.name;
+                    const { error } = await supabase.storage.from('reports').upload('invoices/'+Date.now()+'_'+invFile.name, invFile);
+                    if (!error) { const { data } = supabase.storage.from('reports').getPublicUrl('invoices/'+Date.now()+'_'+invFile.name); invUrl = data.publicUrl; }
+                }
+                
+                await supabase.from('advances').update({
+                    status: 'approved',
+                    approved_by: currentUser?.id,
+                    approved_at: new Date(),
+                    invoice_file_url: invUrl,
+                    invoice_file_name: invName
+                }).eq('id', id);
+                
+                document.getElementById('modal').classList.add('hidden');
+                showMessage('✅ Аванс утверждён','success');
+                loadAll();
+            };
+        }
     };
     
+    // ========== ФИНАНСЫ: УТВЕРЖДЁННЫЕ ==========
     async function loadFinancePlan() {
         const c = document.getElementById('sub-finance-plan');
         c.innerHTML = '<div class="loading"></div>';
         const [eR, oR, aR] = await Promise.all([
-            supabase.from('expenses').select('*, projects(name)').eq('payment_status','approved'),
-            supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status','approved'),
-            supabase.from('advances').select('*, projects(name), brigades(name)').eq('status','approved')
+            supabase.from('expenses').select('*, projects(name)').or('payment_status.eq.approved,payment_status.eq.paid').order('date',{ascending:false}),
+            supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status','approved').order('created_at',{ascending:false}),
+            supabase.from('advances').select('*, projects(name), brigades(name)').eq('status','approved').order('created_at',{ascending:false})
         ]);
-        const all = [...(eR.data||[]).map(e=>({...e,itemType:'expense'})),...(oR.data||[]).map(o=>({...o,itemType:'order'})),...(aR.data||[]).map(a=>({...a,itemType:'advance'}))];
+        const all = [
+            ...(eR.data||[]).map(e=>({...e,itemType:'expense',displayAmount:e.amount,displayName:e.name})),
+            ...(oR.data||[]).map(o=>({...o,itemType:'order',displayAmount:o.total_amount,displayName:o.work_type||'Наряд'})),
+            ...(aR.data||[]).map(a=>({...a,itemType:'advance',displayAmount:a.amount,displayName:'Аванс'}))
+        ];
         if (!all.length) { c.innerHTML = '<div class="empty-state">Нет утверждённых операций</div>'; return; }
-        c.innerHTML = all.map(item => `
-            <div class="task-card">
+        c.innerHTML = all.map(item => {
+            const isPaid = item.payment_status === 'paid' || item.status === 'paid';
+            const typeLabel = item.itemType==='expense'?'💰 Расход':item.itemType==='order'?'📋 Наряд':'💸 Аванс';
+            const typeTag = item.itemType==='expense'?'type-payment':item.itemType==='order'?'type-order_review':'type-payment';
+            return `
+            <div class="task-card" onclick="openApprovedCard('${item.itemType}','${item.id}')">
                 <div class="task-header">
-                    <span class="type-tag type-${item.itemType==='expense'?'payment':item.itemType==='order'?'order_review':'payment'}">${item.itemType==='expense'?'💰 Расход':item.itemType==='order'?'📋 Наряд':'💸 Аванс'}</span>
-                    <span class="tag tag-green">✅ Утверждён</span>
+                    <span class="type-tag ${typeTag}">${typeLabel}</span>
+                    <span class="tag ${isPaid?'tag-green':'tag-blue'}">${isPaid?'💳 Оплачен':'✅ Утверждён'}</span>
                 </div>
-                <div class="task-title">${escapeHtml(item.name||item.work_type||'Аванс')} — ${(item.amount||item.total_amount||0).toLocaleString()} ₸</div>
+                <div class="task-title">${escapeHtml(item.displayName)} — ${formatMoney(item.displayAmount)}</div>
                 <div class="task-description">🏗️ ${escapeHtml(item.projects?.name||'—')} ${item.brigades?.name?'| 👷 '+escapeHtml(item.brigades.name):''}</div>
-            </div>
-        `).join('');
+                <div class="task-meta"><span>📅 ${formatDateShort(item.approved_at||item.date)}</span></div>
+            </div>`;
+        }).join('');
     }
+    
+    window.openApprovedCard = async function(type, id) {
+        if (type === 'expense') {
+            const { data: e } = await supabase.from('expenses').select('*, projects(name)').eq('id',id).single();
+            if (!e) return;
+            let html = `<div><strong>💰 ${escapeHtml(e.name)}</strong></div>`;
+            html += `<div>🏗️ ${escapeHtml(e.projects?.name||'—')}</div>`;
+            html += `<div>💰 ${formatMoney(e.amount)} | ${e.payment_status==='paid'?'💳 Оплачен':'✅ Утверждён'}</div>`;
+            if (e.invoice_file_url) html += `<div style="margin-top:8px;">📎 <a href="${e.invoice_file_url}" target="_blank">${escapeHtml(e.invoice_file_name||'Счёт')}</a></div>`;
+            if (currentRole === 'manager') {
+                html += `<div class="form-group" style="margin-top:12px;"><label class="form-label">Статус</label><select id="approved-status" class="form-input"><option value="approved" ${e.payment_status==='approved'?'selected':''}>✅ Утверждён</option><option value="paid" ${e.payment_status==='paid'?'selected':''}>💳 Оплачен</option></select></div>`;
+                html += `<button class="btn btn-primary" id="save-approved-btn">💾 Сохранить</button>`;
+            }
+            openModal('💰 Расход', html);
+            const saveBtn = document.getElementById('save-approved-btn');
+            if (saveBtn) {
+                saveBtn.onclick = async function() {
+                    await supabase.from('expenses').update({payment_status:document.getElementById('approved-status').value}).eq('id',id);
+                    document.getElementById('modal').classList.add('hidden');
+                    showMessage('✅ Обновлено','success');
+                    loadAll();
+                };
+            }
+        } else {
+            const { data: o } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('id',id).single();
+            if (!o) return;
+            let html = `<div><strong>📋 ${escapeHtml(o.work_type||'Наряд')}</strong></div>`;
+            html += `<div>👷 ${escapeHtml(o.brigades?.name||'—')} | 🏗️ ${escapeHtml(o.projects?.name||'—')}</div>`;
+            html += `<div>💰 ${formatMoney(o.total_amount)} | ${o.payment_status==='paid'?'💳 Выплачен':'✅ Утверждён'}</div>`;
+            if (o.invoice_file_url) html += `<div style="margin-top:8px;">📎 <a href="${o.invoice_file_url}" target="_blank">${escapeHtml(o.invoice_file_name||'Счёт')}</a></div>`;
+            if (currentRole === 'manager') {
+                html += `<div class="form-group" style="margin-top:12px;"><label class="form-label">Статус</label><select id="approved-status" class="form-input"><option value="approved" ${o.payment_status!=='paid'?'selected':''}>✅ Утверждён</option><option value="paid" ${o.payment_status==='paid'?'selected':''}>💳 Оплачен</option></select></div>`;
+                html += `<button class="btn btn-primary" id="save-approved-btn">💾 Сохранить</button>`;
+            }
+            openModal('📋 Наряд', html);
+            const saveBtn = document.getElementById('save-approved-btn');
+            if (saveBtn) {
+                saveBtn.onclick = async function() {
+                    const newStatus = document.getElementById('approved-status').value;
+                    await supabase.from('work_orders').update({
+                        payment_status: newStatus,
+                        payment_date: newStatus==='paid'?new Date().toISOString().split('T')[0]:null
+                    }).eq('id',id);
+                    document.getElementById('modal').classList.add('hidden');
+                    showMessage('✅ Обновлено','success');
+                    loadAll();
+                };
+            }
+        }
+    };
     
     // ========== ПИСЬМА ==========
     async function loadLetters() {
@@ -877,7 +1097,7 @@
                 <div class="task-description">${escapeHtml(l.delay_description||'—')}</div>
                 <div class="task-meta">
                     <span>📅 ${formatDateShort(l.created_at?.split('T')[0])}</span>
-                    <button class="btn btn-success btn-sm" onclick="markLetterSent('${l.id}')">📨 Отправить</button>
+                    <button class="btn btn-success btn-sm" onclick="event.stopPropagation();markLetterSent('${l.id}')">📨 Отправить</button>
                 </div>
             </div>
         `).join('');
@@ -903,11 +1123,12 @@
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет проблем</div>'; return; }
         c.innerHTML = data.map(issue => {
             const statusIcon = {open:'🟡',in_progress:'🔵',overdue:'🔴'}[issue.status]||'🟡';
+            const tagClass = issue.status==='overdue'?'tag-red':issue.status==='in_progress'?'tag-blue':'tag-yellow';
             return `
             <div class="task-card priority-${issue.priority||'medium'}">
                 <div class="task-header">
                     <span class="type-tag type-issue">⚠️ Проблема</span>
-                    <span class="tag tag-${issue.status==='overdue'?'red':issue.status==='in_progress'?'blue':'yellow'}">${statusIcon} ${issue.status==='overdue'?'Просрочена':issue.status==='in_progress'?'В работе':'Открыта'}</span>
+                    <span class="tag ${tagClass}">${statusIcon} ${issue.status==='overdue'?'Просрочена':issue.status==='in_progress'?'В работе':'Открыта'}</span>
                 </div>
                 <div class="task-title">${escapeHtml(issue.title)}</div>
                 <div class="task-description">🏗️ ${escapeHtml(issue.projects?.name||'—')} | ${escapeHtml((issue.description||'').substring(0,80))}</div>
