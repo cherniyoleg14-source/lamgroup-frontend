@@ -683,7 +683,7 @@
             description: 'Бригада: ' + (brigade?.name || '') + '\nПодось: ' + subName + '\nСумма: ' + amount.toLocaleString() + ' ₸\nВид оплаты: ' + (paymentMethod === 'cash' ? 'Наличка' : 'Безнал') + '\nВсего выплачено: ' + totalPaid.toLocaleString() + ' ₸',
             status: 'pending',
             priority: isUrgent ? 'high' : 'medium',
-            type: 'payment',
+            type: 'advance',
             created_by: currentUser?.id,
             created_by_name: currentUser?.full_name,
             created_at: new Date()
