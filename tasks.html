@@ -127,7 +127,7 @@
     
     function openModal(title, content) { document.getElementById('modal-title').textContent = title; document.getElementById('modal-content').innerHTML = content; document.getElementById('modal').classList.remove('hidden'); }
     
-    const typeLabels = { 'report_review': '📑 Отчёт', 'issue': '⚠️ Проблема', 'order_review': '📋 Наряд', 'payment': '💰 Платёж', 'letter': '✉️ Письмо', 'task': '📌 Задача' };
+        const typeLabels = { 'report_review': '📑 Отчёт', 'issue': '⚠️ Проблема', 'order_review': '📋 Наряд', 'payment': '💰 Расход', 'advance': '💸 Аванс', 'letter': '✉️ Письмо', 'task': '📌 Задача' };
     const statusLabels = { 'pending': '⏳ Ожидает', 'in_progress': '🔵 В работе', 'completed': '✅ Сделано' };
     const statusTags = { 'pending': 'tag-yellow', 'in_progress': 'tag-blue', 'completed': 'tag-green' };
     
@@ -185,9 +185,11 @@
     window.confirmReport = async function(id) { await supabase.from('object_reports').update({status:'confirmed',reviewed_by:currentUser?.id,reviewed_by_name:currentUser?.full_name}).eq('id',id); document.getElementById('modal').classList.add('hidden'); showMessage('✅ Отчёт проверен','success'); loadAll(); };
     
     // ========== ВСЕ ЗАДАЧИ ==========
-    async function loadAllTasks() {
+      async function loadAllTasks() {
         const c = document.getElementById('all-tasks-list'); c.innerHTML = '<div class="loading"></div>';
         let query = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false });
+        // Исключаем финансовые задачи (они в отдельной вкладке Финансы)
+        query = query.not('type', 'in', '("payment","order_review","advance")');
         if (currentTaskFilter !== 'all') query = query.eq('status', currentTaskFilter);
         if (currentRole !== 'manager') query = query.or(`created_by.eq.${currentUser?.id},responsible_ids.cs.{${currentUser?.id}}`);
         const { data } = await query;
