@@ -50,7 +50,7 @@
         .tag { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         .tag-green { background: #D1FAE5; color: #065F46; } .tag-yellow { background: #FEF3C7; color: #92400E; } .tag-red { background: #FEE2E2; color: #991B1B; } .tag-blue { background: #DBEAFE; color: #1E40AF; } .tag-purple { background: #F3E8FF; color: #6B21A8; }
         .type-tag { padding: 3px 10px; border-radius: 30px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
-        .type-report_review { background: #F3E8FF; color: #6B21A8; } .type-issue { background: #FEE2E2; color: #991B1B; } .type-order_review { background: #D1FAE5; color: #065F46; } .type-payment { background: #FEF3C7; color: #92400E; } .type-letter { background: #DBEAFE; color: #1E40AF; } .type-task { background: #F1F5F9; color: #475569; }
+        .type-report_review { background: #F3E8FF; color: #6B21A8; } .type-issue { background: #FEE2E2; color: #991B1B; } .type-order_review { background: #D1FAE5; color: #065F46; } .type-payment { background: #FEF3C7; color: #92400E; } .type-letter { background: #DBEAFE; color: #1E40AF; } .type-task { background: #F1F5F9; color: #475569; }.type-advance { background: #F3E8FF; color: #6B21A8; }
         .btn { padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
         .btn:active { transform: scale(0.97); } .btn-primary { background: linear-gradient(135deg, #0F172A, #1E293B); color: white; width: 100%; padding: 14px; border-radius: 14px; } .btn-success { background: #D1FAE5; color: #065F46; } .btn-danger { background: #FEE2E2; color: #991B1B; } .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 8px; } .btn-outline { background: white; border: 1.5px solid var(--border); color: var(--text); }
         .form-group { margin-bottom: 16px; } .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; } .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 14px; font-size: 14px; background: white; font-family: inherit; transition: all 0.2s; } .form-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
@@ -189,7 +189,7 @@
         const c = document.getElementById('all-tasks-list'); c.innerHTML = '<div class="loading"></div>';
         let query = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false });
         // Исключаем финансовые задачи (они в отдельной вкладке Финансы)
-        query = query.not('type', 'in', '("payment","order_review","advance")');
+              query = query.or('type.is.null,type.not.in.(payment,order_review,advance)');
         if (currentTaskFilter !== 'all') query = query.eq('status', currentTaskFilter);
         if (currentRole !== 'manager') query = query.or(`created_by.eq.${currentUser?.id},responsible_ids.cs.{${currentUser?.id}}`);
         const { data } = await query;
@@ -320,7 +320,7 @@
         if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет авансов</div>'; return; }
-        c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-payment">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">Аванс — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span></div></div>`).join('');
+        c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-advance">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">Аванс — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span></div></div>`).join('');
     }
     
     window.openAdvanceCard = async function(id) {
