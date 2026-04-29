@@ -171,15 +171,22 @@
             async function loadWorkStages() { const { data } = await supabase.from('work_stages').select('*').order('id'); allWorkStages = data || []; }
             async function loadProjects() { let query = supabase.from('projects').select('*, users!projects_responsible_worker_id_fkey(full_name)').order('created_at', { ascending: false }); if (currentRole === 'worker') query = query.eq('responsible_worker_id', currentUser?.id); const { data } = await query; allProjects = data || []; renderProjects(); }
 
-            function renderProjects() {
+                    function renderProjects() {
                 let filtered = allProjects;
                 if (currentFilter === 'my') filtered = allProjects.filter(function(p) { return p.responsible_worker_id === currentUser?.id; });
                 else if (currentFilter !== 'all') filtered = allProjects.filter(function(p) { return p.status === currentFilter; });
                 const container = document.getElementById('objects-container');
                 if (filtered.length === 0) { container.innerHTML = '<div class="empty-state">🏗️ Нет объектов</div>'; return; }
                 let html = '<div class="objects-grid">';
-                filtered.forEach(function(p) { const st = { 'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация', 'in_progress': '🔨 В работе', 'completed': '✅ Завершён' }[p.status] || p.status;
-                   html += '<div class="object-card" data-id="'+p.id+'"><div class="object-header"><span class="object-name">'+p.name+'</span><span class="object-status status-'+p.status+'">'+st+'</span></div><div class="object-address">📍 '+p.address+'</div><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div></div><div class="object-footer"><div>👤 '+(p.users?.full_name || '—')+'</div><div>📅 Старт: '+window.formatDateShort(p.start_date)+'</div><div>🏁 ГПР: '+window.formatDateShort(p.end_date_contract)+'</div></div></div>'; });
+                filtered.forEach(function(p) {
+                    const st = { 'preparation': '📋 Подготовка', 'mobilization': '🚚 Мобилизация', 'in_progress': '🔨 В работе', 'completed': '✅ Завершён' }[p.status] || p.status;
+                    html += '<div class="object-card" data-id="' + p.id + '">';
+                    html += '<div class="object-header"><span class="object-name">' + p.name + '</span><span class="object-status status-' + p.status + '">' + st + '</span></div>';
+                    html += '<div class="object-address">📍 ' + p.address + '</div>';
+                    html += '<div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div></div>';
+                    html += '<div class="object-footer"><div>👤 ' + (p.users?.full_name || '—') + '</div><div>📅 Старт: ' + window.formatDateShort(p.start_date) + '</div><div>🏁 ГПР: ' + window.formatDateShort(p.end_date_contract) + '</div></div>';
+                    html += '</div>';
+                });
                 container.innerHTML = html + '</div>';
                 container.querySelectorAll('.object-card').forEach(function(c) { c.addEventListener('click', function() { showDetail(c.dataset.id); }); });
             }
