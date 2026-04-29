@@ -537,7 +537,7 @@
     document.getElementById('form-modal-content').appendChild(saveBtn);
 };
 
-         window.openAdvanceForm = async function(axisId, brigadeId) {
+        window.openAdvanceForm = async function(axisId, brigadeId) {
     var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name,company_name,no_ip)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
     if(!stages||!stages.length){alert('Нет этапов');return;}
     var brigade=stages[0]?.brigades;
@@ -545,19 +545,15 @@
     var subName = stages[0]?.sub_axis_name||'';
     var ipName = brigade?.no_ip ? 'Без ИП' : (brigade?.company_name || '—');
     
-    // Сумма выполненных работ (факт. объём × цена с учётом прогресса)
+    // Сумма выполненных работ (с учётом прогресса)
     var doneAmount = stages.reduce(function(s,st){ return s + ((st.progress||0)/100 * (st.total_cost||0)); }, 0);
-    // Фактические выплаты (утверждённые/оплаченные авансы)
+    // Фактические выплаты
     var { data: prev } = await supabase.from('advances').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId);
     var paid = (prev||[]).filter(function(a){return a.status==='approved'||a.status==='paid';}).reduce(function(s,a){return s+(a.amount||0);},0);
     var rem = Math.max(0, doneAmount - paid);
     
-    var { data: lastNum } = await supabase.rpc('next_doc_number', {doc_type: 'advance'});
-    if (!lastNum) {
-        var { data: ln } = await supabase.from('document_numbers').select('number').eq('doc_type','advance').order('number',{ascending:false}).limit(1);
-        lastNum = (ln && ln.length) ? ln[0].number : 0;
-    }
-    var nextNum = (typeof lastNum === 'number') ? lastNum + 1 : parseInt(lastNum) + 1;
+    var { data: ln } = await supabase.from('document_numbers').select('number').eq('doc_type','advance').order('number',{ascending:false}).limit(1);
+    var nextNum = (ln && ln.length) ? ln[0].number + 1 : 1;
     var advanceNumber = '№-AVANS-' + nextNum + ' от ' + new Date().toLocaleDateString('ru-RU');
     
     var html='<div class="form-group"><label class="form-label">📄 Номер аванса</label><input value="'+advanceNumber+'" disabled class="form-input"></div>';
@@ -569,19 +565,13 @@
     html+='<div class="form-group"><label>Фактические выплаты</label><input value="'+paid.toLocaleString()+' ₸" disabled class="form-input"></div>';
     html+='<div class="form-group"><label>Остаток (Выполнено - Выплаты)</label><input value="'+rem.toLocaleString()+' ₸" disabled class="form-input"></div>';
     html+='<div class="form-group"><label class="form-label">Сумма запроса *</label><input type="number" id="advance-amount" class="form-input" step="0.01" max="'+rem+'"></div>';
-    html+='<div class="form-group"><label class="form-label">Вид оплаты</label><select id="advance-payment-method" class="form-input" onchange="toggleAdvanceFiles()"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
-    html+='<div id="advance-files-section"><div class="form-group"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="advance-invoice-file" class="form-input"></div><div class="form-group"><label class="form-label">📎 Счёт-фактура</label><input type="file" id="advance-bill-file" class="form-input"></div></div>';
+    html+='<div class="form-group"><label class="form-label">Вид оплаты</label><select id="advance-payment-method" class="form-input"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
     html+='<div class="checkbox-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><input type="checkbox" id="advance-urgent" style="width:20px;height:20px;"><label style="font-size:14px;">🚨 Срочный платёж</label></div>';
     html+='<div class="form-group"><label><input type="checkbox" id="advance-confirm" style="width:auto;"> ✅ Подтверждаю</label></div>';
     
     document.getElementById('form-modal-title').textContent='💰 Аванс';
     document.getElementById('form-modal-content').innerHTML=html;
     document.getElementById('form-modal').classList.remove('hidden');
-    
-    window.toggleAdvanceFiles = function() {
-        var method = document.getElementById('advance-payment-method').value;
-        document.getElementById('advance-files-section').style.display = method === 'non_cash' ? 'block' : 'none';
-    };
     
     var saveBtn=document.createElement('button');saveBtn.className='btn-primary';saveBtn.textContent='Сформировать';
     saveBtn.addEventListener('click',async function(){
@@ -591,25 +581,14 @@
         var isUrgent = document.getElementById('advance-urgent').checked;
         var paymentMethod = document.getElementById('advance-payment-method').value;
         
-        var invoiceUrl = null, invoiceName = null;
-        if (paymentMethod === 'non_cash') {
-            var invFile = document.getElementById('advance-invoice-file').files[0];
-            if (invFile) {
-                var cleanName = invFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-                var fileName = 'invoices/' + Date.now() + '_' + cleanName;
-                var { error } = await supabase.storage.from('reports').upload(fileName, invFile);
-                if (!error) { var { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName); invoiceUrl = urlData.publicUrl; invoiceName = invFile.name; }
-            }
-        }
-        
+        // Файлы загружаются позже в Задачах→Финансы→Авансы
         await supabase.from('advances').insert({
             project_id:currentProjectId,axis_id:axisId,brigade_id:brigadeId,
             amount:amount,previous_payments:paid,total_contract:totalCost,
             remaining:rem-amount,created_by:currentUser?.id,
             created_by_name:currentUser?.full_name,status:'pending',
             payment_method:paymentMethod,is_urgent:isUrgent,
-            advance_number:advanceNumber,invoice_file_url:invoiceUrl,
-            invoice_file_name:invoiceName,done_amount:doneAmount
+            advance_number:advanceNumber,done_amount:doneAmount
         });
         await supabase.from('document_numbers').insert({doc_type:'advance',number:nextNum});
         alert('✅ Аванс создан');
