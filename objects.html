@@ -377,33 +377,73 @@
                 document.getElementById('form-modal-content').appendChild(saveBtn);
             };
 
-            window.openWorkOrderForm = async function(axisId, brigadeId) {
+           window.openWorkOrderForm = async function(axisId, brigadeId) {
     var { data: axis } = await supabase.from('axes').select('*').eq('id',axisId).single();
-    var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name,company_name,no_ip)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
+    var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name,company_name,no_ip), work_stages(name)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
     if(!stages||!stages.length){alert('Нет этапов');return;}
+    
     var brigade=stages[0]?.brigades;
-    var totalVolume=stages.reduce(function(s,st){return s+(st.volume||0);},0);
-    var totalCost=stages.reduce(function(s,st){return s+(st.total_cost||0);},0);
     var subName=stages[0]?.sub_axis_name||'';
     var ipName = brigade?.no_ip ? 'Без ИП' : (brigade?.company_name || '—');
     
-    var { data: prev } = await supabase.from('advances').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId);
-    var paid=(prev||[]).filter(function(a){return a.status==='approved'||a.status==='paid';}).reduce(function(s,a){return s+(a.amount||0);},0);
+    // Только этапы с прогрессом 100%
+    var completedStages = stages.filter(function(s){ return (s.progress||0) >= 100; });
+    if (!completedStages.length) {
+        alert('⚠️ Нет этапов с выполнением 100%. Доведите хотя бы один этап до 100% перед сдачей наряда.');
+        return;
+    }
     
+    // Сумма закрываемых работ (только 100% этапы)
+    var totalCost = completedStages.reduce(function(s,st){return s+(st.total_cost||0);},0);
+    var totalVolume = completedStages.reduce(function(s,st){return s+(st.volume||0);},0);
+    
+    // Все выплаты по этой бригаде/оси (авансы + предыдущие наряды)
+    var { data: advances } = await supabase.from('advances').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId);
+    var advPaid = (advances||[]).filter(function(a){return a.status==='approved'||a.status==='paid';}).reduce(function(s,a){return s+(a.amount||0);},0);
+    
+    var { data: prevOrders } = await supabase.from('work_orders').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId);
+    var ordPaid = (prevOrders||[]).filter(function(o){return o.status==='approved'||o.payment_status==='paid';}).reduce(function(s,o){return s+(o.total_amount||0);},0);
+    
+    var totalPaid = advPaid + ordPaid;
+    
+    // Номер наряда
     var { data: ln } = await supabase.from('document_numbers').select('number').eq('doc_type','naryad').order('number',{ascending:false}).limit(1);
     var nextNum = (ln && ln.length) ? ln[0].number + 1 : 1;
     var orderNumber = '№-NAR-' + nextNum + ' от ' + new Date().toLocaleDateString('ru-RU');
+    
+    // Расчёты
+    var guarantee = Math.round(totalCost * 0.10); // 10% удержание
+    var finalPay = totalCost - guarantee; // Итоговая сумма к оплате
+    
+    // Проверка: если выплаты превышают сумму наряда
+    var canSubmit = totalPaid <= totalCost;
+    
+    // Список закрываемых этапов
+    var stagesList = completedStages.map(function(s){
+        return '<tr><td>'+ (s.work_stages?.name||'—') +'</td><td class="text-right">'+ (s.volume||0) +' м²</td><td class="text-right">'+ (s.price_per_unit||0) +' ₸</td><td class="text-right">'+ (s.total_cost||0).toLocaleString() +' ₸</td></tr>';
+    }).join('');
     
     var html='<div class="form-group"><label class="form-label">📄 Номер наряда</label><input value="'+orderNumber+'" disabled class="form-input"></div>';
     html+='<div class="form-group"><label>Бригада</label><input value="'+(brigade?.name||'')+' ('+(brigade?.foreman_name||'')+')" disabled class="form-input"></div>';
     html+='<div class="form-group"><label>ИП/ТОО</label><input value="'+ipName+'" disabled class="form-input"></div>';
     html+='<div class="form-group"><label>Ось / Подось</label><input value="'+(axis?.name||'')+' / '+subName+'" disabled class="form-input"></div>';
-    html+='<div class="row-2"><div class="form-group"><label>Общий объём</label><input value="'+totalVolume+'" disabled class="form-input"></div><div class="form-group"><label>Факт. объём *</label><input type="number" id="narad-fact" step="0.01" class="form-input" value="'+totalVolume+'"></div></div>';
-    html+='<div class="form-group"><label>Цена за м²</label><input type="number" id="narad-price" step="0.01" class="form-input" value="'+(stages[0]?.price_per_unit||0)+'"></div>';
-    html+='<div class="form-group"><label>Сумма договора</label><input value="'+totalCost.toLocaleString()+' ₸" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label>Выплачено авансов</label><input value="'+paid.toLocaleString()+' ₸" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label>Остаток (Договор - Авансы)</label><input value="'+(Math.max(0,totalCost-paid)).toLocaleString()+' ₸" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label class="form-label">Вид оплаты</label><select id="narad-payment-method" class="form-input"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
+    
+    // Таблица закрываемых работ
+    html+='<h4 style="margin:16px 0 8px;">📋 Закрываемые этапы (100%)</h4>';
+    html+='<table class="work-table"><thead><tr><th>Вид работ</th><th>Объём</th><th>Цена</th><th>Сумма</th></tr></thead><tbody>'+stagesList+'</tbody></table>';
+    
+    // Финансовый блок
+    html+='<table class="calc-table" style="margin-top:16px;">';
+    html+='<tr><td>💰 Сумма закрываемых работ</td><td>'+totalCost.toLocaleString()+' ₸</td></tr>';
+    html+='<tr><td>💸 Сумма выплаченных денег (всего)</td><td>'+(totalPaid > 0 ? totalPaid.toLocaleString() : '0')+' ₸</td></tr>';
+    if (!canSubmit) {
+        html+='<tr style="background:#FEF2F2;"><td colspan="2" style="text-align:center;color:#DC2626;padding:12px;">⚠️ Выплаты ('+totalPaid.toLocaleString()+' ₸) превышают сумму наряда ('+totalCost.toLocaleString()+' ₸).<br>Наряд не может быть сформирован. Подайте на аванс.</td></tr>';
+    }
+    html+='<tr><td>🔒 Удержание 10% (гарантийные)</td><td class="negative">-'+guarantee.toLocaleString()+' ₸</td></tr>';
+    html+='<tr class="total-row"><td>💳 ИТОГО К ОПЛАТЕ</td><td style="font-size:18px;color:var(--success);">'+finalPay.toLocaleString()+' ₸</td></tr>';
+    html+='</table>';
+    
+    html+='<div class="form-group" style="margin-top:16px;"><label class="form-label">Вид оплаты</label><select id="narad-payment-method" class="form-input"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
     html+='<div class="checkbox-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><input type="checkbox" id="narad-urgent" style="width:20px;height:20px;"><label style="font-size:14px;">🚨 Срочный платёж</label></div>';
     html+='<div class="form-group"><label><input type="checkbox" id="narad-confirm" style="width:auto;"> ✅ Подтверждаю</label></div>';
     
@@ -411,23 +451,30 @@
     document.getElementById('form-modal-content').innerHTML=html;
     document.getElementById('form-modal').classList.remove('hidden');
     
-    var saveBtn=document.createElement('button');saveBtn.className='btn-primary';saveBtn.textContent='Сформировать';
+    var saveBtn=document.createElement('button');saveBtn.className='btn-primary';saveBtn.textContent='Сформировать наряд';
+    
+    if (!canSubmit) {
+        saveBtn.disabled = true;
+        saveBtn.style.opacity = '0.5';
+        saveBtn.textContent = '⚠️ Наряд не может быть сформирован';
+    }
+    
     saveBtn.addEventListener('click',async function(){
         if(!document.getElementById('narad-confirm').checked){alert('Подтвердите');return;}
-        var fact=parseFloat(document.getElementById('narad-fact').value)||0;
-        var price=parseFloat(document.getElementById('narad-price').value)||0;
         var isUrgent = document.getElementById('narad-urgent').checked;
         var paymentMethod = document.getElementById('narad-payment-method').value;
         
         await supabase.from('work_orders').insert({
             project_id:currentProjectId,
+            axis_id:axisId,
             axis_name:(axis?.name||'')+' / '+subName,
             brigade_id:brigadeId,
-            work_type:'Работы',
+            work_type:'Работы (100%)',
             volume:totalVolume,
-            actual_volume:fact,
-            price:price,
-            total_amount:fact*price,
+            total_amount:finalPay,
+            original_amount:totalCost,
+            guarantee_amount:guarantee,
+            total_paid:totalPaid,
             created_by:currentUser?.id,
             status:'pending',
             payment_method:paymentMethod,
@@ -438,14 +485,14 @@
         await supabase.from('custom_tasks').insert({
             project_id:currentProjectId,
             title:(isUrgent?'🚨 ':'')+'Наряд '+orderNumber,
-            description:'Бригада: '+(brigade?.name||'')+', сумма: '+(fact*price).toLocaleString()+' ₸',
+            description:'Бригада: '+(brigade?.name||'')+'\nСумма: '+totalCost.toLocaleString()+' ₸\nУдержание 10%: '+guarantee.toLocaleString()+' ₸\nК оплате: '+finalPay.toLocaleString()+' ₸',
             status:'pending',
             priority:isUrgent?'high':'medium',
             type:'order_review',
             created_by:currentUser?.id,
             created_by_name:currentUser?.full_name
         });
-        alert('✅ Наряд создан');
+        alert('✅ Наряд создан! Итоговая сумма к оплате: '+finalPay.toLocaleString()+' ₸');
         document.getElementById('form-modal').classList.add('hidden');
         if(document.getElementById('axis-detail-page').classList.contains('hidden'))loadProgressTab();
         else window.openAxisDetailPage(currentAxisId);
