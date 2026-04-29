@@ -381,17 +381,17 @@
     var { data: axis } = await supabase.from('axes').select('*').eq('id',axisId).single();
     var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name,company_name,no_ip)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
     if(!stages||!stages.length){alert('Нет этапов');return;}
-    var brigade=stages[0]?.brigades;var totalVolume=stages.reduce(function(s,st){return s+(st.volume||0);},0);
+    var brigade=stages[0]?.brigades;
+    var totalVolume=stages.reduce(function(s,st){return s+(st.volume||0);},0);
     var totalCost=stages.reduce(function(s,st){return s+(st.total_cost||0);},0);
     var subName=stages[0]?.sub_axis_name||'';
     var ipName = brigade?.no_ip ? 'Без ИП' : (brigade?.company_name || '—');
     
     var { data: prev } = await supabase.from('advances').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId);
-    var paid=(prev||[]).reduce(function(s,a){return s+(a.amount||0);},0);
+    var paid=(prev||[]).filter(function(a){return a.status==='approved'||a.status==='paid';}).reduce(function(s,a){return s+(a.amount||0);},0);
     
-    var { data: lastNum } = await supabase.from('document_numbers').select('number').eq('doc_type','naryad').order('number',{ascending:false}).limit(1);
-    var nextNum = (lastNum && lastNum.length) ? lastNum[0].number + 1 : 1;
-    var today = new Date().toISOString().split('T')[0];
+    var { data: ln } = await supabase.from('document_numbers').select('number').eq('doc_type','naryad').order('number',{ascending:false}).limit(1);
+    var nextNum = (ln && ln.length) ? ln[0].number + 1 : 1;
     var orderNumber = '№-NAR-' + nextNum + ' от ' + new Date().toLocaleDateString('ru-RU');
     
     var html='<div class="form-group"><label class="form-label">📄 Номер наряда</label><input value="'+orderNumber+'" disabled class="form-input"></div>';
@@ -403,86 +403,161 @@
     html+='<div class="form-group"><label>Сумма договора</label><input value="'+totalCost.toLocaleString()+' ₸" disabled class="form-input"></div>';
     html+='<div class="form-group"><label>Выплачено авансов</label><input value="'+paid.toLocaleString()+' ₸" disabled class="form-input"></div>';
     html+='<div class="form-group"><label>Остаток (Договор - Авансы)</label><input value="'+(Math.max(0,totalCost-paid)).toLocaleString()+' ₸" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label class="form-label">Вид оплаты</label><select id="narad-payment-method" class="form-input" onchange="toggleNaradFiles()"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
-    html+='<div id="narad-files-section"><div class="form-group"><label class="form-label">📎 АВР</label><input type="file" id="narad-avr-file" class="form-input"></div><div class="form-group"><label class="form-label">📎 Счёт-фактура</label><input type="file" id="narad-invoice-file" class="form-input"></div></div>';
+    html+='<div class="form-group"><label class="form-label">Вид оплаты</label><select id="narad-payment-method" class="form-input"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
     html+='<div class="checkbox-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><input type="checkbox" id="narad-urgent" style="width:20px;height:20px;"><label style="font-size:14px;">🚨 Срочный платёж</label></div>';
     html+='<div class="form-group"><label><input type="checkbox" id="narad-confirm" style="width:auto;"> ✅ Подтверждаю</label></div>';
-    document.getElementById('form-modal-title').textContent='📋 Сдать Наряд';
-    document.getElementById('form-modal-content').innerHTML=html;document.getElementById('form-modal').classList.remove('hidden');
     
-    window.toggleNaradFiles = function() {
-        var method = document.getElementById('narad-payment-method').value;
-        document.getElementById('narad-files-section').style.display = method === 'non_cash' ? 'block' : 'none';
-    };
+    document.getElementById('form-modal-title').textContent='📋 Сдать Наряд';
+    document.getElementById('form-modal-content').innerHTML=html;
+    document.getElementById('form-modal').classList.remove('hidden');
     
     var saveBtn=document.createElement('button');saveBtn.className='btn-primary';saveBtn.textContent='Сформировать';
     saveBtn.addEventListener('click',async function(){
         if(!document.getElementById('narad-confirm').checked){alert('Подтвердите');return;}
-        var fact=parseFloat(document.getElementById('narad-fact').value)||0;var price=parseFloat(document.getElementById('narad-price').value)||0;
+        var fact=parseFloat(document.getElementById('narad-fact').value)||0;
+        var price=parseFloat(document.getElementById('narad-price').value)||0;
         var isUrgent = document.getElementById('narad-urgent').checked;
         var paymentMethod = document.getElementById('narad-payment-method').value;
         
-        var avrUrl = null, invoiceUrl = null, invoiceName = null;
-        if (paymentMethod === 'non_cash') {
-            var avrFile = document.getElementById('narad-avr-file').files[0];
-            var invFile = document.getElementById('narad-invoice-file').files[0];
-            if (avrFile) { var cn = avrFile.name.replace(/[^a-zA-Z0-9._-]/g, '_'); var { error } = await supabase.storage.from('reports').upload('avr/'+Date.now()+'_'+cn, avrFile); if(!error){var { data } = supabase.storage.from('reports').getPublicUrl('avr/'+Date.now()+'_'+cn); avrUrl = data.publicUrl;} }
-            if (invFile) { var cn2 = invFile.name.replace(/[^a-zA-Z0-9._-]/g, '_'); invoiceName = invFile.name; var { error: e2 } = await supabase.storage.from('reports').upload('invoices/'+Date.now()+'_'+cn2, invFile); if(!e2){var { data } = supabase.storage.from('reports').getPublicUrl('invoices/'+Date.now()+'_'+cn2); invoiceUrl = data.publicUrl;} }
-        }
-        
-        await supabase.from('work_orders').insert({project_id:currentProjectId,axis_name:(axis?.name||'')+' / '+subName,brigade_id:brigadeId,work_type:'Работы',volume:totalVolume,actual_volume:fact,price:price,total_amount:fact*price,created_by:currentUser?.id,status:'pending',payment_method:paymentMethod,is_urgent:isUrgent,order_number:orderNumber,avr_url:avrUrl,invoice_file_url:invoiceUrl,invoice_file_name:invoiceName});
+        await supabase.from('work_orders').insert({
+            project_id:currentProjectId,
+            axis_name:(axis?.name||'')+' / '+subName,
+            brigade_id:brigadeId,
+            work_type:'Работы',
+            volume:totalVolume,
+            actual_volume:fact,
+            price:price,
+            total_amount:fact*price,
+            created_by:currentUser?.id,
+            status:'pending',
+            payment_method:paymentMethod,
+            is_urgent:isUrgent,
+            order_number:orderNumber
+        });
         await supabase.from('document_numbers').insert({doc_type:'naryad',number:nextNum});
-        await supabase.from('custom_tasks').insert({project_id:currentProjectId,title:'Наряд '+orderNumber,description:'Бригада: '+(brigade?.name||'')+', сумма: '+(fact*price).toLocaleString()+' ₸',status:'pending',priority:isUrgent?'high':'medium',type:'order_review',created_by:currentUser?.id,created_by_name:currentUser?.full_name});
-        alert('✅ Наряд создан');document.getElementById('form-modal').classList.add('hidden');
-        if(document.getElementById('axis-detail-page').classList.contains('hidden'))loadProgressTab();else window.openAxisDetailPage(currentAxisId);
+        await supabase.from('custom_tasks').insert({
+            project_id:currentProjectId,
+            title:(isUrgent?'🚨 ':'')+'Наряд '+orderNumber,
+            description:'Бригада: '+(brigade?.name||'')+', сумма: '+(fact*price).toLocaleString()+' ₸',
+            status:'pending',
+            priority:isUrgent?'high':'medium',
+            type:'order_review',
+            created_by:currentUser?.id,
+            created_by_name:currentUser?.full_name
+        });
+        alert('✅ Наряд создан');
+        document.getElementById('form-modal').classList.add('hidden');
+        if(document.getElementById('axis-detail-page').classList.contains('hidden'))loadProgressTab();
+        else window.openAxisDetailPage(currentAxisId);
     });
     document.getElementById('form-modal-content').appendChild(saveBtn);
 };
-                   window.openChangeBrigadeForm = async function(axisId, oldBrigadeId) {
-    var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').eq('axis_id',axisId).eq('brigade_id',oldBrigadeId);
+     window.openChangeBrigadeForm = async function(axisId, oldBrigadeId) {
+    var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name,foreman_name), work_stages(name)').eq('axis_id',axisId).eq('brigade_id',oldBrigadeId);
     if(!stages||!stages.length){alert('Нет этапов');return;}
-    var oldBrigadeName=stages[0]?.brigades?.name||'Бригада';
-    var totalProgress=Math.round(stages.reduce(function(s,st){return s+(st.progress||0);},0)/stages.length);
-    var html='<div class="form-group"><label>Текущая бригада</label><input value="'+oldBrigadeName+'" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label>Выполнено</label><input value="'+totalProgress+'%" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label class="form-label">Новая бригада *</label><select id="change-brigade-select" class="form-input">';
+    var oldBrigadeName = stages[0]?.brigades?.name||'Бригада';
+    var subAxisName = stages[0]?.sub_axis_name||'';
+    var totalProgress = Math.round(stages.reduce(function(s,st){return s+(st.progress||0);},0)/stages.length);
+    
+    // Показываем текущие этапы и проценты
+    var stagesInfo = stages.map(function(s){
+        return '• '+ (s.work_stages?.name||'—') + ' — ' + (s.progress||0) + '% (объём: ' + (s.volume||0) + ' м²)';
+    }).join('<br>');
+    
+    var html = '<div class="form-group"><label>Текущая бригада</label><input value="'+oldBrigadeName+'" disabled class="form-input"></div>';
+    html += '<div class="form-group"><label>Подось</label><input value="'+subAxisName+'" disabled class="form-input"></div>';
+    html += '<div class="form-group"><label>Выполнено</label><input value="'+totalProgress+'%" disabled class="form-input"></div>';
+    html += '<div class="form-group"><label>Текущие этапы</label><div style="background:#F8FAFC;padding:12px;border-radius:12px;font-size:13px;">'+stagesInfo+'</div></div>';
+    html += '<div class="form-group"><label class="form-label">Новая бригада *</label><select id="change-brigade-select" class="form-input">';
     allBrigades.forEach(function(b){if(b.id!==oldBrigadeId)html+='<option value="'+b.id+'">'+b.name+' ('+(b.foreman_name||'')+')</option>';});
-    html+='</select></div>';
-    html+='<div class="form-group"><label class="form-label">📍 Новая подось</label><input type="text" id="change-subaxis-name" class="form-input" placeholder="1-5 (новая)"></div>';
-    html+='<div class="form-group"><label class="form-label">Комментарий</label><textarea id="change-brigade-comment" class="form-input" rows="2"></textarea></div>';
-    document.getElementById('form-modal-title').textContent='👷 Заменить бригаду';
-    document.getElementById('form-modal-content').innerHTML=html;document.getElementById('form-modal').classList.remove('hidden');
-    var saveBtn=document.createElement('button');saveBtn.className='btn-primary';saveBtn.textContent='🔄 Заменить (создать новую подось)';
-    saveBtn.addEventListener('click',async function(){
-        var newBrigadeId=document.getElementById('change-brigade-select').value;
-        var newSubAxisName=document.getElementById('change-subaxis-name').value.trim();
-        var comment=document.getElementById('change-brigade-comment').value;
+    html += '</select></div>';
+    html += '<div class="form-group"><label class="form-label">Комментарий</label><textarea id="change-brigade-comment" class="form-input" rows="2" placeholder="Причина замены..."></textarea></div>';
+    html += '<p style="font-size:12px;color:#F59E0B;margin-top:8px;">⚠️ Старая бригада будет зафиксирована с текущими процентами. Новая бригада продолжит работу с теми же этапами.</p>';
+    
+    document.getElementById('form-modal-title').textContent = '👷 Заменить бригаду';
+    document.getElementById('form-modal-content').innerHTML = html;
+    document.getElementById('form-modal').classList.remove('hidden');
+    
+    var saveBtn = document.createElement('button');
+    saveBtn.className = 'btn-primary';
+    saveBtn.textContent = '🔄 Заменить бригаду';
+    saveBtn.addEventListener('click', async function(){
+        var newBrigadeId = document.getElementById('change-brigade-select').value;
+        var comment = document.getElementById('change-brigade-comment').value;
         if(!newBrigadeId){alert('Выберите бригаду');return;}
+        if(!confirm('Заменить бригаду «'+oldBrigadeName+'» на новую? Старая бригада будет зафиксирована с текущими процентами.')) return;
+        
+        var newBrigade = allBrigades.find(function(b){return b.id===newBrigadeId;});
+        var newBrigadeName = (newBrigade?.name||'') + ' (' + (newBrigade?.foreman_name||'') + ')';
+        
+        // 1. Обновляем старые этапы — фиксируем бригаду
         for(var i=0;i<stages.length;i++){
-            await supabase.from('axis_work_stages').insert({axis_id:axisId,brigade_id:newBrigadeId,sub_axis_name:newSubAxisName||stages[i].sub_axis_name,stage_id:stages[i].stage_id,volume:stages[i].volume,unit:stages[i].unit,price_per_unit:stages[i].price_per_unit,total_cost:stages[i].total_cost,plan_start:stages[i].plan_start,plan_end:stages[i].plan_end,progress:0,status:'pending',created_by:currentUser?.id});
+            await supabase.from('axis_work_stages').update({
+                status: 'completed',
+                comment: (stages[i].comment||'') + ' | Бригада заменена на ' + newBrigadeName
+            }).eq('id', stages[i].id);
         }
-        await supabase.from('change_history').insert({project_id:currentProjectId,entity_type:'axis',entity_id:axisId,action:'change_brigade_split',old_value:oldBrigadeName,new_value:document.getElementById('change-brigade-select').selectedOptions[0]?.text||'',comment:'Новая подось: '+(newSubAxisName||'—')+'. Старая сохранена. '+comment,changed_by:currentUser?.id,changed_by_name:currentUser?.full_name});
-        alert('✅ Бригада заменена. Старая подось сохранена, создана новая.');
+        
+        // 2. Создаём НОВЫЕ этапы для новой бригады (копируем этапы, прогресс 0%)
+        for(var i=0;i<stages.length;i++){
+            await supabase.from('axis_work_stages').insert({
+                axis_id: axisId,
+                brigade_id: newBrigadeId,
+                sub_axis_name: stages[i].sub_axis_name,
+                stage_id: stages[i].stage_id,
+                volume: stages[i].volume,
+                unit: stages[i].unit,
+                price_per_unit: stages[i].price_per_unit,
+                total_cost: stages[i].total_cost,
+                plan_start: new Date().toISOString().split('T')[0],
+                plan_end: stages[i].plan_end,
+                progress: 0,
+                status: 'pending',
+                created_by: currentUser?.id,
+                comment: 'Бригада заменена. Предыдущая: ' + oldBrigadeName
+            });
+        }
+        
+        await supabase.from('change_history').insert({
+            project_id: currentProjectId,
+            entity_type: 'axis',
+            entity_id: axisId,
+            action: 'replace_brigade',
+            old_value: oldBrigadeName,
+            new_value: newBrigadeName,
+            comment: 'Замена бригады на подоси «'+subAxisName+'». Старая бригада зафиксирована. ' + comment,
+            changed_by: currentUser?.id,
+            changed_by_name: currentUser?.full_name
+        });
+        
+        alert('✅ Бригада заменена! Старая зафиксирована, новая продолжит работу с 0%.');
         document.getElementById('form-modal').classList.add('hidden');
         window.openAxisDetailPage(currentAxisId);
     });
     document.getElementById('form-modal-content').appendChild(saveBtn);
 };
 
-            window.openAdvanceForm = async function(axisId, brigadeId) {
+         window.openAdvanceForm = async function(axisId, brigadeId) {
     var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name,company_name,no_ip)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
     if(!stages||!stages.length){alert('Нет этапов');return;}
-    var brigade=stages[0]?.brigades;var totalCost=stages.reduce(function(s,st){return s+(st.total_cost||0);},0);
-    var subName=stages[0]?.sub_axis_name||'';
+    var brigade=stages[0]?.brigades;
+    var totalCost = stages.reduce(function(s,st){return s+(st.total_cost||0);},0);
+    var subName = stages[0]?.sub_axis_name||'';
     var ipName = brigade?.no_ip ? 'Без ИП' : (brigade?.company_name || '—');
     
+    // Сумма выполненных работ (факт. объём × цена с учётом прогресса)
+    var doneAmount = stages.reduce(function(s,st){ return s + ((st.progress||0)/100 * (st.total_cost||0)); }, 0);
+    // Фактические выплаты (утверждённые/оплаченные авансы)
     var { data: prev } = await supabase.from('advances').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId);
-    var paid=(prev||[]).reduce(function(s,a){return s+(a.amount||0);},0);var rem=totalCost-paid;
+    var paid = (prev||[]).filter(function(a){return a.status==='approved'||a.status==='paid';}).reduce(function(s,a){return s+(a.amount||0);},0);
+    var rem = Math.max(0, doneAmount - paid);
     
-    // Получаем следующий номер аванса
-    var { data: lastNum } = await supabase.from('document_numbers').select('number').eq('doc_type','advance').order('number',{ascending:false}).limit(1);
-    var nextNum = (lastNum && lastNum.length) ? lastNum[0].number + 1 : 1;
-    var today = new Date().toISOString().split('T')[0];
+    var { data: lastNum } = await supabase.rpc('next_doc_number', {doc_type: 'advance'});
+    if (!lastNum) {
+        var { data: ln } = await supabase.from('document_numbers').select('number').eq('doc_type','advance').order('number',{ascending:false}).limit(1);
+        lastNum = (ln && ln.length) ? ln[0].number : 0;
+    }
+    var nextNum = (typeof lastNum === 'number') ? lastNum + 1 : parseInt(lastNum) + 1;
     var advanceNumber = '№-AVANS-' + nextNum + ' от ' + new Date().toLocaleDateString('ru-RU');
     
     var html='<div class="form-group"><label class="form-label">📄 Номер аванса</label><input value="'+advanceNumber+'" disabled class="form-input"></div>';
@@ -490,15 +565,18 @@
     html+='<div class="form-group"><label>ИП/ТОО</label><input value="'+ipName+'" disabled class="form-input"></div>';
     html+='<div class="form-group"><label>Подось</label><input value="'+subName+'" disabled class="form-input"></div>';
     html+='<div class="form-group"><label>Сумма договора</label><input value="'+totalCost.toLocaleString()+' ₸" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label>Выплачено</label><input value="'+paid.toLocaleString()+' ₸" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label>Остаток</label><input value="'+Math.max(0,rem).toLocaleString()+' ₸" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label class="form-label">Сумма запроса *</label><input type="number" id="advance-amount" class="form-input" step="0.01" max="'+Math.max(0,rem)+'"></div>';
+    html+='<div class="form-group"><label>Выполнено работ</label><input value="'+doneAmount.toLocaleString()+' ₸" disabled class="form-input"></div>';
+    html+='<div class="form-group"><label>Фактические выплаты</label><input value="'+paid.toLocaleString()+' ₸" disabled class="form-input"></div>';
+    html+='<div class="form-group"><label>Остаток (Выполнено - Выплаты)</label><input value="'+rem.toLocaleString()+' ₸" disabled class="form-input"></div>';
+    html+='<div class="form-group"><label class="form-label">Сумма запроса *</label><input type="number" id="advance-amount" class="form-input" step="0.01" max="'+rem+'"></div>';
     html+='<div class="form-group"><label class="form-label">Вид оплаты</label><select id="advance-payment-method" class="form-input" onchange="toggleAdvanceFiles()"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
     html+='<div id="advance-files-section"><div class="form-group"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="advance-invoice-file" class="form-input"></div><div class="form-group"><label class="form-label">📎 Счёт-фактура</label><input type="file" id="advance-bill-file" class="form-input"></div></div>';
     html+='<div class="checkbox-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><input type="checkbox" id="advance-urgent" style="width:20px;height:20px;"><label style="font-size:14px;">🚨 Срочный платёж</label></div>';
     html+='<div class="form-group"><label><input type="checkbox" id="advance-confirm" style="width:auto;"> ✅ Подтверждаю</label></div>';
+    
     document.getElementById('form-modal-title').textContent='💰 Аванс';
-    document.getElementById('form-modal-content').innerHTML=html;document.getElementById('form-modal').classList.remove('hidden');
+    document.getElementById('form-modal-content').innerHTML=html;
+    document.getElementById('form-modal').classList.remove('hidden');
     
     window.toggleAdvanceFiles = function() {
         var method = document.getElementById('advance-payment-method').value;
@@ -509,7 +587,7 @@
     saveBtn.addEventListener('click',async function(){
         if(!document.getElementById('advance-confirm').checked){alert('Подтвердите');return;}
         var amount=parseFloat(document.getElementById('advance-amount').value)||0;
-        if(amount<=0||amount>rem){alert('Некорректная сумма');return;}
+        if(amount<=0||amount>rem){alert('Некорректная сумма. Максимум: '+rem.toLocaleString()+' ₸');return;}
         var isUrgent = document.getElementById('advance-urgent').checked;
         var paymentMethod = document.getElementById('advance-payment-method').value;
         
@@ -524,12 +602,18 @@
             }
         }
         
-        await supabase.from('advances').insert({project_id:currentProjectId,axis_id:axisId,brigade_id:brigadeId,amount:amount,previous_payments:paid,total_contract:totalCost,remaining:rem-amount,created_by:currentUser?.id,created_by_name:currentUser?.full_name,status:'pending',payment_method:paymentMethod,is_urgent:isUrgent,advance_number:advanceNumber,invoice_file_url:invoiceUrl,invoice_file_name:invoiceName});
+        await supabase.from('advances').insert({
+            project_id:currentProjectId,axis_id:axisId,brigade_id:brigadeId,
+            amount:amount,previous_payments:paid,total_contract:totalCost,
+            remaining:rem-amount,created_by:currentUser?.id,
+            created_by_name:currentUser?.full_name,status:'pending',
+            payment_method:paymentMethod,is_urgent:isUrgent,
+            advance_number:advanceNumber,invoice_file_url:invoiceUrl,
+            invoice_file_name:invoiceName,done_amount:doneAmount
+        });
         await supabase.from('document_numbers').insert({doc_type:'advance',number:nextNum});
-        if (paymentMethod === 'cash') {
-            await supabase.from('payment_plan').insert({project_id:currentProjectId,brigade_id:brigadeId,type:'advance',amount:amount,status:'pending'});
-        }
-        alert('✅ Аванс создан');document.getElementById('form-modal').classList.add('hidden');
+        alert('✅ Аванс создан');
+        document.getElementById('form-modal').classList.add('hidden');
     });
     document.getElementById('form-modal-content').appendChild(saveBtn);
 };
@@ -1023,33 +1107,121 @@ window.addStageToBrigade = function(axisId, brigadeId, subAxisName) {
                 document.getElementById('add-expense-btn')?.addEventListener('click', openAddExpenseForm);
             }
 
-            function openAddExpenseForm() {
+                       function openAddExpenseForm() {
                 const today = new Date().toISOString().split('T')[0];
-                const modalHtml = '<div class="form-group"><label>Дата расхода *</label><input type="date" id="expense-date" value="'+today+'"></div><div class="form-group"><label>Статья расхода *</label><select id="expense-category"><option value="delivery">🚛 Доставка</option><option value="consumables">🔧 Расходники</option><option value="cradles">🏗️ Люльки</option><option value="scaffolding">🪜 Леса</option><option value="rent">🏢 Аренда</option><option value="other">📄 Прочее</option></select></div><div class="form-group"><label>Наименование расхода *</label><input type="text" id="expense-name" placeholder="Например: Доставка материалов"></div><div class="form-group"><label>Поставщик / Получатель</label><input type="text" id="expense-supplier" placeholder="ТОО «СтройМатериалы»"></div><div class="row-2"><div class="form-group"><label>Количество</label><input type="number" id="expense-quantity" step="0.01" value="1"></div><div class="form-group"><label>Сумма *</label><input type="number" id="expense-amount" step="0.01" placeholder="Сумма в ₸"></div></div><div class="form-group"><label>Метод оплаты *</label><select id="expense-payment-method"><option value="cash">💵 Наличка</option><option value="non_cash">💳 Безнал</option></select></div><div class="form-group"><label><input type="checkbox" id="expense-urgent" style="width: auto; margin-right: 8px;"> 🚨 Срочный платёж</label></div><div class="form-group"><label>📎 Счёт на оплату</label><input type="file" id="expense-invoice" accept=".pdf,.jpg,.jpeg,.png"></div><div class="form-group"><label>Статус *</label><select id="expense-status"><option value="paid">✅ Оплатили</option><option value="pending">⏳ В план оплат</option></select></div><button class="btn-primary" id="save-expense-btn">💾 Сохранить расход</button>';
-                document.getElementById('form-modal-title').textContent = '➕ Добавить расход';
-                document.getElementById('form-modal-content').innerHTML = modalHtml;
-                document.getElementById('form-modal').classList.remove('hidden');
-                document.getElementById('save-expense-btn').onclick = async () => {
-                    const date = document.getElementById('expense-date').value;
-                    const category = document.getElementById('expense-category').value;
-                    const name = document.getElementById('expense-name').value.trim();
-                    const supplier = document.getElementById('expense-supplier').value.trim();
-                    const quantity = parseFloat(document.getElementById('expense-quantity').value) || 1;
-                    const amount = parseFloat(document.getElementById('expense-amount').value);
-                    const paymentMethod = document.getElementById('expense-payment-method').value;
-                    const isUrgent = document.getElementById('expense-urgent').checked;
-                    const paymentStatus = document.getElementById('expense-status').value;
-                    if (!name || !amount || amount <= 0) { alert('Заполните наименование и сумму'); return; }
-                    let invoiceUrl = null; let invoiceName = null;
-                    const fileInput = document.getElementById('expense-invoice');
-                    if (fileInput && fileInput.files[0]) { const file = fileInput.files[0]; invoiceName = file.name; const fileName = 'invoices/'+currentProjectId+'/'+Date.now()+'_'+file.name; const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file); if (!uploadError) { const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName); invoiceUrl = urlData.publicUrl; } }
-                    const { error: insertError } = await supabase.from('expenses').insert({ project_id: currentProjectId, date: date, name: name, category: category, quantity: quantity, amount: amount, payment_type: paymentMethod === 'cash' ? 'cash' : 'invoice', payment_status: paymentStatus, supplier: supplier || null, is_urgent: isUrgent, payment_method: paymentMethod, invoice_url: invoiceUrl, invoice_name: invoiceName, created_by: currentUser?.id }).select('id').single();
-                    if (insertError) { alert('Ошибка: ' + insertError.message); return; }
-                    if (paymentStatus === 'pending') { await supabase.from('custom_tasks').insert({ project_id: currentProjectId, title: '💰 Платёж: ' + name, description: 'Сумма: ' + amount.toLocaleString() + ' ₸\nПоставщик: ' + (supplier || '—') + '\nКатегория: ' + category + '\n' + (isUrgent ? '🚨 СРОЧНЫЙ ПЛАТЁЖ' : ''), status: 'pending', priority: isUrgent ? 'high' : 'medium', created_by: currentUser?.id, created_by_name: currentUser?.full_name }); }
-                    document.getElementById('form-modal').classList.add('hidden');
-                    loadExpenses();
-                    showMessage('✅ Расход добавлен', 'success');
-                };
+                
+                // Получаем следующий номер
+                supabase.from('document_numbers').select('number').eq('doc_type','expense').order('number',{ascending:false}).limit(1).then(function(result){
+                    var nextNum = (result.data && result.data.length) ? result.data[0].number + 1 : 1;
+                    var expenseNumber = '№-RAS-' + nextNum + ' от ' + new Date().toLocaleDateString('ru-RU');
+                    
+                    let modalHtml = '<div class="form-group"><label class="form-label">📄 Номер расхода</label><input value="'+expenseNumber+'" disabled class="form-input"></div>';
+                    modalHtml += '<div class="form-group"><label>Дата расхода *</label><input type="date" id="expense-date" class="form-input" value="'+today+'"></div>';
+                    modalHtml += '<div class="form-group"><label>Статья расхода *</label><select id="expense-category" class="form-input"><option value="delivery">🚛 Доставка</option><option value="consumables">🔧 Расходники</option><option value="cradles">🏗️ Люльки</option><option value="scaffolding">🪜 Леса</option><option value="rent">🏢 Аренда</option><option value="other">📄 Прочее</option></select></div>';
+                    modalHtml += '<div class="form-group"><label>Наименование расхода *</label><input type="text" id="expense-name" class="form-input" placeholder="Например: Доставка материалов"></div>';
+                    modalHtml += '<div class="form-group"><label>Поставщик / Получатель</label><input type="text" id="expense-supplier" class="form-input" placeholder="ТОО «СтройМатериалы»"></div>';
+                    modalHtml += '<div class="row-2"><div class="form-group"><label>Количество</label><input type="number" id="expense-quantity" class="form-input" step="0.01" value="1"></div><div class="form-group"><label>Сумма *</label><input type="number" id="expense-amount" class="form-input" step="0.01" placeholder="Сумма в ₸"></div></div>';
+                    modalHtml += '<div class="form-group"><label class="form-label">Метод оплаты *</label><select id="expense-payment-method" class="form-input" onchange="toggleExpenseFields()"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
+                    modalHtml += '<div class="form-group"><label>📎 Счёт на оплату</label><input type="file" id="expense-invoice" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>';
+                    modalHtml += '<div class="checkbox-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><input type="checkbox" id="expense-urgent" style="width:20px;height:20px;"><label style="font-size:14px;">🚨 Срочный платёж</label></div>';
+                    modalHtml += '<div class="form-group"><label class="form-label">Статус *</label><select id="expense-status" class="form-input" onchange="toggleExpenseFields()"><option value="paid">✅ Оплатили</option><option value="pending">⏳ В план оплат</option></select></div>';
+                    modalHtml += '<div id="expense-paid-by-group" class="form-group" style="display:none;"><label class="form-label">👤 Кто оплатил</label><select id="expense-paid-by" class="form-input"></select></div>';
+                    modalHtml += '<div id="expense-plan-date-group" class="form-group" style="display:none;"><label class="form-label">📅 Дата платежа</label><input type="date" id="expense-plan-date" class="form-input" value="'+today+'"></div>';
+                    modalHtml += '<button class="btn-primary" id="save-expense-btn">💾 Сохранить расход</button>';
+                    
+                    document.getElementById('form-modal-title').textContent = '➕ Добавить расход';
+                    document.getElementById('form-modal-content').innerHTML = modalHtml;
+                    document.getElementById('form-modal').classList.remove('hidden');
+                    
+                    // Загружаем список сотрудников
+                    supabase.from('users').select('id, full_name').in('role', ['manager', 'worker']).order('full_name').then(function(ur){
+                        var sel = document.getElementById('expense-paid-by');
+                        if (sel && ur.data) {
+                            sel.innerHTML = '<option value="">Выберите сотрудника</option>' + ur.data.map(function(u){return '<option value="'+u.id+'">'+u.full_name+'</option>';}).join('');
+                        }
+                    });
+                    
+                    window.toggleExpenseFields = function() {
+                        var method = document.getElementById('expense-payment-method').value;
+                        var status = document.getElementById('expense-status').value;
+                        document.getElementById('expense-paid-by-group').style.display = (method === 'cash' && status === 'paid') ? 'block' : 'none';
+                        document.getElementById('expense-plan-date-group').style.display = (status === 'pending') ? 'block' : 'none';
+                    };
+                    
+                    // Сохраняем номер для использования в кнопке
+                    window._currentExpenseNumber = expenseNumber;
+                    window._currentExpenseNextNum = nextNum;
+                });
+                
+                // Кнопка сохранения (добавляется после загрузки номера)
+                setTimeout(function(){
+                    var saveBtn = document.getElementById('save-expense-btn');
+                    if (saveBtn && !saveBtn._hasListener) {
+                        saveBtn._hasListener = true;
+                        saveBtn.onclick = async function() {
+                            const date = document.getElementById('expense-date').value;
+                            const category = document.getElementById('expense-category').value;
+                            const name = document.getElementById('expense-name').value.trim();
+                            const supplier = document.getElementById('expense-supplier').value.trim();
+                            const quantity = parseFloat(document.getElementById('expense-quantity').value) || 1;
+                            const amount = parseFloat(document.getElementById('expense-amount').value);
+                            const paymentMethod = document.getElementById('expense-payment-method').value;
+                            const isUrgent = document.getElementById('expense-urgent').checked;
+                            const paymentStatus = document.getElementById('expense-status').value;
+                            const paidBySel = document.getElementById('expense-paid-by');
+                            const paidByName = paidBySel ? paidBySel.selectedOptions[0]?.text : null;
+                            const planDate = paymentStatus === 'pending' ? document.getElementById('expense-plan-date').value : null;
+                            
+                            if (!name || !amount || amount <= 0) { alert('Заполните наименование и сумму'); return; }
+                            
+                            let invoiceUrl = null, invoiceName = null;
+                            const fileInput = document.getElementById('expense-invoice');
+                            if (fileInput && fileInput.files[0]) {
+                                const file = fileInput.files[0];
+                                invoiceName = file.name;
+                                const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                                const fileName = 'invoices/' + Date.now() + '_' + cleanName;
+                                const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
+                                if (!uploadError) { const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName); invoiceUrl = urlData.publicUrl; }
+                            }
+                            
+                            const { error: insertError } = await supabase.from('expenses').insert({
+                                project_id: currentProjectId, date: date, name: name, category: category,
+                                quantity: quantity, amount: amount,
+                                payment_type: paymentMethod === 'cash' ? 'cash' : 'invoice',
+                                payment_status: paymentStatus, supplier: supplier || null,
+                                is_urgent: isUrgent, payment_method: paymentMethod,
+                                invoice_url: invoiceUrl, invoice_name: invoiceName,
+                                created_by: currentUser?.id,
+                                expense_number: window._currentExpenseNumber,
+                                paid_by_name: paidByName,
+                                planned_payment_date: planDate
+                            });
+                            
+                            if (insertError) { alert('Ошибка: ' + insertError.message); return; }
+                            
+                            await supabase.from('document_numbers').insert({doc_type:'expense',number:window._currentExpenseNextNum});
+                            
+                            // Если статус "план оплат" → в Задачи→Финансы→Расходы
+                            if (paymentStatus === 'pending') {
+                                await supabase.from('custom_tasks').insert({
+                                    project_id: currentProjectId,
+                                    title: (isUrgent ? '🚨 ' : '') + 'Расход ' + window._currentExpenseNumber + ': ' + name,
+                                    description: 'Сумма: ' + amount.toLocaleString() + ' ₸\nПоставщик: ' + (supplier || '—') + '\nКатегория: ' + category + '\nДата платежа: ' + (planDate || '—'),
+                                    status: 'pending',
+                                    priority: isUrgent ? 'high' : 'medium',
+                                    type: 'payment',
+                                    created_by: currentUser?.id,
+                                    created_by_name: currentUser?.full_name
+                                });
+                            }
+                            
+                            document.getElementById('form-modal').classList.add('hidden');
+                            loadExpenses();
+                            showMessage('✅ Расход добавлен', 'success');
+                        };
+                    }
+                }, 300);
             }
 
             window.approveExpense = async function(expenseId) {
