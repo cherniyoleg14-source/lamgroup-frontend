@@ -674,7 +674,22 @@
             advance_number: advanceNumber
         });
         
-        await supabase.from('document_numbers').insert({doc_type:'advance',number:nextNum});
+                await supabase.from('document_numbers').insert({doc_type:'advance',number:nextNum});
+        
+        // Создаём задачу в Задачи→Финансы→Авансы
+        await supabase.from('custom_tasks').insert({
+            project_id: currentProjectId,
+            title: (isUrgent ? '🚨 ' : '') + 'Аванс ' + advanceNumber,
+            description: 'Бригада: ' + (brigade?.name || '') + '\nПодось: ' + subName + '\nСумма: ' + amount.toLocaleString() + ' ₸\nВид оплаты: ' + (paymentMethod === 'cash' ? 'Наличка' : 'Безнал') + '\nВсего выплачено: ' + totalPaid.toLocaleString() + ' ₸',
+            status: 'pending',
+            priority: isUrgent ? 'high' : 'medium',
+            type: 'payment',
+            created_by: currentUser?.id,
+            created_by_name: currentUser?.full_name,
+            created_at: new Date()
+        });
+        
+        alert('✅ Аванс №'+advanceNumber+' на сумму '+amount.toLocaleString()+' ₸ создан!');
         
         alert('✅ Аванс №'+advanceNumber+' на сумму '+amount.toLocaleString()+' ₸ создан!');
         document.getElementById('form-modal').classList.add('hidden');
