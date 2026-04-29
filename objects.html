@@ -585,61 +585,101 @@
 };
 
         window.openAdvanceForm = async function(axisId, brigadeId) {
-    var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name,company_name,no_ip)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
+    var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name,company_name,no_ip), work_stages(name)').eq('axis_id',axisId).eq('brigade_id',brigadeId);
     if(!stages||!stages.length){alert('Нет этапов');return;}
-    var brigade=stages[0]?.brigades;
-    var totalCost = stages.reduce(function(s,st){return s+(st.total_cost||0);},0);
-    var subName = stages[0]?.sub_axis_name||'';
+    
+    var brigade = stages[0]?.brigades;
+    var subName = stages[0]?.sub_axis_name || '';
     var ipName = brigade?.no_ip ? 'Без ИП' : (brigade?.company_name || '—');
     
-    // Сумма выполненных работ (с учётом прогресса)
-    var doneAmount = stages.reduce(function(s,st){ return s + ((st.progress||0)/100 * (st.total_cost||0)); }, 0);
-    // Фактические выплаты
-    var { data: prev } = await supabase.from('advances').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId);
-    var paid = (prev||[]).filter(function(a){return a.status==='approved'||a.status==='paid';}).reduce(function(s,a){return s+(a.amount||0);},0);
-    var rem = Math.max(0, doneAmount - paid);
+    // Общая сумма договора по этой подоси
+    var totalContract = stages.reduce(function(s,st){return s+(st.total_cost||0);},0);
     
+    // Выполнено работ (с учётом прогресса)
+    var doneAmount = stages.reduce(function(s,st){ return s + ((st.progress||0)/100 * (st.total_cost||0)); }, 0);
+    
+    // Фактические выплаты (утверждённые/оплаченные авансы)
+    var { data: prevAdvances } = await supabase.from('advances').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId);
+    var advPaid = (prevAdvances||[]).filter(function(a){return a.status==='approved'||a.status==='paid';}).reduce(function(s,a){return s+(a.amount||0);},0);
+    
+    // Выплаты по нарядам
+    var { data: prevOrders } = await supabase.from('work_orders').select('*').eq('axis_id',axisId).eq('brigade_id',brigadeId);
+    var ordPaid = (prevOrders||[]).filter(function(o){return o.status==='approved'||o.payment_status==='paid';}).reduce(function(s,o){return s+(o.total_amount||0);},0);
+    
+    var totalPaid = advPaid + ordPaid;
+    
+    // Номер аванса
     var { data: ln } = await supabase.from('document_numbers').select('number').eq('doc_type','advance').order('number',{ascending:false}).limit(1);
     var nextNum = (ln && ln.length) ? ln[0].number + 1 : 1;
     var advanceNumber = '№-AVANS-' + nextNum + ' от ' + new Date().toLocaleDateString('ru-RU');
     
-    var html='<div class="form-group"><label class="form-label">📄 Номер аванса</label><input value="'+advanceNumber+'" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label>Бригада</label><input value="'+(brigade?.name||'')+'" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label>ИП/ТОО</label><input value="'+ipName+'" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label>Подось</label><input value="'+subName+'" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label>Сумма договора</label><input value="'+totalCost.toLocaleString()+' ₸" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label>Выполнено работ</label><input value="'+doneAmount.toLocaleString()+' ₸" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label>Фактические выплаты</label><input value="'+paid.toLocaleString()+' ₸" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label>Остаток (Выполнено - Выплаты)</label><input value="'+rem.toLocaleString()+' ₸" disabled class="form-input"></div>';
-    html+='<div class="form-group"><label class="form-label">Сумма запроса *</label><input type="number" id="advance-amount" class="form-input" step="0.01" max="'+rem+'"></div>';
-    html+='<div class="form-group"><label class="form-label">Вид оплаты</label><select id="advance-payment-method" class="form-input"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
-    html+='<div class="checkbox-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><input type="checkbox" id="advance-urgent" style="width:20px;height:20px;"><label style="font-size:14px;">🚨 Срочный платёж</label></div>';
-    html+='<div class="form-group"><label><input type="checkbox" id="advance-confirm" style="width:auto;"> ✅ Подтверждаю</label></div>';
+    // Этапы с прогрессом для информации
+    var stagesInfo = stages.map(function(s){
+        var pct = s.progress||0;
+        var done = (pct/100 * (s.total_cost||0));
+        return '<tr><td>'+ (s.work_stages?.name||'—') +'</td><td class="text-right">'+ (s.volume||0) +' м²</td><td class="text-right">'+ pct +'%</td><td class="text-right">'+ done.toLocaleString() +' ₸</td></tr>';
+    }).join('');
     
-    document.getElementById('form-modal-title').textContent='💰 Аванс';
-    document.getElementById('form-modal-content').innerHTML=html;
+    var html = '<div class="form-group"><label class="form-label">📄 Номер аванса</label><input value="'+advanceNumber+'" disabled class="form-input"></div>';
+    html += '<div class="form-group"><label>Бригада</label><input value="'+(brigade?.name||'')+'" disabled class="form-input"></div>';
+    html += '<div class="form-group"><label>ИП/ТОО</label><input value="'+ipName+'" disabled class="form-input"></div>';
+    html += '<div class="form-group"><label>Подось</label><input value="'+subName+'" disabled class="form-input"></div>';
+    
+    // Таблица этапов
+    html += '<h4 style="margin:16px 0 8px;">📊 Состояние этапов</h4>';
+    html += '<table class="work-table"><thead><tr><th>Этап</th><th>Объём</th><th>Прогресс</th><th>Выполнено</th></tr></thead><tbody>'+stagesInfo+'</tbody></table>';
+    
+    // Финансовая информация
+    html += '<table class="calc-table" style="margin-top:16px;">';
+    html += '<tr><td>📋 Сумма договора</td><td>'+totalContract.toLocaleString()+' ₸</td></tr>';
+    html += '<tr><td>✅ Выполнено работ</td><td>'+doneAmount.toLocaleString()+' ₸</td></tr>';
+    html += '<tr><td>💸 Всего выплачено (авансы + наряды)</td><td>'+totalPaid.toLocaleString()+' ₸</td></tr>';
+    html += '<tr style="background:#FEF3C7;"><td><strong>⚠️ Внимание</strong></td><td style="font-size:12px;">Аванс можно выдать на любую сумму.<br>Выплаты не ограничены выполненными работами.</td></tr>';
+    html += '</table>';
+    
+    html += '<div class="form-group" style="margin-top:16px;"><label class="form-label">💰 Сумма аванса *</label><input type="number" id="advance-amount" class="form-input" step="0.01" placeholder="Введите сумму аванса"></div>';
+    html += '<div class="form-group"><label class="form-label">Вид оплаты</label><select id="advance-payment-method" class="form-input"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
+    html += '<div class="checkbox-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><input type="checkbox" id="advance-urgent" style="width:20px;height:20px;"><label style="font-size:14px;">🚨 Срочный платёж</label></div>';
+    html += '<div class="form-group"><label><input type="checkbox" id="advance-confirm" style="width:auto;"> ✅ Подтверждаю</label></div>';
+    
+    document.getElementById('form-modal-title').textContent = '💰 Выдать Аванс';
+    document.getElementById('form-modal-content').innerHTML = html;
     document.getElementById('form-modal').classList.remove('hidden');
     
-    var saveBtn=document.createElement('button');saveBtn.className='btn-primary';saveBtn.textContent='Сформировать';
-    saveBtn.addEventListener('click',async function(){
-        if(!document.getElementById('advance-confirm').checked){alert('Подтвердите');return;}
-        var amount=parseFloat(document.getElementById('advance-amount').value)||0;
-        if(amount<=0||amount>rem){alert('Некорректная сумма. Максимум: '+rem.toLocaleString()+' ₸');return;}
+    var saveBtn = document.createElement('button');
+    saveBtn.className = 'btn-primary';
+    saveBtn.textContent = '💰 Выдать Аванс';
+    saveBtn.addEventListener('click', async function(){
+        if(!document.getElementById('advance-confirm').checked){alert('Подтвердите выдачу аванса');return;}
+        var amount = parseFloat(document.getElementById('advance-amount').value)||0;
+        if(amount <= 0){alert('Введите сумму аванса');return;}
+        
         var isUrgent = document.getElementById('advance-urgent').checked;
         var paymentMethod = document.getElementById('advance-payment-method').value;
         
-        // Файлы загружаются позже в Задачах→Финансы→Авансы
         await supabase.from('advances').insert({
-            project_id:currentProjectId,axis_id:axisId,brigade_id:brigadeId,
-            amount:amount,previous_payments:paid,total_contract:totalCost,
-            remaining:rem-amount,created_by:currentUser?.id,
-            created_by_name:currentUser?.full_name,status:'pending',
-            payment_method:paymentMethod,is_urgent:isUrgent,
-            advance_number:advanceNumber,done_amount:doneAmount
+            project_id: currentProjectId,
+            axis_id: axisId,
+            brigade_id: brigadeId,
+            amount: amount,
+            previous_payments: totalPaid,
+            total_contract: totalContract,
+            remaining: 0,
+            done_amount: doneAmount,
+            created_by: currentUser?.id,
+            created_by_name: currentUser?.full_name,
+            status: 'pending',
+            payment_method: paymentMethod,
+            is_urgent: isUrgent,
+            advance_number: advanceNumber
         });
+        
         await supabase.from('document_numbers').insert({doc_type:'advance',number:nextNum});
-        alert('✅ Аванс создан');
+        
+        alert('✅ Аванс №'+advanceNumber+' на сумму '+amount.toLocaleString()+' ₸ создан!');
         document.getElementById('form-modal').classList.add('hidden');
+        if(document.getElementById('axis-detail-page').classList.contains('hidden')) loadProgressTab();
+        else window.openAxisDetailPage(currentAxisId);
     });
     document.getElementById('form-modal-content').appendChild(saveBtn);
 };
