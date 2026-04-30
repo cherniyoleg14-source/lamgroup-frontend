@@ -377,7 +377,22 @@ if(!can){sb.disabled=true;sb.style.opacity='0.5';sb.textContent='⚠️ Наря
 sb.addEventListener('click',async function(){
 if(!document.getElementById('narad-confirm').checked){alert('Подтвердите');return;}
 var iu=document.getElementById('narad-urgent').checked;var pm=document.getElementById('narad-payment-method').value;
-await supabase.from('work_orders').insert({project_id:currentProjectId,axis_id:axId,axis_name:(ax?.name||'')+' / '+sn,brigade_id:brId,work_type:'Работы (100%)',volume:tv,total_amount:fp,original_amount:tc,guarantee_amount:gr,total_paid:tpd,created_by:currentUser?.id,status:'pending',payment_method:pm,is_urgent:iu,order_number:on});
+        await supabase.from('work_orders').insert({
+            project_id:currentProjectId,
+            axis_name:(ax?.name||'')+' / '+sn,
+            brigade_id:brId,
+            work_type:'Работы (100%)',
+            volume:tv,
+            total_amount:fp,
+            original_amount:tc,
+            guarantee_amount:gr,
+            total_paid:tpd,
+            created_by:currentUser?.id,
+            status:'pending',
+            payment_method:pm,
+            is_urgent:iu,
+            order_number:on
+        });
 await supabase.from('document_numbers').insert({doc_type:'naryad',number:nn});
 alert('✅ Наряд создан! Итоговая сумма к оплате: '+fp.toLocaleString()+' ₸');
 document.getElementById('form-modal').classList.add('hidden');
