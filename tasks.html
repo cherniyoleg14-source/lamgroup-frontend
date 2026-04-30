@@ -386,8 +386,7 @@
                 try {
                     const invFile = document.getElementById('adv-invoice-file').files[0];
                     const avrFile = document.getElementById('adv-avr-file').files[0];
-                    let updateData = { status: 'approved', approved_by: currentUser?.id, approved_at: new Date(), comment: document.getElementById('adv-comment').value };
-
+                    let updateData = { status: 'approved', approved_at: new Date(), comment: document.getElementById('adv-comment').value };
                     if (invFile) { const r = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = r.url; updateData.invoice_file_name = r.name; }
                     if (avrFile) { const r = await uploadFile(avrFile, 'avr'); updateData.avr_url = r.url; }
 
