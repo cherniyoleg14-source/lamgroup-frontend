@@ -320,9 +320,12 @@
         c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-advance">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(a.advance_number||'Аванс')} — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span></div></div>`).join('');
     }
     
-                window.openAdvanceCard = async function(id) {
+                    window.openAdvanceCard = async function(id) {
         const { data: a } = await supabase.from('advances').select('*, projects(name), brigades(name)').eq('id', id).single();
         if (!a) return;
+
+        const hasInvoice = a.invoice_file_url ? true : false;
+        const hasAvr = a.avr_url ? true : false;
 
         let html = `<div style="margin-bottom:12px;"><strong>💸 Аванс</strong></div>`;
         html += `<div>👷 Бригада: ${escapeHtml(a.brigades?.name || '—')}</div>`;
@@ -333,15 +336,17 @@
         html += `<div>📊 Остаток: ${formatMoney(a.remaining)}</div>`;
         html += `<div>💳 Оплата: ${a.payment_method === 'cash' ? 'Наличка' : 'Безнал'}</div>`;
         html += `<div>📅 Дата: ${formatDate(a.created_at?.split('T')[0])}</div>`;
-        if (a.invoice_file_url) html += `<div style="margin-top:8px;">📎 <a href="${a.invoice_file_url}" target="_blank" class="tag tag-blue">Счёт</a></div>`;
-        if (a.avr_url) html += `<div style="margin-top:8px;">📎 <a href="${a.avr_url}" target="_blank" class="tag tag-green">АВР</a></div>`;
+        if (a.invoice_file_url) html += `<div style="margin-top:8px;">📎 Счёт: <a href="${a.invoice_file_url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">${escapeHtml(a.invoice_file_name || 'Счёт')}</a></div>`;
+        if (a.avr_url) html += `<div style="margin-top:8px;">📎 АВР: <a href="${a.avr_url}" target="_blank" class="tag tag-green" style="text-decoration:none;">Просмотреть</a></div>`;
 
-        html += `<div style="margin-top:16px;"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="adv-invoice-file" class="form-input"></div>`;
-        html += `<div><label class="form-label">📎 АВР</label><input type="file" id="adv-avr-file" class="form-input"></div>`;
+        html += `<div class="form-group" style="margin-top:16px;"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="adv-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>`;
+        html += `<div class="form-group"><label class="form-label">📎 Счёт-фактура</label><input type="file" id="adv-bill-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>`;
+        html += `<div class="form-group"><label class="form-label">📎 АВР</label><input type="file" id="adv-avr-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>`;
+        html += `<div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="adv-comment" class="form-input" rows="2">${escapeHtml(a.comment || '')}</textarea></div>`;
 
         html += `<div style="display:flex;gap:10px;margin-top:16px;">`;
         html += `<button class="btn btn-outline" id="save-advance-btn" style="flex:1;">💾 Сохранить</button>`;
-        if (currentRole === 'manager') html += `<button class="btn btn-success" id="approve-advance-btn" style="flex:1;">✅ Утвердить</button>`;
+        if (currentRole === 'manager') html += `<button class="btn btn-success" id="approve-advance-btn" style="flex:1;">✅ Утвердить аванс</button>`;
         html += `</div>`;
 
         openModal('💸 Карточка аванса', html);
@@ -373,13 +378,18 @@
         const approveBtn = document.getElementById('approve-advance-btn');
         if (approveBtn) {
             approveBtn.onclick = async function() {
-                if (!confirm('✅ Утвердить?')) return;
+                if (!confirm('✅ Утвердить аванс?')) return;
                 approveBtn.textContent = '⏳...'; approveBtn.disabled = true;
                 try {
-                    const { error } = await supabase.from('advances').update({ status: 'approved' }).eq('id', id);
+                    const invFile = document.getElementById('adv-invoice-file').files[0];
+                    const avrFile = document.getElementById('adv-avr-file').files[0];
+                    let updateData = { status: 'approved' };
+                    if (invFile) { const r = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = r.url; updateData.invoice_file_name = r.name; }
+                    if (avrFile) { const r = await uploadFile(avrFile, 'avr'); updateData.avr_url = r.url; }
+                    const { error } = await supabase.from('advances').update(updateData).eq('id', id);
                     if (error) throw error;
                     document.getElementById('modal').classList.add('hidden');
-                    showMessage('✅ Утверждён', 'success');
+                    showMessage('✅ Аванс утверждён', 'success');
                     loadAll();
                 } catch (err) {
                     showMessage('Ошибка: ' + err.message, 'error');
