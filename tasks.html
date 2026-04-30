@@ -365,8 +365,13 @@
                     if (invFile) { const r = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = r.url; updateData.invoice_file_name = r.name; }
                     if (avrFile) { const r = await uploadFile(avrFile, 'avr'); updateData.avr_url = r.url; }
 
-                    const { error } = await supabase.from('advances').update(updateData).eq('id', id);
-                    if (error) throw error;
+                                        console.log('UPDATE advances:', JSON.stringify(updateData));
+                    const { data, error } = await supabase.from('advances').update(updateData).eq('id', id).select();
+                    if (error) {
+                        console.error('ERROR:', error.message, error.details);
+                        throw error;
+                    }
+                    console.log('SUCCESS:', data);
                     document.getElementById('modal').classList.add('hidden');
                     showMessage('✅ Данные сохранены', 'success');
                     loadAll();
