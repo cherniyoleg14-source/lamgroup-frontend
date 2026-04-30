@@ -243,13 +243,12 @@
     }
     
     // ========== ФИНАНСЫ: РАСХОДЫ ==========
-    async function loadFinanceExpenses() {
+        async function loadFinanceExpenses() {
         const c = document.getElementById('sub-finance-expenses'); c.innerHTML = '<div class="loading"></div>';
-        let q = supabase.from('expenses').select('*, projects(name)').eq('payment_status','pending').order('date',{ascending:false});
-        if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
+        let q = supabase.from('custom_tasks').select('*, projects(name)').eq('type','payment').eq('status','pending').order('created_at',{ascending:false});
         const { data } = await q;
-        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет расходов на утверждении</div>'; return; }
-        c.innerHTML = data.map(e => `<div class="task-card" onclick="openExpenseCard('${e.id}')"><div class="task-header"><span class="type-tag type-payment">💰 Расход</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(e.name)} — ${formatMoney(e.amount)}</div><div class="task-description">🏗️ ${escapeHtml(e.projects?.name||'—')} | 🏢 ${escapeHtml(e.supplier||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(e.date)}</span></div></div>`).join('');
+        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет расходов</div>'; return; }
+        c.innerHTML = data.map(t => `<div class="task-card" onclick="viewTaskDetail('${t.id}')"><div class="task-header"><span class="type-tag type-payment">💰 Расход</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(t.title)}</div><div class="task-description">🏗️ ${escapeHtml(t.projects?.name||'—')} | ${escapeHtml((t.description||'').substring(0,80))}</div><div class="task-meta"><span>📅 ${formatDateShort(t.created_at)}</span></div></div>`).join('');
     }
     
     window.openExpenseCard = async function(id) {
@@ -269,13 +268,12 @@
     };
     
     // ========== ФИНАНСЫ: НАРЯДЫ ==========
-    async function loadFinanceOrders() {
+        async function loadFinanceOrders() {
         const c = document.getElementById('sub-finance-orders'); c.innerHTML = '<div class="loading"></div>';
         let q = supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status','pending').order('created_at',{ascending:false});
-        if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
         const { data } = await q;
-        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет нарядов на утверждении</div>'; return; }
-        c.innerHTML = data.map(o => `<div class="task-card" onclick="openOrderCard('${o.id}')"><div class="task-header"><span class="type-tag type-order_review">📋 Наряд</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(o.work_type||'Наряд')} — ${formatMoney(o.total_amount)}</div><div class="task-description">👷 ${escapeHtml(o.brigades?.name||'—')} | 🏗️ ${escapeHtml(o.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(o.created_at?.split('T')[0])}</span></div></div>`).join('');
+        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет нарядов</div>'; return; }
+        c.innerHTML = data.map(o => `<div class="task-card" onclick="openOrderCard('${o.id}')"><div class="task-header"><span class="type-tag type-order_review">📋 Наряд</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(o.order_number||'Наряд')} — ${formatMoney(o.total_amount)}</div><div class="task-description">👷 ${escapeHtml(o.brigades?.name||'—')} | 🏗️ ${escapeHtml(o.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(o.created_at?.split('T')[0])}</span></div></div>`).join('');
     }
     
     window.openOrderCard = async function(id) {
@@ -317,10 +315,9 @@
     async function loadFinanceAdvances() {
         const c = document.getElementById('sub-finance-advances'); c.innerHTML = '<div class="loading"></div>';
         let q = supabase.from('advances').select('*, projects(name), brigades(name)').eq('status','pending').order('created_at',{ascending:false});
-        if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет авансов</div>'; return; }
-        c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-advance">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">Аванс — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span></div></div>`).join('');
+        c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-advance">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(a.advance_number||'Аванс')} — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span></div></div>`).join('');
     }
     
     window.openAdvanceCard = async function(id) {
