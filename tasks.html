@@ -320,63 +320,70 @@
         c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-advance">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(a.advance_number||'Аванс')} — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span></div></div>`).join('');
     }
     
-             window.openAdvanceCard = async function(id) {
-        const { data: a, error: fetchError } = await supabase.from('advances').select('*, projects(name), brigades(name)').eq('id', id).single();
-        console.log('FETCH advances:', fetchError ? fetchError.message : 'OK', a?.id);
+                window.openAdvanceCard = async function(id) {
+        const { data: a } = await supabase.from('advances').select('*, projects(name), brigades(name)').eq('id', id).single();
         if (!a) return;
 
         let html = `<div style="margin-bottom:12px;"><strong>💸 Аванс</strong></div>`;
         html += `<div>👷 Бригада: ${escapeHtml(a.brigades?.name || '—')}</div>`;
         html += `<div>🏗️ Объект: ${escapeHtml(a.projects?.name || '—')}</div>`;
         html += `<div>💰 Сумма: <strong>${formatMoney(a.amount)}</strong></div>`;
+        html += `<div>📊 Договор: ${formatMoney(a.total_contract)}</div>`;
+        html += `<div>📊 Выплачено ранее: ${formatMoney(a.previous_payments)}</div>`;
+        html += `<div>📊 Остаток: ${formatMoney(a.remaining)}</div>`;
+        html += `<div>💳 Оплата: ${a.payment_method === 'cash' ? 'Наличка' : 'Безнал'}</div>`;
+        html += `<div>📅 Дата: ${formatDate(a.created_at?.split('T')[0])}</div>`;
+        if (a.invoice_file_url) html += `<div style="margin-top:8px;">📎 <a href="${a.invoice_file_url}" target="_blank" class="tag tag-blue">Счёт</a></div>`;
+        if (a.avr_url) html += `<div style="margin-top:8px;">📎 <a href="${a.avr_url}" target="_blank" class="tag tag-green">АВР</a></div>`;
+
+        html += `<div style="margin-top:16px;"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="adv-invoice-file" class="form-input"></div>`;
+        html += `<div><label class="form-label">📎 АВР</label><input type="file" id="adv-avr-file" class="form-input"></div>`;
 
         html += `<div style="display:flex;gap:10px;margin-top:16px;">`;
         html += `<button class="btn btn-outline" id="save-advance-btn" style="flex:1;">💾 Сохранить</button>`;
-        html += `<button class="btn btn-outline" id="test-advance-btn" style="flex:1;">🧪 ТЕСТ (без файлов)</button>`;
+        if (currentRole === 'manager') html += `<button class="btn btn-success" id="approve-advance-btn" style="flex:1;">✅ Утвердить</button>`;
         html += `</div>`;
 
         openModal('💸 Карточка аванса', html);
 
-        // ТЕСТОВАЯ кнопка — обновляем БЕЗ файлов
-        document.getElementById('test-advance-btn').onclick = async function() {
-            console.log('TEST: updating advances with empty object...');
-            const { data, error } = await supabase.from('advances').update({}).eq('id', id).select();
-            console.log('TEST result:', error ? 'ERROR: ' + error.message + ' | ' + JSON.stringify(error) : 'OK', data);
-            if (!error) { showMessage('✅ Тест пройден!', 'success'); loadAll(); }
+        // СОХРАНИТЬ
+        document.getElementById('save-advance-btn').onclick = async function() {
+            const btn = document.getElementById('save-advance-btn');
+            btn.textContent = '⏳...'; btn.disabled = true;
+            try {
+                const invFile = document.getElementById('adv-invoice-file').files[0];
+                const avrFile = document.getElementById('adv-avr-file').files[0];
+                let updateData = {};
+                if (invFile) { const r = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = r.url; updateData.invoice_file_name = r.name; }
+                if (avrFile) { const r = await uploadFile(avrFile, 'avr'); updateData.avr_url = r.url; }
+                if (Object.keys(updateData).length > 0) {
+                    const { error } = await supabase.from('advances').update(updateData).eq('id', id);
+                    if (error) throw error;
+                }
+                document.getElementById('modal').classList.add('hidden');
+                showMessage('✅ Сохранено', 'success');
+                loadAll();
+            } catch (err) {
+                showMessage('Ошибка: ' + err.message, 'error');
+                btn.textContent = '💾 Сохранить'; btn.disabled = false;
+            }
         };
 
-        document.getElementById('save-advance-btn').onclick = async function() {
-            console.log('SAVE: starting...');
-            const { data, error } = await supabase.from('advances').update({ status: 'approved' }).eq('id', id).select();
-            console.log('SAVE result:', error ? 'ERROR: ' + error.message : 'OK', data);
-            document.getElementById('modal').classList.add('hidden');
-            loadAll();
-        };
-    };
         // УТВЕРДИТЬ
         const approveBtn = document.getElementById('approve-advance-btn');
         if (approveBtn) {
             approveBtn.onclick = async function() {
-                if (!confirm('✅ Утвердить аванс?')) return;
-                approveBtn.textContent = '⏳ Утверждение...';
-                approveBtn.disabled = true;
+                if (!confirm('✅ Утвердить?')) return;
+                approveBtn.textContent = '⏳...'; approveBtn.disabled = true;
                 try {
-                    const invFile = document.getElementById('adv-invoice-file').files[0];
-                    const avrFile = document.getElementById('adv-avr-file').files[0];
-                    let updateData = { status: 'approved' };
-
-                    if (invFile) { const r = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = r.url; updateData.invoice_file_name = r.name; }
-                    if (avrFile) { const r = await uploadFile(avrFile, 'avr'); updateData.avr_url = r.url; }
-
-                    const { error } = await supabase.from('advances').update(updateData).eq('id', id);
+                    const { error } = await supabase.from('advances').update({ status: 'approved' }).eq('id', id);
                     if (error) throw error;
                     document.getElementById('modal').classList.add('hidden');
-                    showMessage('✅ Аванс утверждён', 'success');
+                    showMessage('✅ Утверждён', 'success');
                     loadAll();
                 } catch (err) {
                     showMessage('Ошибка: ' + err.message, 'error');
-                    approveBtn.textContent = '✅ Утвердить аванс';
-                    approveBtn.disabled = false;
+                    approveBtn.textContent = '✅ Утвердить'; approveBtn.disabled = false;
                 }
             };
         }
