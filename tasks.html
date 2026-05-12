@@ -279,19 +279,34 @@
     window.openOrderCard = async function(id) {
         const { data: o } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('id',id).single();
         if (!o) return;
-        const { data: stages } = await supabase.from('axis_work_stages').select('*').eq('brigade_id', o.brigade_id);
-        const { data: advances } = await supabase.from('advances').select('*').eq('brigade_id', o.brigade_id).eq('project_id', o.project_id);
+
+        // Загружаем ВСЕ этапы бригады для расчёта долга
+        var { data: allStages } = await supabase.from('axis_work_stages').select('*').eq('brigade_id', o.brigade_id);
+        var { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', o.project_id);
+        var blockIds = blocks ? blocks.map(function(b) { return b.id; }) : [];
+        var { data: projectAxes } = await supabase.from('axes').select('id').in('block_id', blockIds);
+        var axisIds = projectAxes ? projectAxes.map(function(ax) { return ax.id; }) : [];
+        var stages = (allStages || []).filter(function(s) { return axisIds.indexOf(s.axis_id) !== -1; });
+        
+        var doneAmount = stages.reduce(function(s, st) { return s + ((st.progress || 0) / 100 * (st.total_cost || 0)); }, 0);
+
+        const { data: advances } = await supabase.from('advances').select('*').eq('brigade_id', o.brigade_id);
+        const sumAdvance = advances?.filter(a => a.status === 'approved' || a.status === 'paid').reduce((s,a) => s + (a.amount||0), 0) || 0;
+        const { data: orders } = await supabase.from('work_orders').select('*').eq('brigade_id', o.brigade_id);
+        const sumOrders = orders?.filter(x => x.status === 'approved' || x.payment_status === 'paid').reduce((s,x) => s + (x.total_amount||0), 0) || 0;
+        const totalPaid = sumAdvance + sumOrders;
+        
         const sumWork = o.original_amount || o.total_amount || 0;
-        const sumAdvance = advances?.filter(a => a.status === 'approved').reduce((s,a) => s + (a.amount||0), 0) || 0;
         const guarantee = o.guarantee_amount || 0;
         const finalPay = o.total_amount || 0;
-        const hasAvr = o.avr_url ? true : false;
-        const hasInvoice = o.invoice_file_url ? true : false;
+        const debt = Math.max(0, totalPaid - doneAmount);
         
-        let html = `<div style="margin-bottom:12px;"><strong>📋 Наряд: ${escapeHtml(o.work_type||'—')}</strong></div><div>👷 Бригада: ${escapeHtml(o.brigades?.name||'—')}</div><div>🏗️ Объект: ${escapeHtml(o.projects?.name||'—')}</div><div>📍 Ось: ${escapeHtml(o.axis_name||'—')}</div><div>📐 Объём: ${o.volume||0} | Факт: ${o.actual_volume||0} | Цена: ${o.price||0} ₸</div>
-                <table class="calc-table" style="margin-top:16px;">
+                let html = `<div style="margin-bottom:12px;"><strong>📋 Наряд: ${escapeHtml(o.work_type||'—')}</strong></div><div>👷 Бригада: ${escapeHtml(o.brigades?.name||'—')}</div><div>🏗️ Объект: ${escapeHtml(o.projects?.name||'—')}</div><div>📍 Ось: ${escapeHtml(o.axis_name||'—')}</div>
+        <table class="calc-table" style="margin-top:16px;">
         <tr><td>💰 Сумма закрываемых работ</td><td>${formatMoney(sumWork)}</td></tr>
-        <tr><td>💸 Выплаченные авансы</td><td>${formatMoney(sumAdvance)}</td></tr>
+        <tr><td>💸 Выплачено авансов</td><td>${formatMoney(sumAdvance)}</td></tr>
+        <tr><td>💸 Выплачено по нарядам</td><td>${formatMoney(sumOrders)}</td></tr>
+        ${debt > 0 ? `<tr style="background:#FEF2F2;"><td>⚠️ Долг бригады (взято вперёд)</td><td style="color:#EF4444;">${formatMoney(debt)}</td></tr>` : ''}
         <tr><td>🔒 Удержание 10% (уже удержано)</td><td class="negative">-${formatMoney(guarantee)}</td></tr>
         <tr class="total-row"><td>💳 СУММА К ОПЛАТЕ</td><td style="font-size:18px;color:var(--success);">${formatMoney(finalPay)}</td></tr>
         </table>
@@ -321,9 +336,35 @@
         c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-advance">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(a.advance_number||'Аванс')} — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span></div></div>`).join('');
     }
     
-                    window.openAdvanceCard = async function(id) {
+                       window.openAdvanceCard = async function(id) {
         const { data: a } = await supabase.from('advances').select('*, projects(name), brigades(name)').eq('id', id).single();
         if (!a) return;
+
+        // Загружаем ВСЕ этапы бригады на объекте
+        var { data: allStages } = await supabase.from('axis_work_stages').select('*').eq('brigade_id', a.brigade_id);
+        var { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', a.project_id);
+        var blockIds = blocks ? blocks.map(function(b) { return b.id; }) : [];
+        var { data: projectAxes } = await supabase.from('axes').select('id').in('block_id', blockIds);
+        var axisIds = projectAxes ? projectAxes.map(function(ax) { return ax.id; }) : [];
+        var stages = (allStages || []).filter(function(s) { return axisIds.indexOf(s.axis_id) !== -1; });
+
+        // Общий договор и выполнено
+        var totalContract = stages.reduce(function(s, st) { return s + (st.total_cost || 0); }, 0);
+        var doneAmount = stages.reduce(function(s, st) { return s + ((st.progress || 0) / 100 * (st.total_cost || 0)); }, 0);
+
+        // Все выплаты
+        var { data: pa } = await supabase.from('advances').select('*').eq('brigade_id', a.brigade_id);
+        var advPaid = (pa || []).filter(function(x) { return x.status === 'approved' || x.status === 'paid'; }).reduce(function(s, x) { return s + (x.amount || 0); }, 0);
+        var { data: po } = await supabase.from('work_orders').select('*').eq('brigade_id', a.brigade_id);
+        var ordPaid = (po || []).filter(function(x) { return x.status === 'approved' || x.payment_status === 'paid'; }).reduce(function(s, x) { return s + (x.total_amount || 0); }, 0);
+        var totalPaid = advPaid + ordPaid;
+
+        // Удержания
+        var totalGuarantee = (po || []).reduce(function(s, o) { return s + (o.guarantee_amount || 0); }, 0);
+
+        // Долг бригады и доступно
+        var debt = Math.max(0, totalPaid - doneAmount);
+        var available = Math.max(0, doneAmount - totalPaid);
 
         const hasInvoice = a.invoice_file_url ? true : false;
         const hasAvr = a.avr_url ? true : false;
@@ -332,30 +373,30 @@
         html += `<div>👷 Бригада: ${escapeHtml(a.brigades?.name || '—')}</div>`;
         html += `<div>🏗️ Объект: ${escapeHtml(a.projects?.name || '—')}</div>`;
         html += `<div>💰 Сумма: <strong>${formatMoney(a.amount)}</strong></div>`;
-        html += `<div>📊 Договор: ${formatMoney(a.total_contract)}</div>`;
-        html += `<div>📊 Выплачено ранее: ${formatMoney(a.previous_payments)}</div>`;
-        html += `<div>📊 Остаток: ${formatMoney(a.remaining)}</div>`;
+        html += `<div>📊 Общий договор (ГПР): ${formatMoney(totalContract)}</div>`;
+        html += `<div>✅ Выполнено работ: ${formatMoney(doneAmount)} (${totalContract > 0 ? Math.round(doneAmount/totalContract*100) : 0}%)</div>`;
+        html += `<div>💸 Выплачено всего: ${formatMoney(totalPaid)}</div>`;
+        html += `<div>📊 Доступно к выплате: ${formatMoney(available)}</div>`;
+        if (debt > 0) html += `<div style="color:#EF4444;font-weight:600;">⚠️ Долг бригады (взято вперёд): ${formatMoney(debt)}</div>`;
+        html += `<div>🔒 Удержано (10%): ${formatMoney(totalGuarantee)}</div>`;
         html += `<div>💳 Оплата: ${a.payment_method === 'cash' ? 'Наличка' : 'Безнал'}</div>`;
         html += `<div>📅 Дата: ${formatDate(a.created_at?.split('T')[0])}</div>`;
-        if (a.invoice_file_url) html += `<div style="margin-top:8px;">📎 Счёт: <a href="${a.invoice_file_url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">${escapeHtml(a.invoice_file_name || 'Счёт')}</a></div>`;
-        if (a.avr_url) html += `<div style="margin-top:8px;">📎 АВР: <a href="${a.avr_url}" target="_blank" class="tag tag-green" style="text-decoration:none;">Просмотреть</a></div>`;
+        if (a.invoice_file_url) html += `<div style="margin-top:8px;">📎 Счёт: <a href="${a.invoice_file_url}" target="_blank" class="tag tag-blue">${escapeHtml(a.invoice_file_name || 'Счёт')}</a></div>`;
+        if (a.avr_url) html += `<div style="margin-top:8px;">📎 АВР: <a href="${a.avr_url}" target="_blank" class="tag tag-green">Просмотреть</a></div>`;
 
-        html += `<div class="form-group" style="margin-top:16px;"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="adv-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>`;
-        html += `<div class="form-group"><label class="form-label">📎 Счёт-фактура</label><input type="file" id="adv-bill-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>`;
-        html += `<div class="form-group"><label class="form-label">📎 АВР</label><input type="file" id="adv-avr-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div>`;
-        html += `<div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="adv-comment" class="form-input" rows="2">${escapeHtml(a.comment || '')}</textarea></div>`;
+        html += `<div class="form-group" style="margin-top:16px;"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="adv-invoice-file" class="form-input"></div>`;
+        html += `<div class="form-group"><label class="form-label">📎 Счёт-фактура</label><input type="file" id="adv-bill-file" class="form-input"></div>`;
+        html += `<div class="form-group"><label class="form-label">📎 АВР</label><input type="file" id="adv-avr-file" class="form-input"></div>`;
 
         html += `<div style="display:flex;gap:10px;margin-top:16px;">`;
         html += `<button class="btn btn-outline" id="save-advance-btn" style="flex:1;">💾 Сохранить</button>`;
-        if (currentRole === 'manager') html += `<button class="btn btn-success" id="approve-advance-btn" style="flex:1;">✅ Утвердить аванс</button>`;
+        if (currentRole === 'manager') html += `<button class="btn btn-success" id="approve-advance-btn" style="flex:1;">✅ Утвердить</button>`;
         html += `</div>`;
 
         openModal('💸 Карточка аванса', html);
 
-        // СОХРАНИТЬ
         document.getElementById('save-advance-btn').onclick = async function() {
-            const btn = document.getElementById('save-advance-btn');
-            btn.textContent = '⏳...'; btn.disabled = true;
+            const btn = document.getElementById('save-advance-btn'); btn.textContent = '⏳...'; btn.disabled = true;
             try {
                 const invFile = document.getElementById('adv-invoice-file').files[0];
                 const avrFile = document.getElementById('adv-avr-file').files[0];
@@ -367,35 +408,22 @@
                     if (error) throw error;
                 }
                 document.getElementById('modal').classList.add('hidden');
-                showMessage('✅ Сохранено', 'success');
-                loadAll();
-            } catch (err) {
-                showMessage('Ошибка: ' + err.message, 'error');
-                btn.textContent = '💾 Сохранить'; btn.disabled = false;
-            }
+                showMessage('✅ Сохранено', 'success'); loadAll();
+            } catch (err) { showMessage('Ошибка: ' + err.message, 'error'); btn.textContent = '💾 Сохранить'; btn.disabled = false; }
         };
 
-        // УТВЕРДИТЬ
         const approveBtn = document.getElementById('approve-advance-btn');
         if (approveBtn) {
             approveBtn.onclick = async function() {
                 if (!confirm('✅ Утвердить аванс?')) return;
                 approveBtn.textContent = '⏳...'; approveBtn.disabled = true;
                 try {
-                    const invFile = document.getElementById('adv-invoice-file').files[0];
-                    const avrFile = document.getElementById('adv-avr-file').files[0];
                     let updateData = { status: 'approved' };
-                    if (invFile) { const r = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = r.url; updateData.invoice_file_name = r.name; }
-                    if (avrFile) { const r = await uploadFile(avrFile, 'avr'); updateData.avr_url = r.url; }
                     const { error } = await supabase.from('advances').update(updateData).eq('id', id);
                     if (error) throw error;
                     document.getElementById('modal').classList.add('hidden');
-                    showMessage('✅ Аванс утверждён', 'success');
-                    loadAll();
-                } catch (err) {
-                    showMessage('Ошибка: ' + err.message, 'error');
-                    approveBtn.textContent = '✅ Утвердить'; approveBtn.disabled = false;
-                }
+                    showMessage('✅ Утверждён', 'success'); loadAll();
+                } catch (err) { showMessage('Ошибка: ' + err.message, 'error'); approveBtn.textContent = '✅ Утвердить'; approveBtn.disabled = false; }
             };
         }
     };
