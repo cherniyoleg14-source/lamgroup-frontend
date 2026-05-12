@@ -299,7 +299,7 @@ window.openAxisDetailPage = async function(axisId) {
         pageHtml += '<div class="brigade-section" data-brigade="'+brigadeId+'"><div class="brigade-header"><span class="brigade-name">👷 '+(brigade?.name||'Бригада')+'</span><span class="status-badge-sm '+(allCompleted?'status-completed-sm':'status-in_progress-sm')+'">'+(allCompleted?'✅ Завершена':'⚙️ В работе')+' '+brProgress+'%</span></div>'+(subAxisName?'<p>📍 '+subAxisName+'</p>':'')+'<table class="work-table"><thead><tr><th>📋</th><th>Этап</th><th>м²</th><th>Цена</th><th>Сумма</th><th>%</th><th>📅</th></tr></thead><tbody>'+bs.map(function(ws) {
             var isCompletedStage = (ws.progress||0) >= 100 && ws.status === 'completed';
             var canSelect = (ws.progress||0) >= 100 && ws.status !== 'completed';
-            var checkboxCell = canSelect ? '<td><input type="checkbox" class="stage-select-cb" data-sid="'+ws.id+'" data-brigade="'+brigadeId+'" data-name="'+(ws.work_stages?.name||'—')+'" data-volume="'+(ws.volume||0)+'" data-cost="'+(ws.total_cost||0)+'" style="width:18px;height:18px;accent-color:#F59E0B;"></td>' : '<td></td>';
+            var checkboxCell = canSelect ? '<td><input type="checkbox" class="stage-select-cb" data-sid="'+ws.id+'" data-brigade="'+brigadeId+'" data-name="'+(ws.work_stages?.name||'—')+'" data-volume="'+(ws.volume||0)+'" data-cost="'+(ws.total_cost||0)+'" data-axisname="'+(axis?.name||'—')+' / '+(ws.sub_axis_name||'—')+'" style="width:18px;height:18px;accent-color:#F59E0B;"></td>' : '<td></td>';
             var inputCell = isCompletedStage ? 
                 '<td style="text-align:center;color:#10B981;font-weight:700;">✅ 100%</td>' :
                 '<td><input type="number" class="progress-input" value="'+(ws.progress||0)+'" min="0" max="100" data-sid="'+ws.id+'" data-aid="'+axisId+'">%</td>';
@@ -327,12 +327,13 @@ window.openAxisDetailPage = async function(axisId) {
             var selected = [];
             page.querySelectorAll('.stage-select-cb:checked').forEach(function(cb) {
                 if (cb.dataset.brigade === brigadeId) {
-                    selected.push({
-                        id: cb.dataset.sid,
-                        name: cb.dataset.name,
-                        volume: parseFloat(cb.dataset.volume) || 0,
-                        cost: parseFloat(cb.dataset.cost) || 0
-                    });
+      selected.push({
+    id: cb.dataset.sid,
+    name: cb.dataset.name,
+    volume: parseFloat(cb.dataset.volume) || 0,
+    cost: parseFloat(cb.dataset.cost) || 0,
+    axisName: cb.dataset.axisname || '—'
+});
                 }
             });
             if (!selected.length) { alert('Выберите этапы для сдачи (галочками)'); return; }
@@ -501,16 +502,27 @@ document.getElementById('form-modal-content').appendChild(sb);
 };
 
 window.openAdvanceForm = async function(axId, brId) {
-    var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name,company_name,no_ip), work_stages(name)').eq('axis_id', axId).eq('brigade_id', brId);
-    if (!stages || !stages.length) { alert('Нет этапов'); return; }
+    // Загружаем ВСЕ этапы бригады на этом объекте (по всем осям)
+    var { data: allStages } = await supabase.from('axis_work_stages').select('*, brigades(name,company_name,no_ip), work_stages(name), axes(name)').eq('brigade_id', brId);
+    
+    // Фильтруем только этапы этого объекта
+    var { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
+    var blockIds = blocks ? blocks.map(function(b) { return b.id; }) : [];
+    var { data: projectAxes } = await supabase.from('axes').select('id').in('block_id', blockIds);
+    var projectAxisIds = projectAxes ? projectAxes.map(function(a) { return a.id; }) : [];
+    
+    var stages = (allStages || []).filter(function(s) { return projectAxisIds.indexOf(s.axis_id) !== -1; });
+    
+    if (!stages || !stages.length) { alert('Нет этапов у этой бригады на объекте'); return; }
 
     var br = stages[0]?.brigades;
-    var sn = stages[0]?.sub_axis_name || '';
     var ip = br?.no_ip ? 'Без ИП' : (br?.company_name || '—');
 
+    // Общие суммы по всем осям
     var tct = stages.reduce(function(s, st) { return s + (st.total_cost || 0); }, 0);
     var da = stages.reduce(function(s, st) { return s + ((st.progress || 0) / 100 * (st.total_cost || 0)); }, 0);
 
+    // Все выплаты бригаде на этом объекте
     var { data: pa } = await supabase.from('advances').select('*').eq('brigade_id', brId);
     var ap = (pa || []).filter(function(a) { return a.status === 'approved' || a.status === 'paid'; }).reduce(function(s, a) { return s + (a.amount || 0); }, 0);
 
@@ -519,26 +531,41 @@ window.openAdvanceForm = async function(axId, brId) {
 
     var tpd = ap + op;
 
+    // Номер аванса
     var { data: ln } = await supabase.from('document_numbers').select('number').eq('doc_type', 'advance').order('number', { ascending: false }).limit(1);
     var nn = (ln && ln.length) ? ln[0].number + 1 : 1;
     var an = '№-AVANS-' + nn + ' от ' + new Date().toLocaleDateString('ru-RU');
 
-    var si = stages.map(function(s) {
-        var p = s.progress || 0;
-        var d = (p / 100 * (s.total_cost || 0));
-        return '<tr><td>' + (s.work_stages?.name || '—') + '</td><td class="text-right">' + (s.volume || 0) + ' м²</td><td class="text-right">' + p + '%</td><td class="text-right">' + d.toLocaleString() + ' ₸</td></tr>';
-    }).join('');
+    // Группируем этапы по осям
+    var axesMap = {};
+    stages.forEach(function(s) {
+        var key = s.axes?.name || 'Ось —';
+        if (!axesMap[key]) axesMap[key] = [];
+        axesMap[key].push(s);
+    });
+
+    // Строим таблицу по осям
+    var stagesHtml = '';
+    Object.keys(axesMap).forEach(function(axisName) {
+        stagesHtml += '<tr><td colspan="4" style="background:#F1F5F9;font-weight:700;padding:8px;">📍 Ось ' + axisName + '</td></tr>';
+        axesMap[axisName].forEach(function(s) {
+            var p = s.progress || 0;
+            var d = (p / 100 * (s.total_cost || 0));
+            stagesHtml += '<tr><td>' + (s.sub_axis_name ? '└ ' + s.sub_axis_name + ' — ' : '') + (s.work_stages?.name || '—') + '</td><td class="text-right">' + (s.volume || 0) + ' м²</td><td class="text-right">' + p + '%</td><td class="text-right">' + d.toLocaleString() + ' ₸</td></tr>';
+        });
+    });
 
     var h = '<div class="form-group"><label class="form-label">📄 Номер аванса</label><input value="' + an + '" disabled class="form-input"></div>';
     h += '<div class="form-group"><label>Бригада</label><input value="' + (br?.name || '') + '" disabled class="form-input"></div>';
     h += '<div class="form-group"><label>ИП/ТОО</label><input value="' + ip + '" disabled class="form-input"></div>';
-    h += '<div class="form-group"><label>Подось</label><input value="' + sn + '" disabled class="form-input"></div>';
-    h += '<h4 style="margin:16px 0 8px;">📊 Состояние этапов</h4>';
-    h += '<table class="work-table"><thead><tr><th>Этап</th><th>Объём</th><th>Прогресс</th><th>Выполнено</th></tr></thead><tbody>' + si + '</tbody></table>';
+    h += '<div class="form-group"><label>👷 Работает на осях: ' + Object.keys(axesMap).length + ' шт.</label></div>';
+    h += '<h4 style="margin:16px 0 8px;">📊 Состояние по всем осям</h4>';
+    h += '<table class="work-table"><thead><tr><th>Этап</th><th>Объём</th><th>Прогресс</th><th>Выполнено</th></tr></thead><tbody>' + stagesHtml + '</tbody></table>';
     h += '<table class="calc-table" style="margin-top:16px;">';
-    h += '<tr><td>📋 Сумма договора</td><td>' + tct.toLocaleString() + ' ₸</td></tr>';
-    h += '<tr><td>✅ Выполнено работ</td><td>' + da.toLocaleString() + ' ₸</td></tr>';
+    h += '<tr><td>📋 Общая сумма договора</td><td>' + tct.toLocaleString() + ' ₸</td></tr>';
+    h += '<tr><td>✅ Выполнено работ (всего)</td><td>' + da.toLocaleString() + ' ₸</td></tr>';
     h += '<tr><td>💸 Всего выплачено</td><td>' + tpd.toLocaleString() + ' ₸</td></tr>';
+    h += '</table>';
     h += '<div class="form-group" style="margin-top:16px;"><label class="form-label">💰 Сумма аванса *</label><input type="number" id="advance-amount" class="form-input" step="0.01" placeholder="Введите сумму аванса"></div>';
     h += '<div class="form-group"><label class="form-label">Вид оплаты</label><select id="advance-payment-method" class="form-input"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
     h += '<div class="checkbox-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><input type="checkbox" id="advance-urgent" style="width:20px;height:20px;"><label style="font-size:14px;">🚨 Срочный платёж</label></div>';
@@ -561,7 +588,7 @@ window.openAdvanceForm = async function(axId, brId) {
 
         await supabase.from('advances').insert({
             project_id: currentProjectId,
-            axis_id: axId,
+            axis_id: stages[0]?.axis_id || axId,
             brigade_id: brId,
             amount: am,
             previous_payments: tpd,
@@ -1355,41 +1382,57 @@ async function viewWaybill(waybillId) {
     }
     listContainer.innerHTML = h;
 }
-    window.openWorkOrderFormWithStages = async function(axId, brId, selectedStages) {
+   window.openWorkOrderFormWithStages = async function(axId, brId, selectedStages) {
+    // Данные оси (для заголовка)
     var { data: ax } = await supabase.from('axes').select('*').eq('id', axId).single();
-    var { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name,company_name,no_ip), work_stages(name)').eq('axis_id', axId).eq('brigade_id', brId);
-    var br = stages ? stages[0]?.brigades : null;
-    var sn = stages ? stages[0]?.sub_axis_name || '' : '';
+    
+    // Загружаем ВСЕ этапы бригады на объекте
+    var { data: allStages } = await supabase.from('axis_work_stages').select('*, brigades(name,company_name,no_ip), work_stages(name), axes(name)').eq('brigade_id', brId);
+    
+    // Фильтруем только этапы этого объекта
+    var { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
+    var blockIds = blocks ? blocks.map(function(b) { return b.id; }) : [];
+    var { data: projectAxes } = await supabase.from('axes').select('id').in('block_id', blockIds);
+    var projectAxisIds = projectAxes ? projectAxes.map(function(a) { return a.id; }) : [];
+    var stages = (allStages || []).filter(function(s) { return projectAxisIds.indexOf(s.axis_id) !== -1; });
+    
+    var br = stages && stages.length ? stages[0]?.brigades : null;
     var ip = br?.no_ip ? 'Без ИП' : (br?.company_name || '—');
 
+    // Сумма выбранных этапов
     var tc = selectedStages.reduce(function(s, st) { return s + (st.cost || 0); }, 0);
     var tv = selectedStages.reduce(function(s, st) { return s + (st.volume || 0); }, 0);
 
-    var { data: adv } = await supabase.from('advances').select('*').eq('brigade_id', brId);
-    var ap = (adv || []).filter(function(a) { return a.status === 'approved' || a.status === 'paid'; }).reduce(function(s, a) { return s + (a.amount || 0); }, 0);
+    // ОБЩИЕ выплаты по всем осям бригады на объекте
+    var { data: pa } = await supabase.from('advances').select('*').eq('brigade_id', brId);
+    var ap = (pa || []).filter(function(a) { return a.status === 'approved' || a.status === 'paid'; }).reduce(function(s, a) { return s + (a.amount || 0); }, 0);
+
     var { data: po } = await supabase.from('work_orders').select('*').eq('brigade_id', brId);
     var op = (po || []).filter(function(o) { return o.status === 'approved' || o.payment_status === 'paid'; }).reduce(function(s, o) { return s + (o.total_amount || 0); }, 0);
+
     var tpd = ap + op;
 
+    // Номер наряда
     var { data: ln } = await supabase.from('document_numbers').select('number').eq('doc_type', 'naryad').order('number', { ascending: false }).limit(1);
     var nn = (ln && ln.length) ? ln[0].number + 1 : 1;
     var on = '№-NAR-' + nn + ' от ' + new Date().toLocaleDateString('ru-RU');
+    
     var gr = Math.round(tc * 0.10);
     var fp = tc - gr;
 
+    // Таблица выбранных этапов с указанием осей
     var sl = selectedStages.map(function(s) {
-        return '<tr><td>' + (s.name || '—') + '</td><td class="text-right">' + (s.volume || 0) + ' м²</td><td class="text-right">' + (s.cost || 0).toLocaleString() + ' ₸</td></tr>';
+        return '<tr><td>' + (s.name || '—') + '</td><td>' + (s.axisName || '—') + '</td><td class="text-right">' + (s.volume || 0) + ' м²</td><td class="text-right">' + (s.cost || 0).toLocaleString() + ' ₸</td></tr>';
     }).join('');
 
     var h = '<div class="form-group"><label class="form-label">📄 Номер наряда</label><input value="' + on + '" disabled class="form-input"></div>';
     h += '<div class="form-group"><label>Бригада</label><input value="' + (br?.name || '') + ' (' + (br?.foreman_name || '') + ')" disabled class="form-input"></div>';
     h += '<div class="form-group"><label>ИП/ТОО</label><input value="' + ip + '" disabled class="form-input"></div>';
-    h += '<div class="form-group"><label>Ось / Подось</label><input value="' + (ax?.name || '') + ' / ' + sn + '" disabled class="form-input"></div>';
-    h += '<h4 style="margin:16px 0 8px;">📋 Выбранные этапы</h4>';
-    h += '<table class="work-table"><thead><tr><th>Вид работ</th><th>Объём</th><th>Сумма</th></tr></thead><tbody>' + sl + '</tbody></table>';
+    h += '<h4 style="margin:16px 0 8px;">📋 Выбранные этапы (по всем осям)</h4>';
+    h += '<table class="work-table"><thead><tr><th>Вид работ</th><th>Ось</th><th>Объём</th><th>Сумма</th></tr></thead><tbody>' + sl + '</tbody></table>';
     h += '<table class="calc-table" style="margin-top:16px;">';
     h += '<tr><td>💰 Сумма закрываемых работ</td><td>' + tc.toLocaleString() + ' ₸</td></tr>';
-    h += '<tr><td>💸 Сумма выплаченных денег (всего)</td><td>' + (tpd > 0 ? tpd.toLocaleString() : '0') + ' ₸</td></tr>';
+    h += '<tr><td>💸 Сумма выплаченных денег (всего по бригаде)</td><td>' + (tpd > 0 ? tpd.toLocaleString() : '0') + ' ₸</td></tr>';
     h += '<tr><td>🔒 Удержание 10% (гарантийные)</td><td class="negative">-' + gr.toLocaleString() + ' ₸</td></tr>';
     h += '<tr class="total-row"><td>💳 ИТОГО К ОПЛАТЕ</td><td style="font-size:18px;color:var(--success);">' + fp.toLocaleString() + ' ₸</td></tr></table>';
     h += '<div class="checkbox-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><input type="checkbox" id="narad-urgent" style="width:20px;height:20px;"><label style="font-size:14px;">🚨 Срочный платёж</label></div>';
@@ -1408,7 +1451,7 @@ async function viewWaybill(waybillId) {
 
         await supabase.from('work_orders').insert({
             project_id: currentProjectId,
-            axis_name: (ax?.name || '') + ' / ' + sn,
+            axis_name: 'Бригада: ' + (br?.name || '') + ' | Осей: ' + selectedStages.length + ' шт.',
             brigade_id: brId,
             work_type: 'Работы (выбранные)',
             volume: tv,
