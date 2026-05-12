@@ -343,7 +343,8 @@ window.openAxisDetailPage = async function(axisId) {
 
 window.updateStageProgress = async function(stageId, value, axisId) {
     var p = Math.max(0, Math.min(100, value));
-    var s = p >= 100 ? 'completed' : p > 0 ? 'in_progress' : 'pending';
+    // НЕ меняем статус на completed — это делает только сдача наряда
+    var s = p > 0 ? 'in_progress' : 'pending';
     await supabase.from('axis_work_stages').update({progress:p, status:s}).eq('id', stageId);
     window.openAxisDetailPage(axisId);
 };
