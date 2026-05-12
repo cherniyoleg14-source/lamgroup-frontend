@@ -738,7 +738,43 @@ window.saveExpense = async function(expenseNumber, nextNum) {
 };
 
 window.approveExpense=async function(id){var{error}=await supabase.from('expenses').update({payment_status:'approved',approved_at:new Date(),approved_by:currentUser?.id}).eq('id',id);if(error){showMessage('Ошибка: '+error.message,'error');}else{showMessage('✅ Расход утверждён','success');loadExpenses();}};
-
+async function loadMaterialsTab() {
+    var container = document.getElementById('materials-container');
+    container.innerHTML = '<div class="loading">Загрузка материалов...</div>';
+    var [matRes, incRes, wbRes] = await Promise.all([
+        supabase.from('material_catalog').select('*').eq('project_id', currentProjectId).order('name'),
+        supabase.from('material_incomes').select('*, material_income_items(*)').eq('project_id', currentProjectId).order('created_at', { ascending: false }),
+        supabase.from('material_waybills').select('*, material_waybill_items(*), brigades(name)').eq('project_id', currentProjectId).order('created_at', { ascending: false })
+    ]);
+    allMaterialsCache = matRes.data || []; allIncomesCache = incRes.data || []; allWaybillsCache = wbRes.data || [];
+    renderMaterialsTab();
+}
+    async function loadIssues() {
+    const container = document.getElementById('tab-issues');
+    container.innerHTML = '<div class="loading">Загрузка проблем...</div>';
+    const { data, error } = await supabase.from('project_issues').select('*').eq('project_id', currentProjectId).order('created_at', { ascending: false });
+    if (error) { container.innerHTML = '<div class="info-card"><p>Ошибка: '+error.message+'</p></div>'; return; }
+    const issues = data || [];
+    if (!issues.length) { container.innerHTML = '<div class="info-card"><p>Нет проблем</p></div>'; return; }
+    let html = '<div class="info-card"><h3 style="margin-bottom:16px">⚠️ Проблемы</h3>';
+    issues.forEach(issue => {
+        html += '<div class="gpr-item"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><strong>'+escapeHtml(issue.title)+'</strong><span style="font-size:11px;color:#64748B">'+window.formatDate(issue.created_at)+'</span></div><div style="font-size:12px;color:#64748B">'+escapeHtml(issue.description||'—')+'</div></div>';
+    });
+    html += '</div>'; container.innerHTML = html;
+}
+    async function loadReports() {
+    const container = document.getElementById('tab-report');
+    container.innerHTML = '<div class="loading">Загрузка отчётов...</div>';
+    const { data, error } = await supabase.from('object_reports').select('*').eq('project_id', currentProjectId).order('report_date', { ascending: false });
+    if (error) { container.innerHTML = '<div class="info-card"><p>Ошибка: '+error.message+'</p></div>'; return; }
+    const reports = data || [];
+    if (!reports.length) { container.innerHTML = '<div class="info-card"><p>Нет отчётов</p></div>'; return; }
+    let html = '<div class="info-card"><h3 style="margin-bottom:16px">📑 Отчёты</h3>';
+    reports.forEach(r => {
+        html += '<div class="gpr-item" style="cursor:pointer;" onclick="window.viewReportDetails(\''+r.id+'\')"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><strong>Отчёт №'+(r.report_number||'—')+'</strong><span style="font-size:11px;color:#64748B">'+window.formatDate(r.report_date)+'</span></div><div style="font-size:12px;color:#64748B">'+escapeHtml(r.description||'—').substring(0,100)+'</div></div>';
+    });
+    html += '</div>'; container.innerHTML = html;
+}
 init();
 })();
 </script>
