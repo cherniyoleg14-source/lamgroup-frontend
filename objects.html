@@ -232,11 +232,9 @@ async function loadProgressTab() {
     var { data: axes } = await supabase.from('axes').select('*').in('block_id', blocks.map(function(b) { return b.id; })).order('name');
     if (!axes?.length) { container.innerHTML = '<div class="info-card"><p>Нет осей.</p><button class="btn-primary" id="create-axis-btn">➕ Создать ось</button></div>'; document.getElementById('create-axis-btn').addEventListener('click', window.openCreateAxis); return; }
     
-    // Загружаем ВСЕ этапы по объекту для блока сдачи наряда
     var axisIds = axes.map(function(a) { return a.id; });
     var { data: allStages } = await supabase.from('axis_work_stages').select('*, brigades(name,company_name,no_ip), work_stages(name), axes(name)').in('axis_id', axisIds);
     
-    // Карта бригад с их этапами
     var brigadesMap = {};
     (allStages || []).forEach(function(s) {
         if (!s.brigade_id) return;
@@ -246,7 +244,6 @@ async function loadProgressTab() {
     
     var html = '';
     
-    // Список осей
     for (var i = 0; i < axes.length; i++) {
         var axis = axes[i]; var aId = axis.id; var aName = axis.name;
         var axisStages = (allStages || []).filter(function(s) { return s.axis_id === aId; });
@@ -261,79 +258,49 @@ async function loadProgressTab() {
     
     // БЛОК СДАЧИ НАРЯДА
     html += '<div class="info-card" style="margin-top:16px;"><h3>📋 Сдать наряд по бригаде</h3><p style="font-size:12px;color:#64748B;margin-bottom:12px;">Выберите бригаду → отметьте этапы (100%) → сдайте наряд</p>';
-    
-    // Выпадающий список бригад
     html += '<div class="form-group"><label>👷 Бригада</label><select id="submit-brigade-select" class="form-input"><option value="">Выберите бригаду...</option>';
     Object.keys(brigadesMap).forEach(function(bId) {
         var br = brigadesMap[bId].info;
         if (br) html += '<option value="'+bId+'">'+br.name+' ('+(br.foreman_name||'')+')</option>';
     });
     html += '</select></div>';
-    
-    // Таблица с этапами (появится после выбора бригады)
     html += '<div id="submit-stages-table"></div>';
-    
-    // Кнопка сдать
     html += '<button class="btn-primary hidden" id="submit-selected-stages-btn" style="margin-top:12px;">📋 Сдать выбранные в наряд</button>';
     html += '</div>';
-    
-    // Кнопка добавить ось
     html += '<button class="btn-primary" id="create-axis-btn2" style="margin-top:8px">➕ Добавить ось</button>';
     
     container.innerHTML = html;
     
-    // Обработчики для списка осей
     container.querySelectorAll('.open-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { openAxisDetailPage(btn.dataset.id); }); });
     container.querySelectorAll('.edit-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.openEditAxis(btn.dataset.id); }); });
     container.querySelectorAll('.delete-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.deleteAxisConfirm(btn.dataset.id, btn.dataset.name); }); });
     var createBtn2 = document.getElementById('create-axis-btn2'); if (createBtn2) createBtn2.addEventListener('click', window.openCreateAxis);
     
-    // Обработчик выбора бригады
     document.getElementById('submit-brigade-select').addEventListener('change', function() {
         var bId = this.value;
         var tableDiv = document.getElementById('submit-stages-table');
         var submitBtn = document.getElementById('submit-selected-stages-btn');
-        
         if (!bId) { tableDiv.innerHTML = ''; submitBtn.classList.add('hidden'); return; }
-        
         var brData = brigadesMap[bId];
         var selectableStages = brData.stages.filter(function(s) { return (s.progress||0) >= 100 && s.status !== 'completed'; });
-        
-        if (!selectableStages.length) { 
-            tableDiv.innerHTML = '<p style="color:#64748B;padding:12px;">Нет этапов со 100% выполнением для сдачи.</p>'; 
-            submitBtn.classList.add('hidden');
-            return; 
-        }
-        
+        if (!selectableStages.length) { tableDiv.innerHTML = '<p style="color:#64748B;padding:12px;">Нет этапов со 100% выполнением для сдачи.</p>'; submitBtn.classList.add('hidden'); return; }
         var totalCost = selectableStages.reduce(function(s, st) { return s + (st.total_cost||0); }, 0);
-        
         var tableHtml = '<table class="work-table"><thead><tr><th>📋</th><th>Этап</th><th>Ось</th><th>м²</th><th>Сумма</th></tr></thead><tbody>';
         selectableStages.forEach(function(ws) {
             var axisLabel = (ws.axes?.name || '—') + (ws.sub_axis_name ? ' / ' + ws.sub_axis_name : '');
             tableHtml += '<tr><td><input type="checkbox" class="stage-select-cb" data-sid="'+ws.id+'" data-name="'+(ws.work_stages?.name||'—')+'" data-volume="'+(ws.volume||0)+'" data-cost="'+(ws.total_cost||0)+'" data-axisname="'+axisLabel+'" style="width:18px;height:18px;accent-color:#F59E0B;"></td><td>'+(ws.work_stages?.name||'—')+'</td><td>'+axisLabel+'</td><td class="text-right">'+(ws.volume||0)+' м²</td><td class="text-right">'+(ws.total_cost||0).toLocaleString()+' ₸</td></tr>';
         });
-        tableHtml += '<tr style="font-weight:700;"><td colspan="4">💰 Общая сумма</td><td class="text-right">'+totalCost.toLocaleString()+' ₸</td></tr>';
-        tableHtml += '</tbody></table>';
-        
+        tableHtml += '<tr style="font-weight:700;"><td colspan="4">💰 Общая сумма</td><td class="text-right">'+totalCost.toLocaleString()+' ₸</td></tr></tbody></table>';
         tableDiv.innerHTML = tableHtml;
         submitBtn.classList.remove('hidden');
     });
     
-    // Кнопка сдать выбранные
     document.getElementById('submit-selected-stages-btn').addEventListener('click', function() {
         var selected = [];
         document.querySelectorAll('.stage-select-cb:checked').forEach(function(cb) {
-            selected.push({
-                id: cb.dataset.sid,
-                name: cb.dataset.name,
-                volume: parseFloat(cb.dataset.volume) || 0,
-                cost: parseFloat(cb.dataset.cost) || 0,
-                axisName: cb.dataset.axisname || '—'
-            });
+            selected.push({ id: cb.dataset.sid, name: cb.dataset.name, volume: parseFloat(cb.dataset.volume)||0, cost: parseFloat(cb.dataset.cost)||0, axisName: cb.dataset.axisname||'—' });
         });
-        
         if (!selected.length) { alert('Выберите этапы для сдачи (галочками ✓)'); return; }
-        
         var brigadeId = document.getElementById('submit-brigade-select').value;
         window.openWorkOrderFormWithStages(null, brigadeId, selected);
     });
