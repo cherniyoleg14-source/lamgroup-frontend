@@ -307,11 +307,16 @@ window.openAxisDetailPage = async function(axisId) {
             return '<tr '+rowStyle+'>'+checkboxCell+'<td>'+(ws.work_stages?.name||'—')+'</td><td class="text-right">'+(ws.volume||0)+'</td><td class="text-right">'+(ws.price_per_unit||0)+' ₸</td><td class="text-right">'+((ws.total_cost||0).toLocaleString())+' ₸</td>'+inputCell+'<td style="font-size:10px">'+window.formatDateShort(ws.plan_start)+'<br>'+window.formatDateShort(ws.plan_end)+'</td></tr>';
         }).join('')+'</tbody></table><div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn-secondary action-menu-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" data-subaxis="'+escapeHtml(subAxisName)+'">⋯ Действия</button><button class="btn-small btn-edit edit-subaxis-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'">✏️ Подось</button><button class="btn-small btn-add add-stage-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" data-subaxis="'+escapeHtml(subAxisName)+'">+ Этап</button><button class="btn-small btn-delete delete-subaxis-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" data-name="'+escapeHtml(brigade?.name||'бригаду')+'">🗑️</button>'+ (hasSelectable ? '<button class="btn-primary submit-selected-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" style="margin-left:auto;padding:6px 12px;font-size:11px;">📋 Сдать выбранные</button>' : '') +'</div></div>';
     }
+        // ЕДИНАЯ КНОПКА для сбора галочек со ВСЕХ бригад
+    pageHtml += '<div class="info-card" style="margin-top:16px;"><h4>📋 Сдать наряд</h4><p style="font-size:12px;color:#64748B;margin-bottom:8px;">Отметьте галочками этапы (100%) на любых подосях → нажмите кнопку</p><button class="btn-primary" id="submit-all-selected-btn">📋 Сдать выбранные в наряд</button></div>';
     pageHtml += '<button class="btn-primary add-brigade-btn" data-axis="'+axisId+'" style="margin-top:8px">➕ Добавить бригаду</button></div>';
+    
     document.getElementById('axis-detail-page').innerHTML = pageHtml;
     document.getElementById('axis-detail-page').classList.remove('hidden');
     var page = document.getElementById('axis-detail-page');
     page.querySelector('#close-axis-btn').addEventListener('click', closeAxisDetailPage);
+    
+    // Кнопки действий для каждой бригады
     page.querySelectorAll('.action-menu-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.openActionMenu(btn.dataset.axis, btn.dataset.brigade, btn.dataset.subaxis); }); });
     page.querySelectorAll('.edit-subaxis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.editSubAxis(btn.dataset.axis, btn.dataset.brigade); }); });
     page.querySelectorAll('.delete-subaxis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.deleteSubAxisConfirm(btn.dataset.axis, btn.dataset.brigade, btn.dataset.name); }); });
@@ -319,26 +324,29 @@ window.openAxisDetailPage = async function(axisId) {
     page.querySelectorAll('.add-brigade-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.addBrigadeToAxis(btn.dataset.axis); }); });
     page.querySelectorAll('.progress-input').forEach(function(inp) { inp.addEventListener('change', function() { window.updateStageProgress(this.dataset.sid, parseInt(this.value)||0, this.dataset.aid); }); });
     
-    // Кнопка "Сдать выбранные"
-    page.querySelectorAll('.submit-selected-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-            var axisId = btn.dataset.axis;
-            var brigadeId = btn.dataset.brigade;
-            var selected = [];
-            page.querySelectorAll('.stage-select-cb:checked').forEach(function(cb) {
-                if (cb.dataset.brigade === brigadeId) {
-      selected.push({
-    id: cb.dataset.sid,
-    name: cb.dataset.name,
-    volume: parseFloat(cb.dataset.volume) || 0,
-    cost: parseFloat(cb.dataset.cost) || 0,
-    axisName: cb.dataset.axisname || '—'
-});
-                }
+    // ЕДИНАЯ КНОПКА — собирает ВСЕ галочки со страницы
+    document.getElementById('submit-all-selected-btn').addEventListener('click', function() {
+        var selected = [];
+        var brigadeId = null;
+        page.querySelectorAll('.stage-select-cb:checked').forEach(function(cb) {
+            selected.push({
+                id: cb.dataset.sid,
+                name: cb.dataset.name,
+                volume: parseFloat(cb.dataset.volume) || 0,
+                cost: parseFloat(cb.dataset.cost) || 0,
+                axisName: cb.dataset.axisname || '—'
             });
-            if (!selected.length) { alert('Выберите этапы для сдачи (галочками)'); return; }
-            window.openWorkOrderFormWithStages(axisId, brigadeId, selected);
+            if (!brigadeId) brigadeId = cb.dataset.brigade;
         });
+        
+        if (!selected.length) { alert('Выберите этапы для сдачи (галочками ✓)'); return; }
+        
+        // Проверяем что все этапы от одной бригады
+        var brigades = [...new Set(Array.from(page.querySelectorAll('.stage-select-cb:checked')).map(function(cb) { return cb.dataset.brigade; }))];
+        if (brigades.length > 1) { alert('⚠️ Выберите этапы только ОДНОЙ бригады. Сейчас выбраны: ' + brigades.length + ' бригад.'); return; }
+        
+        window.openWorkOrderFormWithStages(axisId, brigades[0], selected);
+    });
     });
 };
 
