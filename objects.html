@@ -256,7 +256,6 @@ async function loadProgressTab() {
         html += '<div class="axis-card"><div class="axis-header"><span class="axis-name">🔵 Ось '+aName+'</span><span class="status-badge-sm status-'+(axis.status||'no_brigade')+'-sm">👷 '+brigadeDisplay+'</span></div><div class="axis-dates">📅 '+window.formatDateShort(minStart)+' — '+window.formatDateShort(maxEnd)+' | 📐 '+(axis.total_area||0)+' м² | 👥 Бригад: '+brigades.length+'</div><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:'+totalProgress+'%"></div></div><span style="font-size:11px">'+totalProgress+'%</span></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn-secondary open-axis-btn" data-id="'+aId+'">👁️ Открыть ГПР</button><button class="btn-small btn-edit edit-axis-btn" data-id="'+aId+'">✏️</button><button class="btn-small btn-delete delete-axis-btn" data-id="'+aId+'" data-name="'+escapeHtml(aName)+'">🗑️</button></div></div>';
     }
     
-    // БЛОК СДАЧИ НАРЯДА
     html += '<div class="info-card" style="margin-top:16px;"><h3>📋 Сдать наряд по бригаде</h3><p style="font-size:12px;color:#64748B;margin-bottom:12px;">Выберите бригаду → отметьте этапы (100%) → сдайте наряд</p>';
     html += '<div class="form-group"><label>👷 Бригада</label><select id="submit-brigade-select" class="form-input"><option value="">Выберите бригаду...</option>';
     Object.keys(brigadesMap).forEach(function(bId) {
@@ -271,7 +270,7 @@ async function loadProgressTab() {
     
     container.innerHTML = html;
     
-    container.querySelectorAll('.open-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { openAxisDetailPage(btn.dataset.id); }); });
+    container.querySelectorAll('.open-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.openAxisDetailPage(btn.dataset.id); }); });
     container.querySelectorAll('.edit-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.openEditAxis(btn.dataset.id); }); });
     container.querySelectorAll('.delete-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.deleteAxisConfirm(btn.dataset.id, btn.dataset.name); }); });
     var createBtn2 = document.getElementById('create-axis-btn2'); if (createBtn2) createBtn2.addEventListener('click', window.openCreateAxis);
@@ -306,9 +305,75 @@ async function loadProgressTab() {
     });
 }
 
+window.openCreateAxis = function() {
+    var h = '<div class="form-group"><label>Название оси *</label><input type="text" id="new-axis-name" placeholder="1-10"></div><div class="row-2"><div class="form-group"><label>Общая площадь (м²)</label><input type="number" id="new-axis-area" step="0.01"></div><div class="form-group"><label>Статус</label><select id="new-axis-status"><option value="no_brigade">👷 Нет бригады</option><option value="no_readiness">⏳ Нет стройготовности</option><option value="in_progress">🔨 В работе</option></select></div></div><div id="brigades-container"></div><button class="btn-secondary" id="add-brigade-block-btn" style="width:100%;margin:10px 0">➕ Добавить бригаду</button>';
+    document.getElementById('form-modal-title').textContent = '➕ Создать ось';
+    document.getElementById('form-modal-content').innerHTML = h; document.getElementById('form-modal').classList.remove('hidden');
+    document.getElementById('add-brigade-block-btn').addEventListener('click', window.addBrigadeBlock);
+    window.addBrigadeBlock();
+    var sb = document.createElement('button'); sb.className = 'btn-primary'; sb.textContent = 'Создать ось с ГПР';
+    sb.addEventListener('click', async function() {
+        var name = document.getElementById('new-axis-name').value; var area = parseFloat(document.getElementById('new-axis-area').value)||0; var status = document.getElementById('new-axis-status').value;
+        if (!name) { alert('Введите название оси'); return; }
+        var { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
+        if (!blocks?.length) { alert('Нет блоков'); return; }
+        var { data: axis } = await supabase.from('axes').insert({ block_id: blocks[0].id, name: name, total_area: area, status: status }).select('id').single();
+        var bbs = document.querySelectorAll('.brigade-block'); var ms = null, me = null;
+        for (const bl of bbs) { var bid = bl.querySelector('.brigade-select').value; var sn = bl.querySelector('.subaxis-name-input').value||''; var srs = bl.querySelectorAll('.stage-row');
+            for (const rw of srs) { var sid = rw.querySelector('.stage-select').value; var vol = parseFloat(rw.querySelector('.stage-volume').value)||0; var pr = parseFloat(rw.querySelector('.stage-price').value)||0; var st = rw.querySelector('.stage-start').value; var en = rw.querySelector('.stage-end').value;
+                if (sid && vol > 0) { if (st && (!ms || st < ms)) ms = st; if (en && (!me || en > me)) me = en; await supabase.from('axis_work_stages').insert({ axis_id: axis.id, brigade_id: bid||null, sub_axis_name: sn, stage_id: parseInt(sid), volume: vol, unit: 'м²', price_per_unit: pr, total_cost: vol*pr, plan_start: st||null, plan_end: en||null, progress: 0, status: 'pending', created_by: currentUser?.id }); } } }
+        if (ms || me) await supabase.from('axes').update({ plan_start: ms, plan_end: me }).eq('id', axis.id);
+        await supabase.from('change_history').insert({ project_id: currentProjectId, entity_type: 'axis', entity_id: axis.id, action: 'create_axis', comment: 'Ось создана: '+name, changed_by: currentUser?.id, changed_by_name: currentUser?.full_name });
+        document.getElementById('form-modal').classList.add('hidden'); loadProgressTab(); alert('✅ Ось создана!');
+    });
+    document.getElementById('form-modal-content').appendChild(sb);
+};
+
+window.addBrigadeBlock = function() { var c = document.getElementById('brigades-container'); var b = document.createElement('div'); b.className = 'brigade-block'; b.style.cssText = 'background:#F8FAFC;border-radius:14px;padding:14px;margin:10px 0;border:1px solid #E2E8F0'; b.innerHTML = '<div class="form-group"><label>👷 Бригада</label><select class="brigade-select">'+allBrigades.map(function(x){return'<option value="'+x.id+'">'+x.name+' ('+(x.foreman_name||'')+')</option>';}).join('')+'</select></div><div class="form-group"><label>📍 Подось</label><input type="text" class="subaxis-name-input" placeholder="1-5"></div><div class="stages-rows"></div><button class="btn-add add-stage-btn" style="margin-top:6px">+ Добавить этап</button>'; c.appendChild(b); b.querySelector('.add-stage-btn').addEventListener('click', function() { window.addStageRow(b.querySelector('.stages-rows')); }); window.addStageRow(b.querySelector('.stages-rows')); };
+window.addStageRow = function(c) { var r = document.createElement('div'); r.className = 'stage-row'; r.style.cssText = 'display:flex;gap:6px;margin:6px 0;align-items:center;flex-wrap:wrap'; r.innerHTML = '<select class="stage-select" style="flex:2;min-width:110px">'+allWorkStages.map(function(s){return'<option value="'+s.id+'">'+s.name+'</option>';}).join('')+'</select><input type="number" class="stage-volume" placeholder="м²" style="width:65px" step="0.01"><input type="number" class="stage-price" placeholder="₸/м²" style="width:75px" step="0.01"><input type="date" class="stage-start" style="width:125px"><input type="date" class="stage-end" style="width:125px"><button class="btn-delete" onclick="this.parentElement.remove()" style="width:28px;height:28px">✕</button>'; c.appendChild(r); };
+
+window.openEditAxis = async function(axId) { var { data: ax } = await supabase.from('axes').select('*').eq('id', axId).single(); if (!ax) return; document.getElementById('edit-modal-title').textContent = '✏️ Редактировать ось '+ax.name; document.getElementById('edit-modal-content').innerHTML = '<div class="form-group"><label>Название</label><input type="text" id="edit-axis-name" value="'+ax.name+'"></div><div class="form-group"><label>Площадь</label><input type="number" id="edit-axis-area" value="'+(ax.total_area||0)+'"></div><div class="form-group"><label>Статус</label><select id="edit-axis-status"><option value="in_progress" '+(ax.status==='in_progress'?'selected':'')+'>🔨 В работе</option><option value="no_readiness" '+(ax.status==='no_readiness'?'selected':'')+'>⏳ Нет стройготовности</option><option value="no_brigade" '+(ax.status==='no_brigade'?'selected':'')+'>👷 Нет бригады</option><option value="completed" '+(ax.status==='completed'?'selected':'')+'>✅ Завершена</option><option value="paused" '+(ax.status==='paused'?'selected':'')+'>⏸️ Пауза</option></select></div>'; document.getElementById('save-edit-btn').onclick = async function() { await supabase.from('axes').update({ name: document.getElementById('edit-axis-name').value, total_area: parseFloat(document.getElementById('edit-axis-area').value)||0, status: document.getElementById('edit-axis-status').value }).eq('id', axId); document.getElementById('edit-modal').classList.add('hidden'); loadProgressTab(); }; document.getElementById('edit-modal').classList.remove('hidden'); };
+window.deleteAxisConfirm = function(axId, axName) { if (confirm('⚠️ Удалить ось '+axName+'?')) { supabase.from('axis_work_stages').delete().eq('axis_id', axId).then(function() { supabase.from('axes').delete().eq('id', axId).then(function() { loadProgressTab(); }); }); } };
+window.deleteSubAxisConfirm = function(axId, brId, name) { if (confirm('⚠️ Удалить подось «'+name+'»?')) { supabase.from('axis_work_stages').delete().eq('axis_id', axId).eq('brigade_id', brId).then(function() { window.openAxisDetailPage(axId); }); } };
+
+window.openAxisDetailPage = async function(axisId) {
+    currentAxisId = axisId;
+    const { data: axis } = await supabase.from('axes').select('*').eq('id', axisId).single();
+    const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name, foreman_name), work_stages(name)').eq('axis_id', axisId).order('plan_start');
+    if (!axis) return;
+    var axisNameForPage = axis.name;
+    const brigades = [...new Set((stages||[]).map(function(s) { return s.brigade_id; }).filter(Boolean))];
+    const totalProgress = stages?.length ? Math.round(stages.reduce(function(s,st) { return s + (st.progress||0); }, 0) / stages.length) : 0;
+    var brigadeNames = (stages||[]).map(function(s){ return s.brigades?.name; }).filter(function(v,i,a){ return v && a.indexOf(v)===i; });
+    var brigadeDisplay = brigadeNames.length ? brigadeNames.join(', ') : 'Нет бригад';
+    var pageHtml = '<div style="max-width:600px;margin:0 auto"><button class="back-btn" id="close-axis-btn">← Назад</button><div class="info-card"><h3>📊 ГПР — Ось '+axisNameForPage+'</h3><span class="status-badge-sm status-'+(axis.status||'no_brigade')+'-sm">👷 '+brigadeDisplay+'</span><p>📅 '+window.formatDateShort(axis.plan_start)+' — '+window.formatDateShort(axis.plan_end)+' | 📐 '+(axis.total_area||0)+' м²</p><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:'+totalProgress+'%"></div></div><span>'+totalProgress+'%</span></div></div>';
+    for (var b = 0; b < brigades.length; b++) {
+        var brigadeId = brigades[b];
+        var bs = (stages||[]).filter(function(s) { return s.brigade_id === brigadeId; }); var brigade = bs[0]?.brigades; var subAxisName = bs[0]?.sub_axis_name || '';
+        var brProgress = Math.round(bs.reduce(function(s,st) { return s + (st.progress||0); }, 0) / bs.length);
+        var allCompleted = bs.every(function(s) { return (s.progress||0) >= 100; });
+        pageHtml += '<div class="brigade-section" data-brigade="'+brigadeId+'"><div class="brigade-header"><span class="brigade-name">👷 '+(brigade?.name||'Бригада')+'</span><span class="status-badge-sm '+(allCompleted?'status-completed-sm':'status-in_progress-sm')+'">'+(allCompleted?'✅ Завершена':'⚙️ В работе')+' '+brProgress+'%</span></div>'+(subAxisName?'<p>📍 '+subAxisName+'</p>':'')+'<table class="work-table"><thead><tr><th>Этап</th><th>м²</th><th>Цена</th><th>Сумма</th><th>%</th><th>📅</th></tr></thead><tbody>'+bs.map(function(ws) {
+            var isCompletedStage = (ws.progress||0) >= 100 && ws.status === 'completed';
+            var inputCell = isCompletedStage ? '<td style="text-align:center;color:#10B981;font-weight:700;">✅ 100%</td>' : '<td><input type="number" class="progress-input" value="'+(ws.progress||0)+'" min="0" max="100" data-sid="'+ws.id+'" data-aid="'+axisId+'">%</td>';
+            var rowStyle = isCompletedStage ? 'style="opacity:0.5;background:#F0FDF4;"' : '';
+            return '<tr '+rowStyle+'><td>'+(ws.work_stages?.name||'—')+'</td><td class="text-right">'+(ws.volume||0)+'</td><td class="text-right">'+(ws.price_per_unit||0)+' ₸</td><td class="text-right">'+((ws.total_cost||0).toLocaleString())+' ₸</td>'+inputCell+'<td style="font-size:10px">'+window.formatDateShort(ws.plan_start)+'<br>'+window.formatDateShort(ws.plan_end)+'</td></tr>';
+        }).join('')+'</tbody></table><div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn-secondary action-menu-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" data-subaxis="'+escapeHtml(subAxisName)+'">⋯ Действия</button><button class="btn-small btn-edit edit-subaxis-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'">✏️ Подось</button><button class="btn-small btn-add add-stage-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" data-subaxis="'+escapeHtml(subAxisName)+'">+ Этап</button><button class="btn-small btn-delete delete-subaxis-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" data-name="'+escapeHtml(brigade?.name||'бригаду')+'">🗑️</button></div></div>';
+    }
+    pageHtml += '<button class="btn-primary add-brigade-btn" data-axis="'+axisId+'" style="margin-top:8px">➕ Добавить бригаду</button></div>';
+    document.getElementById('axis-detail-page').innerHTML = pageHtml;
+    document.getElementById('axis-detail-page').classList.remove('hidden');
+    var page = document.getElementById('axis-detail-page');
+    page.querySelector('#close-axis-btn').addEventListener('click', closeAxisDetailPage);
+    page.querySelectorAll('.action-menu-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.openActionMenu(btn.dataset.axis, btn.dataset.brigade, btn.dataset.subaxis); }); });
+    page.querySelectorAll('.edit-subaxis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.editSubAxis(btn.dataset.axis, btn.dataset.brigade); }); });
+    page.querySelectorAll('.delete-subaxis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.deleteSubAxisConfirm(btn.dataset.axis, btn.dataset.brigade, btn.dataset.name); }); });
+    page.querySelectorAll('.add-stage-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.addStageToBrigade(btn.dataset.axis, btn.dataset.brigade, btn.dataset.subaxis); }); });
+    page.querySelectorAll('.add-brigade-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.addBrigadeToAxis(btn.dataset.axis); }); });
+    page.querySelectorAll('.progress-input').forEach(function(inp) { inp.addEventListener('change', function() { window.updateStageProgress(this.dataset.sid, parseInt(this.value)||0, this.dataset.aid); }); });
+};
+
 window.updateStageProgress = async function(stageId, value, axisId) {
     var p = Math.max(0, Math.min(100, value));
-    // НЕ меняем статус на completed — это делает только сдача наряда
     var s = p > 0 ? 'in_progress' : 'pending';
     await supabase.from('axis_work_stages').update({progress:p, status:s}).eq('id', stageId);
     window.openAxisDetailPage(axisId);
