@@ -929,6 +929,144 @@ function renderStockTab() {
     }
     listContainer.innerHTML = h;
 }
+    function openAddIncomeForm() {
+    var html = '<div class="form-group"><label>Поставщик</label><input type="text" id="inc-supplier" placeholder="ТОО «СтройМатериалы»"></div>';
+    html += '<div class="row-2"><div class="form-group"><label>№ накладной поставщика</label><input type="text" id="inc-invoice-number" placeholder="1234"></div><div class="form-group"><label>Дата накладной</label><input type="date" id="inc-invoice-date"></div></div>';
+    html += '<div class="form-group"><label>📎 Файл накладной</label><input type="file" id="inc-invoice-file" accept=".pdf,.jpg,.jpeg,.png"></div>';
+    html += '<div id="income-items-container"></div>';
+    html += '<button class="btn-add" id="add-income-item-btn" style="margin-top:8px">+ Добавить материал</button>';
+    document.getElementById('form-modal-title').textContent = '➕ Создать приход';
+    document.getElementById('form-modal-content').innerHTML = html;
+    document.getElementById('form-modal').classList.remove('hidden');
+    addIncomeItemRow();
+    document.getElementById('add-income-item-btn').addEventListener('click', function() { addIncomeItemRow(); });
+    var saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Сохранить приход';
+    saveBtn.addEventListener('click', async function() {
+        var supplier = document.getElementById('inc-supplier').value.trim();
+        var invoiceNumber = document.getElementById('inc-invoice-number').value.trim();
+        var invoiceDate = document.getElementById('inc-invoice-date').value;
+        var rows = document.querySelectorAll('#income-items-container .income-item-row');
+        var items = [];
+        for (var i = 0; i < rows.length; i++) {
+            var select = rows[i].querySelector('.inc-item-select');
+            var isNew = select.value === '__new__';
+            var name, unit, qty;
+            if (isNew) { name = rows[i].querySelector('.inc-item-new-name').value.trim(); unit = rows[i].querySelector('.inc-item-unit').value; qty = parseFloat(rows[i].querySelector('.inc-item-qty').value) || 0; }
+            else { var selectedOption = select.selectedOptions[0]; name = selectedOption ? selectedOption.dataset.name : ''; unit = selectedOption ? selectedOption.dataset.unit : ''; qty = parseFloat(rows[i].querySelector('.inc-item-qty').value) || 0; }
+            if (name && qty > 0) items.push({ name: name, unit: unit, quantity: qty, isNew: isNew });
+        }
+        if (!items.length) { alert('Добавьте хотя бы один материал'); return; }
+        var { data: income, error: incomeError } = await supabase.from('material_incomes').insert({ project_id: currentProjectId, supplier_name: supplier, supplier_invoice_number: invoiceNumber, supplier_invoice_date: invoiceDate || null, created_by: currentUser?.id, income_date: new Date().toISOString().split('T')[0] }).select('id').single();
+        if (incomeError) { alert('Ошибка: ' + incomeError.message); return; }
+        for (var i = 0; i < items.length; i++) {
+            await supabase.from('material_income_items').insert({ income_id: income.id, material_name: items[i].name, unit: items[i].unit, quantity: items[i].quantity });
+            var { data: existing } = await supabase.from('material_catalog').select('*').eq('project_id', currentProjectId).eq('name', items[i].name).eq('unit', items[i].unit).single();
+            if (existing) { await supabase.from('material_catalog').update({ total_quantity: existing.total_quantity + items[i].quantity, available_quantity: existing.available_quantity + items[i].quantity }).eq('id', existing.id); }
+            else { await supabase.from('material_catalog').insert({ project_id: currentProjectId, name: items[i].name, unit: items[i].unit, total_quantity: items[i].quantity, available_quantity: items[i].quantity, created_by: currentUser?.id }); }
+        }
+        var incomeNumber = 'ПР-'+new Date().getFullYear().toString().slice(-2)+'-'+String(income.id).slice(-4);
+        await supabase.from('material_incomes').update({ income_number: incomeNumber }).eq('id', income.id);
+        document.getElementById('form-modal').classList.add('hidden');
+        loadMaterialsTab();
+        alert('✅ Приход создан');
+    });
+    document.getElementById('form-modal-content').appendChild(saveBtn);
+}
+
+function addIncomeItemRow() {
+    var container = document.getElementById('income-items-container');
+    var row = document.createElement('div'); row.className = 'income-item-row';
+    row.style.cssText = 'display:flex;gap:6px;margin:8px 0;align-items:center;flex-wrap:wrap;padding:8px;background:#F8FAFC;border-radius:10px';
+    var selectHtml = '<select class="inc-item-select" style="flex:2;min-width:150px" onchange="onIncomeItemSelect(this)">';
+    selectHtml += '<option value="">🔄 Выберите материал</option>';
+    allMaterialsCache.forEach(function(m) { selectHtml += '<option value="'+m.id+'" data-name="'+m.name+'" data-unit="'+m.unit+'">'+m.name+' ('+m.unit+')</option>'; });
+    selectHtml += '<option value="__new__">➕ НОВЫЙ МАТЕРИАЛ</option></select>';
+    row.innerHTML = selectHtml + '<input type="text" class="inc-item-new-name" placeholder="Название" style="display:none;flex:2;min-width:120px">' + '<input type="number" class="inc-item-qty" placeholder="Кол-во" style="width:80px" step="0.01">' + '<select class="inc-item-unit" style="width:80px"><option value="м²">м²</option><option value="шт">шт</option><option value="пог.м">пог.м</option><option value="рулон">рулон</option><option value="упак">упаковка</option><option value="кг">кг</option></select>' + '<button class="btn-delete" onclick="this.parentElement.remove()" style="width:28px;height:28px">✕</button>';
+    container.appendChild(row);
+}
+
+window.onIncomeItemSelect = function(selectEl) {
+    var row = selectEl.parentElement;
+    var newNameInput = row.querySelector('.inc-item-new-name');
+    if (selectEl.value === '__new__') { newNameInput.style.display = 'block'; }
+    else { newNameInput.style.display = 'none'; newNameInput.value = ''; }
+};
+    function openIssueMaterialForm() {
+    var html = '<div class="form-group"><label>Бригада *</label><select id="issue-brigade">';
+    html += '<option value="">Выберите бригаду</option>';
+    allBrigades.forEach(function(b) { html += '<option value="'+b.id+'">'+b.name+' ('+(b.foreman_name||'')+')</option>'; });
+    html += '</select></div>';
+    html += '<div class="form-group"><label>Ось / Подось *</label><select id="issue-axis"><option value="">Сначала выберите бригаду</option></select></div>';
+    html += '<div id="issue-materials-list"></div>';
+    html += '<div class="form-group" style="margin-top:16px"><label>📝 Комментарий</label><textarea id="issue-comment" rows="2"></textarea></div>';
+    document.getElementById('form-modal-title').textContent = '📤 Выдать материал';
+    document.getElementById('form-modal-content').innerHTML = html;
+    document.getElementById('form-modal').classList.remove('hidden');
+    renderIssueMaterialsList();
+    var saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Выдать';
+    saveBtn.addEventListener('click', submitIssueMaterial);
+    document.getElementById('form-modal-content').appendChild(saveBtn);
+}
+    function renderIssueMaterialsList() {
+    var container = document.getElementById('issue-materials-list');
+    if (!allMaterialsCache.length) { container.innerHTML = '<p style="color:#64748B;padding:16px;text-align:center">Нет материалов. Сначала создайте приход.</p>'; return; }
+    var html = '<div class="form-group" style="margin-top:16px"><label>📋 Материалы для выдачи</label>';
+    allMaterialsCache.forEach(function(m) { var disabled = m.available_quantity <= 0 ? 'disabled' : '';
+        html += '<div style="display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px;background:#F8FAFC;border-radius:10px">';
+        html += '<input type="checkbox" class="issue-mat-check" data-id="'+m.id+'" data-name="'+m.name+'" data-unit="'+m.unit+'" data-avail="'+m.available_quantity+'" style="width:20px;height:20px" '+disabled+'>';
+        html += '<span style="flex:1;font-size:13px"><strong>'+m.name+'</strong><br><small>Доступно: '+m.available_quantity+' '+m.unit+'</small></span>';
+        html += '<input type="number" class="issue-mat-qty" placeholder="Кол-во" style="width:80px;padding:8px" step="0.01" min="0" max="'+m.available_quantity+'" disabled>';
+        html += '<span style="font-size:12px">'+m.unit+'</span></div>';
+    });
+    html += '</div>'; container.innerHTML = html;
+    document.querySelectorAll('.issue-mat-check').forEach(function(cb) { cb.addEventListener('change', function() { this.parentElement.querySelector('.issue-mat-qty').disabled = !this.checked; if (!this.checked) this.parentElement.querySelector('.issue-mat-qty').value = ''; }); });
+}
+
+async function submitIssueMaterial() {
+    var brigadeId = document.getElementById('issue-brigade').value;
+    var axisName = document.getElementById('issue-axis').value;
+    var comment = document.getElementById('issue-comment').value.trim();
+    if (!brigadeId) { alert('Выберите бригаду'); return; }
+    if (!axisName) { alert('Укажите ось'); return; }
+    var items = [];
+    document.querySelectorAll('.issue-mat-check:checked').forEach(function(cb) { var qty = parseFloat(cb.parentElement.querySelector('.issue-mat-qty').value)||0; if (qty > 0) items.push({ material_id: cb.dataset.id, material_name: cb.dataset.name, unit: cb.dataset.unit, quantity: qty }); });
+    if (!items.length) { alert('Выберите материалы'); return; }
+    var waybillNumber = 'МН-'+new Date().getFullYear().toString().slice(-2)+'-'+Date.now().toString().slice(-6);
+    var today = new Date().toISOString().split('T')[0];
+    var { error: waybillError } = await supabase.from('material_waybills').insert({ project_id: currentProjectId, brigade_id: brigadeId, waybill_number: waybillNumber, waybill_date: today, sub_axis_name: axisName, issued_by: currentUser?.id, issued_by_name: currentUser?.full_name, comment: comment || null }).select('id').single();
+    if (waybillError) { alert('Ошибка: '+waybillError.message); return; }
+    document.getElementById('form-modal').classList.add('hidden');
+    await loadMaterialsTab();
+    alert('✅ Материалы выданы');
+}
+    function openAddIssueForm() {
+    var html = '<div class="form-group"><label>📝 Наименование *</label><input type="text" id="issue-title"></div>';
+    html += '<div class="form-group"><label>📄 Описание *</label><textarea id="issue-description" rows="3"></textarea></div>';
+    html += '<button class="btn-primary" id="save-issue-btn">📤 Создать</button>';
+    document.getElementById('form-modal-title').textContent = '⚠️ Новая проблема';
+    document.getElementById('form-modal-content').innerHTML = html;
+    document.getElementById('form-modal').classList.remove('hidden');
+    document.getElementById('save-issue-btn').onclick = async () => {
+        var title = document.getElementById('issue-title').value.trim();
+        var desc = document.getElementById('issue-description').value.trim();
+        if (!title || !desc) { alert('Заполните поля'); return; }
+        const { error } = await supabase.from('project_issues').insert({ project_id: currentProjectId, title, description: desc, status: 'open', created_by: currentUser?.id, created_by_name: currentUser?.full_name, created_at: new Date() });
+        if (error) alert('Ошибка: ' + error.message);
+        else { document.getElementById('form-modal').classList.add('hidden'); loadIssues(); showMessage('✅ Проблема создана', 'success'); }
+    };
+}
+    window.viewReportDetails = async function(reportId) {
+    const { data: report } = await supabase.from('object_reports').select('*').eq('id', reportId).single();
+    if (!report) return;
+    var html = '<div><strong>📄 Отчёт №'+report.report_number+' от '+new Date(report.report_date).toLocaleDateString('ru-RU')+'</strong></div>';
+    html += '<div>📍 Оси: '+(report.axes_selected?.join(', ')||'—')+'</div>';
+    html += '<div style="background:#F8FAFC;padding:12px;border-radius:14px;margin:12px 0;">📝 '+escapeHtml(report.description||'—')+'</div>';
+    if (report.photos && report.photos.length) { html += '<div style="display:flex;gap:8px;flex-wrap:wrap;">'; report.photos.forEach(p => { html += '<img src="'+p.url+'" style="width:80px;height:80px;object-fit:cover;border-radius:12px;cursor:pointer;" onclick="window.open(\''+p.url+'\',\'_blank\')">'; }); html += '</div>'; }
+    document.getElementById('form-modal-title').textContent = '📄 Отчёт №'+report.report_number;
+    document.getElementById('form-modal-content').innerHTML = html;
+    document.getElementById('form-modal').classList.remove('hidden');
+};
+    
 init();
 })();
 </script>
