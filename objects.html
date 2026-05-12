@@ -283,7 +283,7 @@ async function loadProgressTab() {
     container.innerHTML = html;
     
     // Обработчики для списка осей
-    container.querySelectorAll('.open-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.openAxisDetailPage(btn.dataset.id); }); });
+    container.querySelectorAll('.open-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { openAxisDetailPage(btn.dataset.id); }); });
     container.querySelectorAll('.edit-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.openEditAxis(btn.dataset.id); }); });
     container.querySelectorAll('.delete-axis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.deleteAxisConfirm(btn.dataset.id, btn.dataset.name); }); });
     var createBtn2 = document.getElementById('create-axis-btn2'); if (createBtn2) createBtn2.addEventListener('click', window.openCreateAxis);
