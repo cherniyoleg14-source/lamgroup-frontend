@@ -360,7 +360,7 @@ window.openWorkOrderForm = async function(axId, brId) {
     var sn = stages[0]?.sub_axis_name || '';
     var ip = br?.no_ip ? 'Без ИП' : (br?.company_name || '—');
 
-    var cs = stages.filter(function(s) { return (s.progress || 0) >= 100; });
+       var cs = stages.filter(function(s) { return (s.progress || 0) >= 100 && s.status !== 'completed'; });
     if (!cs.length) { alert('⚠️ Нет этапов с выполнением 100%.'); return; }
 
     var tc = cs.reduce(function(s, st) { return s + (st.total_cost || 0); }, 0);
@@ -432,6 +432,11 @@ window.openWorkOrderForm = async function(axId, brId) {
             order_number: on
         });
         await supabase.from('document_numbers').insert({ doc_type: 'naryad', number: nn });
+                
+        // Отмечаем сданные этапы как completed
+        for (var i = 0; i < cs.length; i++) {
+            await supabase.from('axis_work_stages').update({ status: 'completed' }).eq('id', cs[i].id);
+        }
         alert('✅ Наряд создан! Итоговая сумма к оплате: ' + fp.toLocaleString() + ' ₸');
         document.getElementById('form-modal').classList.add('hidden');
         if (document.getElementById('axis-detail-page').classList.contains('hidden')) loadProgressTab();
