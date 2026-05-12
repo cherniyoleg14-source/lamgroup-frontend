@@ -775,6 +775,160 @@ async function loadMaterialsTab() {
     });
     html += '</div>'; container.innerHTML = html;
 }
+    var currentMaterialsTab = 'incomes';
+var allMaterialsCache = [];
+var allIncomesCache = [];
+var allWaybillsCache = [];
+
+async function loadMaterialsTab() {
+    var container = document.getElementById('materials-container');
+    container.innerHTML = '<div class="loading">Загрузка материалов...</div>';
+    var [matRes, incRes, wbRes] = await Promise.all([
+        supabase.from('material_catalog').select('*').eq('project_id', currentProjectId).order('name'),
+        supabase.from('material_incomes').select('*, material_income_items(*)').eq('project_id', currentProjectId).order('created_at', { ascending: false }),
+        supabase.from('material_waybills').select('*, material_waybill_items(*), brigades(name)').eq('project_id', currentProjectId).order('created_at', { ascending: false })
+    ]);
+    allMaterialsCache = matRes.data || []; allIncomesCache = incRes.data || []; allWaybillsCache = wbRes.data || [];
+    renderMaterialsTab();
+}
+
+function renderMaterialsTab() {
+    var container = document.getElementById('materials-container');
+    var html = '';
+    html += '<div style="display:flex;gap:4px;margin-bottom:16px;overflow-x:auto;">';
+    html += '<button class="filter-chip '+(currentMaterialsTab==='incomes'?'active':'')+'" onclick="window.switchMaterialsTab(\'incomes\')">📋 Накладные</button>';
+    html += '<button class="filter-chip '+(currentMaterialsTab==='catalog'?'active':'')+'" onclick="window.switchMaterialsTab(\'catalog\')">📦 Справочник</button>';
+    html += '<button class="filter-chip '+(currentMaterialsTab==='stock'?'active':'')+'" onclick="window.switchMaterialsTab(\'stock\')">📊 Остатки</button>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:8px;margin-bottom:16px">';
+    html += '<button class="btn-primary" id="add-income-btn" style="flex:1">➕ Создать приход</button>';
+    html += '<button class="btn-primary" id="issue-material-btn" style="flex:1;background:linear-gradient(135deg,#F59E0B,#F97316)">📤 Выдать материал</button>';
+    html += '</div>';
+    if (currentMaterialsTab === 'incomes') { html += renderIncomesTab(); }
+    else if (currentMaterialsTab === 'catalog') { html += renderCatalogTab(); }
+    else if (currentMaterialsTab === 'stock') { html += renderStockTab(); }
+    container.innerHTML = html;
+    var addIncomeBtn = document.getElementById('add-income-btn');
+    var issueBtn = document.getElementById('issue-material-btn');
+    if (addIncomeBtn) addIncomeBtn.addEventListener('click', openAddIncomeForm);
+    if (issueBtn) issueBtn.addEventListener('click', openIssueMaterialForm);
+    container.querySelectorAll('.view-income-btn').forEach(function(btn) { btn.addEventListener('click', function() { viewIncome(btn.dataset.id); }); });
+    container.querySelectorAll('.view-waybill-btn').forEach(function(btn) { btn.addEventListener('click', function() { viewWaybill(btn.dataset.id); }); });
+    container.querySelectorAll('.print-waybill-btn').forEach(function(btn) { btn.addEventListener('click', function() { printWaybill(btn.dataset.id); }); });
+}
+
+window.switchMaterialsTab = function(tabName) { currentMaterialsTab = tabName; renderMaterialsTab(); };
+
+function renderIncomesTab() {
+    var html = '<div class="info-card"><h3 style="margin-bottom:16px">📋 Приходы</h3>';
+    if (!allIncomesCache.length) { html += '<p style="color:#64748B">Нет приходов</p>'; }
+    else { allIncomesCache.forEach(function(inc) {
+        var items = inc.material_income_items || [];
+        var itemsText = items.map(function(i) { return '• '+i.material_name+' — '+i.quantity+' '+i.unit; }).join('<br>');
+        html += '<div class="gpr-item"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>📄 '+(inc.income_number||'Приход')+'</strong><span style="font-size:12px;color:#64748B">'+new Date(inc.income_date).toLocaleDateString('ru-RU')+'</span></div>';
+        html += '<div style="font-size:13px;color:#64748B">Поставщик: '+(inc.supplier_name||'—')+' | Накл: '+(inc.supplier_invoice_number||'—')+'</div>';
+        if (inc.supplier_invoice_name) html += '<div style="font-size:12px;color:#64748B">📎 '+inc.supplier_invoice_name+'</div>';
+        html += '<div style="font-size:13px;margin-top:4px">'+itemsText+'</div>';
+        html += '<button class="btn-small btn-add view-income-btn" data-id="'+inc.id+'" style="margin-top:6px">👁️ Просмотр</button></div>';
+    }); }
+    html += '</div><div class="info-card"><h3 style="margin-bottom:16px">📤 Выдачи</h3>';
+    if (!allWaybillsCache.length) { html += '<p style="color:#64748B">Нет выдач</p>'; }
+    else { allWaybillsCache.forEach(function(w) {
+        var items = w.material_waybill_items || [];
+        var itemsText = items.map(function(i) { return '• '+i.material_name+' — '+i.quantity+' '+i.unit; }).join('<br>');
+        html += '<div class="gpr-item"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><strong>📄 '+w.waybill_number+'</strong><span style="font-size:12px;color:#64748B">'+new Date(w.waybill_date).toLocaleDateString('ru-RU')+'</span></div>';
+        html += '<div style="font-size:13px;color:#64748B">👷 '+(w.brigades?.name||'—')+' | 📍 '+(w.sub_axis_name||'—')+'</div>';
+        html += '<div style="font-size:13px;margin-top:4px">'+itemsText+'</div>';
+        if (w.comment) html += '<div style="font-size:12px;color:#64748B;margin-top:4px">📝 '+w.comment+'</div>';
+        html += '<div style="display:flex;gap:6px;margin-top:6px"><button class="btn-small btn-add view-waybill-btn" data-id="'+w.id+'">👁️</button><button class="btn-small btn-pdf print-waybill-btn" data-id="'+w.id+'">🖨️</button></div></div>';
+    }); }
+    html += '</div>';
+    return html;
+}
+
+function renderCatalogTab() {
+    var html = '<div class="info-card"><h3 style="margin-bottom:16px">📦 Справочник материалов</h3>';
+    if (!allMaterialsCache.length) { html += '<p style="color:#64748B">Нет материалов</p>'; }
+    else { allMaterialsCache.forEach(function(m) { html += '<div class="gpr-item"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><strong>'+m.name+'</strong></div><div style="font-size:13px;color:#64748B">📐 '+m.unit+' | Всего: '+m.total_quantity+' | Доступно: '+m.available_quantity+'</div></div>'; }); }
+    html += '</div>'; return html;
+}
+
+function renderStockTab() {
+    var html = '<div class="info-card"><h3 style="margin-bottom:16px">📊 Остатки материалов</h3>';
+    if (!allMaterialsCache.length) { html += '<p style="color:#64748B">Нет материалов</p>'; }
+    else { html += '<div style="overflow-x:auto"><table class="work-table"><thead><tr><th>№</th><th>Наименование</th><th>Ед.</th><th>Всего</th><th>Доступно</th><th>%</th></tr></thead><tbody>';
+        allMaterialsCache.forEach(function(m, idx) { var pct = m.total_quantity > 0 ? Math.round((m.available_quantity / m.total_quantity) * 100) : 0;
+            html += '<tr><td class="text-right">'+(idx+1)+'</td><td><strong>'+m.name+'</strong></td><td>'+m.unit+'</td><td class="text-right">'+m.total_quantity+'</td><td class="text-right">'+m.available_quantity+'</td><td class="text-right">'+pct+'%</td></tr>'; });
+        html += '</tbody></table></div>';
+        html += '<button class="btn-pdf" id="export-stock-btn" style="width:100%;margin-top:12px">📥 Скачать остатки (Excel)</button>'; }
+    html += '</div>';
+    setTimeout(function() {
+        var exportBtn = document.getElementById('export-stock-btn');
+        if (exportBtn) { exportBtn.addEventListener('click', function() {
+            var data = allMaterialsCache.map(function(m, idx) { return { '№': idx+1, 'Наименование': m.name, 'Ед.изм': m.unit, 'Всего': m.total_quantity, 'Доступно': m.available_quantity, '%': m.total_quantity > 0 ? Math.round((m.available_quantity/m.total_quantity)*100) : 0 }; });
+            var wb = XLSX.utils.book_new(); var ws = XLSX.utils.json_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, 'Остатки'); XLSX.writeFile(wb, 'Остатки_материалов_'+new Date().toISOString().split('T')[0]+'.xlsx');
+        }); }
+    }, 100);
+    return html;
+}
+    async function loadIssues() {
+    const container = document.getElementById('tab-issues');
+    container.innerHTML = '<div class="loading">Загрузка проблем...</div>';
+    const { data, error } = await supabase.from('project_issues').select('*').eq('project_id', currentProjectId).order('created_at', { ascending: false });
+    if (error) { container.innerHTML = '<div class="info-card"><p>Ошибка: '+error.message+'</p></div>'; return; }
+    const issues = data || [];
+    const today = new Date();
+    for (const issue of issues) { if (issue.deadline && issue.status !== 'completed' && issue.deadline < today.toISOString().split('T')[0] && issue.status !== 'overdue') { await supabase.from('project_issues').update({ status: 'overdue', updated_at: new Date() }).eq('id', issue.id); issue.status = 'overdue'; } }
+    const stats = { open: issues.filter(i => i.status === 'open' || i.status === 'in_progress').length, overdue: issues.filter(i => i.status === 'overdue').length, completed: issues.filter(i => i.status === 'completed').length };
+    let html = '<div class="info-card"><div style="display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;"><div class="stat-card" data-filter="open" style="flex:1;background:#FEF3C7;border-radius:20px;padding:16px;text-align:center;cursor:pointer;"><div style="font-size:28px;font-weight:800;color:#92400E;">'+stats.open+'</div><div style="font-size:12px;color:#92400E;">🟡 Открытых</div></div><div class="stat-card" data-filter="overdue" style="flex:1;background:#FEE2E2;border-radius:20px;padding:16px;text-align:center;cursor:pointer;"><div style="font-size:28px;font-weight:800;color:#991B1B;">'+stats.overdue+'</div><div style="font-size:12px;color:#991B1B;">🔴 Просрочено</div></div><div class="stat-card" data-filter="completed" style="flex:1;background:#D1FAE5;border-radius:20px;padding:16px;text-align:center;cursor:pointer;"><div style="font-size:28px;font-weight:800;color:#065F46;">'+stats.completed+'</div><div style="font-size:12px;color:#065F46;">✅ Выполнено</div></div></div>';
+    html += '<button class="btn-primary" id="add-issue-btn" style="margin-bottom:20px;">⚠️ Новая проблема</button>';
+    html += '<div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;"><button class="filter-chip active" data-filter="all">Все</button><button class="filter-chip" data-filter="open">Открытые</button><button class="filter-chip" data-filter="overdue">Просроченные</button><button class="filter-chip" data-filter="completed">Выполненные</button></div><div id="issues-list">';
+    issues.forEach(issue => {
+        var si = {open:'🟡',in_progress:'🔵',completed:'✅',overdue:'🔴'}[issue.status]||'🟡';
+        var tc = issue.status==='overdue'?'tag-red':issue.status==='in_progress'?'tag-blue':'tag-yellow';
+        html += '<div class="gpr-item issue-card" data-status="'+issue.status+'"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;"><div><strong style="font-size:16px;">'+escapeHtml(issue.title)+'</strong></div><span class="tag '+tc+'">'+si+' '+(issue.status==='overdue'?'Просрочена':issue.status==='in_progress'?'В работе':issue.status==='completed'?'Выполнена':'Открыта')+'</span></div><div style="font-size:13px;color:#64748B;margin-bottom:10px;">📅 '+new Date(issue.created_at).toLocaleDateString('ru-RU')+'</div><div style="font-size:14px;margin-bottom:12px;">📝 '+escapeHtml(issue.description||'—')+'</div></div>';
+    });
+    html += '</div></div>'; container.innerHTML = html;
+    document.querySelectorAll('.filter-chip').forEach(function(chip) { chip.addEventListener('click', function() { var f = chip.dataset.filter; document.querySelectorAll('.filter-chip').forEach(function(c) { c.style.background='white'; c.style.color='#0F172A'; }); chip.style.background='#0F172A'; chip.style.color='white'; document.querySelectorAll('.issue-card').forEach(function(card) { card.style.display = (f === 'all' || card.dataset.status === f || (f === 'open' && (card.dataset.status === 'open' || card.dataset.status === 'in_progress'))) ? 'block' : 'none'; }); }); });
+    document.querySelectorAll('.stat-card').forEach(function(card) { card.addEventListener('click', function() { var f = card.dataset.filter; document.querySelectorAll('.filter-chip').forEach(function(c) { if (c.dataset.filter === f) c.click(); }); }); });
+    document.getElementById('add-issue-btn')?.addEventListener('click', openAddIssueForm);
+}
+    async function loadReports() {
+    const container = document.getElementById('tab-report');
+    container.innerHTML = '<div class="loading">Загрузка отчётов...</div>';
+    const { data, error } = await supabase.from('object_reports').select('*').eq('project_id', currentProjectId).order('report_date', { ascending: false });
+    if (error) { container.innerHTML = '<div class="info-card"><p>Ошибка: '+error.message+'</p></div>'; return; }
+    const reports = data || [];
+    const nextNumber = reports.length > 0 ? Math.max(...reports.map(r => r.report_number || 0)) + 1 : 1;
+    const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
+    let axesList = [];
+    if (blocks && blocks.length) { const blockIds = blocks.map(b => b.id); const { data: axes } = await supabase.from('axes').select('name').in('block_id', blockIds); axesList = axes || []; }
+    let html = '<div class="info-card"><h3 style="margin-bottom:20px;">📝 Создать новый отчёт</h3>';
+    html += '<div><label>📅 Дата отчёта</label><input type="date" id="report-date" value="'+new Date().toISOString().split('T')[0]+'"></div>';
+    html += '<div><label>📍 Выберите оси *</label><div id="report-axes-list" style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;">';
+    axesList.forEach(axis => { html += '<label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" class="report-axis-cb" value="'+axis.name+'"><span>'+axis.name+'</span></label>'; });
+    html += '</div></div><div><label>📝 Описание</label><textarea id="report-description" rows="3"></textarea></div>';
+    html += '<button class="btn-primary" id="submit-report-btn" style="margin-top:0;">📤 Отправить отчёт</button></div>';
+    html += '<div class="info-card"><h3 style="margin-bottom:16px;">📋 История отчётов</h3><div id="reports-list"></div></div>';
+    container.innerHTML = html;
+    document.getElementById('submit-report-btn').addEventListener('click', async () => {
+        var reportDate = document.getElementById('report-date').value;
+        var description = document.getElementById('report-description').value.trim();
+        var selectedAxes = Array.from(document.querySelectorAll('.report-axis-cb:checked')).map(cb => cb.value);
+        if (!selectedAxes.length) { alert('Выберите оси'); return; }
+        const { error } = await supabase.from('object_reports').insert({ report_number: nextNumber, project_id: currentProjectId, report_date: reportDate, axes_selected: selectedAxes, description: description, status: 'pending', created_by: currentUser?.id, created_by_name: currentUser?.full_name, created_by_role: currentRole, created_at: new Date() });
+        if (error) { alert('Ошибка: ' + error.message); return; }
+        showMessage('✅ Отчёт отправлен', 'success'); loadReports();
+    });
+    var listContainer = document.getElementById('reports-list');
+    if (!reports.length) { listContainer.innerHTML = '<p style="color:#64748B;text-align:center;padding:20px;">Нет отчётов</p>'; return; }
+    var h = '';
+    for (const report of reports) {
+        h += '<div class="gpr-item" style="margin-bottom:12px;cursor:pointer;" onclick="window.viewReportDetails(\''+report.id+'\')"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;"><div><strong>📄 Отчёт №'+report.report_number+' от '+new Date(report.report_date).toLocaleDateString('ru-RU')+'</strong></div><span style="font-size:12px;padding:4px 10px;border-radius:20px;background:'+(report.status==='confirmed'?'#D1FAE5':'#FEF3C7')+';color:'+(report.status==='confirmed'?'#065F46':'#92400E')+';">'+(report.status==='confirmed'?'✅ Проверен':'⏳ На проверке')+'</span></div><div style="font-size:13px;margin-bottom:6px;">📝 '+(report.description||'').substring(0,100)+'</div></div>';
+    }
+    listContainer.innerHTML = h;
+}
 init();
 })();
 </script>
