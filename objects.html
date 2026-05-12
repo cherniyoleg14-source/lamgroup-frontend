@@ -559,6 +559,8 @@ window.openAdvanceForm = async function(axId, brId) {
     var op = (po || []).filter(function(o) { return o.status === 'approved' || o.payment_status === 'paid'; }).reduce(function(s, o) { return s + (o.total_amount || 0); }, 0);
 
     var tpd = ap + op;
+    // Общая сумма удержаний по всем нарядам бригады на объекте
+    var totalGuarantee = (po || []).reduce(function(s, o) { return s + (o.guarantee_amount || 0); }, 0);
 
     // Номер аванса
     var { data: ln } = await supabase.from('document_numbers').select('number').eq('doc_type', 'advance').order('number', { ascending: false }).limit(1);
@@ -594,6 +596,7 @@ window.openAdvanceForm = async function(axId, brId) {
     h += '<tr><td>📋 Общая сумма договора</td><td>' + tct.toLocaleString() + ' ₸</td></tr>';
     h += '<tr><td>✅ Выполнено работ (всего)</td><td>' + da.toLocaleString() + ' ₸</td></tr>';
     h += '<tr><td>💸 Всего выплачено</td><td>' + tpd.toLocaleString() + ' ₸</td></tr>';
+        h += '<tr><td>🔒 Общая сумма удержаний (10%)</td><td>' + totalGuarantee.toLocaleString() + ' ₸</td></tr>';
     h += '</table>';
     h += '<div class="form-group" style="margin-top:16px;"><label class="form-label">💰 Сумма аванса *</label><input type="number" id="advance-amount" class="form-input" step="0.01" placeholder="Введите сумму аванса"></div>';
     h += '<div class="form-group"><label class="form-label">Вид оплаты</label><select id="advance-payment-method" class="form-input"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
@@ -1440,7 +1443,8 @@ async function viewWaybill(waybillId) {
     var op = (po || []).filter(function(o) { return o.status === 'approved' || o.payment_status === 'paid'; }).reduce(function(s, o) { return s + (o.total_amount || 0); }, 0);
 
     var tpd = ap + op;
-
+// Общая сумма удержаний
+    var totalGuarantee = (po || []).reduce(function(s, o) { return s + (o.guarantee_amount || 0); }, 0);
     // Номер наряда
     var { data: ln } = await supabase.from('document_numbers').select('number').eq('doc_type', 'naryad').order('number', { ascending: false }).limit(1);
     var nn = (ln && ln.length) ? ln[0].number + 1 : 1;
@@ -1462,6 +1466,7 @@ async function viewWaybill(waybillId) {
     h += '<table class="calc-table" style="margin-top:16px;">';
     h += '<tr><td>💰 Сумма закрываемых работ</td><td>' + tc.toLocaleString() + ' ₸</td></tr>';
     h += '<tr><td>💸 Сумма выплаченных денег (всего по бригаде)</td><td>' + (tpd > 0 ? tpd.toLocaleString() : '0') + ' ₸</td></tr>';
+       h += '<tr><td>🔒 Общая сумма удержаний (10%)</td><td>' + totalGuarantee.toLocaleString() + ' ₸</td></tr>';
     h += '<tr><td>🔒 Удержание 10% (гарантийные)</td><td class="negative">-' + gr.toLocaleString() + ' ₸</td></tr>';
     h += '<tr class="total-row"><td>💳 ИТОГО К ОПЛАТЕ</td><td style="font-size:18px;color:var(--success);">' + fp.toLocaleString() + ' ₸</td></tr></table>';
     h += '<div class="checkbox-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><input type="checkbox" id="narad-urgent" style="width:20px;height:20px;"><label style="font-size:14px;">🚨 Срочный платёж</label></div>';
