@@ -991,53 +991,166 @@ window.onIncomeItemSelect = function(selectEl) {
     if (selectEl.value === '__new__') { newNameInput.style.display = 'block'; }
     else { newNameInput.style.display = 'none'; newNameInput.value = ''; }
 };
-    function openIssueMaterialForm() {
-    var html = '<div class="form-group"><label>Бригада *</label><select id="issue-brigade">';
-    html += '<option value="">Выберите бригаду</option>';
-    allBrigades.forEach(function(b) { html += '<option value="'+b.id+'">'+b.name+' ('+(b.foreman_name||'')+')</option>'; });
-    html += '</select></div>';
+   function openIssueMaterialForm() {
+    var html = '<div class="form-group"><label>Бригада *</label><select id="issue-brigade"><option value="">Загрузка...</option></select></div>';
     html += '<div class="form-group"><label>Ось / Подось *</label><select id="issue-axis"><option value="">Сначала выберите бригаду</option></select></div>';
-    html += '<div id="issue-materials-list"></div>';
+    html += '<div id="issue-materials-list"><p style="color:#64748B;">Сначала выберите бригаду и ось</p></div>';
     html += '<div class="form-group" style="margin-top:16px"><label>📝 Комментарий</label><textarea id="issue-comment" rows="2"></textarea></div>';
     document.getElementById('form-modal-title').textContent = '📤 Выдать материал';
     document.getElementById('form-modal-content').innerHTML = html;
     document.getElementById('form-modal').classList.remove('hidden');
-    renderIssueMaterialsList();
+    
+    // Загружаем ТОЛЬКО бригады, у которых есть этапы на ЭТОМ объекте
+    async function loadObjectBrigades() {
+        // Получаем блоки проекта
+        var { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
+        if (!blocks?.length) return;
+        var blockIds = blocks.map(function(b) { return b.id; });
+        
+        // Получаем оси проекта
+        var { data: axes } = await supabase.from('axes').select('id').in('block_id', blockIds);
+        if (!axes?.length) return;
+        var axisIds = axes.map(function(a) { return a.id; });
+        
+        // Получаем бригады, работающие на этих осях
+        var { data: stages } = await supabase.from('axis_work_stages').select('brigade_id, brigades!inner(name, foreman_name)').in('axis_id', axisIds);
+        
+        var brigadeMap = {};
+        if (stages) {
+            stages.forEach(function(s) {
+                if (s.brigade_id && s.brigades && !brigadeMap[s.brigade_id]) {
+                    brigadeMap[s.brigade_id] = s.brigades;
+                }
+            });
+        }
+        
+        var sel = document.getElementById('issue-brigade');
+        sel.innerHTML = '<option value="">Выберите бригаду</option>';
+        Object.keys(brigadeMap).forEach(function(id) {
+            var b = brigadeMap[id];
+            sel.innerHTML += '<option value="'+id+'">'+b.name+' ('+(b.foreman_name||'')+')</option>';
+        });
+    }
+    
+    loadObjectBrigades();
+    
+    document.getElementById('issue-brigade').addEventListener('change', async function() {
+        var brigadeId = this.value;
+        var axisSelect = document.getElementById('issue-axis');
+        if (!brigadeId) { axisSelect.innerHTML = '<option value="">Сначала выберите бригаду</option>'; return; }
+        axisSelect.innerHTML = '<option value="">Загрузка...</option>';
+        
+        // Получаем блоки → оси → подоси этой бригады на объекте
+        var { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', currentProjectId);
+        var blockIds = blocks ? blocks.map(function(b) { return b.id; }) : [];
+        var { data: axes } = await supabase.from('axes').select('id').in('block_id', blockIds);
+        var axisIds = axes ? axes.map(function(a) { return a.id; }) : [];
+        
+        var { data: stages } = await supabase.from('axis_work_stages').select('sub_axis_name').eq('brigade_id', brigadeId).in('axis_id', axisIds);
+        var axesMap = {};
+        if (stages) stages.forEach(function(s) { if (s.sub_axis_name) axesMap[s.sub_axis_name] = true; });
+        
+        axisSelect.innerHTML = '<option value="">Выберите ось/подось</option>';
+        Object.keys(axesMap).forEach(function(a) { axisSelect.innerHTML += '<option value="'+a+'">'+a+'</option>'; });
+        if (!Object.keys(axesMap).length) axisSelect.innerHTML = '<option value="">Нет закреплённых осей</option>';
+    });
+    
+    // Показываем материалы после выбора оси
+    document.getElementById('issue-axis').addEventListener('change', function() {
+        if (this.value) renderIssueMaterialsList();
+    });
+    
     var saveBtn = document.createElement('button'); saveBtn.className = 'btn-primary'; saveBtn.textContent = 'Выдать';
     saveBtn.addEventListener('click', submitIssueMaterial);
     document.getElementById('form-modal-content').appendChild(saveBtn);
 }
-    function renderIssueMaterialsList() {
+function renderIssueMaterialsList() {
     var container = document.getElementById('issue-materials-list');
-    if (!allMaterialsCache.length) { container.innerHTML = '<p style="color:#64748B;padding:16px;text-align:center">Нет материалов. Сначала создайте приход.</p>'; return; }
+    if (!allMaterialsCache || !allMaterialsCache.length) { container.innerHTML = '<p style="color:#64748B;padding:16px;text-align:center">Нет материалов в справочнике. Сначала создайте приход.</p>'; return; }
+    
+    var available = allMaterialsCache.filter(function(m) { return (m.available_quantity || 0) > 0; });
+    if (!available.length) { container.innerHTML = '<p style="color:#64748B;padding:16px;text-align:center">Все материалы израсходованы.</p>'; return; }
+    
     var html = '<div class="form-group" style="margin-top:16px"><label>📋 Материалы для выдачи</label>';
-    allMaterialsCache.forEach(function(m) { var disabled = m.available_quantity <= 0 ? 'disabled' : '';
+    available.forEach(function(m) {
         html += '<div style="display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px;background:#F8FAFC;border-radius:10px">';
-        html += '<input type="checkbox" class="issue-mat-check" data-id="'+m.id+'" data-name="'+m.name+'" data-unit="'+m.unit+'" data-avail="'+m.available_quantity+'" style="width:20px;height:20px" '+disabled+'>';
-        html += '<span style="flex:1;font-size:13px"><strong>'+m.name+'</strong><br><small>Доступно: '+m.available_quantity+' '+m.unit+'</small></span>';
-        html += '<input type="number" class="issue-mat-qty" placeholder="Кол-во" style="width:80px;padding:8px" step="0.01" min="0" max="'+m.available_quantity+'" disabled>';
+        html += '<input type="checkbox" class="issue-mat-check" data-id="'+m.id+'" data-name="'+m.name+'" data-unit="'+m.unit+'" data-avail="'+(m.available_quantity||0)+'" style="width:20px;height:20px">';
+        html += '<span style="flex:1;font-size:13px"><strong>'+m.name+'</strong><br><small>Доступно: '+(m.available_quantity||0)+' '+m.unit+'</small></span>';
+        html += '<input type="number" class="issue-mat-qty" placeholder="Кол-во" style="width:80px;padding:8px" step="0.01" min="0" max="'+(m.available_quantity||0)+'" disabled>';
         html += '<span style="font-size:12px">'+m.unit+'</span></div>';
     });
     html += '</div>'; container.innerHTML = html;
-    document.querySelectorAll('.issue-mat-check').forEach(function(cb) { cb.addEventListener('change', function() { this.parentElement.querySelector('.issue-mat-qty').disabled = !this.checked; if (!this.checked) this.parentElement.querySelector('.issue-mat-qty').value = ''; }); });
+    
+    document.querySelectorAll('.issue-mat-check').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            var qtyInput = this.parentElement.querySelector('.issue-mat-qty');
+            qtyInput.disabled = !this.checked;
+            if (!this.checked) qtyInput.value = '';
+        });
+    });
 }
 
 async function submitIssueMaterial() {
     var brigadeId = document.getElementById('issue-brigade').value;
     var axisName = document.getElementById('issue-axis').value;
     var comment = document.getElementById('issue-comment').value.trim();
+    
     if (!brigadeId) { alert('Выберите бригаду'); return; }
-    if (!axisName) { alert('Укажите ось'); return; }
+    if (!axisName) { alert('Укажите ось / подось'); return; }
+    
     var items = [];
-    document.querySelectorAll('.issue-mat-check:checked').forEach(function(cb) { var qty = parseFloat(cb.parentElement.querySelector('.issue-mat-qty').value)||0; if (qty > 0) items.push({ material_id: cb.dataset.id, material_name: cb.dataset.name, unit: cb.dataset.unit, quantity: qty }); });
-    if (!items.length) { alert('Выберите материалы'); return; }
-    var waybillNumber = 'МН-'+new Date().getFullYear().toString().slice(-2)+'-'+Date.now().toString().slice(-6);
+    document.querySelectorAll('.issue-mat-check:checked').forEach(function(cb) {
+        var qty = parseFloat(cb.parentElement.querySelector('.issue-mat-qty').value) || 0;
+        var avail = parseFloat(cb.dataset.avail) || 0;
+        if (qty > 0 && qty <= avail) {
+            items.push({ material_id: cb.dataset.id, material_name: cb.dataset.name, unit: cb.dataset.unit, quantity: qty });
+        }
+    });
+    
+    if (!items.length) { alert('Выберите материалы и укажите количество'); return; }
+    
+    var waybillNumber = 'МН-' + new Date().getFullYear().toString().slice(-2) + '-' + Date.now().toString().slice(-6);
     var today = new Date().toISOString().split('T')[0];
-    var { error: waybillError } = await supabase.from('material_waybills').insert({ project_id: currentProjectId, brigade_id: brigadeId, waybill_number: waybillNumber, waybill_date: today, sub_axis_name: axisName, issued_by: currentUser?.id, issued_by_name: currentUser?.full_name, comment: comment || null }).select('id').single();
-    if (waybillError) { alert('Ошибка: '+waybillError.message); return; }
+    
+    // Создаём накладную
+    var { data: waybill, error: waybillError } = await supabase.from('material_waybills').insert({
+        project_id: currentProjectId,
+        brigade_id: brigadeId,
+        waybill_number: waybillNumber,
+        waybill_date: today,
+        sub_axis_name: axisName,
+        issued_by: currentUser?.id,
+        issued_by_name: currentUser?.full_name,
+        comment: comment || null
+    }).select('id').single();
+    
+    if (waybillError) { alert('Ошибка: ' + waybillError.message); return; }
+    
+    // Добавляем позиции и списываем остатки
+    for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        
+        // Сохраняем позицию в накладной
+        await supabase.from('material_waybill_items').insert({
+            waybill_id: waybill.id,
+            material_name: item.material_name,
+            unit: item.unit,
+            quantity: item.quantity
+        });
+        
+        // Обновляем остатки в справочнике
+        var { data: mat } = await supabase.from('material_catalog').select('available_quantity').eq('id', item.material_id).single();
+        if (mat) {
+            await supabase.from('material_catalog').update({
+                available_quantity: mat.available_quantity - item.quantity,
+                updated_at: new Date()
+            }).eq('id', item.material_id);
+        }
+    }
+    
     document.getElementById('form-modal').classList.add('hidden');
     await loadMaterialsTab();
-    alert('✅ Материалы выданы');
+    alert('✅ Материалы выданы. Накладная №' + waybillNumber + ' создана.');
 }
     function openAddIssueForm() {
     var html = '<div class="form-group"><label>📝 Наименование *</label><input type="text" id="issue-title"></div>';
