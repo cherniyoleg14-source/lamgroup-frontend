@@ -510,7 +510,7 @@ window.openAdvanceForm = async function(axId, brId) {
     h += '<tr><td>📋 Сумма договора</td><td>' + tct.toLocaleString() + ' ₸</td></tr>';
     h += '<tr><td>✅ Выполнено работ</td><td>' + da.toLocaleString() + ' ₸</td></tr>';
     h += '<tr><td>💸 Всего выплачено</td><td>' + tpd.toLocaleString() + ' ₸</td></tr>';
-    h += </table>';
+      h += '</table>';
     h += '<div class="form-group" style="margin-top:16px;"><label class="form-label">💰 Сумма аванса *</label><input type="number" id="advance-amount" class="form-input" step="0.01" placeholder="Введите сумму аванса"></div>';
     h += '<div class="form-group"><label class="form-label">Вид оплаты</label><select id="advance-payment-method" class="form-input"><option value="non_cash">💳 Безнал</option><option value="cash">💵 Наличка</option></select></div>';
     h += '<div class="checkbox-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;"><input type="checkbox" id="advance-urgent" style="width:20px;height:20px;"><label style="font-size:14px;">🚨 Срочный платёж</label></div>';
