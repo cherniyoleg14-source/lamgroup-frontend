@@ -281,19 +281,20 @@
         if (!o) return;
         const { data: stages } = await supabase.from('axis_work_stages').select('*').eq('brigade_id', o.brigade_id);
         const { data: advances } = await supabase.from('advances').select('*').eq('brigade_id', o.brigade_id).eq('project_id', o.project_id);
-        const sumWork = stages?.reduce((s,st) => s + (st.total_cost||0), 0) || o.total_amount || 0;
+        const sumWork = o.original_amount || o.total_amount || 0;
         const sumAdvance = advances?.filter(a => a.status === 'approved').reduce((s,a) => s + (a.amount||0), 0) || 0;
-        const sumDone = (o.actual_volume || o.volume || 0) * (o.price || 0) || o.total_amount || 0;
-        const remain = sumWork - sumDone;
-        const guarantee = Math.round(sumDone * 0.10);
-        const toPay = sumDone - sumAdvance - guarantee;
-        const advanceForward = toPay < 0 ? Math.abs(toPay) : 0;
-        const finalPay = Math.max(0, toPay);
+        const guarantee = o.guarantee_amount || 0;
+        const finalPay = o.total_amount || 0;
         const hasAvr = o.avr_url ? true : false;
         const hasInvoice = o.invoice_file_url ? true : false;
         
         let html = `<div style="margin-bottom:12px;"><strong>📋 Наряд: ${escapeHtml(o.work_type||'—')}</strong></div><div>👷 Бригада: ${escapeHtml(o.brigades?.name||'—')}</div><div>🏗️ Объект: ${escapeHtml(o.projects?.name||'—')}</div><div>📍 Ось: ${escapeHtml(o.axis_name||'—')}</div><div>📐 Объём: ${o.volume||0} | Факт: ${o.actual_volume||0} | Цена: ${o.price||0} ₸</div>
-        <table class="calc-table" style="margin-top:16px;"><tr><td>📊 Сумма работ (ГПР)</td><td>${formatMoney(sumWork)}</td></tr><tr><td>💸 Сумма аванса</td><td>${formatMoney(sumAdvance)}</td></tr><tr><td>✅ Выполнено</td><td>${formatMoney(sumDone)}</td></tr><tr><td>📐 Остаток</td><td>${formatMoney(remain)}</td></tr><tr><td>🔒 Удержание 10% (гарантийные)</td><td class="negative">-${formatMoney(guarantee)}</td></tr>${advanceForward > 0 ? `<tr style="background:#FEF2F2;"><td>⚠️ Аванс вперёд</td><td class="negative">${formatMoney(advanceForward)}</td></tr>` : ''}<tr class="total-row"><td>💳 К ВЫПЛАТЕ</td><td style="color:${finalPay>0?'var(--success)':'var(--danger)'};font-size:16px;">${formatMoney(finalPay)}</td></tr></table>${advanceForward > 0 ? '<div class="tag tag-red" style="margin-top:8px;display:inline-block;">⚠️ Выплата с Авансом</div>' : ''}
+                <table class="calc-table" style="margin-top:16px;">
+        <tr><td>💰 Сумма закрываемых работ</td><td>${formatMoney(sumWork)}</td></tr>
+        <tr><td>💸 Выплаченные авансы</td><td>${formatMoney(sumAdvance)}</td></tr>
+        <tr><td>🔒 Удержание 10% (уже удержано)</td><td class="negative">-${formatMoney(guarantee)}</td></tr>
+        <tr class="total-row"><td>💳 СУММА К ОПЛАТЕ</td><td style="font-size:18px;color:var(--success);">${formatMoney(finalPay)}</td></tr>
+        </table>
         <div style="margin-top:20px;padding-top:16px;border-top:2px solid var(--border);"><h4 style="margin-bottom:12px;">📎 Документы</h4>${o.avr_url ? `<div style="margin-bottom:8px;">📎 АВР: <a href="${o.avr_url}" target="_blank" class="tag tag-green" style="text-decoration:none;">Просмотреть</a></div>` : ''}${o.invoice_file_url ? `<div style="margin-bottom:8px;">📎 Счёт-фактура: <a href="${o.invoice_file_url}" target="_blank" class="tag tag-green" style="text-decoration:none;">${escapeHtml(o.invoice_file_name||'Просмотреть')}</a></div>` : ''}
         <div class="form-group"><label class="form-label">📎 АВР ${hasAvr?'✅':'(обязательно)'}</label><input type="file" id="order-avr-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div><div class="form-group"><label class="form-label">📎 Счёт-фактура ${hasInvoice?'✅':'(обязательно)'}</label><input type="file" id="order-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div><div class="form-group"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="order-bill-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png"></div><div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="order-comment" class="form-input" rows="2">${escapeHtml(o.comment||'')}</textarea></div></div>`;
         
