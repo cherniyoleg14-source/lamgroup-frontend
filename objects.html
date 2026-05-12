@@ -285,29 +285,27 @@ window.openAxisDetailPage = async function(axisId) {
     const { data: axis } = await supabase.from('axes').select('*').eq('id', axisId).single();
     const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name, foreman_name), work_stages(name)').eq('axis_id', axisId).order('plan_start');
     if (!axis) return;
+    var axisNameForPage = axis.name;
     const brigades = [...new Set((stages||[]).map(function(s) { return s.brigade_id; }).filter(Boolean))];
     const totalProgress = stages?.length ? Math.round(stages.reduce(function(s,st) { return s + (st.progress||0); }, 0) / stages.length) : 0;
     var brigadeNames = (stages||[]).map(function(s){ return s.brigades?.name; }).filter(function(v,i,a){ return v && a.indexOf(v)===i; });
     var brigadeDisplay = brigadeNames.length ? brigadeNames.join(', ') : 'Нет бригад';
-    var pageHtml = '<div style="max-width:600px;margin:0 auto"><button class="back-btn" id="close-axis-btn">← Назад</button><div class="info-card"><h3>📊 ГПР — Ось '+axis.name+'</h3><span class="status-badge-sm status-'+(axis.status||'no_brigade')+'-sm">👷 '+brigadeDisplay+'</span><p>📅 '+window.formatDateShort(axis.plan_start)+' — '+window.formatDateShort(axis.plan_end)+' | 📐 '+(axis.total_area||0)+' м²</p><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:'+totalProgress+'%"></div></div><span>'+totalProgress+'%</span></div></div>';
+    var pageHtml = '<div style="max-width:600px;margin:0 auto"><button class="back-btn" id="close-axis-btn">← Назад</button><div class="info-card"><h3>📊 ГПР — Ось '+axisNameForPage+'</h3><span class="status-badge-sm status-'+(axis.status||'no_brigade')+'-sm">👷 '+brigadeDisplay+'</span><p>📅 '+window.formatDateShort(axis.plan_start)+' — '+window.formatDateShort(axis.plan_end)+' | 📐 '+(axis.total_area||0)+' м²</p><div class="progress-section"><div class="progress-bar"><div class="progress-fill" style="width:'+totalProgress+'%"></div></div><span>'+totalProgress+'%</span></div></div>';
     for (var b = 0; b < brigades.length; b++) {
         var brigadeId = brigades[b];
         var bs = (stages||[]).filter(function(s) { return s.brigade_id === brigadeId; }); var brigade = bs[0]?.brigades; var subAxisName = bs[0]?.sub_axis_name || '';
         var brProgress = Math.round(bs.reduce(function(s,st) { return s + (st.progress||0); }, 0) / bs.length);
         var allCompleted = bs.every(function(s) { return (s.progress||0) >= 100; });
-        var hasSelectable = bs.some(function(s) { return (s.progress||0) >= 100 && s.status !== 'completed'; });
         pageHtml += '<div class="brigade-section" data-brigade="'+brigadeId+'"><div class="brigade-header"><span class="brigade-name">👷 '+(brigade?.name||'Бригада')+'</span><span class="status-badge-sm '+(allCompleted?'status-completed-sm':'status-in_progress-sm')+'">'+(allCompleted?'✅ Завершена':'⚙️ В работе')+' '+brProgress+'%</span></div>'+(subAxisName?'<p>📍 '+subAxisName+'</p>':'')+'<table class="work-table"><thead><tr><th>📋</th><th>Этап</th><th>м²</th><th>Цена</th><th>Сумма</th><th>%</th><th>📅</th></tr></thead><tbody>'+bs.map(function(ws) {
             var isCompletedStage = (ws.progress||0) >= 100 && ws.status === 'completed';
             var canSelect = (ws.progress||0) >= 100 && ws.status !== 'completed';
-            var checkboxCell = canSelect ? '<td><input type="checkbox" class="stage-select-cb" data-sid="'+ws.id+'" data-brigade="'+brigadeId+'" data-name="'+(ws.work_stages?.name||'—')+'" data-volume="'+(ws.volume||0)+'" data-cost="'+(ws.total_cost||0)+'" data-axisname="'+(axis?.name||'—')+' / '+(ws.sub_axis_name||'—')+'" style="width:18px;height:18px;accent-color:#F59E0B;"></td>' : '<td></td>';
-            var inputCell = isCompletedStage ? 
-                '<td style="text-align:center;color:#10B981;font-weight:700;">✅ 100%</td>' :
-                '<td><input type="number" class="progress-input" value="'+(ws.progress||0)+'" min="0" max="100" data-sid="'+ws.id+'" data-aid="'+axisId+'">%</td>';
+            var axisLabel = axisNameForPage + (ws.sub_axis_name ? ' / ' + ws.sub_axis_name : '');
+            var checkboxCell = canSelect ? '<td><input type="checkbox" class="stage-select-cb" data-sid="'+ws.id+'" data-brigade="'+brigadeId+'" data-name="'+(ws.work_stages?.name||'—')+'" data-volume="'+(ws.volume||0)+'" data-cost="'+(ws.total_cost||0)+'" data-axisname="'+axisLabel+'" style="width:18px;height:18px;accent-color:#F59E0B;"></td>' : '<td></td>';
+            var inputCell = isCompletedStage ? '<td style="text-align:center;color:#10B981;font-weight:700;">✅ 100%</td>' : '<td><input type="number" class="progress-input" value="'+(ws.progress||0)+'" min="0" max="100" data-sid="'+ws.id+'" data-aid="'+axisId+'">%</td>';
             var rowStyle = isCompletedStage ? 'style="opacity:0.5;background:#F0FDF4;"' : '';
             return '<tr '+rowStyle+'>'+checkboxCell+'<td>'+(ws.work_stages?.name||'—')+'</td><td class="text-right">'+(ws.volume||0)+'</td><td class="text-right">'+(ws.price_per_unit||0)+' ₸</td><td class="text-right">'+((ws.total_cost||0).toLocaleString())+' ₸</td>'+inputCell+'<td style="font-size:10px">'+window.formatDateShort(ws.plan_start)+'<br>'+window.formatDateShort(ws.plan_end)+'</td></tr>';
         }).join('')+'</tbody></table><div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><button class="btn-secondary action-menu-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" data-subaxis="'+escapeHtml(subAxisName)+'">⋯ Действия</button><button class="btn-small btn-edit edit-subaxis-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'">✏️ Подось</button><button class="btn-small btn-add add-stage-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" data-subaxis="'+escapeHtml(subAxisName)+'">+ Этап</button><button class="btn-small btn-delete delete-subaxis-btn" data-axis="'+axisId+'" data-brigade="'+brigadeId+'" data-name="'+escapeHtml(brigade?.name||'бригаду')+'">🗑️</button></div></div>';
     }
-        // ЕДИНАЯ КНОПКА для сбора галочек со ВСЕХ бригад
     pageHtml += '<div class="info-card" style="margin-top:16px;"><h4>📋 Сдать наряд</h4><p style="font-size:12px;color:#64748B;margin-bottom:8px;">Отметьте галочками этапы (100%) на любых подосях → нажмите кнопку</p><button class="btn-primary" id="submit-all-selected-btn">📋 Сдать выбранные в наряд</button></div>';
     pageHtml += '<button class="btn-primary add-brigade-btn" data-axis="'+axisId+'" style="margin-top:8px">➕ Добавить бригаду</button></div>';
     
@@ -315,8 +313,6 @@ window.openAxisDetailPage = async function(axisId) {
     document.getElementById('axis-detail-page').classList.remove('hidden');
     var page = document.getElementById('axis-detail-page');
     page.querySelector('#close-axis-btn').addEventListener('click', closeAxisDetailPage);
-    
-    // Кнопки действий для каждой бригады
     page.querySelectorAll('.action-menu-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.openActionMenu(btn.dataset.axis, btn.dataset.brigade, btn.dataset.subaxis); }); });
     page.querySelectorAll('.edit-subaxis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.editSubAxis(btn.dataset.axis, btn.dataset.brigade); }); });
     page.querySelectorAll('.delete-subaxis-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.deleteSubAxisConfirm(btn.dataset.axis, btn.dataset.brigade, btn.dataset.name); }); });
@@ -324,28 +320,15 @@ window.openAxisDetailPage = async function(axisId) {
     page.querySelectorAll('.add-brigade-btn').forEach(function(btn) { btn.addEventListener('click', function() { window.addBrigadeToAxis(btn.dataset.axis); }); });
     page.querySelectorAll('.progress-input').forEach(function(inp) { inp.addEventListener('change', function() { window.updateStageProgress(this.dataset.sid, parseInt(this.value)||0, this.dataset.aid); }); });
     
-    // ЕДИНАЯ КНОПКА — собирает ВСЕ галочки со страницы
     document.getElementById('submit-all-selected-btn').addEventListener('click', function() {
         var selected = [];
-        var brigadeId = null;
         page.querySelectorAll('.stage-select-cb:checked').forEach(function(cb) {
-            selected.push({
-                id: cb.dataset.sid,
-                name: cb.dataset.name,
-                volume: parseFloat(cb.dataset.volume) || 0,
-                cost: parseFloat(cb.dataset.cost) || 0,
-                axisName: cb.dataset.axisname || '—'
-            });
-            if (!brigadeId) brigadeId = cb.dataset.brigade;
+            selected.push({ id: cb.dataset.sid, name: cb.dataset.name, volume: parseFloat(cb.dataset.volume)||0, cost: parseFloat(cb.dataset.cost)||0, axisName: cb.dataset.axisname||'—' });
         });
-        
         if (!selected.length) { alert('Выберите этапы для сдачи (галочками ✓)'); return; }
-        
-        // Проверяем что все этапы от одной бригады
-        var brigades = [...new Set(Array.from(page.querySelectorAll('.stage-select-cb:checked')).map(function(cb) { return cb.dataset.brigade; }))];
-        if (brigades.length > 1) { alert('⚠️ Выберите этапы только ОДНОЙ бригады. Сейчас выбраны: ' + brigades.length + ' бригад.'); return; }
-        
-        window.openWorkOrderFormWithStages(axisId, brigades[0], selected);
+        var brigadesList = [...new Set(Array.from(page.querySelectorAll('.stage-select-cb:checked')).map(function(cb){return cb.dataset.brigade;}))];
+        if (brigadesList.length > 1) { alert('⚠️ Выберите этапы только ОДНОЙ бригады.'); return; }
+        window.openWorkOrderFormWithStages(axisId, brigadesList[0], selected);
     });
 };
 
