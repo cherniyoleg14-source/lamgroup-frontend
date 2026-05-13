@@ -194,7 +194,7 @@
         if (currentRole !== 'manager') query = query.or(`created_by.eq.${currentUser?.id},responsible_ids.cs.{${currentUser?.id}}`);
         const { data } = await query;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет задач</div>'; return; }
-        c.innerHTML = data.map(t => { const typeLabel = typeLabels[t.type] || '📌 Задача'; const statusLabel = statusLabels[t.status] || t.status; const st = statusTags[t.status] || 'tag-yellow'; const pc = t.priority === 'high' ? 'priority-high' : t.priority === 'medium' ? 'priority-medium' : 'priority-low'; return `<div class="task-card ${pc}" onclick="viewTaskDetail('${t.id}')"><div class="task-header"><span class="type-tag type-${t.type||'task'}">${typeLabel}</span><span class="tag ${st}">${statusLabel}</span></div><div class="task-title">${escapeHtml(t.title)}</div><div class="task-description">${escapeHtml((t.description||'').substring(0,100))}</div>${t.projects?.name ? `<div style="font-size:12px;color:var(--text-secondary);">🏗️ ${escapeHtml(t.projects.name)}</div>` : ''}<div class="task-meta"><span>📅 ${formatDateShort(t.created_at)}</span><span>👤 ${escapeHtml(t.created_by_name||'—')}</span></div></div>`; }).join('');
+        c.innerHTML = data.map(t => { const typeLabel = typeLabels[t.type] || '📌 Задача'; const statusLabel = statusLabels[t.status] || t.status; const st = statusTags[t.status] || 'tag-yellow'; const pc = t.priority === 'high' ? 'priority-high' : t.priority === 'medium' ? 'priority-medium' : 'priority-low'; return `<div class="task-card ${pc}" onclick="viewTaskDetail('${t.id}')"><div class="task-header"><span class="type-tag type-${t.type||'task'}">${typeLabel}</span><span class="tag ${st}">${statusLabel}</span></div><div class="task-title">${escapeHtml(t.title)}</div><div class="task-description">${escapeHtml((t.description||'').substring(0,100))}</div>${t.projects?.name ? `<div style="font-size:12px;color:var(--text-secondary);">🏗️ ${escapeHtml(t.projects.name)}</div>` : ''}<div class="task-meta"><span>📅 ${formatDateShort(t.created_at)}</span><span>👤 ${escapeHtml(t.created_by_name||'—')}</span><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteTask('${t.id}','${t.type||'task'}')">🗑️</button></div></div>`; }).join('');
     }
     
     window.viewTaskDetail = async function(id) {
@@ -273,7 +273,7 @@
         let q = supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status','pending').order('created_at',{ascending:false});
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет нарядов</div>'; return; }
-        c.innerHTML = data.map(o => `<div class="task-card" onclick="openOrderCard('${o.id}')"><div class="task-header"><span class="type-tag type-order_review">📋 Наряд</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(o.order_number||'Наряд')} — ${formatMoney(o.total_amount)}</div><div class="task-description">👷 ${escapeHtml(o.brigades?.name||'—')} | 🏗️ ${escapeHtml(o.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(o.created_at?.split('T')[0])}</span></div></div>`).join('');
+        c.innerHTML = data.map(o => `<div class="task-card" onclick="openOrderCard('${o.id}')"><div class="task-header"><span class="type-tag type-order_review">📋 Наряд</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(o.order_number||'Наряд')} — ${formatMoney(o.total_amount)}</div><div class="task-description">👷 ${escapeHtml(o.brigades?.name||'—')} | 🏗️ ${escapeHtml(o.projects?.name||'—')}<div class="task-meta"><span>📅 ${formatDateShort(o.created_at?.split('T')[0])}</span><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteOrder('${o.id}')">🗑️</button></div></div>`).join('');
     }
     
     window.openOrderCard = async function(id) {
@@ -333,7 +333,7 @@
         let q = supabase.from('advances').select('*, projects(name), brigades(name)').eq('status','pending').order('created_at',{ascending:false});
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет авансов</div>'; return; }
-        c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-advance">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(a.advance_number||'Аванс')} — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span></div></div>`).join('');
+        c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-advance">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(a.advance_number||'Аванс')} — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}<div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteAdvance('${a.id}')">🗑️</button></div></div>`).join('');
     }
     
                        window.openAdvanceCard = async function(id) {
@@ -461,7 +461,7 @@
         if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет писем</div>'; return; }
-        c.innerHTML = data.map(l => `<div class="task-card"><div class="task-header"><span class="type-tag type-letter">✉️ Письмо</span><span class="tag tag-yellow">⏳ К отправке</span></div><div class="task-title">№${escapeHtml(l.letter_number_full)} — ${escapeHtml(l.projects?.name||'—')}</div><div class="task-description">${escapeHtml(l.delay_description||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(l.created_at?.split('T')[0])}</span><button class="btn btn-success btn-sm" onclick="event.stopPropagation();markLetterSent('${l.id}')">📨 Отправить</button></div></div>`).join('');
+        c.innerHTML = data.map(l => `<div class="task-card"><div class="task-header"><span class="type-tag type-letter">✉️ Письмо</span><span class="tag tag-yellow">⏳ К отправке</span></div><div class="task-title">№${escapeHtml(l.letter_number_full)} — ${escapeHtml(l.projects?.name||'—')}</div><div class="task-description">${escapeHtml(l.delay_description||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(l.created_at?.split('T')[0])}</span>}<button class="btn btn-success btn-sm" onclick="event.stopPropagation();markLetterSent('${l.id}')">📨 Отправить</button><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteLetter('${l.id}')">🗑️</button></div></div>`).join('');
     }
     
     window.markLetterSent = async function(id) { await supabase.from('letters').update({status:'sent_to_customer',sent_to_customer:true}).eq('id',id); showMessage('✅ Письмо отправлено','success'); loadLetters(); };
@@ -473,9 +473,61 @@
         if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет проблем</div>'; return; }
-        c.innerHTML = data.map(issue => { const si = {open:'🟡',in_progress:'🔵',overdue:'🔴'}[issue.status]||'🟡'; const tc = issue.status==='overdue'?'tag-red':issue.status==='in_progress'?'tag-blue':'tag-yellow'; return `<div class="task-card priority-${issue.priority||'medium'}"><div class="task-header"><span class="type-tag type-issue">⚠️ Проблема</span><span class="tag ${tc}">${si} ${issue.status==='overdue'?'Просрочена':issue.status==='in_progress'?'В работе':'Открыта'}</span></div><div class="task-title">${escapeHtml(issue.title)}</div><div class="task-description">🏗️ ${escapeHtml(issue.projects?.name||'—')} | ${escapeHtml((issue.description||'').substring(0,80))}</div><div class="task-meta"><span>👤 ${issue.created_by_name||'—'}</span></div></div>`; }).join('');
+        c.innerHTML = data.map(issue => { const si = {open:'🟡',in_progress:'🔵',overdue:'🔴'}[issue.status]||'🟡'; const tc = issue.status==='overdue'?'tag-red':issue.status==='in_progress'?'tag-blue':'tag-yellow'; return `<div class="task-card priority-${issue.priority||'medium'}"><div class="task-header"><span class="type-tag type-issue">⚠️ Проблема</span><span class="tag ${tc}">${si} ${issue.status==='overdue'?'Просрочена':issue.status==='in_progress'?'В работе':'Открыта'}</span></div><div class="task-title">${escapeHtml(issue.title)}</div><div class="task-description">🏗️ ${escapeHtml(issue.projects?.name||'—')} | ${escapeHtml((issue.description||'').substring(0,80))}</div>}<div class="task-meta"><span>👤 ${issue.created_by_name||'—'}</span><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteIssue('${issue.id}')">🗑️</button></div></div>`; }).join('');
     }
-    
+    window.deleteTask = async function(id, type) {
+    if (!confirm('⚠️ Удалить задачу? Эта операция необратима.')) return;
+    if (type === 'payment') {
+        // Удаляем расход из expenses + custom_tasks
+        const { data: task } = await supabase.from('custom_tasks').select('title').eq('id', id).single();
+        if (task) {
+            const expenseNumber = task.title.match(/№-RAS-\d+/);
+            if (expenseNumber) {
+                await supabase.from('expenses').delete().eq('expense_number', expenseNumber[0]);
+            }
+        }
+    }
+    await supabase.from('custom_tasks').delete().eq('id', id);
+    showMessage('✅ Удалено', 'success');
+    loadAll();
+};
+    window.deleteOrder = async function(id) {
+    if (!confirm('⚠️ Удалить наряд? Этапы будут возвращены в работу (статус in_progress).')) return;
+    // Возвращаем этапы в работу
+    const { data: order } = await supabase.from('work_orders').select('brigade_id, project_id').eq('id', id).single();
+    if (order) {
+        const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', order.project_id);
+        const blockIds = blocks ? blocks.map(b => b.id) : [];
+        const { data: axes } = await supabase.from('axes').select('id').in('block_id', blockIds);
+        const axisIds = axes ? axes.map(a => a.id) : [];
+        await supabase.from('axis_work_stages')
+            .update({ status: 'in_progress' })
+            .eq('brigade_id', order.brigade_id)
+            .in('axis_id', axisIds)
+            .eq('status', 'completed');
+    }
+    await supabase.from('work_orders').delete().eq('id', id);
+    showMessage('✅ Наряд удалён, этапы возвращены в работу', 'success');
+    loadAll();
+};
+    window.deleteAdvance = async function(id) {
+    if (!confirm('⚠️ Удалить аванс?')) return;
+    await supabase.from('advances').delete().eq('id', id);
+    showMessage('✅ Аванс удалён', 'success');
+    loadAll();
+};
+    window.deleteLetter = async function(id) {
+    if (!confirm('⚠️ Удалить письмо?')) return;
+    await supabase.from('letters').delete().eq('id', id);
+    showMessage('✅ Письмо удалено', 'success');
+    loadLetters();
+};
+    window.deleteIssue = async function(id) {
+    if (!confirm('⚠️ Удалить проблему?')) return;
+    await supabase.from('project_issues').delete().eq('id', id);
+    showMessage('✅ Проблема удалена', 'success');
+    loadIssues();
+};
     init();
 })();
 </script>
