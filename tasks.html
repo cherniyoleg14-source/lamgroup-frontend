@@ -597,41 +597,333 @@
     };
     
     // ========== ПИСЬМА ==========
-    async function loadLetters() {
-        const c = document.getElementById('sub-letters-list'); 
-        if (!c) return;
-        c.innerHTML = '<div class="loading">Загрузка...</div>';
-        
-        let q = supabase.from('letters').select('*, projects(name)').eq('status', 'sent_to_office').order('created_at', { ascending: false });
-        if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
-        const { data } = await q;
-        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет писем</div>'; return; }
-        c.innerHTML = data.map(l => `
-            <div class="task-card">
-                <div class="task-header">
-                    <span class="type-tag type-letter">✉️ Письмо</span>
-                    <span class="tag tag-yellow">⏳ К отправке</span>
-                </div>
-                <div class="task-title">№${escapeHtml(l.letter_number_full)} — ${escapeHtml(l.projects?.name||'—')}</div>
-                <div class="task-description">${escapeHtml(l.delay_description||'—')}</div>
-                <div class="task-meta">
-                    <span>📅 ${formatDateShort(l.created_at?.split('T')[0])}</span>
-                    <button class="btn btn-success btn-sm" onclick="event.stopPropagation();markLetterSent('${l.id}')">📨 Отправить</button>
-                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteLetter('${l.id}')">🗑️</button>
-                </div>
-            </div>
-        `).join('');
+// ========== ПИСЬМА (новая версия) ==========
+async function loadLetters() {
+    const c = document.getElementById('sub-letters-list'); 
+    if (!c) return;
+    c.innerHTML = '<div class="loading">Загрузка...</div>';
+    
+    let q = supabase.from('letters')
+        .select('*, projects(name)')
+        .order('created_at', { ascending: false });
+    
+    if (currentRole !== 'manager') { 
+        const { data: up } = await supabase.from('projects')
+            .select('id')
+            .eq('responsible_worker_id', currentUser?.id); 
+        const ids = up?.map(p => p.id) || []; 
+        if (ids.length) q = q.in('project_id', ids); 
     }
     
-    window.markLetterSent = async function(id) { await supabase.from('letters').update({status:'sent_to_customer',sent_to_customer:true}).eq('id',id); showMessage('✅ Письмо отправлено','success'); loadLetters(); };
+    const { data } = await q;
     
-    window.deleteLetter = async function(id) {
-        if (!confirm('⚠️ Удалить письмо?')) return;
-        await supabase.from('letters').delete().eq('id', id);
-        showMessage('✅ Письмо удалено', 'success');
-        loadLetters();
+    if (!data?.length) { 
+        c.innerHTML = '<div class="empty-state">Нет писем</div>'; 
+        return; 
+    }
+    
+    c.innerHTML = data.map(l => {
+        const statusTag = l.status === 'draft' 
+            ? '<span class="tag tag-yellow">⏳ Черновик</span>'
+            : '<span class="tag tag-green">✅ Отправлено</span>';
+        
+        return `
+            <div class="task-card" onclick="viewLetterCard('${l.id}')">
+                <div class="task-header">
+                    <span class="type-tag type-letter">✉️ Письмо</span>
+                    ${statusTag}
+                </div>
+                <div class="task-title">
+                    ${escapeHtml(l.letter_number_full || `№ ${l.letter_number}/LGC-ERP`)}
+                </div>
+                <div class="task-description">
+                    🏗️ ${escapeHtml(l.object_name || l.projects?.name || '—')} | 
+                    ⏱ Сдвиг: +${l.delay_days || '?'} дн.
+                </div>
+                <div class="task-meta">
+                    <span>📅 ${formatDateShort(l.letter_date)}</span>
+                    <span>👷 ${escapeHtml(l.responsible_name || '—')}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Просмотр карточки письма
+window.viewLetterCard = async function(id) {
+    const { data: l } = await supabase.from('letters')
+        .select('*, projects(name)')
+        .eq('id', id)
+        .single();
+    
+    if (!l) return;
+    
+    const letterData = {
+        letterNumber: l.letter_number,
+        letterDate: formatDate(l.letter_date),
+        customerCompany: l.customer_company,
+        customerName: l.customer_name,
+        customerShortName: (l.customer_name || '').split(' ').slice(-1)[0] || 'Заказчик',
+        objectName: l.object_name,
+        objectAddress: l.object_address,
+        contractInfo: l.contract_number_customer 
+            ? `№ ${l.contract_number_customer} от ${formatDate(l.contract_date_customer)}`
+            : '—',
+        delayReason: l.delay_reason,
+        delayDays: l.delay_days,
+        oldEndDate: formatDate(l.old_end_date),
+        newEndDate: formatDate(l.new_end_date),
+        responsibleName: l.responsible_name,
+        responsiblePhone: l.responsible_phone
     };
     
+    let html = `
+        <div style="background:#F8FAFC;padding:16px;border-radius:12px;margin-bottom:16px;">
+            <div style="font-weight:700;font-size:16px;margin-bottom:8px;">
+                ✉️ ${escapeHtml(l.letter_number_full || `№ ${l.letter_number}/LGC-ERP`)}
+            </div>
+            <div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">
+                Статус: ${l.status === 'draft' ? '⏳ Черновик' : '✅ Отправлено'}<br>
+                📅 Исх. дата: ${formatDate(l.letter_date)}<br>
+                🏗️ Объект: ${escapeHtml(l.object_name)}<br>
+                👤 Заказчик: ${escapeHtml(l.customer_company)}<br>
+                📋 Договор: ${letterData.contractInfo}<br>
+                ⏱ Сдвиг: +${l.delay_days} ${window.getDaysWord ? window.getDaysWord(l.delay_days) : 'дней'}<br>
+                📅 Было: ${formatDate(l.old_end_date)}<br>
+                📅 Стало: ${formatDate(l.new_end_date)}<br>
+                👷 ИТР: ${escapeHtml(l.responsible_name)}
+            </div>
+        </div>
+        
+        <div style="background:#FFFBEB;padding:16px;border-radius:12px;margin-bottom:16px;border:1px solid #FDE68A;">
+            <div style="font-weight:600;margin-bottom:8px;">📝 Причина задержки:</div>
+            <div style="font-size:13px;line-height:1.5;">${escapeHtml(l.delay_reason || '—')}</div>
+        </div>
+        
+        <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+            <div style="font-weight:600;margin-bottom:12px;">📄 Предпросмотр письма</div>
+            <div style="font-size:10px;line-height:1.4;color:var(--text-secondary);max-height:180px;overflow-y:auto;border:1px dashed var(--border);padding:12px;border-radius:8px;font-family:'Times New Roman',serif;">
+                <div style="text-align:center;font-weight:bold;font-size:11px;">
+                    ТОО "LamGroup Construction"<br>
+                    <span style="font-weight:normal;font-size:9px;">
+                        г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215 | +7 701 710 04 77
+                    </span>
+                </div>
+                <hr style="margin:6px 0;">
+                <div style="font-size:9px;">
+                    <b>Исх. № ${letterData.letterNumber}/LGC-ERP</b> от ${letterData.letterDate}<br>
+                    <b>Кому:</b> ${letterData.customerCompany}<br>
+                    <b>Объект:</b> ${letterData.objectName}<br>
+                    <b>Договор:</b> ${letterData.contractInfo}
+                </div>
+                <hr style="margin:6px 0;">
+                <div style="text-align:center;font-weight:bold;font-size:10px;">УВЕДОМЛЕНИЕ О СДВИГЕ ГПР</div>
+                <p style="font-size:9px;margin:4px 0;">
+                    Сдвиг: <b>+${letterData.delayDays} дн.</b><br>
+                    Новая дата: <b>${letterData.newEndDate}</b><br>
+                    ИТР: ${letterData.responsibleName}
+                </p>
+            </div>
+        </div>
+        
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-outline" onclick="window.printLetterById('${l.id}')" style="flex:1;">
+                📥 Печать
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteLetterCard('${l.id}')" style="flex:1;">
+                🗑️ Удалить
+            </button>
+            ${l.status === 'draft' ? `
+                <button class="btn btn-success" onclick="markLetterSent('${l.id}')" style="width:100%;">
+                    📨 Отметить отправленным заказчику
+                </button>
+            ` : ''}
+        </div>
+    `;
+    
+    openModal('✉️ Карточка письма', html);
+};
+
+// Отметить отправленным
+window.markLetterSent = async function(id) {
+    if (!confirm('📨 Отметить письмо как отправленное заказчику?')) return;
+    
+    await supabase.from('letters').update({
+        status: 'sent',
+        sent_at: new Date().toISOString()
+    }).eq('id', id);
+    
+    document.getElementById('modal').classList.add('hidden');
+    showMessage('✅ Письмо отмечено как отправленное', 'success');
+    loadLetters();
+};
+
+// Удаление письма
+window.deleteLetterCard = async function(id) {
+    if (!confirm('⚠️ Удалить письмо? Это действие необратимо.')) return;
+    
+    await supabase.from('letters').delete().eq('id', id);
+    document.getElementById('modal').classList.add('hidden');
+    showMessage('✅ Письмо удалено', 'success');
+    loadLetters();
+};
+
+// Печать письма по ID (для tasks.html)
+window.printLetterById = async function(id) {
+    const { data: l } = await supabase.from('letters')
+        .select('*')
+        .eq('id', id)
+        .single();
+    
+    if (!l) return;
+    
+    const letterData = {
+        letterNumber: l.letter_number,
+        letterDate: formatDate(l.letter_date),
+        customerCompany: l.customer_company,
+        customerName: l.customer_name,
+        customerShortName: (l.customer_name || '').split(' ').slice(-1)[0] || 'Заказчик',
+        objectName: l.object_name,
+        objectAddress: l.object_address,
+        contractInfo: l.contract_number_customer 
+            ? `№ ${l.contract_number_customer} от ${formatDate(l.contract_date_customer)}`
+            : '—',
+        delayReason: l.delay_reason,
+        delayDays: l.delay_days,
+        oldEndDate: formatDate(l.old_end_date),
+        newEndDate: formatDate(l.new_end_date),
+        responsibleName: l.responsible_name,
+        responsiblePhone: l.responsible_phone
+    };
+    
+    // Проверяем, есть ли функция printLetter (должна быть из objects.html)
+    if (typeof window.printLetter === 'function') {
+        window.printLetter(letterData);
+    } else {
+        // Если функции нет — открываем печать напрямую
+        var printWindow = window.open('', '_blank', 'width=900,height=700');
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Письмо ${letterData.letterNumber}/LGC-ERP</title>
+                <style>
+                    @media print {
+                        body { margin: 0; padding: 15mm; }
+                        @page { size: A4; margin: 15mm; }
+                        .no-print { display: none !important; }
+                    }
+                    body {
+                        font-family: 'Times New Roman', serif;
+                        color: #000;
+                        line-height: 1.5;
+                        max-width: 190mm;
+                        margin: 0 auto;
+                        padding: 10mm;
+                        font-size: 12pt;
+                    }
+                    .print-btn {
+                        padding: 12px 24px;
+                        background: #0F172A;
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        cursor: pointer;
+                    }
+                    .header { text-align:center; margin-bottom:20px; }
+                    .header h3 { margin:0 0 4px 0; font-size:14pt; }
+                    .header p { margin:2px 0; font-size:10pt; }
+                    .divider { border-top:2px solid #000; margin:16px 0; }
+                    .info-block { margin:16px 0; }
+                    .info-block p { margin:4px 0; }
+                    .title { text-align:center; font-size:12pt; font-weight:bold; margin:24px 0 16px 0; }
+                    .reason-box { border:1px solid #000; padding:16px; margin:16px 0; min-height:80px; }
+                    .signature { margin-top:40px; }
+                    .signature .line { display:inline-block; width:200px; border-bottom:1px solid #000; margin-left:10px; }
+                    .footer { text-align:center; font-size:9pt; color:#666; margin-top:40px; }
+                </style>
+            </head>
+            <body>
+                <div class="no-print" style="text-align:center;margin-bottom:20px;">
+                    <button class="print-btn" onclick="window.print()">🖨️ Печать / Сохранить как PDF</button>
+                </div>
+                
+                <div class="header">
+                    <h3>ТОО "LamGroup Construction"</h3>
+                    <p>Фасадные работы | г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215</p>
+                    <p>+7 701 710 04 77</p>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div style="display:flex;justify-content:space-between;">
+                    <span><b>Исх. № ${letterData.letterNumber}/LGC-ERP</b></span>
+                    <span>${letterData.letterDate}</span>
+                </div>
+                
+                <div class="info-block">
+                    <p><b>Кому:</b> ${letterData.customerCompany}</p>
+                    <p style="margin-left:60px;">${letterData.customerName}</p>
+                </div>
+                
+                <div class="info-block">
+                    <p><b>Объект:</b> ${letterData.objectName}, ${letterData.objectAddress}</p>
+                </div>
+                
+                <div class="info-block">
+                    <p><b>Договор:</b> ${letterData.contractInfo}</p>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div class="title">
+                    УВЕДОМЛЕНИЕ<br>
+                    О СДВИГЕ ГРАФИКА ПРОИЗВОДСТВА РАБОТ (ГПР)
+                </div>
+                
+                <p>Уважаемый ${letterData.customerShortName}!</p>
+                
+                <p>Настоящим уведомляем Вас о сдвиге графика производства работ 
+                на объекте: ${letterData.objectName}, ${letterData.objectAddress}.</p>
+                
+                <p><b>Причина задержки:</b></p>
+                <div class="reason-box">${letterData.delayReason}</div>
+                
+                <p><b>Срок сдвига ГПР:</b> на ${letterData.delayDays} календарных дней</p>
+                <p><b>Новая дата окончания работ:</b> ${letterData.newEndDate}</p>
+                <p><b>Предыдущая дата окончания:</b> ${letterData.oldEndDate}</p>
+                
+                <p>Прошу согласовать новый график производства работ.</p>
+                
+                <div class="divider"></div>
+                
+                <div class="signature">
+                    <p>С уважением,</p>
+                    <p style="margin-top:30px;">
+                        ИТР<br>
+                        ТОО "LamGroup Construction"
+                        <span class="line"></span> / ${letterData.responsibleName}
+                    </p>
+                    <p>Тел.: ${letterData.responsiblePhone}</p>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div class="footer">
+                    г. Алматы | пр. Ермек Серкебаева, д. 97, н.п. 215
+                </div>
+                
+                <script>
+                    setTimeout(function() { window.print(); }, 500);
+                <\\/script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+};
     // ========== ПРОБЛЕМЫ ==========
     async function loadIssues() {
         const c = document.getElementById('sub-issues-list'); 
