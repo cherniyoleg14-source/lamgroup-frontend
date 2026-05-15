@@ -620,7 +620,8 @@ window.openShiftGPRForm = async function(axId, brId) {
             responsibleName: itrName,
             responsiblePhone: itrPhone
         };
-        
+        console.log('letterData:', JSON.stringify(letterData));
+var letterHTML = generateLetterHTML(letterData);
         var letterHTML = generateLetterHTML(letterData);
         var previewHTML = `
             <div style="background:white;padding:20px;border:1px solid #ccc;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.5;color:#000;max-height:55vh;overflow-y:auto;">
@@ -844,6 +845,7 @@ function getDaysWord(d) {
 
 // HTML письма
 function generateLetterHTML(data) {
+    console.log('generateLetterHTML получила data.delayReason:', data.delayReason);
     return `
         <div style="text-align:center;margin-bottom:20px;">
             <h3 style="margin:0 0 4px 0;font-size:14pt;">ТОО "LamGroup Construction"</h3>
