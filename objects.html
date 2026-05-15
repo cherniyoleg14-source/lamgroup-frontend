@@ -633,11 +633,16 @@ window.openShiftGPRForm = async function(axId, brId) {
         `;
         
         window.openModal('👁️ Предпросмотр письма', previewHTML);
-        
-        document.getElementById('preview-print-btn').addEventListener('click', function() {
+
+// Ждём пока модалка откроется, потом вешаем обработчик
+setTimeout(function() {
+    var printBtn = document.getElementById('preview-print-btn');
+    if (printBtn) {
+        printBtn.addEventListener('click', function() {
             printLetterToNewWindow(letterData);
         });
-    });
+    }
+}, 100);
     
     // Кнопка сохранить
     var sb = document.createElement('button');
@@ -696,7 +701,7 @@ window.openShiftGPRForm = async function(axId, brId) {
                 }
                 
                // Создаём письмо (под твою таблицу)
-await supabase.from('letters').insert({
+var { data: letterResult, error: letterError } = await supabase.from('letters').insert({
     project_id: projectId,
     letter_number: nextNum,
     letter_date: ld,
@@ -707,20 +712,74 @@ await supabase.from('letters').insert({
     object_name: project?.name || '',
     object_address: project?.address || '',
     delay_reason: ds,
-    delay_description: ds,  // дублируем в старое поле
+    delay_description: ds,
     delay_days: diffDays,
     old_end_date: ce,
     new_end_date: nd,
     responsible_name: itrName,
     responsible_phone: itrPhone,
-    created_by: currentUser?.id,
-    created_by_name: currentUser?.full_name,
-    created_at: new Date(),
+    created_by: currentUser?.id || null,
+    created_by_name: currentUser?.full_name || '',
+    created_at: new Date().toISOString(),
     status: 'draft',
     sent_to_office: false,
     sent_to_customer: false,
     letter_number_full: fullNumber
 });
+
+if (letterError) {
+    console.error('Ошибка письма:', letterError);
+    alert('❌ Ошибка создания письма: ' + (letterError.message || 'Неизвестная ошибка'));
+    sb.textContent = '💾 Сохранить сдвиг';
+    sb.disabled = false;
+    return;
+}
+
+console.log('✅ Письмо создано:', letterResult);
+
+// Показываем успех с информацией о письме
+document.getElementById('form-modal').classList.add('hidden');
+
+var successMsg = `
+    <div style="text-align:center;">
+        <div style="font-size:48px;margin-bottom:16px;">✅</div>
+        <h3>Сдвиг ГПР сохранён!</h3>
+        <p>📅 ${window.formatDate(nd)} (+${diffDays} дн.)</p>
+        <div style="background:#F0F9FF;padding:16px;border-radius:12px;margin:16px 0;">
+            <b>✉️ Письмо создано</b><br>
+            ${fullNumber}<br>
+            <span style="font-size:12px;color:#64748B;">Статус: ⏳ Черновик</span>
+        </div>
+        <button class="btn btn-outline" id="success-print" style="width:100%;margin-bottom:8px;">📥 Распечатать</button>
+        <button class="btn btn-primary" id="success-close" style="width:100%;">✓ Закрыть</button>
+    </div>
+`;
+
+window.openModal('✅ Успешно', successMsg);
+
+document.getElementById('success-print').onclick = function() {
+    var letterPrintData = {
+        letterNumber: nextNum,
+        letterDate: window.formatDate(ld),
+        customerCompany: project?.customer_company || '',
+        customerName: project?.customer_name || '',
+        customerShortName: (project?.customer_name || '').split(' ').slice(-1)[0] || '',
+        objectName: project?.name || '',
+        objectAddress: project?.address || '',
+        contractInfo: cn ? '№ ' + cn + (cd ? ' от ' + window.formatDate(cd) : '') : '—',
+        delayReason: ds,
+        delayDays: diffDays,
+        oldEndDate: window.formatDate(ce),
+        newEndDate: window.formatDate(nd),
+        responsibleName: itrName,
+        responsiblePhone: itrPhone
+    };
+    printLetterToNewWindow(letterPrintData);
+};
+
+document.getElementById('success-close').onclick = function() {
+    document.getElementById('modal').classList.add('hidden');
+};
                 
                 document.getElementById('form-modal').classList.add('hidden');
                 
