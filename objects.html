@@ -632,17 +632,21 @@ window.openShiftGPRForm = async function(axId, brId) {
             </div>
         `;
         
-        window.openModal('👁️ Предпросмотр письма', previewHTML);
+                window.openModal('👁️ Предпросмотр письма', previewHTML);
 
-// Ждём пока модалка откроется, потом вешаем обработчик
-setTimeout(function() {
-    var printBtn = document.getElementById('preview-print-btn');
-    if (printBtn) {
-        printBtn.addEventListener('click', function() {
-            printLetterToNewWindow(letterData);
-        });
-    }
-}, 100);
+        // Ждём пока модалка откроется, потом вешаем обработчик
+        setTimeout(function() {
+            var printBtn = document.getElementById('preview-print-btn');
+            if (printBtn) {
+                printBtn.addEventListener('click', function() {
+                    printLetterToNewWindow(letterData);
+                });
+            }
+        }, 100);
+    });  // ← ВОТ ЭТА СТРОКА ЗАКРЫВАЕТ ОБРАБОТЧИК КЛИКА КНОПКИ ПРЕДПРОСМОТРА
+    
+    // Кнопка сохранить
+    var sb = document.createElement('button');
     
     // Кнопка сохранить
     var sb = document.createElement('button');
@@ -781,49 +785,7 @@ document.getElementById('success-close').onclick = function() {
     document.getElementById('modal').classList.add('hidden');
 };
                 
-                document.getElementById('form-modal').classList.add('hidden');
                 
-                var letterPrintData = {
-                    letterNumber: nextNum,
-                    letterDate: window.formatDate(ld),
-                    customerCompany: project?.customer_company || '',
-                    customerName: project?.customer_name || '',
-                    customerShortName: (project?.customer_name || '').split(' ').slice(-1)[0] || '',
-                    objectName: project?.name || '',
-                    objectAddress: project?.address || '',
-                    contractInfo: cn ? '№ ' + cn + (cd ? ' от ' + window.formatDate(cd) : '') : '—',
-                    delayReason: ds,
-                    delayDays: diffDays,
-                    oldEndDate: window.formatDate(ce),
-                    newEndDate: window.formatDate(nd),
-                    responsibleName: itrName,
-                    responsiblePhone: itrPhone
-                };
-                
-                var successMsg = `
-                    <div style="text-align:center;">
-                        <div style="font-size:48px;margin-bottom:16px;">✅</div>
-                        <h3>Сдвиг ГПР сохранён!</h3>
-                        <p>📅 ${window.formatDate(nd)} (+${diffDays} дн.)</p>
-                        <div style="background:#F0F9FF;padding:16px;border-radius:12px;margin:16px 0;">
-                            <b>✉️ Письмо создано</b><br>
-                            ${fullNumber}<br>
-                            <span style="font-size:12px;color:#64748B;">Статус: ⏳ Черновик</span>
-                        </div>
-                        <button class="btn btn-outline" id="success-print" style="width:100%;margin-bottom:8px;">📥 Распечатать</button>
-                        <button class="btn btn-primary" id="success-close" style="width:100%;">✓ Закрыть</button>
-                    </div>
-                `;
-                
-                window.openModal('✅ Успешно', successMsg);
-                
-                document.getElementById('success-print').onclick = function() {
-                    printLetterToNewWindow(letterPrintData);
-                };
-                
-                document.getElementById('success-close').onclick = function() {
-                    document.getElementById('modal').classList.add('hidden');
-                };
             } else {
                 document.getElementById('form-modal').classList.add('hidden');
                 alert('✅ Срок изменён. Сдвиг: +' + diffDays + ' дн.');
