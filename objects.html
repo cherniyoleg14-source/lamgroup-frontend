@@ -591,7 +591,7 @@ window.openShiftGPRForm = async function(axId, brId) {
         document.getElementById('letter-fields').style.display = this.checked ? 'block' : 'none';
     });
     
-    // Предпросмотр
+        // Предпросмотр
     document.getElementById('preview-letter-btn').addEventListener('click', function() {
         var nd = document.getElementById('shift-new-date').value;
         var ds = document.getElementById('shift-desc').value;
@@ -620,7 +620,6 @@ window.openShiftGPRForm = async function(axId, brId) {
             responsiblePhone: itrPhone
         };
         
-        // Показываем предпросмотр в модалке
         var letterHTML = generateLetterHTML(letterData);
         var previewHTML = `
             <div style="background:white;padding:20px;border:1px solid #ccc;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.5;color:#000;max-height:55vh;overflow-y:auto;">
@@ -632,9 +631,11 @@ window.openShiftGPRForm = async function(axId, brId) {
             </div>
         `;
         
-                window.openModal('👁️ Предпросмотр письма', previewHTML);
+        // ← ВОТ ЭТУ СТРОКУ ДОБАВЬ:
+        document.getElementById('form-modal').classList.add('hidden');
+        
+        window.openModal('👁️ Предпросмотр письма', previewHTML);
 
-        // Ждём пока модалка откроется, потом вешаем обработчик
         setTimeout(function() {
             var printBtn = document.getElementById('preview-print-btn');
             if (printBtn) {
@@ -643,7 +644,7 @@ window.openShiftGPRForm = async function(axId, brId) {
                 });
             }
         }, 100);
-    });  // ← ВОТ ЭТА СТРОКА ЗАКРЫВАЕТ ОБРАБОТЧИК КЛИКА КНОПКИ ПРЕДПРОСМОТРА
+    });
     
     // Кнопка сохранить
     var sb = document.createElement('button');
