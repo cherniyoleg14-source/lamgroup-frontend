@@ -632,7 +632,7 @@ window.openShiftGPRForm = async function(axId, brId) {
             </div>
         `;
         
-        openModal('👁️ Предпросмотр письма', previewHTML);
+        window.openModal('👁️ Предпросмотр письма', previewHTML);
         
         document.getElementById('preview-print-btn').addEventListener('click', function() {
             printLetterToNewWindow(letterData);
@@ -753,7 +753,7 @@ window.openShiftGPRForm = async function(axId, brId) {
                     </div>
                 `;
                 
-                openModal('✅ Успешно', successMsg);
+                window.openModal('✅ Успешно', successMsg);
                 
                 document.getElementById('success-print').onclick = function() {
                     printLetterToNewWindow(letterPrintData);
