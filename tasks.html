@@ -333,7 +333,7 @@
         let q = supabase.from('advances').select('*, projects(name), brigades(name)').eq('status','pending').order('created_at',{ascending:false});
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет авансов</div>'; return; }
-        c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-advance">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(a.advance_number||'Аванс')} — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')<div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteAdvance('${a.id}')">🗑️</button></div></div>`).join('');
+               c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-advance">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(a.advance_number||'Аванс')} — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteAdvance('${a.id}')">🗑️</button></div></div>`).join('');
     }
     
                        window.openAdvanceCard = async function(id) {
