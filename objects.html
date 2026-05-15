@@ -603,7 +603,7 @@ window.openShiftGPRForm = async function(axId, brId) {
         var cd = document.getElementById('contract-date').value;
         var diffDays = Math.ceil((new Date(nd) - new Date(ce)) / (1000 * 60 * 60 * 24));
         console.log('DEBUG ds:', ds);
-console.log('DEBUG rs:', rs);
+
         var letterData = {
             letterNumber: '?',
             letterDate: window.formatDate(ld),
