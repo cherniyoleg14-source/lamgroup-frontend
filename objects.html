@@ -711,8 +711,8 @@ var { data: letterResult, error: letterError } = await supabase.from('letters').
     contract_date_customer: cd || null,
     object_name: project?.name || '',
     object_address: project?.address || '',
-    delay_reason: ds,
-    delay_description: ds,
+    delay_reason: rs,           // тип причины (customer/lamgroup/contractor)
+delay_description: ds,      // полное описание
     delay_days: diffDays,
     old_end_date: ce,
     new_end_date: nd,
