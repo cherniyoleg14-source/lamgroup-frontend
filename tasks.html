@@ -669,7 +669,7 @@ window.viewLetterCard = async function(id) {
         contractInfo: l.contract_number_customer 
             ? `№ ${l.contract_number_customer} от ${formatDate(l.contract_date_customer)}`
             : '—',
-        delayReason: l.delay_reason,
+        delayReason: l.delay_description || l.delay_reason || '—',
         delayDays: l.delay_days,
         oldEndDate: formatDate(l.old_end_date),
         newEndDate: formatDate(l.new_end_date),
@@ -697,7 +697,7 @@ window.viewLetterCard = async function(id) {
         
         <div style="background:#FFFBEB;padding:16px;border-radius:12px;margin-bottom:16px;border:1px solid #FDE68A;">
             <div style="font-weight:600;margin-bottom:8px;">📝 Причина задержки:</div>
-            <div style="font-size:13px;line-height:1.5;">${escapeHtml(l.delay_reason || '—')}</div>
+            <div style="font-size:13px;line-height:1.5;">${escapeHtml(l.delay_description || l.delay_reason || '—')}</div>
         </div>
         
         <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
@@ -788,7 +788,7 @@ window.printLetterById = async function(id) {
         contractInfo: l.contract_number_customer 
             ? `№ ${l.contract_number_customer} от ${formatDate(l.contract_date_customer)}`
             : '—',
-        delayReason: l.delay_reason,
+      delayReason: l.delay_description || l.delay_reason,
         delayDays: l.delay_days,
         oldEndDate: formatDate(l.old_end_date),
         newEndDate: formatDate(l.new_end_date),
