@@ -119,7 +119,7 @@
     
     function setupTabsScroll() { const tabsContainer = document.getElementById('tabs-container'); const scrollLeft = document.getElementById('scroll-left'); const scrollRight = document.getElementById('scroll-right'); if (!tabsContainer) return; function updateArrows() { if (scrollLeft) scrollLeft.classList.toggle('hidden', tabsContainer.scrollLeft <= 0); if (scrollRight) scrollRight.classList.toggle('hidden', tabsContainer.scrollLeft >= tabsContainer.scrollWidth - tabsContainer.clientWidth - 1); } if (scrollLeft) scrollLeft.addEventListener('click', function() { tabsContainer.scrollBy({ left: -200, behavior: 'smooth' }); }); if (scrollRight) scrollRight.addEventListener('click', function() { tabsContainer.scrollBy({ left: 200, behavior: 'smooth' }); }); tabsContainer.addEventListener('scroll', updateArrows); window.addEventListener('resize', updateArrows); setTimeout(updateArrows, 300); }
     
-    function setupSubTabs() { document.querySelectorAll('.sub-tab').forEach(st => { st.addEventListener('click', function() { const parent = this.closest('.tab-content'); parent.querySelectorAll('.sub-tab').forEach(s => s.classList.remove('active')); parent.querySelectorAll('.sub-content').forEach(s => s.classList.remove('active')); this.classList.add('active'); const targetId = 'sub-' + this.dataset.sub; const target = document.getElementById(targetId); if (target) target.classList.add('active'); loadAll(); }); }); }
+    function setupSubTabs() { document.querySelectorAll('.sub-tab').forEach(st => { st.addEventListener('click', function() { const parent = this.closest('.tab-content'); if (!parent) return; parent.querySelectorAll('.sub-tab').forEach(s => s.classList.remove('active')); parent.querySelectorAll('.sub-content').forEach(s => s.classList.remove('active')); this.classList.add('active'); const targetId = 'sub-' + this.dataset.sub; const target = document.getElementById(targetId); if (target) target.classList.add('active'); loadAll(); }); }); }
     
     function setupFilters() { document.querySelectorAll('.filter-chip').forEach(chip => { chip.addEventListener('click', function() { document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active')); this.classList.add('active'); currentTaskFilter = this.dataset.filter; loadAllTasks(); }); }); document.getElementById('create-task-btn')?.addEventListener('click', openCreateTaskForm); }
     
@@ -127,7 +127,7 @@
     
     function openModal(title, content) { document.getElementById('modal-title').textContent = title; document.getElementById('modal-content').innerHTML = content; document.getElementById('modal').classList.remove('hidden'); }
     
-        const typeLabels = { 'report_review': '📑 Отчёт', 'issue': '⚠️ Проблема', 'order_review': '📋 Наряд', 'payment': '💰 Расход', 'advance': '💸 Аванс', 'letter': '✉️ Письмо', 'task': '📌 Задача' };
+    const typeLabels = { 'report_review': '📑 Отчёт', 'issue': '⚠️ Проблема', 'order_review': '📋 Наряд', 'payment': '💰 Расход', 'advance': '💸 Аванс', 'letter': '✉️ Письмо', 'task': '📌 Задача' };
     const statusLabels = { 'pending': '⏳ Ожидает', 'in_progress': '🔵 В работе', 'completed': '✅ Сделано' };
     const statusTags = { 'pending': 'tag-yellow', 'in_progress': 'tag-blue', 'completed': 'tag-green' };
     
@@ -135,14 +135,18 @@
     
     // ========== ОТЧЁТЫ ==========
     async function loadPendingReports() {
-        const c = document.getElementById('sub-pending-reports'); c.innerHTML = '<div class="loading"></div>';
+        const c = document.getElementById('sub-pending-reports'); 
+        if (!c) return;
+        c.innerHTML = '<div class="loading">Загрузка...</div>';
         const { data } = await supabase.from('object_reports').select('*, projects(name)').eq('status', 'pending').order('report_date', { ascending: false });
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет отчётов на проверке</div>'; return; }
         c.innerHTML = data.map(r => `<div class="task-card" onclick="viewReportDetail('${r.id}')"><div class="task-header"><span class="type-tag type-report_review">📑 Отчёт №${r.report_number||'—'}</span><span class="tag tag-yellow">⏳ На проверке</span></div><div class="task-title">${escapeHtml(r.projects?.name||'—')}</div><div class="task-description">📅 ${formatDate(r.report_date)} | 📝 ${(r.description||'').substring(0,80)}</div><div class="task-meta"><span>👤 ${r.created_by_name||'—'}</span></div></div>`).join('');
     }
     
     async function loadCompletedReports() {
-        const c = document.getElementById('sub-completed-reports'); c.innerHTML = '<div class="loading"></div>';
+        const c = document.getElementById('sub-completed-reports'); 
+        if (!c) return;
+        c.innerHTML = '<div class="loading">Загрузка...</div>';
         const { data } = await supabase.from('object_reports').select('*, projects(name)').eq('status', 'confirmed').order('report_date', { ascending: false });
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет проверенных отчётов</div>'; return; }
         c.innerHTML = data.map(r => `<div class="task-card" onclick="viewReportDetail('${r.id}')"><div class="task-header"><span class="type-tag type-report_review">📑 Отчёт №${r.report_number||'—'}</span><span class="tag tag-green">✅ Проверен</span></div><div class="task-title">${escapeHtml(r.projects?.name||'—')}</div><div class="task-description">📅 ${formatDate(r.report_date)}</div><div class="task-meta"><span>👤 ${r.created_by_name||'—'}</span></div></div>`).join('');
@@ -163,18 +167,20 @@
         const createBtn = document.getElementById('create-report-task-btn');
         if (createBtn) {
             createBtn.onclick = async function() {
-                const title = document.getElementById('report-task-title').value.trim();
-                const desc = document.getElementById('report-task-desc').value.trim();
-                const respId = document.getElementById('report-task-responsible').value;
-                const respName = document.getElementById('report-task-responsible').selectedOptions[0]?.text||'';
-                if (!title) { alert('Введите название задачи'); return; }
-                const files = document.getElementById('report-task-files').files;
+                const title = document.getElementById('report-task-title')?.value?.trim();
+                const desc = document.getElementById('report-task-desc')?.value?.trim();
+                const respId = document.getElementById('report-task-responsible')?.value;
+                const respName = document.getElementById('report-task-responsible')?.selectedOptions[0]?.text||'';
+                if (!title) { showMessage('Введите название задачи','error'); return; }
+                const files = document.getElementById('report-task-files')?.files || [];
                 const fileUrls = [];
                 for (const file of files) {
-                    const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-                    const fileName = 'tasks/' + Date.now() + '_' + cleanName;
-                    const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: false });
-                    if (!uploadError) { const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName); fileUrls.push({ name: file.name, url: urlData.publicUrl }); }
+                    try {
+                        const result = await uploadFile(file, 'tasks');
+                        fileUrls.push({ name: file.name, url: result.url });
+                    } catch(e) {
+                        console.error('Upload error:', e);
+                    }
                 }
                 await supabase.from('custom_tasks').insert({ project_id: r.project_id, title: '📑 ' + title, description: desc + (fileUrls.length ? '\n\n📎 Файлы: ' + fileUrls.map(f => f.name).join(', ') : ''), status: 'pending', priority: 'high', type: 'report_review', responsible_ids: [respId], responsible_names: [respName], created_by: currentUser?.id, created_by_name: currentUser?.full_name, created_at: new Date(), files: fileUrls });
                 document.getElementById('modal').classList.add('hidden'); showMessage('✅ Задача создана','success'); loadAll();
@@ -184,12 +190,23 @@
     
     window.confirmReport = async function(id) { await supabase.from('object_reports').update({status:'confirmed',reviewed_by:currentUser?.id,reviewed_by_name:currentUser?.full_name}).eq('id',id); document.getElementById('modal').classList.add('hidden'); showMessage('✅ Отчёт проверен','success'); loadAll(); };
     
+    // ========== ФУНКЦИЯ ЗАГРУЗКИ ФАЙЛА ==========
+    async function uploadFile(file, folder) {
+        const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const fileName = folder + '/' + Date.now() + '_' + cleanName;
+        const { data, error } = await supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: false });
+        if (error) throw new Error('Ошибка загрузки: ' + error.message);
+        const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+        return { url: urlData.publicUrl, name: file.name };
+    }
+    
     // ========== ВСЕ ЗАДАЧИ ==========
-      async function loadAllTasks() {
-        const c = document.getElementById('all-tasks-list'); c.innerHTML = '<div class="loading"></div>';
+    async function loadAllTasks() {
+        const c = document.getElementById('all-tasks-list'); 
+        if (!c) return;
+        c.innerHTML = '<div class="loading">Загрузка...</div>';
         let query = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false });
-        // Исключаем финансовые задачи (они в отдельной вкладке Финансы)
-              query = query.or('type.is.null,type.not.in.(payment,order_review,advance)');
+        query = query.or('type.is.null,type.not.in.(payment,order_review,advance)');
         if (currentTaskFilter !== 'all') query = query.eq('status', currentTaskFilter);
         if (currentRole !== 'manager') query = query.or(`created_by.eq.${currentUser?.id},responsible_ids.cs.{${currentUser?.id}}`);
         const { data } = await query;
@@ -200,13 +217,67 @@
     window.viewTaskDetail = async function(id) {
         const { data: t } = await supabase.from('custom_tasks').select('*, projects(name)').eq('id', id).single();
         if (!t) return;
-        let html = `<div style="margin-bottom:12px;"><strong>${escapeHtml(t.title)}</strong></div><div style="background:#F8FAFC;padding:12px;border-radius:12px;margin:8px 0;">📝 ${escapeHtml(t.description||'—')}</div>`;
+        
+        let html = `<div style="margin-bottom:12px;"><strong>${escapeHtml(t.title)}</strong></div>
+        <div style="background:#F8FAFC;padding:12px;border-radius:12px;margin:8px 0;">📝 ${escapeHtml(t.description || '—')}</div>`;
+        
         if (t.projects?.name) html += `<div>🏗️ ${escapeHtml(t.projects.name)}</div>`;
-        html += `<div>👤 Создал: ${t.created_by_name||'—'} | 📅 ${formatDate(t.created_at)}</div>`;
-        if (t.files && t.files.length) { html += '<div class="filter-bar" style="margin-top:12px;">'; t.files.forEach(f => { html += `<a href="${f.url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">📎 ${escapeHtml(f.name)}</a>`; }); html += '</div>'; }
-        html += `<div class="form-group" style="margin-top:16px;"><label class="form-label">Статус</label><select id="task-status" class="form-input"><option value="pending" ${t.status==='pending'?'selected':''}>⏳ Ожидает</option><option value="in_progress" ${t.status==='in_progress'?'selected':''}>🔵 В работе</option><option value="completed" ${t.status==='completed'?'selected':''}>✅ Сделано</option></select></div><button class="btn btn-primary" id="update-task-btn">💾 Обновить</button>`;
+        html += `<div>👤 Создал: ${t.created_by_name || '—'} | 📅 ${formatDate(t.created_at)}</div>`;
+        html += `<div>📊 Статус: ${statusLabels[t.status] || t.status}</div>`;
+        html += `<div>⚡ Приоритет: ${t.priority === 'high' ? '🔴 Высокий' : t.priority === 'medium' ? '🟡 Средний' : '🟢 Низкий'}</div>`;
+        
+        if (t.responsible_names?.length) {
+            html += `<div>👥 Ответственные: ${t.responsible_names.join(', ')}</div>`;
+        }
+        
+        if (t.files && t.files.length) { 
+            html += '<div class="filter-bar" style="margin-top:12px;">'; 
+            t.files.forEach(f => { 
+                html += `<a href="${f.url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">📎 ${escapeHtml(f.name)}</a>`; 
+            }); 
+            html += '</div>'; 
+        }
+        
+        html += `
+            <div class="form-group" style="margin-top:16px;">
+                <label class="form-label">Статус</label>
+                <select id="task-status" class="form-input">
+                    <option value="pending" ${t.status === 'pending' ? 'selected' : ''}>⏳ Ожидает</option>
+                    <option value="in_progress" ${t.status === 'in_progress' ? 'selected' : ''}>🔵 В работе</option>
+                    <option value="completed" ${t.status === 'completed' ? 'selected' : ''}>✅ Сделано</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" id="update-task-btn">💾 Обновить</button>`;
+        
         openModal('📌 Задача', html);
-        document.getElementById('update-task-btn').onclick = async function() { await supabase.from('custom_tasks').update({status:document.getElementById('task-status').value,updated_at:new Date()}).eq('id',id); document.getElementById('modal').classList.add('hidden'); showMessage('✅ Обновлено','success'); loadAllTasks(); };
+        
+        const updateBtn = document.getElementById('update-task-btn');
+        if (updateBtn) {
+            updateBtn.onclick = async function() {
+                const newStatus = document.getElementById('task-status')?.value;
+                if (!newStatus) return;
+                
+                const updateData = { 
+                    status: newStatus, 
+                    updated_at: new Date().toISOString() 
+                };
+                
+                if (newStatus === 'completed') {
+                    updateData.completed_at = new Date().toISOString();
+                }
+                
+                const { error } = await supabase.from('custom_tasks').update(updateData).eq('id', id);
+                
+                if (error) {
+                    showMessage('❌ Ошибка: ' + error.message, 'error');
+                    return;
+                }
+                
+                document.getElementById('modal').classList.add('hidden'); 
+                showMessage('✅ Обновлено', 'success'); 
+                loadAllTasks(); 
+            };
+        }
     };
     
     async function openCreateTaskForm() {
@@ -215,40 +286,51 @@
         let html = `<div class="form-group"><label class="form-label">Название *</label><input type="text" id="ct-title" class="form-input"></div><div class="form-group"><label class="form-label">Описание</label><textarea id="ct-desc" class="form-input" rows="2"></textarea></div><div class="form-group"><label class="form-label">Объект</label><select id="ct-project" class="form-input"><option value="">—</option>${(projects||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Приоритет</label><select id="ct-priority" class="form-input"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option></select></div><div class="form-group"><label class="form-label">Ответственный</label><select id="ct-responsible" class="form-input">${(users||[]).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">📎 Файлы</label><input type="file" id="ct-files" class="form-input" multiple></div><button class="btn btn-primary" id="save-ct-btn">📤 Создать</button>`;
         openModal('➕ Новая задача', html);
         document.getElementById('save-ct-btn').onclick = async function() {
-            const title = document.getElementById('ct-title').value.trim();
-            if (!title) { alert('Введите название'); return; }
-            const respId = document.getElementById('ct-responsible').value;
-            const respName = document.getElementById('ct-responsible').selectedOptions[0]?.text||'';
-            const files = document.getElementById('ct-files').files;
+            const title = document.getElementById('ct-title')?.value?.trim();
+            if (!title) { showMessage('Введите название','error'); return; }
+            const respId = document.getElementById('ct-responsible')?.value;
+            const respName = document.getElementById('ct-responsible')?.selectedOptions[0]?.text||'';
+            const files = document.getElementById('ct-files')?.files || [];
             const fileUrls = [];
             for (const file of files) {
-                const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-                const fileName = 'tasks/' + Date.now() + '_' + cleanName;
-                const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: false });
-                if (!uploadError) { const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName); fileUrls.push({ name: file.name, url: urlData.publicUrl }); }
+                try {
+                    const result = await uploadFile(file, 'tasks');
+                    fileUrls.push({ name: file.name, url: result.url });
+                } catch(e) {
+                    console.error('Upload error:', e);
+                }
             }
-            await supabase.from('custom_tasks').insert({ project_id: document.getElementById('ct-project').value||null, title, description: document.getElementById('ct-desc').value, priority: document.getElementById('ct-priority').value, responsible_ids: [respId], responsible_names: [respName], status: 'pending', type: 'task', created_by: currentUser?.id, created_by_name: currentUser?.full_name, created_at: new Date(), files: fileUrls });
+            await supabase.from('custom_tasks').insert({ project_id: document.getElementById('ct-project')?.value||null, title, description: document.getElementById('ct-desc')?.value, priority: document.getElementById('ct-priority')?.value, responsible_ids: [respId], responsible_names: [respName], status: 'pending', type: 'task', created_by: currentUser?.id, created_by_name: currentUser?.full_name, created_at: new Date(), files: fileUrls });
             document.getElementById('modal').classList.add('hidden'); showMessage('✅ Задача создана','success'); loadAllTasks();
         };
     }
     
-    // ========== ФУНКЦИЯ ЗАГРУЗКИ ФАЙЛА (общая) ==========
-    async function uploadFile(file, folder) {
-        const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const fileName = folder + '/' + Date.now() + '_' + cleanName;
-        const { data, error } = await supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: false });
-        if (error) throw new Error('Ошибка загрузки: ' + error.message);
-        const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-        return { url: urlData.publicUrl, name: file.name };
-    }
-    
     // ========== ФИНАНСЫ: РАСХОДЫ ==========
-        async function loadFinanceExpenses() {
-        const c = document.getElementById('sub-finance-expenses'); c.innerHTML = '<div class="loading"></div>';
-        let q = supabase.from('custom_tasks').select('*, projects(name)').eq('type','payment').eq('status','pending').order('created_at',{ascending:false});
+    async function loadFinanceExpenses() {
+        const c = document.getElementById('sub-finance-expenses'); 
+        if (!c) return;
+        c.innerHTML = '<div class="loading">Загрузка...</div>';
+        
+        let q = supabase.from('expenses').select('*, projects(name)').eq('payment_status', 'pending').order('date', { ascending: false });
+        if (currentRole !== 'manager') q = q.eq('created_by', currentUser?.id);
+        
         const { data } = await q;
-        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет расходов</div>'; return; }
-        c.innerHTML = data.map(t => `<div class="task-card" onclick="viewTaskDetail('${t.id}')"><div class="task-header"><span class="type-tag type-payment">💰 Расход</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(t.title)}</div><div class="task-description">🏗️ ${escapeHtml(t.projects?.name||'—')} | ${escapeHtml((t.description||'').substring(0,80))}</div><div class="task-meta"><span>📅 ${formatDateShort(t.created_at)}</span></div></div>`).join('');
+        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет расходов на оплату</div>'; return; }
+        
+        c.innerHTML = data.map(e => `
+            <div class="task-card" onclick="openExpenseCard('${e.id}')">
+                <div class="task-header">
+                    <span class="type-tag type-payment">💰 Расход</span>
+                    <span class="tag tag-yellow">⏳ Ожидает</span>
+                </div>
+                <div class="task-title">${escapeHtml(e.name)} — ${formatMoney(e.amount)}</div>
+                <div class="task-description">🏗️ ${escapeHtml(e.projects?.name || '—')} | 💳 ${e.payment_method === 'cash' ? 'Наличка' : 'Безнал'}</div>
+                <div class="task-meta">
+                    <span>📅 ${formatDateShort(e.date)}</span>
+                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteExpense('${e.id}')">🗑️</button>
+                </div>
+            </div>
+        `).join('');
     }
     
     window.openExpenseCard = async function(id) {
@@ -261,26 +343,52 @@
         openModal('💰 Карточка расхода', html);
         
         const saveBtn = document.getElementById('save-expense-btn');
-        if (saveBtn) { saveBtn.onclick = async function() { saveBtn.textContent = '⏳ Сохранение...'; saveBtn.disabled = true; try { const fileInput = document.getElementById('exp-invoice-file'); let updateData = { comment: document.getElementById('exp-comment').value }; if (fileInput && fileInput.files[0]) { const result = await uploadFile(fileInput.files[0], 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error } = await supabase.from('expenses').update(updateData).eq('id', id); if (error) throw error; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Данные сохранены','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); saveBtn.textContent = '💾 Сохранить'; saveBtn.disabled = false; } }; }
+        if (saveBtn) { saveBtn.onclick = async function() { saveBtn.textContent = '⏳ Сохранение...'; saveBtn.disabled = true; try { const fileInput = document.getElementById('exp-invoice-file'); let updateData = { comment: document.getElementById('exp-comment')?.value }; if (fileInput && fileInput.files[0]) { const result = await uploadFile(fileInput.files[0], 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error } = await supabase.from('expenses').update(updateData).eq('id', id); if (error) throw error; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Данные сохранены','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); saveBtn.textContent = '💾 Сохранить'; saveBtn.disabled = false; } }; }
         
         const approveBtn = document.getElementById('approve-expense-btn');
-        if (approveBtn) { approveBtn.onclick = async function() { if (!confirm('✅ Утвердить расход? Он попадёт в план оплат.')) return; approveBtn.textContent = '⏳ Утверждение...'; approveBtn.disabled = true; try { const fileInput = document.getElementById('exp-invoice-file'); let updateData = { payment_status: 'approved', approved_by: currentUser?.id, approved_at: new Date(), comment: document.getElementById('exp-comment').value }; if (fileInput && fileInput.files[0]) { const result = await uploadFile(fileInput.files[0], 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error } = await supabase.from('expenses').update(updateData).eq('id', id); if (error) throw error; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Расход утверждён','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); approveBtn.textContent = '✅ Утвердить оплату'; approveBtn.disabled = false; } }; }
+        if (approveBtn) { approveBtn.onclick = async function() { if (!confirm('✅ Утвердить расход? Он попадёт в план оплат.')) return; approveBtn.textContent = '⏳ Утверждение...'; approveBtn.disabled = true; try { const fileInput = document.getElementById('exp-invoice-file'); let updateData = { payment_status: 'approved', approved_by: currentUser?.id, approved_at: new Date(), comment: document.getElementById('exp-comment')?.value }; if (fileInput && fileInput.files[0]) { const result = await uploadFile(fileInput.files[0], 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error } = await supabase.from('expenses').update(updateData).eq('id', id); if (error) throw error; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Расход утверждён','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); approveBtn.textContent = '✅ Утвердить оплату'; approveBtn.disabled = false; } }; }
+    };
+    
+    window.deleteExpense = async function(id) {
+        if (!confirm('⚠️ Удалить расход?')) return;
+        const { data: expense } = await supabase.from('expenses').select('expense_number').eq('id', id).single();
+        if (expense?.expense_number) {
+            await supabase.from('custom_tasks').delete().ilike('title', `%${expense.expense_number}%`);
+        }
+        await supabase.from('expenses').delete().eq('id', id);
+        showMessage('✅ Расход удалён', 'success');
+        loadAll();
     };
     
     // ========== ФИНАНСЫ: НАРЯДЫ ==========
-        async function loadFinanceOrders() {
-        const c = document.getElementById('sub-finance-orders'); c.innerHTML = '<div class="loading"></div>';
-        let q = supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status','pending').order('created_at',{ascending:false});
-        const { data } = await q;
-        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет нарядов</div>'; return; }
-        c.innerHTML = data.map(o => `<div class="task-card" onclick="openOrderCard('${o.id}')"><div class="task-header"><span class="type-tag type-order_review">📋 Наряд</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(o.order_number||'Наряд')} — ${formatMoney(o.total_amount)}</div><div class="task-description">👷 ${escapeHtml(o.brigades?.name||'—')} | 🏗️ ${escapeHtml(o.projects?.name||'—')}<div class="task-meta"><span>📅 ${formatDateShort(o.created_at?.split('T')[0])}</span><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteOrder('${o.id}')">🗑️</button></div></div>`).join('');
+    async function loadFinanceOrders() {
+        const c = document.getElementById('sub-finance-orders'); 
+        if (!c) return;
+        c.innerHTML = '<div class="loading">Загрузка...</div>';
+        
+        const { data } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status', 'pending').order('created_at', { ascending: false });
+        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет нарядов на утверждение</div>'; return; }
+        
+        c.innerHTML = data.map(o => `
+            <div class="task-card" onclick="openOrderCard('${o.id}')">
+                <div class="task-header">
+                    <span class="type-tag type-order_review">📋 Наряд</span>
+                    <span class="tag tag-yellow">⏳ Ожидает</span>
+                </div>
+                <div class="task-title">${escapeHtml(o.order_number || 'Наряд')} — ${formatMoney(o.total_amount)}</div>
+                <div class="task-description">👷 ${escapeHtml(o.brigades?.name || '—')} | 🏗️ ${escapeHtml(o.projects?.name || '—')}</div>
+                <div class="task-meta">
+                    <span>📅 ${formatDateShort(o.created_at?.split('T')[0])}</span>
+                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteOrder('${o.id}')">🗑️</button>
+                </div>
+            </div>
+        `).join('');
     }
     
     window.openOrderCard = async function(id) {
         const { data: o } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('id',id).single();
         if (!o) return;
 
-        // Загружаем ВСЕ этапы бригады для расчёта долга
         var { data: allStages } = await supabase.from('axis_work_stages').select('*').eq('brigade_id', o.brigade_id);
         var { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', o.project_id);
         var blockIds = blocks ? blocks.map(function(b) { return b.id; }) : [];
@@ -301,7 +409,7 @@
         const finalPay = o.total_amount || 0;
         const debt = Math.max(0, totalPaid - doneAmount);
         
-                let html = `<div style="margin-bottom:12px;"><strong>📋 Наряд: ${escapeHtml(o.work_type||'—')}</strong></div><div>👷 Бригада: ${escapeHtml(o.brigades?.name||'—')}</div><div>🏗️ Объект: ${escapeHtml(o.projects?.name||'—')}</div><div>📍 Ось: ${escapeHtml(o.axis_name||'—')}</div>
+        let html = `<div style="margin-bottom:12px;"><strong>📋 Наряд: ${escapeHtml(o.work_type||'—')}</strong></div><div>👷 Бригада: ${escapeHtml(o.brigades?.name||'—')}</div><div>🏗️ Объект: ${escapeHtml(o.projects?.name||'—')}</div><div>📍 Ось: ${escapeHtml(o.axis_name||'—')}</div>
         <table class="calc-table" style="margin-top:16px;">
         <tr><td>💰 Сумма закрываемых работ</td><td>${formatMoney(sumWork)}</td></tr>
         <tr><td>💸 Выплачено авансов</td><td>${formatMoney(sumAdvance)}</td></tr>
@@ -318,29 +426,57 @@
         html += `</div>`;
         openModal('📋 Карточка наряда', html);
         
-        // СОХРАНИТЬ
         const saveBtn = document.getElementById('save-order-btn');
-        if (saveBtn) { saveBtn.onclick = async function() { saveBtn.textContent = '⏳ Сохранение...'; saveBtn.disabled = true; try { const avrFile = document.getElementById('order-avr-file').files[0]; const invFile = document.getElementById('order-invoice-file').files[0]; let updateData = { comment: document.getElementById('order-comment').value }; if (avrFile) { const result = await uploadFile(avrFile, 'avr'); updateData.avr_url = result.url; } if (invFile) { const result = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error: updateError } = await supabase.from('work_orders').update(updateData).eq('id', id); if (updateError) throw updateError; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Данные сохранены','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); saveBtn.textContent = '💾 Сохранить'; saveBtn.disabled = false; } }; }
+        if (saveBtn) { saveBtn.onclick = async function() { saveBtn.textContent = '⏳ Сохранение...'; saveBtn.disabled = true; try { const avrFile = document.getElementById('order-avr-file')?.files[0]; const invFile = document.getElementById('order-invoice-file')?.files[0]; let updateData = { comment: document.getElementById('order-comment')?.value }; if (avrFile) { const result = await uploadFile(avrFile, 'avr'); updateData.avr_url = result.url; } if (invFile) { const result = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error: updateError } = await supabase.from('work_orders').update(updateData).eq('id', id); if (updateError) throw updateError; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Данные сохранены','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); saveBtn.textContent = '💾 Сохранить'; saveBtn.disabled = false; } }; }
         
-        // УТВЕРДИТЬ
         const approveBtn = document.getElementById('approve-order-btn');
-        if (approveBtn) { approveBtn.onclick = async function() { const avrFile = document.getElementById('order-avr-file').files[0]; const invFile = document.getElementById('order-invoice-file').files[0]; if (!avrFile && !o.avr_url) { showMessage('❌ Загрузите АВР перед утверждением','error'); return; } if (!invFile && !o.invoice_file_url) { showMessage('❌ Загрузите Счёт-фактуру перед утверждением','error'); return; } if (!confirm('✅ Утвердить наряд? После утверждения он попадёт в план оплат.')) return; approveBtn.textContent = '⏳ Утверждение...'; approveBtn.disabled = true; try { let updateData = { status: 'approved', approved_by: currentUser?.id, approved_at: new Date(), comment: document.getElementById('order-comment').value }; if (avrFile) { const result = await uploadFile(avrFile, 'avr'); updateData.avr_url = result.url; } if (invFile) { const result = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error: updateError } = await supabase.from('work_orders').update(updateData).eq('id', id); if (updateError) throw updateError; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Наряд утверждён и отправлен в план оплат','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); approveBtn.textContent = '✅ Утвердить'; approveBtn.disabled = false; } }; }
+        if (approveBtn) { approveBtn.onclick = async function() { const avrFile = document.getElementById('order-avr-file')?.files[0]; const invFile = document.getElementById('order-invoice-file')?.files[0]; if (!avrFile && !o.avr_url) { showMessage('❌ Загрузите АВР перед утверждением','error'); return; } if (!invFile && !o.invoice_file_url) { showMessage('❌ Загрузите Счёт-фактуру перед утверждением','error'); return; } if (!confirm('✅ Утвердить наряд? После утверждения он попадёт в план оплат.')) return; approveBtn.textContent = '⏳ Утверждение...'; approveBtn.disabled = true; try { let updateData = { status: 'approved', approved_by: currentUser?.id, approved_at: new Date(), comment: document.getElementById('order-comment')?.value }; if (avrFile) { const result = await uploadFile(avrFile, 'avr'); updateData.avr_url = result.url; } if (invFile) { const result = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = result.url; updateData.invoice_file_name = result.name; } const { error: updateError } = await supabase.from('work_orders').update(updateData).eq('id', id); if (updateError) throw updateError; document.getElementById('modal').classList.add('hidden'); showMessage('✅ Наряд утверждён и отправлен в план оплат','success'); loadAll(); } catch(err) { showMessage('Ошибка: ' + err.message, 'error'); approveBtn.textContent = '✅ Утвердить'; approveBtn.disabled = false; } }; }
+    };
+    
+    window.deleteOrder = async function(id) {
+        if (!confirm('⚠️ Удалить наряд? Этапы будут возвращены в работу (статус in_progress).')) return;
+        const { data: order } = await supabase.from('work_orders').select('brigade_id, project_id').eq('id', id).single();
+        if (order) {
+            const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', order.project_id);
+            const blockIds = blocks ? blocks.map(b => b.id) : [];
+            const { data: axes } = await supabase.from('axes').select('id').in('block_id', blockIds);
+            const axisIds = axes ? axes.map(a => a.id) : [];
+            await supabase.from('axis_work_stages').update({ status: 'in_progress' }).eq('brigade_id', order.brigade_id).in('axis_id', axisIds).eq('status', 'completed');
+        }
+        await supabase.from('work_orders').delete().eq('id', id);
+        showMessage('✅ Наряд удалён, этапы возвращены в работу', 'success');
+        loadAll();
     };
     
     // ========== ФИНАНСЫ: АВАНСЫ ==========
     async function loadFinanceAdvances() {
-        const c = document.getElementById('sub-finance-advances'); c.innerHTML = '<div class="loading"></div>';
-        let q = supabase.from('advances').select('*, projects(name), brigades(name)').eq('status','pending').order('created_at',{ascending:false});
-        const { data } = await q;
-        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет авансов</div>'; return; }
-               c.innerHTML = data.map(a => `<div class="task-card" onclick="openAdvanceCard('${a.id}')"><div class="task-header"><span class="type-tag type-advance">💸 Аванс</span><span class="tag tag-yellow">⏳ Ожидает</span></div><div class="task-title">${escapeHtml(a.advance_number||'Аванс')} — ${formatMoney(a.amount)}</div><div class="task-description">👷 ${escapeHtml(a.brigades?.name||'—')} | 🏗️ ${escapeHtml(a.projects?.name||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteAdvance('${a.id}')">🗑️</button></div></div>`).join('');
+        const c = document.getElementById('sub-finance-advances'); 
+        if (!c) return;
+        c.innerHTML = '<div class="loading">Загрузка...</div>';
+        
+        const { data } = await supabase.from('advances').select('*, projects(name), brigades(name)').eq('status', 'pending').order('created_at', { ascending: false });
+        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет авансов на утверждение</div>'; return; }
+        
+        c.innerHTML = data.map(a => `
+            <div class="task-card" onclick="openAdvanceCard('${a.id}')">
+                <div class="task-header">
+                    <span class="type-tag type-advance">💸 Аванс</span>
+                    <span class="tag tag-yellow">⏳ Ожидает</span>
+                </div>
+                <div class="task-title">${escapeHtml(a.advance_number || 'Аванс')} — ${formatMoney(a.amount)}</div>
+                <div class="task-description">👷 ${escapeHtml(a.brigades?.name || '—')} | 🏗️ ${escapeHtml(a.projects?.name || '—')}</div>
+                <div class="task-meta">
+                    <span>📅 ${formatDateShort(a.created_at?.split('T')[0])}</span>
+                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteAdvance('${a.id}')">🗑️</button>
+                </div>
+            </div>
+        `).join('');
     }
     
-                       window.openAdvanceCard = async function(id) {
+    window.openAdvanceCard = async function(id) {
         const { data: a } = await supabase.from('advances').select('*, projects(name), brigades(name)').eq('id', id).single();
         if (!a) return;
 
-        // Загружаем ВСЕ этапы бригады на объекте
         var { data: allStages } = await supabase.from('axis_work_stages').select('*').eq('brigade_id', a.brigade_id);
         var { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', a.project_id);
         var blockIds = blocks ? blocks.map(function(b) { return b.id; }) : [];
@@ -348,26 +484,19 @@
         var axisIds = projectAxes ? projectAxes.map(function(ax) { return ax.id; }) : [];
         var stages = (allStages || []).filter(function(s) { return axisIds.indexOf(s.axis_id) !== -1; });
 
-        // Общий договор и выполнено
         var totalContract = stages.reduce(function(s, st) { return s + (st.total_cost || 0); }, 0);
         var doneAmount = stages.reduce(function(s, st) { return s + ((st.progress || 0) / 100 * (st.total_cost || 0)); }, 0);
 
-        // Все выплаты
         var { data: pa } = await supabase.from('advances').select('*').eq('brigade_id', a.brigade_id);
         var advPaid = (pa || []).filter(function(x) { return x.status === 'approved' || x.status === 'paid'; }).reduce(function(s, x) { return s + (x.amount || 0); }, 0);
         var { data: po } = await supabase.from('work_orders').select('*').eq('brigade_id', a.brigade_id);
         var ordPaid = (po || []).filter(function(x) { return x.status === 'approved' || x.payment_status === 'paid'; }).reduce(function(s, x) { return s + (x.total_amount || 0); }, 0);
         var totalPaid = advPaid + ordPaid;
 
-        // Удержания
         var totalGuarantee = (po || []).reduce(function(s, o) { return s + (o.guarantee_amount || 0); }, 0);
 
-        // Долг бригады и доступно
         var debt = Math.max(0, totalPaid - doneAmount);
         var available = Math.max(0, doneAmount - totalPaid);
-
-        const hasInvoice = a.invoice_file_url ? true : false;
-        const hasAvr = a.avr_url ? true : false;
 
         let html = `<div style="margin-bottom:12px;"><strong>💸 Аванс</strong></div>`;
         html += `<div>👷 Бригада: ${escapeHtml(a.brigades?.name || '—')}</div>`;
@@ -395,22 +524,25 @@
 
         openModal('💸 Карточка аванса', html);
 
-        document.getElementById('save-advance-btn').onclick = async function() {
-            const btn = document.getElementById('save-advance-btn'); btn.textContent = '⏳...'; btn.disabled = true;
-            try {
-                const invFile = document.getElementById('adv-invoice-file').files[0];
-                const avrFile = document.getElementById('adv-avr-file').files[0];
-                let updateData = {};
-                if (invFile) { const r = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = r.url; updateData.invoice_file_name = r.name; }
-                if (avrFile) { const r = await uploadFile(avrFile, 'avr'); updateData.avr_url = r.url; }
-                if (Object.keys(updateData).length > 0) {
-                    const { error } = await supabase.from('advances').update(updateData).eq('id', id);
-                    if (error) throw error;
-                }
-                document.getElementById('modal').classList.add('hidden');
-                showMessage('✅ Сохранено', 'success'); loadAll();
-            } catch (err) { showMessage('Ошибка: ' + err.message, 'error'); btn.textContent = '💾 Сохранить'; btn.disabled = false; }
-        };
+        const saveBtn = document.getElementById('save-advance-btn');
+        if (saveBtn) {
+            saveBtn.onclick = async function() {
+                saveBtn.textContent = '⏳...'; saveBtn.disabled = true;
+                try {
+                    const invFile = document.getElementById('adv-invoice-file')?.files[0];
+                    const avrFile = document.getElementById('adv-avr-file')?.files[0];
+                    let updateData = {};
+                    if (invFile) { const r = await uploadFile(invFile, 'invoices'); updateData.invoice_file_url = r.url; updateData.invoice_file_name = r.name; }
+                    if (avrFile) { const r = await uploadFile(avrFile, 'avr'); updateData.avr_url = r.url; }
+                    if (Object.keys(updateData).length > 0) {
+                        const { error } = await supabase.from('advances').update(updateData).eq('id', id);
+                        if (error) throw error;
+                    }
+                    document.getElementById('modal').classList.add('hidden');
+                    showMessage('✅ Сохранено', 'success'); loadAll();
+                } catch (err) { showMessage('Ошибка: ' + err.message, 'error'); saveBtn.textContent = '💾 Сохранить'; saveBtn.disabled = false; }
+            };
+        }
 
         const approveBtn = document.getElementById('approve-advance-btn');
         if (approveBtn) {
@@ -427,9 +559,19 @@
             };
         }
     };
+    
+    window.deleteAdvance = async function(id) {
+        if (!confirm('⚠️ Удалить аванс?')) return;
+        await supabase.from('advances').delete().eq('id', id);
+        showMessage('✅ Аванс удалён', 'success');
+        loadAll();
+    };
+    
     // ========== ФИНАНСЫ: УТВЕРЖДЁННЫЕ ==========
     async function loadFinancePlan() {
-        const c = document.getElementById('sub-finance-plan'); c.innerHTML = '<div class="loading"></div>';
+        const c = document.getElementById('sub-finance-plan'); 
+        if (!c) return;
+        c.innerHTML = '<div class="loading">Загрузка...</div>';
         const [eR, oR, aR] = await Promise.all([ supabase.from('expenses').select('*, projects(name)').or('payment_status.eq.approved,payment_status.eq.paid').order('date',{ascending:false}), supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('status','approved').order('created_at',{ascending:false}), supabase.from('advances').select('*, projects(name), brigades(name)').eq('status','approved').order('created_at',{ascending:false}) ]);
         const all = [ ...(eR.data||[]).map(e=>({...e,itemType:'expense',displayAmount:e.amount,displayName:e.name})), ...(oR.data||[]).map(o=>({...o,itemType:'order',displayAmount:o.total_amount,displayName:o.work_type||'Наряд'})), ...(aR.data||[]).map(a=>({...a,itemType:'advance',displayAmount:a.amount,displayName:'Аванс'})) ];
         if (!all.length) { c.innerHTML = '<div class="empty-state">Нет утверждённых операций</div>'; return; }
@@ -443,91 +585,102 @@
             if (currentRole === 'manager') { html += `<div class="form-group" style="margin-top:12px;"><label class="form-label">Статус</label><select id="approved-status" class="form-input"><option value="approved" ${e.payment_status==='approved'?'selected':''}>✅ Утверждён</option><option value="paid" ${e.payment_status==='paid'?'selected':''}>💳 Оплачен</option></select></div><button class="btn btn-primary" id="save-approved-btn">💾 Сохранить</button>`; }
             openModal('💰 Расход', html);
             const saveBtn = document.getElementById('save-approved-btn');
-            if (saveBtn) { saveBtn.onclick = async function() { await supabase.from('expenses').update({payment_status:document.getElementById('approved-status').value}).eq('id',id); document.getElementById('modal').classList.add('hidden'); showMessage('✅ Обновлено','success'); loadAll(); }; }
+            if (saveBtn) { saveBtn.onclick = async function() { await supabase.from('expenses').update({payment_status:document.getElementById('approved-status')?.value}).eq('id',id); document.getElementById('modal').classList.add('hidden'); showMessage('✅ Обновлено','success'); loadAll(); }; }
         } else {
             const { data: o } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('id',id).single(); if (!o) return;
             let html = `<div><strong>📋 ${escapeHtml(o.work_type||'Наряд')}</strong></div><div>👷 ${escapeHtml(o.brigades?.name||'—')} | 🏗️ ${escapeHtml(o.projects?.name||'—')}</div><div>💰 ${formatMoney(o.total_amount)} | ${o.payment_status==='paid'?'💳 Выплачен':'✅ Утверждён'}</div>${o.invoice_file_url ? `<div style="margin-top:8px;">📎 <a href="${o.invoice_file_url}" target="_blank">${escapeHtml(o.invoice_file_name||'Счёт')}</a></div>` : ''}`;
             if (currentRole === 'manager') { html += `<div class="form-group" style="margin-top:12px;"><label class="form-label">Статус</label><select id="approved-status" class="form-input"><option value="approved" ${o.payment_status!=='paid'?'selected':''}>✅ Утверждён</option><option value="paid" ${o.payment_status==='paid'?'selected':''}>💳 Оплачен</option></select></div><button class="btn btn-primary" id="save-approved-btn">💾 Сохранить</button>`; }
             openModal('📋 Наряд', html);
             const saveBtn = document.getElementById('save-approved-btn');
-            if (saveBtn) { saveBtn.onclick = async function() { const newStatus = document.getElementById('approved-status').value; await supabase.from('work_orders').update({ payment_status: newStatus, payment_date: newStatus==='paid'?new Date().toISOString().split('T')[0]:null }).eq('id',id); document.getElementById('modal').classList.add('hidden'); showMessage('✅ Обновлено','success'); loadAll(); }; }
+            if (saveBtn) { saveBtn.onclick = async function() { const newStatus = document.getElementById('approved-status')?.value; await supabase.from('work_orders').update({ payment_status: newStatus, payment_date: newStatus==='paid'?new Date().toISOString().split('T')[0]:null }).eq('id',id); document.getElementById('modal').classList.add('hidden'); showMessage('✅ Обновлено','success'); loadAll(); }; }
         }
     };
     
     // ========== ПИСЬМА ==========
     async function loadLetters() {
-        const c = document.getElementById('sub-letters-list'); c.innerHTML = '<div class="loading"></div>';
-        let q = supabase.from('letters').select('*, projects(name)').eq('status','sent_to_office').order('created_at',{ascending:false});
+        const c = document.getElementById('sub-letters-list'); 
+        if (!c) return;
+        c.innerHTML = '<div class="loading">Загрузка...</div>';
+        
+        let q = supabase.from('letters').select('*, projects(name)').eq('status', 'sent_to_office').order('created_at', { ascending: false });
         if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет писем</div>'; return; }
-        c.innerHTML = data.map(l => `<div class="task-card"><div class="task-header"><span class="type-tag type-letter">✉️ Письмо</span><span class="tag tag-yellow">⏳ К отправке</span></div><div class="task-title">№${escapeHtml(l.letter_number_full)} — ${escapeHtml(l.projects?.name||'—')}</div><div class="task-description">${escapeHtml(l.delay_description||'—')}</div><div class="task-meta"><span>📅 ${formatDateShort(l.created_at?.split('T')[0])}</span>}<button class="btn btn-success btn-sm" onclick="event.stopPropagation();markLetterSent('${l.id}')">📨 Отправить</button><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteLetter('${l.id}')">🗑️</button></div></div>`).join('');
+        c.innerHTML = data.map(l => `
+            <div class="task-card">
+                <div class="task-header">
+                    <span class="type-tag type-letter">✉️ Письмо</span>
+                    <span class="tag tag-yellow">⏳ К отправке</span>
+                </div>
+                <div class="task-title">№${escapeHtml(l.letter_number_full)} — ${escapeHtml(l.projects?.name||'—')}</div>
+                <div class="task-description">${escapeHtml(l.delay_description||'—')}</div>
+                <div class="task-meta">
+                    <span>📅 ${formatDateShort(l.created_at?.split('T')[0])}</span>
+                    <button class="btn btn-success btn-sm" onclick="event.stopPropagation();markLetterSent('${l.id}')">📨 Отправить</button>
+                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteLetter('${l.id}')">🗑️</button>
+                </div>
+            </div>
+        `).join('');
     }
     
     window.markLetterSent = async function(id) { await supabase.from('letters').update({status:'sent_to_customer',sent_to_customer:true}).eq('id',id); showMessage('✅ Письмо отправлено','success'); loadLetters(); };
     
+    window.deleteLetter = async function(id) {
+        if (!confirm('⚠️ Удалить письмо?')) return;
+        await supabase.from('letters').delete().eq('id', id);
+        showMessage('✅ Письмо удалено', 'success');
+        loadLetters();
+    };
+    
     // ========== ПРОБЛЕМЫ ==========
     async function loadIssues() {
-        const c = document.getElementById('sub-issues-list'); c.innerHTML = '<div class="loading"></div>';
+        const c = document.getElementById('sub-issues-list'); 
+        if (!c) return;
+        c.innerHTML = '<div class="loading">Загрузка...</div>';
+        
         let q = supabase.from('project_issues').select('*, projects(name)').in('status',['open','in_progress','overdue']).order('created_at',{ascending:false});
         if (currentRole !== 'manager') { const { data: up } = await supabase.from('projects').select('id').eq('responsible_worker_id',currentUser?.id); const ids = up?.map(p=>p.id)||[]; if (ids.length) q = q.in('project_id',ids); }
         const { data } = await q;
         if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет проблем</div>'; return; }
-        c.innerHTML = data.map(issue => { const si = {open:'🟡',in_progress:'🔵',overdue:'🔴'}[issue.status]||'🟡'; const tc = issue.status==='overdue'?'tag-red':issue.status==='in_progress'?'tag-blue':'tag-yellow'; return `<div class="task-card priority-${issue.priority||'medium'}"><div class="task-header"><span class="type-tag type-issue">⚠️ Проблема</span><span class="tag ${tc}">${si} ${issue.status==='overdue'?'Просрочена':issue.status==='in_progress'?'В работе':'Открыта'}</span></div><div class="task-title">${escapeHtml(issue.title)}</div><div class="task-description">🏗️ ${escapeHtml(issue.projects?.name||'—')} | ${escapeHtml((issue.description||'').substring(0,80))}</div>}<div class="task-meta"><span>👤 ${issue.created_by_name||'—'}</span><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteIssue('${issue.id}')">🗑️</button></div></div>`; }).join('');
+        c.innerHTML = data.map(issue => { const si = {open:'🟡',in_progress:'🔵',overdue:'🔴'}[issue.status]||'🟡'; const tc = issue.status==='overdue'?'tag-red':issue.status==='in_progress'?'tag-blue':'tag-yellow'; const pc = issue.priority==='high'?'priority-high':issue.priority==='medium'?'priority-medium':'priority-low'; return `
+            <div class="task-card ${pc}">
+                <div class="task-header">
+                    <span class="type-tag type-issue">⚠️ Проблема</span>
+                    <span class="tag ${tc}">${si} ${issue.status==='overdue'?'Просрочена':issue.status==='in_progress'?'В работе':'Открыта'}</span>
+                </div>
+                <div class="task-title">${escapeHtml(issue.title)}</div>
+                <div class="task-description">🏗️ ${escapeHtml(issue.projects?.name||'—')} | ${escapeHtml((issue.description||'').substring(0,80))}</div>
+                <div class="task-meta">
+                    <span>👤 ${issue.created_by_name||'—'}</span>
+                    <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteIssue('${issue.id}')">🗑️</button>
+                </div>
+            </div>
+        `; }).join('');
     }
+    
+    window.deleteIssue = async function(id) {
+        if (!confirm('⚠️ Удалить проблему?')) return;
+        await supabase.from('project_issues').delete().eq('id', id);
+        showMessage('✅ Проблема удалена', 'success');
+        loadIssues();
+    };
+    
     window.deleteTask = async function(id, type) {
-    if (!confirm('⚠️ Удалить задачу? Эта операция необратима.')) return;
-    if (type === 'payment') {
-        // Удаляем расход из expenses + custom_tasks
-        const { data: task } = await supabase.from('custom_tasks').select('title').eq('id', id).single();
-        if (task) {
-            const expenseNumber = task.title.match(/№-RAS-\d+/);
-            if (expenseNumber) {
-                await supabase.from('expenses').delete().eq('expense_number', expenseNumber[0]);
+        if (!confirm('⚠️ Удалить задачу? Эта операция необратима.')) return;
+        if (type === 'payment') {
+            const { data: task } = await supabase.from('custom_tasks').select('title').eq('id', id).single();
+            if (task) {
+                const expenseNumber = task.title.match(/№-RAS-\d+/);
+                if (expenseNumber) {
+                    await supabase.from('expenses').delete().eq('expense_number', expenseNumber[0]);
+                }
             }
         }
-    }
-    await supabase.from('custom_tasks').delete().eq('id', id);
-    showMessage('✅ Удалено', 'success');
-    loadAll();
-};
-    window.deleteOrder = async function(id) {
-    if (!confirm('⚠️ Удалить наряд? Этапы будут возвращены в работу (статус in_progress).')) return;
-    // Возвращаем этапы в работу
-    const { data: order } = await supabase.from('work_orders').select('brigade_id, project_id').eq('id', id).single();
-    if (order) {
-        const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', order.project_id);
-        const blockIds = blocks ? blocks.map(b => b.id) : [];
-        const { data: axes } = await supabase.from('axes').select('id').in('block_id', blockIds);
-        const axisIds = axes ? axes.map(a => a.id) : [];
-        await supabase.from('axis_work_stages')
-            .update({ status: 'in_progress' })
-            .eq('brigade_id', order.brigade_id)
-            .in('axis_id', axisIds)
-            .eq('status', 'completed');
-    }
-    await supabase.from('work_orders').delete().eq('id', id);
-    showMessage('✅ Наряд удалён, этапы возвращены в работу', 'success');
-    loadAll();
-};
-    window.deleteAdvance = async function(id) {
-    if (!confirm('⚠️ Удалить аванс?')) return;
-    await supabase.from('advances').delete().eq('id', id);
-    showMessage('✅ Аванс удалён', 'success');
-    loadAll();
-};
-    window.deleteLetter = async function(id) {
-    if (!confirm('⚠️ Удалить письмо?')) return;
-    await supabase.from('letters').delete().eq('id', id);
-    showMessage('✅ Письмо удалено', 'success');
-    loadLetters();
-};
-    window.deleteIssue = async function(id) {
-    if (!confirm('⚠️ Удалить проблему?')) return;
-    await supabase.from('project_issues').delete().eq('id', id);
-    showMessage('✅ Проблема удалена', 'success');
-    loadIssues();
-};
+        await supabase.from('custom_tasks').delete().eq('id', id);
+        showMessage('✅ Удалено', 'success');
+        loadAll();
+    };
+    
     init();
 })();
 </script>
