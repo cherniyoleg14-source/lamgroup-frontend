@@ -1983,6 +1983,24 @@ async function viewWaybill(waybillId) {
 };
 init();
 })();
+    // ========== ГЛОБАЛЬНЫЕ ФУНКЦИИ ==========
+if (typeof window.openModal !== 'function') {
+    window.openModal = function(title, content) {
+        var modalTitle = document.getElementById('modal-title');
+        var modalContent = document.getElementById('modal-content');
+        var modal = document.getElementById('modal');
+        if (modalTitle) modalTitle.textContent = title;
+        if (modalContent) modalContent.innerHTML = content;
+        if (modal) modal.classList.remove('hidden');
+    };
+}
+
+if (typeof window.formatDate !== 'function') {
+    window.formatDate = function(d) {
+        if (!d) return '—';
+        return new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
+}
 </script>
 </body>
 </html>
