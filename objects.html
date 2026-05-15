@@ -372,8 +372,9 @@ window.openAxisDetailPage = async function(axisId) {
     page.querySelectorAll('.progress-input').forEach(function(inp) { inp.addEventListener('change', function() { window.updateStageProgress(this.dataset.sid, parseInt(this.value)||0, this.dataset.aid); }); });
 };
 
+// ========== СДВИГ ГПР (полная версия) ==========
 window.openShiftGPRForm = async function(axId, brId) {
-    // Загружаем этапы бригады на оси
+    // Загружаем этапы
     var { data: stages } = await supabase.from('axis_work_stages')
         .select('*, brigades(name)')
         .eq('axis_id', axId)
@@ -385,13 +386,11 @@ window.openShiftGPRForm = async function(axId, brId) {
     }
     
     var br = stages[0]?.brigades?.name || 'Бригада';
-    
-    // Текущая дата окончания (максимальная среди этапов)
     var ce = stages.reduce(function(max, s) { 
         return s.plan_end && (!max || s.plan_end > max) ? s.plan_end : max; 
     }, null);
     
-    // Загружаем данные объекта для письма
+    // Загружаем ось и проект
     var { data: axis } = await supabase.from('axes')
         .select('*, blocks(project_id)')
         .eq('id', axId)
@@ -404,7 +403,7 @@ window.openShiftGPRForm = async function(axId, brId) {
         .eq('id', projectId)
         .single();
     
-    // Загружаем данные ИТР (ответственного за объект)
+    // ИТР (ответственный за объект)
     var { data: itr } = await supabase.from('users')
         .select('full_name, phone')
         .eq('id', project?.responsible_worker_id)
@@ -413,11 +412,9 @@ window.openShiftGPRForm = async function(axId, brId) {
     var itrName = itr?.full_name || currentUser?.full_name || '—';
     var itrPhone = itr?.phone || currentUser?.phone || '+7 (___) ___-__-__';
     
-    // Формируем HTML формы
     var todayStr = new Date().toISOString().split('T')[0];
-    var contractNum = project?.contract_number_customer || '';
-    var contractDate = project?.contract_date_customer || '';
     
+    // Форма
     var h = `
         <div class="form-group">
             <label class="form-label">👷 Бригада</label>
@@ -426,51 +423,51 @@ window.openShiftGPRForm = async function(axId, brId) {
         
         <div class="grid-2">
             <div class="form-group">
-                <label class="form-label">📅 Текущая дата окончания</label>
+                <label class="form-label">📅 Текущая дата</label>
                 <input class="form-input" value="${window.formatDate(ce)}" disabled>
             </div>
             <div class="form-group">
-                <label class="form-label">📅 Новая дата окончания *</label>
+                <label class="form-label">📅 Новая дата *</label>
                 <input type="date" id="shift-new-date" class="form-input" value="${ce || ''}">
             </div>
         </div>
         
         <div class="form-group" id="shift-days-info" style="display:none;">
             <div style="background:#F0F9FF;padding:12px;border-radius:12px;font-size:14px;font-weight:600;color:#0369A1;">
-                ⏱ Сдвиг составит: <span id="shift-days-count">0</span>
+                ⏱ Сдвиг: <span id="shift-days-count">0</span>
             </div>
         </div>
         
         <div class="form-group">
-            <label class="form-label">📝 Причина задержки *</label>
+            <label class="form-label">📝 Причина *</label>
             <select id="shift-reason" class="form-input">
-                <option value="customer">Заказчик (отсутствие фронта работ)</option>
-                <option value="lamgroup">LamGroup (внутренние причины)</option>
-                <option value="contractor">Монтажник (задержка бригады)</option>
+                <option value="customer">Заказчик</option>
+                <option value="lamgroup">LamGroup</option>
+                <option value="contractor">Монтажник</option>
                 <option value="weather">Погодные условия</option>
                 <option value="material">Задержка материалов</option>
-                <option value="other">Другая причина</option>
+                <option value="other">Другое</option>
             </select>
         </div>
         
         <div class="form-group">
-            <label class="form-label">📄 Описание причины *</label>
-            <textarea id="shift-desc" class="form-input" rows="3" placeholder="Подробно опишите причину задержки..."></textarea>
+            <label class="form-label">📄 Описание *</label>
+            <textarea id="shift-desc" class="form-input" rows="3" placeholder="Подробно опишите причину..."></textarea>
         </div>
         
         <hr style="margin:20px 0;border-color:var(--border);">
         
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
-            <input type="checkbox" id="create-letter-checkbox" checked style="width:20px;height:20px;accent-color:var(--gold);">
+            <input type="checkbox" id="create-letter-checkbox" checked style="width:20px;height:20px;">
             <label for="create-letter-checkbox" style="font-weight:600;font-size:14px;">
-                ✉️ Сформировать письмо заказчику о сдвиге ГПР
+                ✉️ Сформировать письмо заказчику
             </label>
         </div>
         
         <div id="letter-fields">
             <div class="grid-2">
                 <div class="form-group">
-                    <label class="form-label">📅 Исходящая дата письма</label>
+                    <label class="form-label">📅 Дата письма</label>
                     <input type="date" id="letter-date" class="form-input" value="${todayStr}">
                 </div>
                 <div class="form-group">
@@ -481,32 +478,31 @@ window.openShiftGPRForm = async function(axId, brId) {
             
             <div class="grid-2">
                 <div class="form-group">
-                    <label class="form-label">📋 № Договора с заказчиком</label>
-                    <input type="text" id="contract-number" class="form-input" value="${contractNum}" placeholder="Номер договора">
+                    <label class="form-label">📋 № Договора</label>
+                    <input type="text" id="contract-number" class="form-input" value="${project?.contract_number_customer || ''}" placeholder="Номер">
                 </div>
                 <div class="form-group">
                     <label class="form-label">📅 Дата договора</label>
-                    <input type="date" id="contract-date" class="form-input" value="${contractDate}">
+                    <input type="date" id="contract-date" class="form-input" value="${project?.contract_date_customer || ''}">
                 </div>
             </div>
             
             <div class="form-group">
-                <label class="form-label">👷 ИТР (ответственный за объект)</label>
+                <label class="form-label">👷 ИТР</label>
                 <input class="form-input" value="${itrName} | ${itrPhone}" disabled>
             </div>
             
-            <button class="btn btn-outline" id="preview-letter-btn" style="width:100%;margin-bottom:16px;">
+            <button type="button" class="btn btn-outline" id="preview-letter-btn" style="width:100%;margin-bottom:16px;">
                 👁️ Предпросмотр письма
             </button>
         </div>
     `;
     
-    // Показываем форму
     document.getElementById('form-modal-title').textContent = '⏰ Сдвиг ГПР';
     document.getElementById('form-modal-content').innerHTML = h;
     document.getElementById('form-modal').classList.remove('hidden');
     
-    // Обработчик изменения даты — показываем количество дней сдвига
+    // Обновление дней сдвига
     var newDateInput = document.getElementById('shift-new-date');
     var daysInfo = document.getElementById('shift-days-info');
     var daysCount = document.getElementById('shift-days-count');
@@ -517,16 +513,17 @@ window.openShiftGPRForm = async function(axId, brId) {
             var oldDate = new Date(ce);
             var newDate = new Date(nd);
             var diff = Math.ceil((newDate - oldDate) / (1000 * 60 * 60 * 24));
+            daysInfo.style.display = 'block';
             if (diff > 0) {
-                daysInfo.style.display = 'block';
-                daysCount.textContent = '+ ' + diff + ' ' + window.getDaysWord(diff);
+                daysCount.textContent = '+ ' + diff + ' ' + getDaysWord(diff);
+                daysInfo.querySelector('div').style.background = '#F0F9FF';
+                daysInfo.querySelector('div').style.color = '#0369A1';
             } else if (diff < 0) {
-                daysInfo.style.display = 'block';
-                daysCount.textContent = diff + ' ' + window.getDaysWord(Math.abs(diff)) + ' (раньше)';
+                daysCount.textContent = diff + ' ' + getDaysWord(Math.abs(diff)) + ' (раньше)';
                 daysInfo.querySelector('div').style.background = '#FEF2F2';
                 daysInfo.querySelector('div').style.color = '#991B1B';
             } else {
-                daysInfo.style.display = 'none';
+                daysCount.textContent = '0 дней (без изменений)';
             }
         }
     }
@@ -534,31 +531,22 @@ window.openShiftGPRForm = async function(axId, brId) {
     newDateInput.addEventListener('change', updateShiftDays);
     updateShiftDays();
     
-    // Показать/скрыть поля письма
-    var letterCheckbox = document.getElementById('create-letter-checkbox');
-    var letterFields = document.getElementById('letter-fields');
-    
-    letterCheckbox.addEventListener('change', function() {
-        letterFields.style.display = this.checked ? 'block' : 'none';
+    // Галочка письма
+    document.getElementById('create-letter-checkbox').addEventListener('change', function() {
+        document.getElementById('letter-fields').style.display = this.checked ? 'block' : 'none';
     });
     
-    // Предпросмотр письма
+    // Предпросмотр
     document.getElementById('preview-letter-btn').addEventListener('click', function() {
         var nd = document.getElementById('shift-new-date').value;
-        var rs = document.getElementById('shift-reason').value;
         var ds = document.getElementById('shift-desc').value;
+        
+        if (!nd || !ds) { alert('Заполните дату и описание'); return; }
+        
         var ld = document.getElementById('letter-date').value;
         var cn = document.getElementById('contract-number').value;
         var cd = document.getElementById('contract-date').value;
-        
-        if (!nd || !ds) {
-            alert('Заполните дату и описание причины');
-            return;
-        }
-        
-        var oldDate = new Date(ce);
-        var newDate = new Date(nd);
-        var diffDays = Math.ceil((newDate - oldDate) / (1000 * 60 * 60 * 24));
+        var diffDays = Math.ceil((new Date(nd) - new Date(ce)) / (1000 * 60 * 60 * 24));
         
         var letterData = {
             letterNumber: '?',
@@ -577,13 +565,29 @@ window.openShiftGPRForm = async function(axId, brId) {
             responsiblePhone: itrPhone
         };
         
-        window.previewLetterInModal(letterData);
+        // Показываем предпросмотр в модалке
+        var letterHTML = generateLetterHTML(letterData);
+        var previewHTML = `
+            <div style="background:white;padding:20px;border:1px solid #ccc;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.5;color:#000;max-height:55vh;overflow-y:auto;">
+                ${letterHTML}
+            </div>
+            <div style="display:flex;gap:10px;margin-top:16px;">
+                <button class="btn btn-outline" id="preview-print-btn" style="flex:1;">📥 Печать</button>
+                <button class="btn btn-primary" onclick="document.getElementById('modal').classList.add('hidden')" style="flex:1;">✓ Закрыть</button>
+            </div>
+        `;
+        
+        openModal('👁️ Предпросмотр письма', previewHTML);
+        
+        document.getElementById('preview-print-btn').addEventListener('click', function() {
+            printLetterToNewWindow(letterData);
+        });
     });
     
-    // Кнопка сохранения
+    // Кнопка сохранить
     var sb = document.createElement('button');
     sb.className = 'btn-primary';
-    sb.textContent = '💾 Сохранить сдвиг и создать письмо';
+    sb.textContent = '💾 Сохранить сдвиг';
     sb.style.marginTop = '16px';
     
     sb.addEventListener('click', async function() {
@@ -591,64 +595,52 @@ window.openShiftGPRForm = async function(axId, brId) {
         var rs = document.getElementById('shift-reason').value;
         var ds = document.getElementById('shift-desc').value;
         
-        if (!nd) { alert('Укажите новую дату окончания'); return; }
-        if (!ds) { alert('Опишите причину задержки'); return; }
+        if (!nd) { alert('Укажите новую дату'); return; }
+        if (!ds) { alert('Опишите причину'); return; }
         
-        var oldDate = new Date(ce);
-        var newDate = new Date(nd);
-        var diffDays = Math.ceil((newDate - oldDate) / (1000 * 60 * 60 * 24));
+        var diffDays = Math.ceil((new Date(nd) - new Date(ce)) / (1000 * 60 * 60 * 24));
         
         sb.textContent = '⏳ Сохранение...';
         sb.disabled = true;
         
         try {
-            // 1. Обновляем даты этапов
+            // Обновляем этапы
             for (var i = 0; i < stages.length; i++) {
-                await supabase.from('axis_work_stages')
-                    .update({ plan_end: nd })
-                    .eq('id', stages[i].id);
+                await supabase.from('axis_work_stages').update({ plan_end: nd }).eq('id', stages[i].id);
             }
             
-            // 2. Обновляем дату оси
-            await supabase.from('axes')
-                .update({ plan_end: nd })
-                .eq('id', axId);
+            // Обновляем ось
+            await supabase.from('axes').update({ plan_end: nd }).eq('id', axId);
             
-            // 3. Записываем в историю
+            // История
             await supabase.from('change_history').insert({
                 project_id: projectId,
                 entity_type: 'axis',
                 entity_id: axId,
                 action: 'shift_gpr',
-                comment: 'Сдвиг ГПР: ' + rs + '. ' + ds + ' | +' + diffDays + ' дн.',
+                comment: 'Сдвиг: ' + rs + '. ' + ds + ' | +' + diffDays + ' дн.',
                 changed_by: currentUser?.id,
                 changed_by_name: currentUser?.full_name
             });
             
-            // 4. Создаём письмо если включена галочка
-            var createLetter = document.getElementById('create-letter-checkbox').checked;
-            
-            if (createLetter) {
+            // Письмо если галочка включена
+            if (document.getElementById('create-letter-checkbox').checked) {
                 var ld = document.getElementById('letter-date').value;
                 var cn = document.getElementById('contract-number').value;
                 var cd = document.getElementById('contract-date').value;
                 
-                // Генерируем следующий номер письма
-                var nextNum = await window.getNextLetterNumber();
+                var nextNum = await getNextLetterNumber();
+                var fullNumber = formatLetterNumber(nextNum, ld);
                 
-                // Формируем полный номер
-                var fullNumber = window.formatLetterNumber(nextNum, ld);
-                
-                // Сохраняем договор в объект если изменился
-                if (cn !== (project?.contract_number_customer || '') || 
-                    cd !== (project?.contract_date_customer || '')) {
+                // Сохраняем договор если изменился
+                if (cn !== (project?.contract_number_customer || '') || cd !== (project?.contract_date_customer || '')) {
                     await supabase.from('projects').update({
                         contract_number_customer: cn,
                         contract_date_customer: cd
                     }).eq('id', projectId);
                 }
                 
-                // Создаём письмо в таблице letters
+                // Создаём письмо
                 await supabase.from('letters').insert({
                     project_id: projectId,
                     letter_number: nextNum,
@@ -672,77 +664,62 @@ window.openShiftGPRForm = async function(axId, brId) {
                     letter_number_full: fullNumber
                 });
                 
-                // Показываем успех с информацией о письме
                 document.getElementById('form-modal').classList.add('hidden');
                 
-                var successHtml = `
+                var letterPrintData = {
+                    letterNumber: nextNum,
+                    letterDate: window.formatDate(ld),
+                    customerCompany: project?.customer_company || '',
+                    customerName: project?.customer_name || '',
+                    customerShortName: (project?.customer_name || '').split(' ').slice(-1)[0] || '',
+                    objectName: project?.name || '',
+                    objectAddress: project?.address || '',
+                    contractInfo: cn ? '№ ' + cn + (cd ? ' от ' + window.formatDate(cd) : '') : '—',
+                    delayReason: ds,
+                    delayDays: diffDays,
+                    oldEndDate: window.formatDate(ce),
+                    newEndDate: window.formatDate(nd),
+                    responsibleName: itrName,
+                    responsiblePhone: itrPhone
+                };
+                
+                var successMsg = `
                     <div style="text-align:center;">
                         <div style="font-size:48px;margin-bottom:16px;">✅</div>
-                        <h3 style="margin-bottom:8px;">Сдвиг ГПР сохранён!</h3>
-                        <p style="color:var(--text-secondary);margin-bottom:8px;">
-                            📅 Новая дата: <b>${window.formatDate(nd)}</b> (+${diffDays} дн.)
-                        </p>
+                        <h3>Сдвиг ГПР сохранён!</h3>
+                        <p>📅 ${window.formatDate(nd)} (+${diffDays} дн.)</p>
                         <div style="background:#F0F9FF;padding:16px;border-radius:12px;margin:16px 0;">
-                            <div style="font-weight:700;margin-bottom:8px;">✉️ Письмо заказчику создано</div>
-                            <div style="font-size:14px;">${fullNumber}</div>
-                            <div style="font-size:12px;color:var(--text-secondary);">Статус: ⏳ Черновик</div>
+                            <b>✉️ Письмо создано</b><br>
+                            ${fullNumber}<br>
+                            <span style="font-size:12px;color:#64748B;">Статус: ⏳ Черновик</span>
                         </div>
-                        <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                            <button class="btn btn-outline" id="success-print-btn" style="flex:1;">
-                                📥 Распечатать письмо
-                            </button>
-                            <button class="btn btn-primary" id="success-close-btn" style="flex:1;">
-                                ✓ Закрыть
-                            </button>
-                        </div>
+                        <button class="btn btn-outline" id="success-print" style="width:100%;margin-bottom:8px;">📥 Распечатать</button>
+                        <button class="btn btn-primary" id="success-close" style="width:100%;">✓ Закрыть</button>
                     </div>
                 `;
                 
-                openModal('✅ Сдвиг ГПР', successHtml);
+                openModal('✅ Успешно', successMsg);
                 
-                // Кнопка печати в окне успеха
-                document.getElementById('success-print-btn').addEventListener('click', function() {
-                    var letterData = {
-                        letterNumber: nextNum,
-                        letterDate: window.formatDate(ld),
-                        customerCompany: project?.customer_company || '',
-                        customerName: project?.customer_name || '',
-                        customerShortName: (project?.customer_name || '').split(' ').slice(-1)[0] || '',
-                        objectName: project?.name || '',
-                        objectAddress: project?.address || '',
-                        contractInfo: cn ? '№ ' + cn + (cd ? ' от ' + window.formatDate(cd) : '') : '—',
-                        delayReason: ds,
-                        delayDays: diffDays,
-                        oldEndDate: window.formatDate(ce),
-                        newEndDate: window.formatDate(nd),
-                        responsibleName: itrName,
-                        responsiblePhone: itrPhone
-                    };
-                    window.printLetter(letterData);
-                });
+                document.getElementById('success-print').onclick = function() {
+                    printLetterToNewWindow(letterPrintData);
+                };
                 
-                document.getElementById('success-close-btn').addEventListener('click', function() {
+                document.getElementById('success-close').onclick = function() {
                     document.getElementById('modal').classList.add('hidden');
-                });
-                
+                };
             } else {
-                // Без письма
                 document.getElementById('form-modal').classList.add('hidden');
                 alert('✅ Срок изменён. Сдвиг: +' + diffDays + ' дн.');
             }
             
             // Обновляем страницу
-            if (document.getElementById('axis-detail-page') && 
-                !document.getElementById('axis-detail-page').classList.contains('hidden')) {
+            if (typeof window.openAxisDetailPage === 'function') {
                 window.openAxisDetailPage(axId);
-            } else {
-                if (typeof loadProgressTab === 'function') loadProgressTab();
             }
             
         } catch (err) {
-            console.error('Ошибка при сдвиге ГПР:', err);
             alert('❌ Ошибка: ' + (err.message || 'Неизвестная ошибка'));
-            sb.textContent = '💾 Сохранить сдвиг и создать письмо';
+            sb.textContent = '💾 Сохранить сдвиг';
             sb.disabled = false;
         }
     });
@@ -750,189 +727,90 @@ window.openShiftGPRForm = async function(axId, brId) {
     document.getElementById('form-modal-content').appendChild(sb);
 };
 
-// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ ПИСЕМ ==========
+// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
 
-// Получить следующий номер письма (сквозная нумерация)
-window.getNextLetterNumber = async function() {
-    var { data } = await supabase
-        .from('letters')
-        .select('letter_number')
-        .order('created_at', { ascending: false })
-        .limit(1);
-    
-    var lastNumber = data?.[0]?.letter_number 
-        ? parseInt(data[0].letter_number) 
-        : 0;
-    
-    return String(lastNumber + 1);
-};
+// Номер письма
+async function getNextLetterNumber() {
+    var { data } = await supabase.from('letters').select('letter_number').order('created_at', { ascending: false }).limit(1);
+    var last = data?.[0]?.letter_number ? parseInt(data[0].letter_number) : 0;
+    return String(last + 1);
+}
 
-// Формирование полного номера письма
-window.formatLetterNumber = function(number, dateStr) {
+// Формат номера
+function formatLetterNumber(number, dateStr) {
     var d = new Date(dateStr);
-    var day = d.getDate();
-    var month = d.toLocaleDateString('ru-RU', { month: 'long' });
-    var year = d.getFullYear();
-    return '№ ' + number + '/LGC-ERP от ' + day + ' ' + month + ' ' + year + ' г.';
-};
+    return '№ ' + number + '/LGC-ERP от ' + d.getDate() + ' ' + d.toLocaleDateString('ru-RU', { month: 'long' }) + ' ' + d.getFullYear() + ' г.';
+}
 
-// Склонение слова "день"
-window.getDaysWord = function(days) {
-    var lastDigit = days % 10;
-    var lastTwo = days % 100;
-    if (lastTwo >= 11 && lastTwo <= 14) return 'календарных дней';
-    if (lastDigit === 1) return 'календарный день';
-    if (lastDigit >= 2 && lastDigit <= 4) return 'календарных дня';
+// Дни
+function getDaysWord(d) {
+    d = Math.abs(d);
+    if (d % 100 >= 11 && d % 100 <= 14) return 'календарных дней';
+    if (d % 10 === 1) return 'календарный день';
+    if (d % 10 >= 2 && d % 10 <= 4) return 'календарных дня';
     return 'календарных дней';
-};
+}
 
-// Предпросмотр письма в модальном окне
-window.previewLetterInModal = function(data) {
-    var html = window.generateLetterBodyHTML(data);
-    var modalHtml = `
-        <div style="background:white;padding:20px;border:1px solid #ccc;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.5;color:#000;max-height:60vh;overflow-y:auto;">
-            ${html}
-        </div>
-        <div style="display:flex;gap:10px;margin-top:16px;">
-            <button class="btn btn-outline" id="preview-print-btn" style="flex:1;">
-                📥 Печать
-            </button>
-            <button class="btn btn-primary" onclick="document.getElementById('modal').classList.add('hidden')" style="flex:1;">
-                ✓ Закрыть
-            </button>
-        </div>
-    `;
-    
-    openModal('👁️ Предпросмотр письма', modalHtml);
-    
-    document.getElementById('preview-print-btn').addEventListener('click', function() {
-        window.printLetter(data);
-    });
-};
-
-// Генерация HTML тела письма
-window.generateLetterBodyHTML = function(data) {
+// HTML письма
+function generateLetterHTML(data) {
     return `
         <div style="text-align:center;margin-bottom:20px;">
             <h3 style="margin:0 0 4px 0;font-size:14pt;">ТОО "LamGroup Construction"</h3>
             <p style="margin:2px 0;font-size:10pt;">Фасадные работы | г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215</p>
             <p style="margin:2px 0;font-size:10pt;">+7 701 710 04 77</p>
         </div>
-        
         <div style="border-top:2px solid #000;margin:16px 0;"></div>
-        
-        <div style="display:flex;justify-content:space-between;margin:8px 0;font-size:11pt;">
+        <div style="display:flex;justify-content:space-between;margin:8px 0;">
             <span><b>Исх. № ${data.letterNumber}/LGC-ERP</b></span>
             <span>${data.letterDate}</span>
         </div>
-        
-        <div style="margin:16px 0;">
-            <p style="margin:4px 0;"><b>Кому:</b> ${data.customerCompany}</p>
-            <p style="margin:4px 0 4px 60px;">${data.customerName}</p>
-        </div>
-        
-        <div style="margin:16px 0;">
-            <p style="margin:4px 0;"><b>Объект:</b> ${data.objectName}, ${data.objectAddress}</p>
-        </div>
-        
-        <div style="margin:16px 0;">
-            <p style="margin:4px 0;"><b>Договор:</b> ${data.contractInfo}</p>
-        </div>
-        
+        <p style="margin:8px 0;"><b>Кому:</b> ${data.customerCompany}<br><span style="margin-left:60px;">${data.customerName}</span></p>
+        <p style="margin:8px 0;"><b>Объект:</b> ${data.objectName}, ${data.objectAddress}</p>
+        <p style="margin:8px 0;"><b>Договор:</b> ${data.contractInfo}</p>
         <div style="border-top:2px solid #000;margin:16px 0;"></div>
-        
-        <div style="text-align:center;font-size:12pt;font-weight:bold;margin:24px 0 16px 0;">
-            УВЕДОМЛЕНИЕ<br>
-            О СДВИГЕ ГРАФИКА ПРОИЗВОДСТВА РАБОТ (ГПР)
+        <div style="text-align:center;font-size:12pt;font-weight:bold;margin:20px 0;">
+            УВЕДОМЛЕНИЕ<br>О СДВИГЕ ГРАФИКА ПРОИЗВОДСТВА РАБОТ (ГПР)
         </div>
-        
         <p>Уважаемый ${data.customerShortName}!</p>
-        
-        <p>Настоящим уведомляем Вас о сдвиге графика производства работ 
-        на объекте: ${data.objectName}, ${data.objectAddress}.</p>
-        
+        <p>Настоящим уведомляем Вас о сдвиге графика производства работ на объекте: ${data.objectName}.</p>
         <p><b>Причина задержки:</b></p>
-        <div style="border:1px solid #000;padding:16px;margin:16px 0;min-height:80px;">
-            ${data.delayReason}
-        </div>
-        
-        <p><b>Срок сдвига ГПР:</b> на ${data.delayDays} ${window.getDaysWord(data.delayDays)}</p>
-        <p><b>Новая дата окончания работ:</b> ${data.newEndDate}</p>
-        <p><b>Предыдущая дата окончания:</b> ${data.oldEndDate}</p>
-        
+        <div style="border:1px solid #000;padding:16px;margin:16px 0;">${data.delayReason}</div>
+        <p><b>Срок сдвига ГПР:</b> на ${data.delayDays} ${getDaysWord(data.delayDays)}</p>
+        <p><b>Новая дата окончания:</b> ${data.newEndDate}</p>
+        <p><b>Предыдущая дата:</b> ${data.oldEndDate}</p>
         <p>Прошу согласовать новый график производства работ.</p>
-        
         <div style="border-top:2px solid #000;margin:16px 0;"></div>
-        
-        <div style="margin-top:40px;">
-            <p>С уважением,</p>
-            <p style="margin-top:30px;">
-                ИТР<br>
-                ТОО "LamGroup Construction"
-                <span style="display:inline-block;width:200px;border-bottom:1px solid #000;margin-left:10px;"></span> / ${data.responsibleName}
-            </p>
-            <p>Тел.: ${data.responsiblePhone}</p>
-        </div>
-        
+        <p>С уважением,</p>
+        <p style="margin-top:30px;">ИТР ТОО "LamGroup Construction" <span style="display:inline-block;width:200px;border-bottom:1px solid #000;margin-left:10px;"></span> / ${data.responsibleName}</p>
+        <p>Тел.: ${data.responsiblePhone}</p>
         <div style="border-top:2px solid #000;margin:16px 0;"></div>
-        
-        <div style="text-align:center;font-size:9pt;color:#666;margin-top:40px;">
-            г. Алматы | пр. Ермек Серкебаева, д. 97, н.п. 215
-        </div>
+        <div style="text-align:center;font-size:9pt;color:#666;">г. Алматы | пр. Ермек Серкебаева, д. 97, н.п. 215</div>
     `;
-};
+}
 
-// Печать письма (открывает новое окно)
-window.printLetter = function(letterData) {
-    var printWindow = window.open('', '_blank', 'width=900,height=700');
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>Письмо ${letterData.letterNumber}/LGC-ERP</title>
-            <style>
-                @media print {
-                    body { margin: 0; padding: 15mm; }
-                    @page { size: A4; margin: 15mm; }
-                    .no-print { display: none !important; }
-                }
-                body {
-                    font-family: 'Times New Roman', serif;
-                    color: #000;
-                    line-height: 1.5;
-                    max-width: 190mm;
-                    margin: 0 auto;
-                    padding: 10mm;
-                    font-size: 12pt;
-                }
-                .print-btn {
-                    padding: 12px 24px;
-                    background: #0F172A;
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    font-size: 14px;
-                    cursor: pointer;
-                    font-family: 'Inter', sans-serif;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="no-print" style="text-align:center;margin-bottom:20px;">
-                <button class="print-btn" onclick="window.print()">🖨️ Печать / Сохранить как PDF</button>
-                <p style="color:#666;font-family:sans-serif;font-size:12px;margin-top:8px;">
-                    Для сохранения как PDF выберите "Сохранить как PDF" в настройках принтера
-                </p>
-            </div>
-            ${window.generateLetterBodyHTML(letterData)}
-            <script>
-                setTimeout(function() { window.print(); }, 500);
-            <\\/script>
-        </body>
-        </html>
+// Печать в новом окне
+function printLetterToNewWindow(data) {
+    var w = window.open('', '_blank', 'width=900,height=700');
+    w.document.write(`
+        <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Письмо ${data.letterNumber}/LGC-ERP</title>
+        <style>
+            @media print { body { margin: 0; padding: 15mm; } @page { size: A4; margin: 15mm; } .no-print { display: none !important; } }
+            body { font-family: 'Times New Roman', serif; color: #000; line-height: 1.5; max-width: 190mm; margin: 0 auto; padding: 10mm; font-size: 12pt; }
+            .print-btn { padding: 12px 24px; background: #0F172A; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        </style></head><body>
+        <div class="no-print" style="text-align:center;margin-bottom:20px;">
+            <button class="print-btn" onclick="window.print()">🖨️ Печать / Сохранить как PDF</button>
+        </div>
+        ${generateLetterHTML(data)}
+        <script>setTimeout(function(){window.print();},500);<\\/script>
+        </body></html>
     `);
-    printWindow.document.close();
+    w.document.close();
+}
+
+// Заглушка для кнопки "Письмо заказчику" в меню
+window.openLetterFormAction = function() {
+    alert('✉️ Используйте "Сдвиг ГПР" с галочкой "Сформировать письмо"');
 };
 
 window.openWorkOrderForm = async function(axId, brId) {
