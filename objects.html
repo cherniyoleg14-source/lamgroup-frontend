@@ -762,29 +762,38 @@ var successMsg = `
 
 window.openModal('✅ Успешно', successMsg);
 
-document.getElementById('success-print').onclick = function() {
-    var letterPrintData = {
-        letterNumber: nextNum,
-        letterDate: window.formatDate(ld),
-        customerCompany: project?.customer_company || '',
-        customerName: project?.customer_name || '',
-        customerShortName: (project?.customer_name || '').split(' ').slice(-1)[0] || '',
-        objectName: project?.name || '',
-        objectAddress: project?.address || '',
-        contractInfo: cn ? '№ ' + cn + (cd ? ' от ' + window.formatDate(cd) : '') : '—',
-        delayReason: ds,
-        delayDays: diffDays,
-        oldEndDate: window.formatDate(ce),
-        newEndDate: window.formatDate(nd),
-        responsibleName: itrName,
-        responsiblePhone: itrPhone
-    };
-    printLetterToNewWindow(letterPrintData);
-};
-
-document.getElementById('success-close').onclick = function() {
-    document.getElementById('modal').classList.add('hidden');
-};
+setTimeout(function() {
+    var printBtn = document.getElementById('success-print');
+    var closeBtn = document.getElementById('success-close');
+    
+    if (printBtn) {
+        printBtn.onclick = function() {
+            var letterPrintData = {
+                letterNumber: nextNum,
+                letterDate: window.formatDate(ld),
+                customerCompany: project?.customer_company || '',
+                customerName: project?.customer_name || '',
+                customerShortName: (project?.customer_name || '').split(' ').slice(-1)[0] || '',
+                objectName: project?.name || '',
+                objectAddress: project?.address || '',
+                contractInfo: cn ? '№ ' + cn + (cd ? ' от ' + window.formatDate(cd) : '') : '—',
+                delayReason: ds,
+                delayDays: diffDays,
+                oldEndDate: window.formatDate(ce),
+                newEndDate: window.formatDate(nd),
+                responsibleName: itrName,
+                responsiblePhone: itrPhone
+            };
+            printLetterToNewWindow(letterPrintData);
+        };
+    }
+    
+    if (closeBtn) {
+        closeBtn.onclick = function() {
+            document.getElementById('modal').classList.add('hidden');
+        };
+    }
+}, 200);
                 
                 
             } else {
