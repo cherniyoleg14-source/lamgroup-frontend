@@ -602,7 +602,8 @@ window.openShiftGPRForm = async function(axId, brId) {
         var cn = document.getElementById('contract-number').value;
         var cd = document.getElementById('contract-date').value;
         var diffDays = Math.ceil((new Date(nd) - new Date(ce)) / (1000 * 60 * 60 * 24));
-        
+        console.log('DEBUG ds:', ds);
+console.log('DEBUG rs:', rs);
         var letterData = {
             letterNumber: '?',
             letterDate: window.formatDate(ld),
@@ -768,6 +769,7 @@ setTimeout(function() {
     
     if (printBtn) {
         printBtn.onclick = function() {
+            console.log('DEBUG ds:', ds);
             var letterPrintData = {
                 letterNumber: nextNum,
                 letterDate: window.formatDate(ld),
