@@ -695,29 +695,32 @@ window.openShiftGPRForm = async function(axId, brId) {
                     }).eq('id', projectId);
                 }
                 
-                // Создаём письмо
-                await supabase.from('letters').insert({
-                    project_id: projectId,
-                    letter_number: nextNum,
-                    letter_date: ld,
-                    customer_name: project?.customer_name || '',
-                    customer_company: project?.customer_company || '',
-                    contract_number_customer: cn || null,
-                    contract_date_customer: cd || null,
-                    object_name: project?.name || '',
-                    object_address: project?.address || '',
-                    delay_reason: ds,
-                    delay_days: diffDays,
-                    old_end_date: ce,
-                    new_end_date: nd,
-                    responsible_name: itrName,
-                    responsible_phone: itrPhone,
-                    created_by: currentUser?.id,
-                    created_by_name: currentUser?.full_name,
-                    created_at: new Date(),
-                    status: 'draft',
-                    letter_number_full: fullNumber
-                });
+               // Создаём письмо (под твою таблицу)
+await supabase.from('letters').insert({
+    project_id: projectId,
+    letter_number: nextNum,
+    letter_date: ld,
+    customer_name: project?.customer_name || '',
+    customer_company: project?.customer_company || '',
+    contract_number_customer: cn || null,
+    contract_date_customer: cd || null,
+    object_name: project?.name || '',
+    object_address: project?.address || '',
+    delay_reason: ds,
+    delay_description: ds,  // дублируем в старое поле
+    delay_days: diffDays,
+    old_end_date: ce,
+    new_end_date: nd,
+    responsible_name: itrName,
+    responsible_phone: itrPhone,
+    created_by: currentUser?.id,
+    created_by_name: currentUser?.full_name,
+    created_at: new Date(),
+    status: 'draft',
+    sent_to_office: false,
+    sent_to_customer: false,
+    letter_number_full: fullNumber
+});
                 
                 document.getElementById('form-modal').classList.add('hidden');
                 
