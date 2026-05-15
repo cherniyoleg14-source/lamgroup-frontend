@@ -373,6 +373,61 @@ window.openAxisDetailPage = async function(axisId) {
 };
 
 // ========== СДВИГ ГПР (полная версия) ==========
+    // ========== МЕНЮ ДЕЙСТВИЙ ==========
+
+// Закрыть меню
+window.closeActionMenu = function() {
+    var m = document.getElementById('action-menu');
+    var o = document.getElementById('action-overlay');
+    if (m) m.classList.add('hidden');
+    if (o) o.classList.add('hidden');
+};
+
+// Показать меню
+window.showActionMenu = function(items) {
+    var m = document.getElementById('action-menu');
+    var o = document.getElementById('action-overlay');
+    
+    if (!m || !o) {
+        alert('Меню не найдено на странице');
+        return;
+    }
+    
+    m.innerHTML = items.map(function(i) { 
+        return '<div class="action-item" style="padding:14px 20px;font-size:14px;font-weight:500;cursor:pointer;border-bottom:1px solid #E2E8F0;">' + i.label + '</div>'; 
+    }).join('');
+    
+    o.classList.remove('hidden');
+    m.classList.remove('hidden');
+    
+    m.querySelectorAll('.action-item').forEach(function(item, idx) {
+        item.addEventListener('click', function() {
+            window.closeActionMenu();
+            items[idx].action();
+        });
+    });
+    
+    o.addEventListener('click', function() {
+        window.closeActionMenu();
+    });
+};
+
+// Открыть меню для оси
+window.openActionMenu = function(axId, brId, sn) {
+    window.showActionMenu([
+        { label: '⏰ Сдвиг ГПР', action: function() { window.openShiftGPRForm(axId, brId); } },
+        { label: '📋 Сдать Наряд', action: function() { if (typeof window.openWorkOrderForm === 'function') window.openWorkOrderForm(axId, brId); else alert('Функция в разработке'); } },
+        { label: '👷 Заменить бригаду', action: function() { if (typeof window.openChangeBrigadeForm === 'function') window.openChangeBrigadeForm(axId, brId); else alert('Функция в разработке'); } },
+        { label: '✉️ Письмо заказчику', action: function() { window.openLetterFormAction(); } },
+        { label: '💰 Аванс', action: function() { if (typeof window.openAdvanceForm === 'function') window.openAdvanceForm(axId, brId); else alert('Функция в разработке'); } },
+        { label: '📝 Задача', action: function() { if (typeof window.openTaskForm === 'function') window.openTaskForm(axId, brId); else alert('Функция в разработке'); } }
+    ]);
+};
+
+// Заглушка для "Письмо заказчику"
+window.openLetterFormAction = function() {
+    alert('✉️ Для создания письма используйте:\n\n1. Нажмите "⏰ Сдвиг ГПР"\n2. Включите галочку "Сформировать письмо"\n3. Заполните данные и сохраните');
+};
 window.openShiftGPRForm = async function(axId, brId) {
     // Загружаем этапы
     var { data: stages } = await supabase.from('axis_work_stages')
