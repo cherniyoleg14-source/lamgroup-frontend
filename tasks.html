@@ -623,9 +623,9 @@ async function loadLetters() {
     }
     
     c.innerHTML = data.map(l => {
-        const statusTag = l.status === 'draft' 
-            ? '<span class="tag tag-yellow">⏳ Черновик</span>'
-            : '<span class="tag tag-green">✅ Отправлено</span>';
+        const statusTag = (l.sent_to_customer || l.status === 'sent') 
+    ? '<span class="tag tag-green">✅ Отправлено</span>'
+    : '<span class="tag tag-yellow">⏳ Черновик</span>';
         
         return `
             <div class="task-card" onclick="viewLetterCard('${l.id}')">
@@ -748,10 +748,17 @@ window.viewLetterCard = async function(id) {
 window.markLetterSent = async function(id) {
     if (!confirm('📨 Отметить письмо как отправленное заказчику?')) return;
     
-    await supabase.from('letters').update({
+    var { error } = await supabase.from('letters').update({
         status: 'sent',
+        sent_to_customer: true,
         sent_at: new Date().toISOString()
     }).eq('id', id);
+    
+    if (error) {
+        console.error('Ошибка:', error);
+        showMessage('❌ Ошибка: ' + error.message, 'error');
+        return;
+    }
     
     document.getElementById('modal').classList.add('hidden');
     showMessage('✅ Письмо отмечено как отправленное', 'success');
