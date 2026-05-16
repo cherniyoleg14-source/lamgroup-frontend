@@ -736,8 +736,20 @@ window.exportToExcel = function() {
     ws4['!cols'] = [{wch:12}, {wch:18}, {wch:20}, {wch:30}, {wch:15}, {wch:12}];
     XLSX.utils.book_append_sheet(wb, ws4, 'Все операции');
     
-    XLSX.writeFile(wb, `ДДС_LamGroup_${periodLabel.replace(/\s/g,'_')}.xlsx`);
-    showMessage('✅ Отчёт скачан', 'success');
+    // Вместо скачивания — открываем в браузере через внешнюю ссылку
+const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+const dataUri = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + wbout;
+
+// Пробуем открыть в новой вкладке
+const newWindow = window.open('', '_blank');
+if (newWindow) {
+    newWindow.document.write(`<html><head><title>Скачать отчёт</title></head><body style="text-align:center;padding:40px;font-family:sans-serif;"><h2>📥 Отчёт готов!</h2><p>Нажмите на ссылку чтобы скачать:</p><a href="${dataUri}" download="ДДС_LamGroup_${periodLabel.replace(/\s/g,'_')}.xlsx" style="display:inline-block;margin-top:20px;padding:16px 32px;background:#0F172A;color:white;border-radius:12px;text-decoration:none;font-weight:600;">💾 Скачать Excel</a><p style="margin-top:30px;color:#64748B;">Или откройте эту страницу в браузере</p></body></html>`);
+    newWindow.document.close();
+} else {
+    // Если не открылось — используем Telegram openLink
+    tg.openLink(dataUri);
+}
+showMessage('✅ Отчёт готов', 'success');
 };
 
 // ========== ЭКСПОРТ В PDF (печать) ==========
