@@ -647,7 +647,9 @@ window.openExpenseFormDDS = async function(editId) {
             this.classList.add('active'); document.getElementById('tab-'+this.dataset.tab).classList.add('active');
         }));
     }
-   window.exportToExcel = function() {
+   window.exportToExcel = async function() {
+    showMessage('⏳ Формирую отчёт...', 'success');
+    
     const periodType = document.getElementById('filter-period-type')?.value || 'month';
     let periodLabel = '';
     const now = new Date();
@@ -680,21 +682,21 @@ window.openExpenseFormDDS = async function(editId) {
         ['Период: ' + periodLabel],
         [''],
         ['Показатель', 'Сумма, ₸'],
-        ['💰 Поступления (факт)', totalIncome],
-        ['📥 Поступления (план)', totalPlan],
-        ['📤 Расходы (оплаченные)', totalExp],
-        ['👷 Выплаты бригадам', totalPay],
+        ['Поступления (факт)', totalIncome],
+        ['Поступления (план)', totalPlan],
+        ['Расходы (оплаченные)', totalExp],
+        ['Выплаты бригадам', totalPay],
         [''],
-        ['💰 Чистый денежный поток', totalIncome - totalExp - totalPay],
+        ['Чистый денежный поток', totalIncome - totalExp - totalPay],
         [''],
-        ['Дата формирования: ' + new Date().toLocaleDateString('ru-RU')],
+        ['Дата: ' + new Date().toLocaleDateString('ru-RU')],
         ['Ответственный: ' + (currentUser?.full_name || '—')]
     ];
     const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
     ws1['!cols'] = [{wch:35}, {wch:20}];
     XLSX.utils.book_append_sheet(wb, ws1, 'Сводка');
     
-    const objData = [['Объект', 'Поступления факт', 'Поступления план', 'Расходы', 'Выплаты', 'Сальдо']];
+    const objData = [['Объект', 'Поступления', 'План пост.', 'Расходы', 'Выплаты', 'Сальдо']];
     allProjects.forEach(p => {
         const inc = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
         const pln = allIncome.filter(i => i.project_id === p.id && i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
@@ -703,44 +705,43 @@ window.openExpenseFormDDS = async function(editId) {
         objData.push([p.name, inc, pln, exp, pay, inc - exp - pay]);
     });
     const ws2 = XLSX.utils.aoa_to_sheet(objData);
-    ws2['!cols'] = [{wch:25}, {wch:18}, {wch:18}, {wch:18}, {wch:18}, {wch:18}];
-    XLSX.utils.book_append_sheet(wb, ws2, 'По объектам');
-    
-    const catData = [['Статья', 'Сумма, ₸', 'Доля']];
-    const catTotals = {};
-    allExpenses.filter(e => e.payment_status === 'paid').forEach(e => {
-        catTotals[e.category] = (catTotals[e.category] || 0) + (e.amount || 0);
-    });
-    const catSum = Object.values(catTotals).reduce((s,v) => s + v, 0);
-    Object.entries(catTotals).sort((a,b) => b[1] - a[1]).forEach(([k,v]) => {
-        catData.push([expenseCategories[k] || k, v, catSum > 0 ? Math.round(v/catSum*100) + '%' : '0%']);
-    });
-    const ws3 = XLSX.utils.aoa_to_sheet(catData);
-    ws3['!cols'] = [{wch:30}, {wch:18}, {wch:10}];
-    XLSX.utils.book_append_sheet(wb, ws3, 'Расходы по статьям');
+    ws2['!cols'] = [{wch:25}, {wch:15}, {wch:15}, {wch:15}, {wch:15}, {wch:15}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Объекты');
     
     const opsData = [['Дата', 'Тип', 'Объект', 'Описание', 'Сумма', 'Статус']];
     const allOps = [
-        ...allIncome.map(i => [i.date, '📥 Поступление', i.projects?.name||'', i.description||'', i.amount||0, i.status==='paid'?'Оплачен':'Ожидается']),
-        ...allExpenses.map(e => [e.date, '📤 Расход', e.projects?.name||'', e.name||'', -(e.amount||0), e.payment_status==='paid'?'Оплачен':'План']),
-        ...allWorkOrders.map(o => [(o.payment_date||o.created_at?.split('T')[0]), '👷 Наряд', o.projects?.name||'', o.work_type||'', -(o.total_amount||0), o.payment_status==='paid'?'Выплачен':'План']),
-        ...allAdvances.map(a => [(a.payment_date||a.created_at?.split('T')[0]), '💳 Аванс', a.projects?.name||'', 'Аванс '+(a.brigades?.name||''), -(a.amount||0), a.status==='paid'?'Выплачен':'План'])
+        ...allIncome.map(i => [i.date, 'Поступление', i.projects?.name||'', i.description||'', i.amount||0, i.status==='paid'?'Оплачен':'Ожидается']),
+        ...allExpenses.map(e => [e.date, 'Расход', e.projects?.name||'', e.name||'', -(e.amount||0), e.payment_status==='paid'?'Оплачен':'План']),
+        ...allWorkOrders.map(o => [(o.payment_date||o.created_at?.split('T')[0]), 'Наряд', o.projects?.name||'', o.work_type||'', -(o.total_amount||0), o.payment_status==='paid'?'Выплачен':'План']),
+        ...allAdvances.map(a => [(a.payment_date||a.created_at?.split('T')[0]), 'Аванс', a.projects?.name||'', 'Аванс', -(a.amount||0), a.status==='paid'?'Выплачен':'План'])
     ].sort((a,b) => new Date(b[0]) - new Date(a[0]));
     allOps.forEach(o => opsData.push(o));
-    const ws4 = XLSX.utils.aoa_to_sheet(opsData);
-    ws4['!cols'] = [{wch:12}, {wch:18}, {wch:20}, {wch:30}, {wch:15}, {wch:12}];
-    XLSX.utils.book_append_sheet(wb, ws4, 'Все операции');
+    const ws3 = XLSX.utils.aoa_to_sheet(opsData);
+    ws3['!cols'] = [{wch:12}, {wch:15}, {wch:20}, {wch:30}, {wch:15}, {wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws3, 'Операции');
     
-    // Конвертируем в base64 и открываем через Telegram
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
-    const dataUri = 'data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,' + wbout;
+    // Конвертируем в бинарный формат
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const file = new File([blob], `ДДС_${periodLabel.replace(/\s/g,'_')}.xlsx`);
     
-    // Открываем в системном браузере через Telegram API
-    tg.openLink(dataUri);
+    // Загружаем в Supabase Storage
+    const fileName = 'reports/' + Date.now() + '_dds_report.xlsx';
+    const { data: uploadData, error: uploadError } = await supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: true });
     
-    showMessage('✅ Отчёт открыт в браузере', 'success');
+    if (uploadError) {
+        console.error('Ошибка загрузки:', uploadError);
+        showMessage('❌ Ошибка загрузки отчёта', 'error');
+        return;
+    }
+    
+    // Получаем публичную ссылку
+    const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+    
+    // Открываем в браузере
+    tg.openLink(urlData.publicUrl);
+    showMessage('✅ Отчёт открыт', 'success');
 };
-
 // ========== ЭКСПОРТ В PDF (печать) ==========
 window.exportToPDF = function() {
     const periodType = document.getElementById('filter-period-type')?.value || 'month';
