@@ -6,6 +6,7 @@
     <title>ДДС | LamGroup</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -146,7 +147,10 @@
     <input type="date" id="filter-date-to" class="form-input" style="padding:6px;font-size:12px;width:130px;">
 </div>
         </div>
-        
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+    <button class="btn btn-outline btn-sm" id="export-excel" style="flex:1;">📥 Скачать Excel</button>
+    <button class="btn btn-outline btn-sm" id="export-pdf" style="flex:1;">📄 Печать / PDF</button>
+</div>
         <div class="tabs">
             <button class="tab active" data-tab="summary">📊 Сводка</button>
             <button class="tab" data-tab="income">📥 Поступления</button>
@@ -643,9 +647,195 @@ window.openExpenseFormDDS = async function(editId) {
             this.classList.add('active'); document.getElementById('tab-'+this.dataset.tab).classList.add('active');
         }));
     }
+    // ========== ЭКСПОРТ В EXCEL ==========
+window.exportToExcel = function() {
+    const periodType = document.getElementById('filter-period-type')?.value || 'month';
+    let periodLabel = '';
+    const now = new Date();
+    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
     
+    if (periodType === 'month') {
+        const val = document.getElementById('filter-period-month')?.value;
+        if (val) { const [y, m] = val.split('-'); periodLabel = months[parseInt(m)-1] + ' ' + y; }
+    } else if (periodType === 'quarter') {
+        const q = Math.floor(now.getMonth() / 3) + 1;
+        periodLabel = q + '-й квартал ' + now.getFullYear();
+    } else if (periodType === 'year') {
+        periodLabel = now.getFullYear() + ' год';
+    } else {
+        const from = document.getElementById('filter-date-from')?.value;
+        const to = document.getElementById('filter-date-to')?.value;
+        periodLabel = from + ' – ' + to;
+    }
+    
+    const wb = XLSX.utils.book_new();
+    
+    // Лист 1: Сводка
+    const totalIncome = allIncome.filter(i => i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+    const totalPlan = allIncome.filter(i => i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+    const totalExp = allExpenses.filter(e => e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+    const totalPay = [...allWorkOrders.filter(o => o.payment_status === 'paid'), ...allAdvances.filter(a => a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
+    
+    const summaryData = [
+        ['ТОО "LamGroup Construction"'],
+        ['ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ'],
+        ['Период: ' + periodLabel],
+        [''],
+        ['Показатель', 'Сумма, ₸'],
+        ['💰 Поступления (факт)', totalIncome],
+        ['📥 Поступления (план)', totalPlan],
+        ['📤 Расходы (оплаченные)', totalExp],
+        ['👷 Выплаты бригадам', totalPay],
+        [''],
+        ['💰 Чистый денежный поток', totalIncome - totalExp - totalPay],
+        [''],
+        ['Дата формирования: ' + new Date().toLocaleDateString('ru-RU')],
+        ['Ответственный: ' + (currentUser?.full_name || '—')]
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+    ws1['!cols'] = [{wch:35}, {wch:20}];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Сводка');
+    
+    // Лист 2: По объектам
+    const objData = [['Объект', 'Поступления факт', 'Поступления план', 'Расходы', 'Выплаты', 'Сальдо']];
+    allProjects.forEach(p => {
+        const inc = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+        const pln = allIncome.filter(i => i.project_id === p.id && i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+        const exp = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+        const pay = [...allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...allAdvances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
+        objData.push([p.name, inc, pln, exp, pay, inc - exp - pay]);
+    });
+    const ws2 = XLSX.utils.aoa_to_sheet(objData);
+    ws2['!cols'] = [{wch:25}, {wch:18}, {wch:18}, {wch:18}, {wch:18}, {wch:18}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'По объектам');
+    
+    // Лист 3: Расходы по статьям
+    const catData = [['Статья', 'Сумма, ₸', 'Доля']];
+    const catTotals = {};
+    allExpenses.filter(e => e.payment_status === 'paid').forEach(e => {
+        catTotals[e.category] = (catTotals[e.category] || 0) + (e.amount || 0);
+    });
+    const catSum = Object.values(catTotals).reduce((s,v) => s + v, 0);
+    Object.entries(catTotals).sort((a,b) => b[1] - a[1]).forEach(([k,v]) => {
+        catData.push([expenseCategories[k] || k, v, catSum > 0 ? Math.round(v/catSum*100) + '%' : '0%']);
+    });
+    const ws3 = XLSX.utils.aoa_to_sheet(catData);
+    ws3['!cols'] = [{wch:30}, {wch:18}, {wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws3, 'Расходы по статьям');
+    
+    // Лист 4: Все операции
+    const opsData = [['Дата', 'Тип', 'Объект', 'Описание', 'Сумма', 'Статус']];
+    const allOps = [
+        ...allIncome.map(i => [i.date, '📥 Поступление', i.projects?.name||'', i.description||'', i.amount||0, i.status==='paid'?'Оплачен':'Ожидается']),
+        ...allExpenses.map(e => [e.date, '📤 Расход', e.projects?.name||'', e.name||'', -(e.amount||0), e.payment_status==='paid'?'Оплачен':'План']),
+        ...allWorkOrders.map(o => [(o.payment_date||o.created_at?.split('T')[0]), '👷 Наряд', o.projects?.name||'', o.work_type||'', -(o.total_amount||0), o.payment_status==='paid'?'Выплачен':'План']),
+        ...allAdvances.map(a => [(a.payment_date||a.created_at?.split('T')[0]), '💳 Аванс', a.projects?.name||'', 'Аванс '+(a.brigades?.name||''), -(a.amount||0), a.status==='paid'?'Выплачен':'План'])
+    ].sort((a,b) => new Date(b[0]) - new Date(a[0]));
+    allOps.forEach(o => opsData.push(o));
+    const ws4 = XLSX.utils.aoa_to_sheet(opsData);
+    ws4['!cols'] = [{wch:12}, {wch:18}, {wch:20}, {wch:30}, {wch:15}, {wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws4, 'Все операции');
+    
+    XLSX.writeFile(wb, `ДДС_LamGroup_${periodLabel.replace(/\s/g,'_')}.xlsx`);
+    showMessage('✅ Отчёт скачан', 'success');
+};
+
+// ========== ЭКСПОРТ В PDF (печать) ==========
+window.exportToPDF = function() {
+    const periodType = document.getElementById('filter-period-type')?.value || 'month';
+    let periodLabel = '';
+    const now = new Date();
+    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    
+    if (periodType === 'month') {
+        const val = document.getElementById('filter-period-month')?.value;
+        if (val) { const [y, m] = val.split('-'); periodLabel = months[parseInt(m)-1] + ' ' + y; }
+    } else if (periodType === 'quarter') {
+        const q = Math.floor(now.getMonth() / 3) + 1;
+        periodLabel = q + '-й квартал ' + now.getFullYear();
+    } else if (periodType === 'year') {
+        periodLabel = now.getFullYear() + ' год';
+    } else {
+        const from = document.getElementById('filter-date-from')?.value;
+        const to = document.getElementById('filter-date-to')?.value;
+        periodLabel = from + ' – ' + to;
+    }
+    
+    const totalIncome = allIncome.filter(i => i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+    const totalPlan = allIncome.filter(i => i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+    const totalExp = allExpenses.filter(e => e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+    const totalPay = [...allWorkOrders.filter(o => o.payment_status === 'paid'), ...allAdvances.filter(a => a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
+    
+    let objRows = '';
+    allProjects.forEach(p => {
+        const inc = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+        const pln = allIncome.filter(i => i.project_id === p.id && i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+        const exp = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+        const pay = [...allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...allAdvances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
+        objRows += `<tr><td>${p.name}</td><td>${(inc/1000).toFixed(0)}k</td><td>${(pln/1000).toFixed(0)}k</td><td>${(exp/1000).toFixed(0)}k</td><td>${(pay/1000).toFixed(0)}k</td><td style="color:${inc-exp-pay>=0?'#065F46':'#991B1B'}">${((inc-exp-pay)/1000).toFixed(0)}k</td></tr>`;
+    });
+    
+    let catRows = '';
+    const catTotals = {};
+    allExpenses.filter(e => e.payment_status === 'paid').forEach(e => { catTotals[e.category] = (catTotals[e.category] || 0) + (e.amount || 0); });
+    const catSum = Object.values(catTotals).reduce((s,v) => s + v, 0);
+    Object.entries(catTotals).sort((a,b) => b[1] - a[1]).forEach(([k,v]) => {
+        catRows += `<tr><td>${expenseCategories[k]||k}</td><td>${v.toLocaleString()} ₸</td><td>${catSum>0?Math.round(v/catSum*100):0}%</td></tr>`;
+    });
+    
+    const html = `
+    <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Отчёт ДДС</title>
+    <style>
+        @media print { body { margin: 0; padding: 15mm; } @page { size: A4 landscape; margin: 10mm; } .no-print { display: none !important; } }
+        body { font-family: 'Inter', sans-serif; color: #0F172A; line-height: 1.4; max-width: 280mm; margin: 0 auto; padding: 10mm; font-size: 10pt; }
+        h1 { font-size: 16pt; text-align: center; margin-bottom: 4px; }
+        h2 { font-size: 12pt; text-align: center; color: #64748B; margin-bottom: 16px; }
+        h3 { font-size: 11pt; border-bottom: 2px solid #E2E8F0; padding-bottom: 4px; margin: 16px 0 8px 0; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        th { background: #F1F5F9; padding: 6px 8px; text-align: left; font-weight: 600; font-size: 9pt; }
+        td { padding: 5px 8px; border-bottom: 1px solid #E2E8F0; font-size: 9pt; }
+        .kpi-grid { display: flex; gap: 12px; margin-bottom: 16px; }
+        .kpi-card { flex: 1; background: #F8FAFC; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #E2E8F0; }
+        .kpi-value { font-size: 18pt; font-weight: 800; }
+        .kpi-label { font-size: 8pt; color: #64748B; text-transform: uppercase; }
+        .footer { text-align: center; font-size: 8pt; color: #94A3B8; margin-top: 20px; border-top: 1px solid #E2E8F0; padding-top: 10px; }
+    </style></head><body>
+    <div class="no-print" style="text-align:center;margin-bottom:16px;">
+        <button onclick="window.print()" style="padding:12px 24px;background:#0F172A;color:white;border:none;border-radius:10px;font-size:14px;cursor:pointer;">🖨️ Печать / Сохранить как PDF</button>
+    </div>
+    
+    <h1>ТОО "LamGroup Construction"</h1>
+    <h2>ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ<br>за период: ${periodLabel}</h2>
+    
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-value" style="color:#10B981;">${(totalIncome/1000).toFixed(0)}k</div><div class="kpi-label">💰 Поступления</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:#3B82F6;">${(totalPlan/1000).toFixed(0)}k</div><div class="kpi-label">📥 План поступлений</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:#EF4444;">${(totalExp/1000).toFixed(0)}k</div><div class="kpi-label">📤 Расходы</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:#F59E0B;">${(totalPay/1000).toFixed(0)}k</div><div class="kpi-label">👷 Выплаты</div></div>
+    </div>
+    
+    <h3>📊 Сводка по объектам</h3>
+    <table><thead><tr><th>Объект</th><th>💰 Поступления</th><th>📥 План</th><th>📤 Расходы</th><th>👷 Выплаты</th><th>Сальдо</th></tr></thead><tbody>${objRows}</tbody></table>
+    
+    <h3>📂 Расходы по статьям</h3>
+    <table><thead><tr><th>Статья</th><th>Сумма</th><th>Доля</th></tr></thead><tbody>${catRows}</tbody></table>
+    
+    <div class="footer">
+        <p>Дата формирования: ${new Date().toLocaleDateString('ru-RU')} | Ответственный: ${currentUser?.full_name || '—'}</p>
+        <p>ТОО "LamGroup Construction" | г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215</p>
+    </div>
+    
+    <script>setTimeout(function(){window.print();},500);<\\/script>
+    </body></html>`;
+    
+    const w = window.open('', '_blank', 'width=1000,height=700');
+    w.document.write(html);
+    w.document.close();
+};
   function setupFilters() {
     document.getElementById('filter-project').addEventListener('change', e => { selectedProjectId = e.target.value; loadAllData(); });
+      document.getElementById('export-excel')?.addEventListener('click', () => window.exportToExcel());
+document.getElementById('export-pdf')?.addEventListener('click', () => window.exportToPDF());
     
     const periodMonth = document.getElementById('filter-period-month');
     const dateFrom = document.getElementById('filter-date-from');
