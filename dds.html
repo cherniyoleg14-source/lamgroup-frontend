@@ -20,59 +20,55 @@
         body { font-family: 'Inter', -apple-system, sans-serif; background: linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%); min-height: 100vh; -webkit-font-smoothing: antialiased; padding: 16px; }
         .container { max-width: 600px; margin: 0 auto; }
         
-        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; margin-bottom: 16px; background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: var(--radius-lg); box-shadow: var(--shadow); border: 1px solid rgba(226,232,240,0.5); }
-        .app-header h1 { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #0F172A, #1E293B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.5px; }
+        .app-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; margin-bottom: 16px; background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border-radius: var(--radius-lg); box-shadow: var(--shadow); border: 1px solid rgba(226,232,240,0.5); }
+        .app-header h1 { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #0F172A, #1E293B); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .badge { padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; }
         .badge-dark { background: var(--primary); color: white; }
         
         .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-        .kpi-card { background: var(--card); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); border: 1px solid rgba(226,232,240,0.5); }
-        .kpi-card.income { border-left: 4px solid var(--success); }
-        .kpi-card.plan { border-left: 4px solid var(--info); }
-        .kpi-card.expense { border-left: 4px solid var(--danger); }
-        .kpi-card.payout { border-left: 4px solid var(--warning); }
+        .kpi-card { background: var(--card); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); border-left: 4px solid transparent; }
+        .kpi-card.income { border-left-color: var(--success); } .kpi-card.plan { border-left-color: var(--info); }
+        .kpi-card.expense { border-left-color: var(--danger); } .kpi-card.payout { border-left-color: var(--warning); }
         .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600; color: var(--text-secondary); }
-        .kpi-value { font-size: 22px; font-weight: 800; color: var(--text); }
+        .kpi-value { font-size: 20px; font-weight: 800; }
         
         .calendar-section { background: white; border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; box-shadow: var(--shadow); }
         .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 6px; }
-        .weekday { font-size: 10px; font-weight: 600; color: var(--text-secondary); padding: 4px 0; text-transform: uppercase; }
+        .weekday { font-size: 10px; font-weight: 600; color: var(--text-secondary); padding: 4px 0; }
         .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; background: #F8FAFC; position: relative; }
-        .calendar-day:hover { background: #E2E8F0; }
+        .calendar-day { aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; font-size: 12px; font-weight: 500; cursor: pointer; background: #F8FAFC; position: relative; }
         .calendar-day.other-month { color: #94A3B8; }
         .calendar-day.today { background: var(--primary); color: white; font-weight: 700; }
         .calendar-day.has-income { border: 2px solid var(--success); }
         .calendar-day.has-expense { border: 2px solid var(--danger); }
         .calendar-day.has-both { border: 2px solid var(--warning); }
-        .day-amount { font-size: 7px; font-weight: 700; margin-top: 1px; white-space: nowrap; }
+        .day-amount { font-size: 7px; font-weight: 700; margin-top: 1px; }
         .calendar-legend { display: flex; gap: 12px; margin-top: 10px; justify-content: center; font-size: 10px; }
         .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
         
+        .filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+        .form-select { flex: 1; min-width: 120px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 13px; background: white; font-family: inherit; }
+        .btn { padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: var(--primary); color: white; width: 100%; }
+        .btn-outline { background: white; border: 1.5px solid var(--border); }
+        .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 8px; }
+        .btn-danger { background: #FEE2E2; color: #991B1B; }
+        .btn-success { background: #D1FAE5; color: #065F46; }
+        
         .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; }
         .tabs::-webkit-scrollbar { display: none; }
-        .tab { padding: 10px 14px; background: none; border: none; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.2s; }
+        .tab { padding: 10px 14px; background: none; border: none; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; }
         .tab.active { color: var(--text); border-bottom-color: var(--gold); }
         .tab-content { display: none; } .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         
-        .filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
-        .form-select { flex: 1; min-width: 140px; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 13px; background: white; font-family: inherit; }
-        .btn { padding: 10px 16px; border-radius: 12px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
-        .btn:active { transform: scale(0.97); }
-        .btn-primary { background: linear-gradient(135deg, #0F172A, #1E293B); color: white; width: 100%; }
-        .btn-success { background: #D1FAE5; color: #065F46; }
-        .btn-danger { background: #FEE2E2; color: #991B1B; }
-        .btn-outline { background: white; border: 1.5px solid var(--border); color: var(--text); }
-        .btn-sm { padding: 5px 10px; font-size: 11px; border-radius: 8px; }
-        
+        .card { background: var(--card); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
         .form-group { margin-bottom: 14px; }
         .form-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
         .form-input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 13px; background: white; font-family: inherit; }
-        .form-input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
-        
-        .card { background: var(--card); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); border: 1px solid rgba(226,232,240,0.5); }
+        .form-input:focus { outline: none; border-color: var(--gold); }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .hidden { display: none !important; }
         .loading { text-align: center; padding: 40px; color: var(--text-secondary); }
@@ -81,14 +77,15 @@
         .summary-table { width: 100%; border-collapse: collapse; font-size: 11px; }
         .summary-table th { background: #F8FAFC; padding: 8px 6px; text-align: left; font-weight: 600; font-size: 10px; color: var(--text-secondary); border-bottom: 2px solid var(--border); }
         .summary-table td { padding: 8px 6px; border-bottom: 1px solid var(--border); }
-        .summary-table tr:hover { background: #F8FAFC; }
         
-        .transaction-item { background: white; border-radius: var(--radius); padding: 12px; margin-bottom: 8px; border: 1px solid var(--border); }
-        .transaction-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; flex-wrap: wrap; gap: 6px; }
-        .transaction-title { font-weight: 600; font-size: 13px; }
-        .transaction-amount { font-weight: 700; font-size: 16px; }
-        .amount-income { color: var(--success); } .amount-expense { color: var(--danger); } .amount-plan { color: var(--info); }
-        .transaction-meta { font-size: 11px; color: var(--text-secondary); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+        .expense-card { background: white; border-radius: var(--radius); padding: 14px; margin-bottom: 10px; border: 1px solid var(--border); cursor: pointer; }
+        .expense-card.urgent { border-left: 4px solid var(--danger); }
+        .expense-card.approved { border-left: 4px solid var(--success); }
+        .expense-card.pending { border-left: 4px solid var(--warning); }
+        .expense-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; flex-wrap: wrap; gap: 6px; }
+        .expense-title { font-weight: 600; font-size: 14px; }
+        .expense-amount { font-weight: 700; font-size: 17px; }
+        .expense-meta { font-size: 11px; color: var(--text-secondary); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
         
         .tag { padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
         .tag-green { background: #D1FAE5; color: #065F46; } .tag-yellow { background: #FEF3C7; color: #92400E; }
@@ -99,13 +96,14 @@
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .modal-title { font-size: 18px; font-weight: 800; }
         .modal-close { width: 32px; height: 32px; border-radius: 50%; background: #F1F5F9; border: none; font-size: 16px; cursor: pointer; }
+        .message { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 99999; padding: 12px 20px; border-radius: 14px; font-weight: 600; font-size: 13px; opacity: 0; pointer-events: none; transition: all 0.3s; }
+        .message.success { background: #D1FAE5; color: #065F46; opacity: 1; } .message.error { background: #FEE2E2; color: #991B1B; opacity: 1; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="app-header"><h1>💰 Движение средств</h1><span class="badge badge-dark" id="role-badge">Загрузка...</span></div>
         
-        <!-- KPI -->
         <div class="kpi-grid">
             <div class="kpi-card income"><div class="kpi-label">💰 Приход (зашло)</div><div class="kpi-value" id="kpi-income" style="color:var(--success);">0 ₸</div></div>
             <div class="kpi-card plan"><div class="kpi-label">📥 План поступлений</div><div class="kpi-value" id="kpi-plan-income" style="color:var(--info);">0 ₸</div></div>
@@ -113,7 +111,6 @@
             <div class="kpi-card payout"><div class="kpi-label">👷 Выплаты (оплач.)</div><div class="kpi-value" id="kpi-payouts" style="color:var(--warning);">0 ₸</div></div>
         </div>
         
-        <!-- Календарь -->
         <div class="calendar-section">
             <div class="calendar-header">
                 <span id="calendar-month-year" style="font-weight:700;font-size:15px;">Май 2026</span>
@@ -133,12 +130,11 @@
             </div>
         </div>
         
-        <!-- Фильтр -->
         <div class="filter-row">
             <select id="filter-project" class="form-select"><option value="">Все объекты</option></select>
+            <input type="month" id="filter-period" class="form-select" style="max-width:140px;">
         </div>
         
-        <!-- Вкладки -->
         <div class="tabs">
             <button class="tab active" data-tab="summary">📊 Сводка</button>
             <button class="tab" data-tab="income">📥 Поступления</button>
@@ -146,55 +142,31 @@
             <button class="tab" data-tab="payouts">👷 Выплаты</button>
         </div>
         
-        <!-- Сводка -->
         <div id="tab-summary" class="tab-content active"><div id="summary-content"></div></div>
-        
-        <!-- Поступления -->
         <div id="tab-income" class="tab-content">
-            <button class="btn btn-primary" id="show-income-form" style="margin-bottom:12px;">➕ Создать поступление</button>
-            <div id="income-filter" style="display:flex;gap:6px;margin-bottom:12px;">
-                <button class="btn btn-sm btn-outline income-filter-btn active" data-filter="all">Все</button>
-                <button class="btn btn-sm btn-outline income-filter-btn" data-filter="paid">✅ Оплаченные</button>
-                <button class="btn btn-sm btn-outline income-filter-btn" data-filter="pending">⏳ Ожидаются</button>
+            <button class="btn btn-primary" id="show-income-form" style="margin-bottom:12px;">➕ Поступление</button>
+            <div style="display:flex;gap:6px;margin-bottom:12px;" id="income-filters">
+                <button class="btn btn-sm btn-outline income-fb active" data-f="all">Все</button>
+                <button class="btn btn-sm btn-outline income-fb" data-f="paid">✅ Оплаченные</button>
+                <button class="btn btn-sm btn-outline income-fb" data-f="pending">⏳ Ожидаются</button>
             </div>
             <div id="income-list"></div>
         </div>
-        
-        <!-- Расходы -->
         <div id="tab-expense" class="tab-content">
-            <button class="btn btn-primary" id="show-expense-form" style="margin-bottom:12px;">➕ Создать расход</button>
-            <div id="expense-filter" style="display:flex;gap:6px;margin-bottom:12px;">
-                <button class="btn btn-sm btn-outline expense-filter-btn active" data-filter="all">Все</button>
-                <button class="btn btn-sm btn-outline expense-filter-btn" data-filter="paid">💳 Оплаченные</button>
-                <button class="btn btn-sm btn-outline expense-filter-btn" data-filter="pending">📅 План</button>
+            <button class="btn btn-primary" id="show-expense-form" style="margin-bottom:12px;">➕ Расход</button>
+            <div style="display:flex;gap:6px;margin-bottom:12px;" id="expense-filters">
+                <button class="btn btn-sm btn-outline expense-fb active" data-f="all">Все</button>
+                <button class="btn btn-sm btn-outline expense-fb" data-f="paid">💳 Оплаченные</button>
+                <button class="btn btn-sm btn-outline expense-fb" data-f="pending">📅 План</button>
             </div>
             <div id="expense-list"></div>
         </div>
-        
-        <!-- Выплаты -->
-        <div id="tab-payouts" class="tab-content">
-            <div id="payouts-filter" style="display:flex;gap:6px;margin-bottom:12px;">
-                <button class="btn btn-sm btn-outline payouts-filter-btn active" data-filter="all">Все</button>
-                <button class="btn btn-sm btn-outline payouts-filter-btn" data-filter="paid">✅ Оплаченные</button>
-                <button class="btn btn-sm btn-outline payouts-filter-btn" data-filter="pending">📅 План</button>
-            </div>
-            <div id="payouts-list"></div>
-        </div>
+        <div id="tab-payouts" class="tab-content"><div id="payouts-list"></div></div>
     </div>
     
-    <div id="modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header"><span class="modal-title" id="modal-title"></span><button class="modal-close" id="modal-close">✕</button></div>
-            <div id="modal-content"></div>
-        </div>
-    </div>
-    
-    <div id="day-modal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header"><span class="modal-title" id="day-modal-title"></span><button class="modal-close" id="day-modal-close">✕</button></div>
-            <div id="day-modal-content"></div>
-        </div>
-    </div>
+    <div id="modal" class="modal hidden"><div class="modal-content"><div class="modal-header"><span class="modal-title" id="modal-title"></span><button class="modal-close" id="modal-close">✕</button></div><div id="modal-content"></div></div></div>
+    <div id="day-modal" class="modal hidden"><div class="modal-content"><div class="modal-header"><span class="modal-title" id="day-modal-title"></span><button class="modal-close" id="day-modal-close">✕</button></div><div id="day-modal-content"></div></div></div>
+    <div id="message" class="message"></div>
 
 <script>
 (function() {
@@ -204,381 +176,391 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     
     let userId = tg.initDataUnsafe?.user?.id || 531738802;
-    let currentUser = null, currentRole = 'worker', selectedProjectId = '', incomeFilter = 'all', expenseFilter = 'all', payoutsFilter = 'all';
+    let currentUser = null, currentRole = 'worker', selectedProjectId = '', incomeFilter = 'all', expenseFilter = 'all', selectedPeriod = '';
     let allProjects = [], allIncome = [], allExpenses = [], allWorkOrders = [], allAdvances = [];
     let currentDisplayDate = new Date();
+    
+    const expenseCategories = { delivery: '🚛 Доставка', consumables: '🔧 Расходники', cradles: '🏗️ Люльки', scaffolding: '🪜 Леса', rent: '🏢 Аренда', other: '📄 Прочее' };
     
     function escapeHtml(t) { if(!t) return ''; return String(t).replace(/[&<>]/g, function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]||c;}); }
     function formatDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('ru-RU'); }
     function formatDateLong(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('ru-RU', {day:'numeric',month:'long',year:'numeric'}); }
     function formatMoney(a) { return (a||0).toLocaleString() + ' ₸'; }
+    function showMessage(text, type) { const m = document.getElementById('message'); m.textContent = text; m.className = 'message ' + type; setTimeout(() => m.className = 'message', 3000); }
     
-    async function init() {
-        await loadUser();
-        await loadProjects();
-        await loadAllData();
-        setupTabs();
-        setupFilters();
-        setupForms();
-        renderCalendar();
-    }
+    async function init() { await loadUser(); await loadProjects(); setupFilters(); setupTabs(); loadAllData(); renderCalendar(); }
     
-    async function loadUser() {
-        const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single();
-        if (data) { currentUser = data; currentRole = data.role; }
-        document.getElementById('role-badge').textContent = currentRole === 'manager' ? '👑 Руководитель' : '👷 ИТР';
-    }
+    async function loadUser() { const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single(); if (data) { currentUser = data; currentRole = data.role; } document.getElementById('role-badge').textContent = currentRole === 'manager' ? '👑 Руководитель' : '👷 ИТР'; }
     
     async function loadProjects() {
-        let query = supabase.from('projects').select('*').order('name');
-        if (currentRole !== 'manager') query = query.eq('responsible_worker_id', currentUser?.id);
-        const { data } = await query;
-        allProjects = data || [];
-        const sel = document.getElementById('filter-project');
-        if (sel) {
-            sel.innerHTML = '<option value="">Все объекты</option>';
-            allProjects.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.name}</option>`);
-        }
+        let q = supabase.from('projects').select('*').order('name');
+        if (currentRole !== 'manager') q = q.eq('responsible_worker_id', currentUser?.id);
+        const { data } = await q; allProjects = data || [];
+        document.getElementById('filter-project').innerHTML = '<option value="">Все объекты</option>' + allProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    }
+    
+    function getPeriodFilter() {
+        const monthVal = document.getElementById('filter-period')?.value;
+        if (monthVal) { const [y, m] = monthVal.split('-'); return { start: `${y}-${m}-01`, end: new Date(y, m, 0).toISOString().split('T')[0] }; }
+        return null;
     }
     
     async function loadAllData() {
+        const period = getPeriodFilter();
         let incQ = supabase.from('incomes').select('*, projects(name, customer_company_name)').order('date', { ascending: false });
         let expQ = supabase.from('expenses').select('*, projects(name)').order('date', { ascending: false });
         let ordQ = supabase.from('work_orders').select('*, projects(name), brigades(name)').order('created_at', { ascending: false });
         let advQ = supabase.from('advances').select('*, projects(name), brigades(name)').order('created_at', { ascending: false });
         
         if (currentRole !== 'manager') {
-            incQ = incQ.in('project_id', allProjects.map(p => p.id));
-            expQ = expQ.in('project_id', allProjects.map(p => p.id));
-            ordQ = ordQ.in('project_id', allProjects.map(p => p.id));
-            advQ = advQ.in('project_id', allProjects.map(p => p.id));
+            const pids = allProjects.map(p => p.id);
+            if (pids.length) { incQ = incQ.in('project_id', pids); expQ = expQ.in('project_id', pids); ordQ = ordQ.in('project_id', pids); advQ = advQ.in('project_id', pids); }
         }
-        if (selectedProjectId) {
-            incQ = incQ.eq('project_id', selectedProjectId);
-            expQ = expQ.eq('project_id', selectedProjectId);
-            ordQ = ordQ.eq('project_id', selectedProjectId);
-            advQ = advQ.eq('project_id', selectedProjectId);
+        if (selectedProjectId) { incQ = incQ.eq('project_id', selectedProjectId); expQ = expQ.eq('project_id', selectedProjectId); ordQ = ordQ.eq('project_id', selectedProjectId); advQ = advQ.eq('project_id', selectedProjectId); }
+        if (period) {
+            incQ = incQ.gte('date', period.start).lte('date', period.end);
+            expQ = expQ.gte('date', period.start).lte('date', period.end);
         }
         
         const [incR, expR, ordR, advR] = await Promise.all([incQ, expQ, ordQ, advQ]);
-        allIncome = incR.data || [];
-        allExpenses = expR.data || [];
-        allWorkOrders = ordR.data || [];
-        allAdvances = advR.data || [];
-        
-        updateKPI();
-        renderAll();
-        renderCalendar();
+        allIncome = incR.data || []; allExpenses = expR.data || []; allWorkOrders = ordR.data || []; allAdvances = advR.data || [];
+        updateKPI(); renderAll(); renderCalendar();
     }
     
     function updateKPI() {
-        const monthIncome = allIncome.filter(i => new Date(i.date).getMonth() === currentDisplayDate.getMonth() && new Date(i.date).getFullYear() === currentDisplayDate.getFullYear());
-        const monthExp = allExpenses.filter(e => new Date(e.date).getMonth() === currentDisplayDate.getMonth() && new Date(e.date).getFullYear() === currentDisplayDate.getFullYear());
-        const monthOrd = allWorkOrders.filter(o => new Date(o.created_at).getMonth() === currentDisplayDate.getMonth() && new Date(o.created_at).getFullYear() === currentDisplayDate.getFullYear());
-        const monthAdv = allAdvances.filter(a => new Date(a.created_at).getMonth() === currentDisplayDate.getMonth() && new Date(a.created_at).getFullYear() === currentDisplayDate.getFullYear());
-        
-        const totalIncome = monthIncome.filter(i => i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
-        const totalPlanIncome = monthIncome.filter(i => i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
-        const totalExpense = monthExp.filter(e => e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
-        const totalPayouts = [...monthOrd.filter(o => o.payment_status === 'paid'), ...monthAdv.filter(a => a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
-        
+        const totalIncome = allIncome.filter(i => i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+        const totalPlan = allIncome.filter(i => i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+        const totalExp = allExpenses.filter(e => e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+        const totalPay = [...allWorkOrders.filter(o => o.payment_status === 'paid'), ...allAdvances.filter(a => a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
         document.getElementById('kpi-income').textContent = formatMoney(totalIncome);
-        document.getElementById('kpi-plan-income').textContent = formatMoney(totalPlanIncome);
-        document.getElementById('kpi-expense').textContent = formatMoney(totalExpense);
-        document.getElementById('kpi-payouts').textContent = formatMoney(totalPayouts);
+        document.getElementById('kpi-plan-income').textContent = formatMoney(totalPlan);
+        document.getElementById('kpi-expense').textContent = formatMoney(totalExp);
+        document.getElementById('kpi-payouts').textContent = formatMoney(totalPay);
     }
     
     function renderCalendar() {
-        const year = currentDisplayDate.getFullYear();
-        const month = currentDisplayDate.getMonth();
-        const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-        document.getElementById('calendar-month-year').textContent = `${months[month]} ${year}`;
-        
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        let startDay = firstDay.getDay() || 7;
-        
-        let html = '';
-        for (let i = 1; i < startDay; i++) {
-            const prev = new Date(year, month, 1 - (startDay - i));
-            html += renderDay(prev, true);
-        }
-        for (let d = 1; d <= lastDay.getDate(); d++) {
-            html += renderDay(new Date(year, month, d), false);
-        }
-        const total = Math.ceil((startDay - 1 + lastDay.getDate()) / 7) * 7;
-        for (let i = startDay + lastDay.getDate() - 1; i < total; i++) {
-            const next = new Date(year, month + 1, i - (startDay + lastDay.getDate() - 1) + 1);
-            html += renderDay(next, true);
-        }
+        const y = currentDisplayDate.getFullYear(), m = currentDisplayDate.getMonth();
+        document.getElementById('calendar-month-year').textContent = `${['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'][m]} ${y}`;
+        const first = new Date(y, m, 1), last = new Date(y, m+1, 0);
+        let start = first.getDay() || 7, html = '';
+        for (let i=1; i<start; i++) html += renderDay(new Date(y, m, 1-(start-i)), true);
+        for (let d=1; d<=last.getDate(); d++) html += renderDay(new Date(y, m, d), false);
+        const total = Math.ceil((start-1+last.getDate())/7)*7;
+        for (let i=start+last.getDate()-1; i<total; i++) html += renderDay(new Date(y, m+1, i-(start+last.getDate()-1)+1), true);
         document.getElementById('calendar-days').innerHTML = html;
     }
     
-    function renderDay(date, isOther) {
+    function renderDay(date, other) {
         const ds = date.toISOString().split('T')[0];
-        const dInc = allIncome.filter(i => i.date === ds).reduce((s,i) => s + (i.amount||0), 0);
-        const dExp = allExpenses.filter(e => e.date === ds).reduce((s,e) => s + (e.amount||0), 0);
-        const dOrd = allWorkOrders.filter(o => (o.payment_date || o.created_at?.split('T')[0]) === ds).reduce((s,o) => s + (o.total_amount||0), 0);
-        const dAdv = allAdvances.filter(a => (a.payment_date || a.created_at?.split('T')[0]) === ds).reduce((s,a) => s + (a.amount||0), 0);
-        const totalExp = dExp + dOrd + dAdv;
-        
+        const inc = allIncome.filter(i => i.date === ds).reduce((s,i) => s + (i.amount||0), 0);
+        const exp = allExpenses.filter(e => e.date === ds).reduce((s,e) => s + (e.amount||0), 0) + allWorkOrders.filter(o => (o.payment_date||o.created_at?.split('T')[0]) === ds).reduce((s,o) => s + (o.total_amount||0), 0) + allAdvances.filter(a => (a.payment_date||a.created_at?.split('T')[0]) === ds).reduce((s,a) => s + (a.amount||0), 0);
         const isToday = date.toDateString() === new Date().toDateString();
-        let cls = '';
-        if (isOther) cls += ' other-month';
+        let cls = other ? ' other-month' : '';
         if (isToday) cls += ' today';
-        if (dInc > 0 && totalExp > 0) cls += ' has-both';
-        else if (dInc > 0) cls += ' has-income';
-        else if (totalExp > 0) cls += ' has-expense';
-        
-        return `<div class="calendar-day${cls}" onclick="showDay('${ds}')">
-            <span>${date.getDate()}</span>
-            ${dInc > 0 ? `<span class="day-amount" style="color:var(--success);">+${Math.round(dInc/1000)}k</span>` : ''}
-            ${totalExp > 0 ? `<span class="day-amount" style="color:var(--danger);">-${Math.round(totalExp/1000)}k</span>` : ''}
-        </div>`;
+        if (inc>0 && exp>0) cls += ' has-both'; else if (inc>0) cls += ' has-income'; else if (exp>0) cls += ' has-expense';
+        return `<div class="calendar-day${cls}" onclick="showDay('${ds}')"><span>${date.getDate()}</span>${inc>0?`<span class="day-amount" style="color:var(--success);">+${Math.round(inc/1000)}k</span>`:''}${exp>0?`<span class="day-amount" style="color:var(--danger);">-${Math.round(exp/1000)}k</span>`:''}</div>`;
     }
     
     window.showDay = function(ds) {
-        const inc = allIncome.filter(i => i.date === ds);
-        const exp = allExpenses.filter(e => e.date === ds);
-        const ord = allWorkOrders.filter(o => (o.payment_date || o.created_at?.split('T')[0]) === ds);
-        const adv = allAdvances.filter(a => (a.payment_date || a.created_at?.split('T')[0]) === ds);
-        
+        const inc = allIncome.filter(i => i.date === ds), exp = allExpenses.filter(e => e.date === ds);
+        const ord = allWorkOrders.filter(o => (o.payment_date||o.created_at?.split('T')[0]) === ds), adv = allAdvances.filter(a => (a.payment_date||a.created_at?.split('T')[0]) === ds);
         document.getElementById('day-modal-title').textContent = `Операции за ${formatDateLong(ds)}`;
-        let html = '';
-        if (!inc.length && !exp.length && !ord.length && !adv.length) {
-            html = '<p style="text-align:center;color:var(--text-secondary);padding:20px;">Нет операций</p>';
-        } else {
-            inc.forEach(i => html += `<div class="transaction-item"><div class="transaction-header"><span>📥 ${escapeHtml(i.description||'Поступление')}</span><span class="transaction-amount amount-income">+${formatMoney(i.amount)}</span></div><div class="transaction-meta"><span>🏗️ ${escapeHtml(i.projects?.name||'—')}</span><span class="tag ${i.status==='paid'?'tag-green':'tag-yellow'}">${i.status==='paid'?'Оплачен':'Ожидается'}</span></div></div>`);
-            exp.forEach(e => html += `<div class="transaction-item"><div class="transaction-header"><span>📤 ${escapeHtml(e.name)}</span><span class="transaction-amount amount-expense">-${formatMoney(e.amount)}</span></div><div class="transaction-meta"><span>🏗️ ${escapeHtml(e.projects?.name||'—')}</span><span class="tag ${e.payment_status==='paid'?'tag-green':'tag-yellow'}">${e.payment_status==='paid'?'Оплачен':'План'}</span></div></div>`);
-            ord.forEach(o => html += `<div class="transaction-item"><div class="transaction-header"><span>👷 ${escapeHtml(o.work_type||'Наряд')}</span><span class="transaction-amount amount-expense">-${formatMoney(o.total_amount)}</span></div><div class="transaction-meta"><span>👷 ${escapeHtml(o.brigades?.name||'—')}</span><span class="tag ${o.payment_status==='paid'?'tag-green':'tag-yellow'}">${o.payment_status==='paid'?'Выплачен':'К выплате'}</span></div></div>`);
-            adv.forEach(a => html += `<div class="transaction-item"><div class="transaction-header"><span>💳 Аванс</span><span class="transaction-amount amount-expense">-${formatMoney(a.amount)}</span></div><div class="transaction-meta"><span>👷 ${escapeHtml(a.brigades?.name||'—')}</span><span class="tag ${a.status==='paid'?'tag-green':'tag-yellow'}">${a.status==='paid'?'Оплачен':'План'}</span></div></div>`);
-        }
-        document.getElementById('day-modal-content').innerHTML = html;
-        document.getElementById('day-modal').classList.remove('hidden');
+        let h = '';
+        if (!inc.length&&!exp.length&&!ord.length&&!adv.length) h = '<p style="text-align:center;padding:20px;">Нет операций</p>';
+        inc.forEach(i => h += `<div style="padding:10px;border-bottom:1px solid var(--border);"><b>📥 ${escapeHtml(i.description)}</b> <span style="color:var(--success);">+${formatMoney(i.amount)}</span><br><small>${escapeHtml(i.projects?.name||'—')}</small></div>`);
+        exp.forEach(e => h += `<div style="padding:10px;border-bottom:1px solid var(--border);"><b>📤 ${escapeHtml(e.name)}</b> <span style="color:var(--danger);">-${formatMoney(e.amount)}</span><br><small>${escapeHtml(e.projects?.name||'—')} | ${expenseCategories[e.category]||e.category}</small></div>`);
+        ord.forEach(o => h += `<div style="padding:10px;border-bottom:1px solid var(--border);"><b>👷 ${escapeHtml(o.work_type||'Наряд')}</b> <span style="color:var(--danger);">-${formatMoney(o.total_amount)}</span><br><small>${escapeHtml(o.brigades?.name||'—')}</small></div>`);
+        adv.forEach(a => h += `<div style="padding:10px;border-bottom:1px solid var(--border);"><b>💳 Аванс</b> <span style="color:var(--danger);">-${formatMoney(a.amount)}</span><br><small>${escapeHtml(a.brigades?.name||'—')}</small></div>`);
+        document.getElementById('day-modal-content').innerHTML = h; document.getElementById('day-modal').classList.remove('hidden');
     };
     
-    function renderAll() {
-        renderSummary();
-        renderIncomeList();
-        renderExpenseList();
-        renderPayoutsList();
-    }
+    function renderAll() { renderSummary(); renderIncomeList(); renderExpenseList(); renderPayoutsList(); }
     
     // ===== СВОДКА =====
     function renderSummary() {
         const c = document.getElementById('summary-content');
         if (!allProjects.length) { c.innerHTML = '<div class="empty-state">Нет объектов</div>'; return; }
-        
-        let rows = '';
-        let totalInc = 0, totalPlan = 0, totalExp = 0, totalPayout = 0;
-        
+        let rows = '', ti=0, tp=0, te=0, tpa=0;
         allProjects.forEach(p => {
-            const pInc = allIncome.filter(i => i.project_id === p.id && i.status === 'paid');
-            const pPlan = allIncome.filter(i => i.project_id === p.id && i.status === 'pending');
-            const pExp = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid');
-            const pOrd = allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid');
-            const pAdv = allAdvances.filter(a => a.project_id === p.id && a.status === 'paid');
-            
-            const sumInc = pInc.reduce((s,i) => s + (i.amount||0), 0);
-            const sumPlan = pPlan.reduce((s,i) => s + (i.amount||0), 0);
-            const sumExp = pExp.reduce((s,e) => s + (e.amount||0), 0);
-            const sumPay = [...pOrd, ...pAdv].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
-            
-            totalInc += sumInc; totalPlan += sumPlan; totalExp += sumExp; totalPayout += sumPay;
-            
-            rows += `<tr>
-                <td><b>${escapeHtml(p.name)}</b></td>
-                <td style="color:var(--success);">${formatMoney(sumInc)}</td>
-                <td style="color:var(--info);">${formatMoney(sumPlan)}</td>
-                <td style="color:var(--danger);">${formatMoney(sumExp)}</td>
-                <td style="color:var(--warning);">${formatMoney(sumPay)}</td>
-            </tr>`;
+            const si = allIncome.filter(i => i.project_id===p.id&&i.status==='paid').reduce((s,i)=>s+(i.amount||0),0);
+            const sp = allIncome.filter(i => i.project_id===p.id&&i.status==='pending').reduce((s,i)=>s+(i.amount||0),0);
+            const se = allExpenses.filter(e => e.project_id===p.id&&e.payment_status==='paid').reduce((s,e)=>s+(e.amount||0),0);
+            const spay = [...allWorkOrders.filter(o=>o.project_id===p.id&&o.payment_status==='paid'),...allAdvances.filter(a=>a.project_id===p.id&&a.status==='paid')].reduce((s,x)=>s+(x.amount||x.total_amount||0),0);
+            ti+=si; tp+=sp; te+=se; tpa+=spay;
+            rows += `<tr><td><b>${escapeHtml(p.name)}</b></td><td style="color:var(--success);">${formatMoney(si)}</td><td style="color:var(--info);">${formatMoney(sp)}</td><td style="color:var(--danger);">${formatMoney(se)}</td><td style="color:var(--warning);">${formatMoney(spay)}</td></tr>`;
         });
-        
-        c.innerHTML = `
-            <table class="summary-table">
-                <thead><tr><th>Объект</th><th>💰 Приход</th><th>📥 План пост.</th><th>📤 Расходы</th><th>👷 Выплаты</th></tr></thead>
-                <tbody>${rows}</tbody>
-                <tfoot style="font-weight:700;background:#F8FAFC;">
-                    <tr><td>ИТОГО</td><td style="color:var(--success);">${formatMoney(totalInc)}</td><td style="color:var(--info);">${formatMoney(totalPlan)}</td><td style="color:var(--danger);">${formatMoney(totalExp)}</td><td style="color:var(--warning);">${formatMoney(totalPayout)}</td></tr>
-                </tfoot>
-            </table>
-        `;
+        c.innerHTML = `<table class="summary-table"><thead><tr><th>Объект</th><th>💰 Приход</th><th>📥 План</th><th>📤 Расходы</th><th>👷 Выплаты</th></tr></thead><tbody>${rows}</tbody><tfoot style="font-weight:700;background:#F8FAFC;"><tr><td>ИТОГО</td><td style="color:var(--success);">${formatMoney(ti)}</td><td style="color:var(--info);">${formatMoney(tp)}</td><td style="color:var(--danger);">${formatMoney(te)}</td><td style="color:var(--warning);">${formatMoney(tpa)}</td></tr></tfoot></table>`;
     }
     
     // ===== ПОСТУПЛЕНИЯ =====
     function renderIncomeList() {
-        let filtered = allIncome;
-        if (incomeFilter === 'paid') filtered = filtered.filter(i => i.status === 'paid');
-        if (incomeFilter === 'pending') filtered = filtered.filter(i => i.status === 'pending');
-        
+        let f = allIncome; if (incomeFilter==='paid') f=f.filter(i=>i.status==='paid'); if (incomeFilter==='pending') f=f.filter(i=>i.status==='pending');
         const c = document.getElementById('income-list');
-        if (!filtered.length) { c.innerHTML = '<div class="empty-state">Нет поступлений</div>'; return; }
-        
-        c.innerHTML = filtered.map(i => `
-            <div class="transaction-item">
-                <div class="transaction-header">
-                    <span class="transaction-title">${escapeHtml(i.description||'Поступление')}</span>
-                    <span class="transaction-amount amount-income">+${formatMoney(i.amount)}</span>
-                </div>
-                <div style="font-size:12px;color:var(--text-secondary);">🏗️ ${escapeHtml(i.projects?.name||'—')} | 📋 ${escapeHtml(i.income_type||'—')}</div>
-                ${i.invoice_number ? `<div style="font-size:11px;color:var(--text-secondary);">📄 Счёт: ${escapeHtml(i.invoice_number)}</div>` : ''}
-                <div class="transaction-meta">
-                    <span>📅 ${formatDate(i.date)}</span>
-                    <span class="tag ${i.status==='paid'?'tag-green':'tag-yellow'}">${i.status==='paid'?'✅ Оплачен':'⏳ Ожидается'}</span>
-                </div>
-            </div>
-        `).join('');
+        if (!f.length) { c.innerHTML = '<div class="empty-state">Нет поступлений</div>'; return; }
+        c.innerHTML = f.map(i => `<div class="expense-card" onclick="viewIncome('${i.id}')"><div class="expense-header"><span class="expense-title">${escapeHtml(i.description)}</span><span class="expense-amount" style="color:var(--success);">+${formatMoney(i.amount)}</span></div><div style="font-size:12px;color:var(--text-secondary);">🏗️ ${escapeHtml(i.projects?.name||'—')} | 📋 ${escapeHtml(i.income_type||'—')} | 📄 ${escapeHtml(i.invoice_number||'—')}</div><div class="expense-meta"><span>📅 ${formatDate(i.date)}</span><span class="tag ${i.status==='paid'?'tag-green':'tag-yellow'}">${i.status==='paid'?'✅ Оплачен':'⏳ Ожидается'}</span></div></div>`).join('');
     }
+    
+    window.viewIncome = function(id) {
+        const i = allIncome.find(x => x.id === id); if (!i) return;
+        document.getElementById('modal-title').textContent = '📥 Поступление';
+        document.getElementById('modal-content').innerHTML = `
+            <div style="font-size:13px;line-height:1.8;">
+                <b>🏗️ Объект:</b> ${escapeHtml(i.projects?.name||'—')}<br>
+                <b>🏢 Заказчик:</b> ${escapeHtml(i.projects?.customer_company_name||'—')}<br>
+                <b>📋 Вид:</b> ${escapeHtml(i.income_type||'—')}<br>
+                <b>📄 Счёт:</b> ${escapeHtml(i.invoice_number||'—')}<br>
+                <b>💰 Сумма:</b> <span style="color:var(--success);font-weight:700;">${formatMoney(i.amount)}</span><br>
+                <b>📅 Дата:</b> ${formatDateLong(i.date)}<br>
+                <b>📊 Статус:</b> ${i.status==='paid'?'✅ Оплачен':'⏳ Ожидается'}
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px;">
+                <button class="btn btn-outline btn-sm" onclick="editIncome('${i.id}')">✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteIncome('${i.id}')">🗑️</button>
+            </div>`; document.getElementById('modal').classList.remove('hidden');
+    };
+    
+    window.deleteIncome = async function(id) {
+        const i = allIncome.find(x => x.id === id); if (!i) return;
+        if (!confirm(`⚠️ Удалить поступление?\n\n${i.description}\n${formatMoney(i.amount)}\n${i.projects?.name||''}\n\nЭто нельзя отменить!`)) return;
+        await supabase.from('incomes').delete().eq('id', id);
+        document.getElementById('modal').classList.add('hidden'); showMessage('✅ Удалено','success'); loadAllData();
+    };
     
     // ===== РАСХОДЫ =====
     function renderExpenseList() {
-        let filtered = allExpenses;
-        if (expenseFilter === 'paid') filtered = filtered.filter(e => e.payment_status === 'paid');
-        if (expenseFilter === 'pending') filtered = filtered.filter(e => e.payment_status !== 'paid');
-        
+        let f = allExpenses; if (expenseFilter==='paid') f=f.filter(e=>e.payment_status==='paid'); if (expenseFilter==='pending') f=f.filter(e=>e.payment_status!=='paid');
         const c = document.getElementById('expense-list');
-        if (!filtered.length) { c.innerHTML = '<div class="empty-state">Нет расходов</div>'; return; }
-        
-        c.innerHTML = filtered.map(e => `
-            <div class="transaction-item">
-                <div class="transaction-header">
-                    <span class="transaction-title">${escapeHtml(e.name)}</span>
-                    <span class="transaction-amount amount-expense">-${formatMoney(e.amount)}</span>
+        if (!f.length) { c.innerHTML = '<div class="empty-state">Нет расходов</div>'; return; }
+        c.innerHTML = f.map(e => {
+            const isPaid = e.payment_status === 'paid', isUrgent = e.is_urgent;
+            const cls = isUrgent ? 'urgent' : (isPaid ? 'approved' : 'pending');
+            return `<div class="expense-card ${cls}" onclick="viewExpense('${e.id}')">
+                <div class="expense-header">
+                    <span class="expense-title">${escapeHtml(e.name)}${isUrgent?' 🔥':''}</span>
+                    <span class="expense-amount" style="color:${isPaid?'var(--success)':'var(--warning)'};">${formatMoney(e.amount)}</span>
                 </div>
-                <div style="font-size:12px;color:var(--text-secondary);">🏗️ ${escapeHtml(e.projects?.name||'—')} | 📂 ${escapeHtml(e.category||'—')}</div>
-                <div class="transaction-meta">
-                    <span>📅 ${formatDate(e.date)} | 💳 ${e.payment_method==='cash'?'Наличка':'Безнал'}</span>
-                    <span class="tag ${e.payment_status==='paid'?'tag-green':'tag-yellow'}">${e.payment_status==='paid'?'💳 Оплачен':'📅 План'}</span>
+                <div style="font-size:12px;color:var(--text-secondary);">🏗️ ${escapeHtml(e.projects?.name||'—')} | ${expenseCategories[e.category]||e.category} | ${e.expense_number||''}</div>
+                <div class="expense-meta">
+                    <span>📅 ${formatDate(e.date)} | 💳 ${e.payment_method==='cash'?'Наличка':'Безнал'}${e.paid_by_name?' | 👤 '+escapeHtml(e.paid_by_name):''}</span>
+                    <span class="tag ${isPaid?'tag-green':'tag-yellow'}">${isPaid?'💳 Оплачен':'📅 План'}</span>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     }
+    
+    window.viewExpense = function(id) {
+        const e = allExpenses.find(x => x.id === id); if (!e) return;
+        document.getElementById('modal-title').textContent = '📤 Расход';
+        document.getElementById('modal-content').innerHTML = `
+            <div style="font-size:13px;line-height:1.8;">
+                <b>📄 Номер:</b> ${escapeHtml(e.expense_number||'—')}<br>
+                <b>🏗️ Объект:</b> ${escapeHtml(e.projects?.name||'—')}<br>
+                <b>📂 Статья:</b> ${expenseCategories[e.category]||e.category}<br>
+                <b>📝 Наименование:</b> ${escapeHtml(e.name)}<br>
+                ${e.supplier?`<b>🏢 Поставщик:</b> ${escapeHtml(e.supplier)}<br>`:''}
+                <b>💰 Сумма:</b> <span style="color:var(--danger);font-weight:700;">${formatMoney(e.amount)}</span><br>
+                <b>📅 Дата:</b> ${formatDateLong(e.date)}<br>
+                ${e.planned_payment_date?`<b>📅 План оплаты:</b> ${formatDate(e.planned_payment_date)}<br>`:''}
+                <b>💳 Метод:</b> ${e.payment_method==='cash'?'💵 Наличка':'💳 Безнал'}<br>
+                ${e.paid_by_name?`<b>👤 Кто оплатил:</b> ${escapeHtml(e.paid_by_name)}<br>`:''}
+                <b>📊 Статус:</b> ${e.payment_status==='paid'?'💳 Оплачен':'📅 План оплат'}<br>
+                ${e.invoice_url?`<b>📎 Счёт:</b> <a href="${e.invoice_url}" target="_blank">Просмотреть</a><br>`:''}
+                ${e.comment?`<b>📝 Комментарий:</b> ${escapeHtml(e.comment)}<br>`:''}
+            </div>
+            <div style="display:flex;gap:8px;margin-top:16px;">
+                <button class="btn btn-outline btn-sm" onclick="editExpense('${e.id}')">✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteExpense('${e.id}')">🗑️</button>
+                ${!e.payment_status||e.payment_status==='pending'?`<button class="btn btn-success btn-sm" onclick="approveExpenseDDS('${e.id}')">✅ Утвердить</button>`:''}
+            </div>`; document.getElementById('modal').classList.remove('hidden');
+    };
+    
+    window.deleteExpense = async function(id) {
+        const e = allExpenses.find(x => x.id === id); if (!e) return;
+        const info = `${e.expense_number||''}\n${e.name}\n${formatMoney(e.amount)}\n${e.projects?.name||''}\n${expenseCategories[e.category]||e.category}`;
+        if (!confirm(`⚠️ Удалить расход?\n\n${info}\n\nЭто нельзя отменить!`)) return;
+        await supabase.from('expenses').delete().eq('id', id);
+        document.getElementById('modal').classList.add('hidden'); showMessage('✅ Удалено','success'); loadAllData();
+    };
+    
+    window.approveExpenseDDS = async function(id) {
+        await supabase.from('expenses').update({payment_status:'approved',approved_at:new Date(),approved_by:currentUser?.id}).eq('id',id);
+        document.getElementById('modal').classList.add('hidden'); showMessage('✅ Утверждён','success'); loadAllData();
+    };
+    
+    // ФОРМА РАСХОДА (как в objects + дополнения)
+    window.openExpenseFormDDS = async function(editId) {
+        const today = new Date().toISOString().split('T')[0];
+        let editData = null;
+        if (editId) editData = allExpenses.find(x => x.id === editId);
+        
+        if (!editId) {
+            const { data: num } = await supabase.from('document_numbers').select('number').eq('doc_type','expense').order('number',{ascending:false}).limit(1);
+            const next = num?.length ? num[0].number + 1 : 1;
+            var expNum = '№-RAS-' + next;
+        } else {
+            var expNum = editData.expense_number || '';
+        }
+        
+        const opts = allProjects.map(p => `<option value="${p.id}" ${editData?.project_id===p.id?'selected':''}>${p.name}</option>`).join('');
+        const catOpts = Object.entries(expenseCategories).map(([k,v]) => `<option value="${k}" ${editData?.category===k?'selected':''}>${v}</option>`).join('');
+        
+        let h = `<div class="form-group"><label class="form-label">📄 Номер</label><input class="form-input" value="${expNum}" disabled></div>`;
+        h += `<div class="form-group"><label class="form-label">🏗️ Объект</label><select id="exp-project" class="form-input">${opts}</select></div>`;
+        h += `<div class="form-group"><label class="form-label">📂 Статья расхода</label><select id="exp-category" class="form-input">${catOpts}</select></div>`;
+        h += `<div class="form-group"><label class="form-label">📝 Наименование *</label><input id="exp-name" class="form-input" value="${escapeHtml(editData?.name||'')}"></div>`;
+        h += `<div class="form-group"><label class="form-label">🏢 Поставщик</label><input id="exp-supplier" class="form-input" value="${escapeHtml(editData?.supplier||'')}"></div>`;
+        h += `<div class="grid-2"><div class="form-group"><label class="form-label">Количество</label><input type="number" id="exp-qty" class="form-input" step="0.01" value="${editData?.quantity||1}"></div><div class="form-group"><label class="form-label">💰 Сумма *</label><input type="number" id="exp-amount" class="form-input" step="0.01" value="${editData?.amount||''}"></div></div>`;
+        h += `<div class="form-group"><label class="form-label">📅 Дата расхода</label><input type="date" id="exp-date" class="form-input" value="${editData?.date||today}"></div>`;
+        h += `<div class="form-group"><label class="form-label">💳 Метод оплаты</label><select id="exp-method" class="form-input" onchange="toggleExpFieldsDDS()"><option value="non_cash" ${editData?.payment_method==='non_cash'?'selected':''}>💳 Безнал</option><option value="cash" ${editData?.payment_method==='cash'?'selected':''}>💵 Наличка</option></select></div>`;
+        h += `<div class="form-group"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="exp-invoice" class="form-input">${editData?.invoice_url?`<div style="font-size:11px;margin-top:4px;">📎 <a href="${editData.invoice_url}" target="_blank">Текущий файл</a></div>`:''}</div>`;
+        h += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><input type="checkbox" id="exp-urgent" style="width:18px;height:18px;" ${editData?.is_urgent?'checked':''}><label>🚨 Срочный платёж</label></div>`;
+        h += `<div class="form-group"><label class="form-label">📊 Статус</label><select id="exp-status" class="form-input" onchange="toggleExpFieldsDDS()"><option value="paid" ${editData?.payment_status==='paid'?'selected':''}>💳 Оплатили</option><option value="pending" ${(!editData||editData?.payment_status!=='paid')?'selected':''}>📅 В план оплат</option></select></div>`;
+        h += `<div id="exp-paid-group" class="form-group" style="display:none;"><label class="form-label">👤 Кто оплатил</label><select id="exp-paid-by" class="form-input"></select></div>`;
+        h += `<div id="exp-plan-date-group" class="form-group" style="display:none;"><label class="form-label">📅 Дата платежа</label><input type="date" id="exp-plan-date" class="form-input" value="${editData?.planned_payment_date||today}"></div>`;
+        h += `<div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="exp-comment" class="form-input" rows="2">${escapeHtml(editData?.comment||'')}</textarea></div>`;
+        h += `<button class="btn btn-primary" id="save-expense-btn">💾 ${editId?'Сохранить изменения':'Сохранить расход'}</button>`;
+        
+        document.getElementById('modal-title').textContent = editId ? '✏️ Редактировать расход' : '➕ Новый расход';
+        document.getElementById('modal-content').innerHTML = h;
+        document.getElementById('modal').classList.remove('hidden');
+        
+        supabase.from('users').select('id, full_name').in('role',['manager','worker']).order('full_name').then(ur => {
+            const sel = document.getElementById('exp-paid-by');
+            if (sel && ur.data) {
+                sel.innerHTML = ur.data.map(u => `<option value="${u.full_name}" ${editData?.paid_by_name===u.full_name?'selected':''}>${u.full_name}</option>`).join('');
+            }
+        });
+        
+        window.toggleExpFieldsDDS = function() {
+            const mt = document.getElementById('exp-method')?.value;
+            const st = document.getElementById('exp-status')?.value;
+            const pg = document.getElementById('exp-paid-group');
+            const dg = document.getElementById('exp-plan-date-group');
+            if (pg) pg.style.display = (mt==='cash' && st==='paid') ? 'block' : 'none';
+            if (dg) dg.style.display = (st==='pending') ? 'block' : 'none';
+        };
+        setTimeout(() => { if (typeof toggleExpFieldsDDS === 'function') toggleExpFieldsDDS(); }, 100);
+        
+        document.getElementById('save-expense-btn').addEventListener('click', async function() {
+            const name = document.getElementById('exp-name').value.trim();
+            const amount = parseFloat(document.getElementById('exp-amount').value);
+            if (!name || !amount || amount <= 0) { alert('Заполните наименование и сумму'); return; }
+            
+            const data = {
+                project_id: document.getElementById('exp-project').value || null,
+                name, amount,
+                category: document.getElementById('exp-category').value,
+                supplier: document.getElementById('exp-supplier').value,
+                quantity: parseFloat(document.getElementById('exp-qty').value) || 1,
+                date: document.getElementById('exp-date').value,
+                payment_method: document.getElementById('exp-method').value,
+                payment_status: document.getElementById('exp-status').value,
+                is_urgent: document.getElementById('exp-urgent').checked,
+                planned_payment_date: document.getElementById('exp-status').value==='pending' ? document.getElementById('exp-plan-date').value : null,
+                paid_by_name: document.getElementById('exp-status').value==='paid'&&document.getElementById('exp-method').value==='cash' ? document.getElementById('exp-paid-by').value : null,
+                comment: document.getElementById('exp-comment').value,
+                expense_number: expNum
+            };
+            
+            // Загрузка файла
+            const fi = document.getElementById('exp-invoice');
+            if (fi?.files[0]) {
+                const fl = fi.files[0];
+                const cn = fl.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                const { data: up, error: ue } = await supabase.storage.from('reports').upload('invoices/'+Date.now()+'_'+cn, fl);
+                if (!ue) { const { data: ud } = supabase.storage.from('reports').getPublicUrl(up.path); data.invoice_url = ud.publicUrl; data.invoice_name = fl.name; }
+            }
+            
+            let result;
+            if (editId) {
+                result = await supabase.from('expenses').update(data).eq('id', editId);
+            } else {
+                result = await supabase.from('expenses').insert({...data, created_by: currentUser?.id});
+                if (!result.error) await supabase.from('document_numbers').upsert({doc_type:'expense', number: parseInt(expNum.replace('№-RAS-',''))}, {onConflict:'doc_type'});
+                
+                if (data.payment_status === 'pending') {
+                    await supabase.from('custom_tasks').insert({
+                        project_id: data.project_id,
+                        title: (data.is_urgent?'🚨 ':'')+'Расход '+expNum+': '+name,
+                        description: `Сумма: ${amount.toLocaleString()} ₸\nПоставщик: ${data.supplier||'—'}\nДата платежа: ${data.planned_payment_date||'—'}`,
+                        status: 'pending', priority: data.is_urgent?'high':'medium', type: 'payment',
+                        created_by: currentUser?.id, created_by_name: currentUser?.full_name
+                    });
+                }
+            }
+            
+            if (result.error) { alert('Ошибка: '+result.error.message); return; }
+            document.getElementById('modal').classList.add('hidden');
+            showMessage(editId?'✅ Расход обновлён':'✅ Расход добавлен','success');
+            loadAllData();
+        });
+    };
+    
+    window.editExpense = function(id) { window.openExpenseFormDDS(id); };
     
     // ===== ВЫПЛАТЫ =====
     function renderPayoutsList() {
-        const all = [
-            ...allWorkOrders.map(o => ({...o, type: 'order', amount: o.total_amount, date: o.payment_date || o.created_at?.split('T')[0], status: o.payment_status === 'paid' ? 'paid' : 'pending'})),
-            ...allAdvances.map(a => ({...a, type: 'advance', amount: a.amount, date: a.payment_date || a.created_at?.split('T')[0], status: a.status === 'paid' ? 'paid' : 'pending'}))
-        ].sort((a,b) => new Date(b.date) - new Date(a.date));
-        
-        let filtered = all;
-        if (payoutsFilter === 'paid') filtered = all.filter(x => x.status === 'paid');
-        if (payoutsFilter === 'pending') filtered = all.filter(x => x.status !== 'paid');
-        
+        const all = [...allWorkOrders.map(o=>({...o,type:'order',amount:o.total_amount,date:o.payment_date||o.created_at?.split('T')[0],status:o.payment_status==='paid'?'paid':'pending'})),...allAdvances.map(a=>({...a,type:'advance',amount:a.amount,date:a.payment_date||a.created_at?.split('T')[0],status:a.status==='paid'?'paid':'pending'}))].sort((a,b)=>new Date(b.date)-new Date(a.date));
         const c = document.getElementById('payouts-list');
-        if (!filtered.length) { c.innerHTML = '<div class="empty-state">Нет выплат</div>'; return; }
-        
-        c.innerHTML = filtered.map(x => `
-            <div class="transaction-item">
-                <div class="transaction-header">
-                    <span class="transaction-title">${x.type==='order' ? '📋 Наряд' : '💳 Аванс'} ${escapeHtml(x.work_type||'')}</span>
-                    <span class="transaction-amount amount-expense">-${formatMoney(x.amount)}</span>
-                </div>
-                <div style="font-size:12px;color:var(--text-secondary);">👷 ${escapeHtml(x.brigades?.name||'—')} | 🏗️ ${escapeHtml(x.projects?.name||'—')}</div>
-                <div class="transaction-meta">
-                    <span>📅 ${formatDate(x.date)}</span>
-                    <span class="tag ${x.status==='paid'?'tag-green':'tag-yellow'}">${x.status==='paid'?'✅ Выплачен':'⏳ План'}</span>
-                </div>
-            </div>
-        `).join('');
+        if (!all.length) { c.innerHTML = '<div class="empty-state">Нет выплат</div>'; return; }
+        c.innerHTML = all.map(x => `<div class="expense-card"><div class="expense-header"><span class="expense-title">${x.type==='order'?'📋 Наряд':'💳 Аванс'} ${escapeHtml(x.work_type||'')}</span><span class="expense-amount" style="color:var(--danger);">-${formatMoney(x.amount)}</span></div><div style="font-size:12px;color:var(--text-secondary);">👷 ${escapeHtml(x.brigades?.name||'—')} | 🏗️ ${escapeHtml(x.projects?.name||'—')}</div><div class="expense-meta"><span>📅 ${formatDate(x.date)}</span><span class="tag ${x.status==='paid'?'tag-green':'tag-yellow'}">${x.status==='paid'?'✅ Выплачен':'⏳ План'}</span></div></div>`).join('');
     }
     
-    // ===== ФОРМЫ =====
-    function setupForms() {
-        // Поступление
-        document.getElementById('show-income-form').addEventListener('click', () => {
-            let opts = allProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-            document.getElementById('modal-title').textContent = '➕ Поступление';
-            document.getElementById('modal-content').innerHTML = `
-                <div class="form-group"><label class="form-label">🏗️ Объект *</label><select id="inc-project" class="form-input" onchange="updateIncomeCustomer()">${opts}</select></div>
-                <div class="form-group"><label class="form-label">🏢 Заказчик</label><input id="inc-customer" class="form-input" disabled></div>
-                <div class="form-group"><label class="form-label">📋 Вид поступления *</label><select id="inc-type" class="form-input"><option>Аванс от заказчика</option><option>Сдача наряда заказчику</option><option>Доплата по договору</option></select></div>
-                <div class="form-group"><label class="form-label">📄 Номер счёта</label><input id="inc-invoice" class="form-input"></div>
-                <div class="grid-2"><div class="form-group"><label class="form-label">💰 Сумма *</label><input type="number" id="inc-amount" class="form-input" step="0.01"></div><div class="form-group"><label class="form-label">📅 Дата *</label><input type="date" id="inc-date" class="form-input" value="${new Date().toISOString().split('T')[0]}"></div></div>
-                <div class="form-group"><label class="form-label">📊 Статус *</label><select id="inc-status" class="form-input"><option value="pending">⏳ Ожидается (план)</option><option value="paid">✅ Оплачен (факт)</option></select></div>
-                <button class="btn btn-primary" id="save-income">💾 Сохранить</button>
-            `;
-            document.getElementById('modal').classList.remove('hidden');
-            document.getElementById('save-income').onclick = async () => {
-                const projectId = document.getElementById('inc-project').value;
-                const type = document.getElementById('inc-type').value;
-                const invoice = document.getElementById('inc-invoice').value;
-                const amount = parseFloat(document.getElementById('inc-amount').value);
-                const date = document.getElementById('inc-date').value;
-                const status = document.getElementById('inc-status').value;
-                if (!amount || !date) { alert('Заполните сумму и дату'); return; }
-                await supabase.from('incomes').insert({project_id: projectId||null, description: type, income_type: type, invoice_number: invoice, amount, date, status, created_by: currentUser?.id});
-                document.getElementById('modal').classList.add('hidden');
-                loadAllData();
-            };
-        });
-        
-        // Расход
-        document.getElementById('show-expense-form').addEventListener('click', async () => {
-            const { data: num } = await supabase.from('document_numbers').select('number').eq('doc_type','expense').order('number',{ascending:false}).limit(1);
-            const next = num?.length ? num[0].number + 1 : 1;
-            const expNum = `№-RAS-${next}`;
-            let opts = allProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-            document.getElementById('modal-title').textContent = '➕ Расход';
-            document.getElementById('modal-content').innerHTML = `
-                <div class="form-group"><label class="form-label">Номер</label><input class="form-input" value="${expNum}" disabled></div>
-                <div class="form-group"><label class="form-label">🏗️ Объект</label><select id="exp-project" class="form-input">${opts}</select></div>
-                <div class="form-group"><label class="form-label">📂 Категория</label><select id="exp-category" class="form-input"><option>Материалы</option><option>Транспорт</option><option>Питание</option><option>Инструменты</option><option>Спецодежда</option><option>Прочее</option></select></div>
-                <div class="form-group"><label class="form-label">📝 Наименование *</label><input id="exp-name" class="form-input"></div>
-                <div class="grid-2"><div class="form-group"><label class="form-label">💰 Сумма *</label><input type="number" id="exp-amount" class="form-input" step="0.01"></div><div class="form-group"><label class="form-label">📅 Дата</label><input type="date" id="exp-date" class="form-input" value="${new Date().toISOString().split('T')[0]}"></div></div>
-                <div class="form-group"><label class="form-label">💳 Метод оплаты</label><select id="exp-method" class="form-input" onchange="togglePayer()"><option value="non_cash">Безнал</option><option value="cash">Наличка</option></select></div>
-                <div class="form-group hidden" id="exp-payer-group"><label class="form-label">👤 Кто оплатил</label><select id="exp-payer" class="form-input"><option>Карта ИТР</option><option>Наличка ИТР</option><option>Маххабат Карта</option><option>Маххабат Наличка</option><option>Володя Карта</option><option>Володя Наличка</option></select></div>
-                <div class="form-group"><label class="form-label">📊 Статус</label><select id="exp-status" class="form-input"><option value="pending">📅 План</option><option value="paid">💳 Оплачен</option></select></div>
-                <button class="btn btn-primary" id="save-expense">💾 Сохранить</button>
-            `;
-            document.getElementById('modal').classList.remove('hidden');
-            document.getElementById('save-expense').onclick = async () => {
-                const name = document.getElementById('exp-name').value.trim();
-                const amount = parseFloat(document.getElementById('exp-amount').value);
-                if (!name || !amount) { alert('Заполните поля'); return; }
-                await supabase.from('expenses').insert({
-                    project_id: document.getElementById('exp-project').value||null,
-                    name, amount, date: document.getElementById('exp-date').value,
-                    category: document.getElementById('exp-category').value,
-                    payment_method: document.getElementById('exp-method').value,
-                    paid_by_name: document.getElementById('exp-method').value==='cash' ? document.getElementById('exp-payer').value : null,
-                    payment_status: document.getElementById('exp-status').value,
-                    expense_number: expNum, created_by: currentUser?.id
-                });
-                await supabase.from('document_numbers').upsert({doc_type:'expense', number: next}, {onConflict: 'doc_type'});
-                document.getElementById('modal').classList.add('hidden');
-                loadAllData();
-            };
-        });
-    }
+    // ===== ФОРМА ПОСТУПЛЕНИЙ =====
+    document.getElementById('show-income-form').addEventListener('click', () => {
+        document.getElementById('modal-title').textContent = '➕ Поступление';
+        document.getElementById('modal-content').innerHTML = `
+            <div class="form-group"><label class="form-label">🏗️ Объект</label><select id="inc-project" class="form-input" onchange="updateIncCustomer()">${allProjects.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">🏢 Заказчик</label><input id="inc-customer" class="form-input" disabled></div>
+            <div class="form-group"><label class="form-label">📋 Вид</label><select id="inc-type" class="form-input"><option>Аванс от заказчика</option><option>Сдача наряда заказчику</option><option>Доплата по договору</option></select></div>
+            <div class="form-group"><label class="form-label">📄 Номер счёта</label><input id="inc-invoice" class="form-input"></div>
+            <div class="grid-2"><div class="form-group"><label class="form-label">💰 Сумма *</label><input type="number" id="inc-amount" class="form-input" step="0.01"></div><div class="form-group"><label class="form-label">📅 Дата</label><input type="date" id="inc-date" class="form-input" value="${new Date().toISOString().split('T')[0]}"></div></div>
+            <div class="form-group"><label class="form-label">📊 Статус</label><select id="inc-status" class="form-input"><option value="pending">⏳ Ожидается</option><option value="paid">✅ Оплачен</option></select></div>
+            <button class="btn btn-primary" id="save-inc">💾 Сохранить</button>`;
+        document.getElementById('modal').classList.remove('hidden');
+        document.getElementById('save-inc').onclick = async () => {
+            const a = parseFloat(document.getElementById('inc-amount').value);
+            if (!a) { alert('Введите сумму'); return; }
+            await supabase.from('incomes').insert({project_id:document.getElementById('inc-project').value||null,description:document.getElementById('inc-type').value,income_type:document.getElementById('inc-type').value,invoice_number:document.getElementById('inc-invoice').value,amount:a,date:document.getElementById('inc-date').value,status:document.getElementById('inc-status').value,created_by:currentUser?.id});
+            document.getElementById('modal').classList.add('hidden'); showMessage('✅ Добавлено','success'); loadAllData();
+        };
+    });
     
-    window.updateIncomeCustomer = function() {
-        const pid = document.getElementById('inc-project')?.value;
-        const project = allProjects.find(p => p.id === pid);
-        const el = document.getElementById('inc-customer');
-        if (el) el.value = project?.customer_company_name || '';
+    window.updateIncCustomer = function() {
+        const p = allProjects.find(x => x.id === document.getElementById('inc-project')?.value);
+        const el = document.getElementById('inc-customer'); if (el) el.value = p?.customer_company_name || '';
     };
     
-    window.togglePayer = function() {
-        const method = document.getElementById('exp-method')?.value;
-        const group = document.getElementById('exp-payer-group');
-        if (group) group.classList.toggle('hidden', method !== 'cash');
+    window.editIncome = function(id) {
+        const i = allIncome.find(x => x.id === id); if (!i) return;
+        document.getElementById('modal-title').textContent = '✏️ Поступление';
+        document.getElementById('modal-content').innerHTML = `
+            <div class="form-group"><label class="form-label">📋 Вид</label><input id="einc-type" class="form-input" value="${escapeHtml(i.income_type||'')}"></div>
+            <div class="form-group"><label class="form-label">📄 Счёт</label><input id="einc-invoice" class="form-input" value="${escapeHtml(i.invoice_number||'')}"></div>
+            <div class="grid-2"><div class="form-group"><label class="form-label">💰 Сумма</label><input type="number" id="einc-amount" class="form-input" step="0.01" value="${i.amount||''}"></div><div class="form-group"><label class="form-label">📅 Дата</label><input type="date" id="einc-date" class="form-input" value="${i.date||''}"></div></div>
+            <div class="form-group"><label class="form-label">📊 Статус</label><select id="einc-status" class="form-input"><option value="pending" ${i.status==='pending'?'selected':''}>⏳ Ожидается</option><option value="paid" ${i.status==='paid'?'selected':''}>✅ Оплачен</option></select></div>
+            <button class="btn btn-primary" id="save-einc">💾 Сохранить</button>`;
+        document.getElementById('modal').classList.remove('hidden');
+        document.getElementById('save-einc').onclick = async () => {
+            await supabase.from('incomes').update({income_type:document.getElementById('einc-type').value,invoice_number:document.getElementById('einc-invoice').value,amount:parseFloat(document.getElementById('einc-amount').value),date:document.getElementById('einc-date').value,status:document.getElementById('einc-status').value}).eq('id',id);
+            document.getElementById('modal').classList.add('hidden'); showMessage('✅ Обновлено','success'); loadAllData();
+        };
     };
     
+    document.getElementById('show-expense-form').addEventListener('click', () => window.openExpenseFormDDS());
+    
+    // ===== НАСТРОЙКИ =====
     function setupTabs() {
-        document.querySelectorAll('.tab').forEach(t => {
-            t.addEventListener('click', function() {
-                document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
-                this.classList.add('active');
-                document.getElementById('tab-'+this.dataset.tab).classList.add('active');
-            });
-        });
+        document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', function() {
+            document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+            this.classList.add('active'); document.getElementById('tab-'+this.dataset.tab).classList.add('active');
+        }));
     }
     
     function setupFilters() {
         document.getElementById('filter-project').addEventListener('change', e => { selectedProjectId = e.target.value; loadAllData(); });
+        document.getElementById('filter-period').addEventListener('change', () => loadAllData());
         document.getElementById('prev-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()-1); loadAllData(); });
         document.getElementById('next-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()+1); loadAllData(); });
         document.getElementById('today-month').addEventListener('click', () => { currentDisplayDate = new Date(); loadAllData(); });
@@ -587,17 +569,13 @@
         document.getElementById('day-modal-close').addEventListener('click', () => document.getElementById('day-modal').classList.add('hidden'));
         document.getElementById('day-modal').addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
         
-        document.querySelectorAll('.income-filter-btn').forEach(b => b.addEventListener('click', function() {
-            document.querySelectorAll('.income-filter-btn').forEach(x => x.classList.remove('active'));
-            this.classList.add('active'); incomeFilter = this.dataset.filter; renderIncomeList();
+        document.querySelectorAll('.income-fb').forEach(b => b.addEventListener('click', function() {
+            document.querySelectorAll('.income-fb').forEach(x => x.classList.remove('active'));
+            this.classList.add('active'); incomeFilter = this.dataset.f; renderIncomeList();
         }));
-        document.querySelectorAll('.expense-filter-btn').forEach(b => b.addEventListener('click', function() {
-            document.querySelectorAll('.expense-filter-btn').forEach(x => x.classList.remove('active'));
-            this.classList.add('active'); expenseFilter = this.dataset.filter; renderExpenseList();
-        }));
-        document.querySelectorAll('.payouts-filter-btn').forEach(b => b.addEventListener('click', function() {
-            document.querySelectorAll('.payouts-filter-btn').forEach(x => x.classList.remove('active'));
-            this.classList.add('active'); payoutsFilter = this.dataset.filter; renderPayoutsList();
+        document.querySelectorAll('.expense-fb').forEach(b => b.addEventListener('click', function() {
+            document.querySelectorAll('.expense-fb').forEach(x => x.classList.remove('active'));
+            this.classList.add('active'); expenseFilter = this.dataset.f; renderExpenseList();
         }));
     }
     
