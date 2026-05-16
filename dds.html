@@ -768,7 +768,9 @@ setTimeout(function() {
 }, 2000);
 };
 // ========== ЭКСПОРТ В PDF (печать) ==========
-window.exportToPDF = function() {
+window.exportToPDF = async function() {
+    showMessage('⏳ Формирую PDF...', 'success');
+    
     const periodType = document.getElementById('filter-period-type')?.value || 'month';
     let periodLabel = '';
     const now = new Date();
@@ -799,7 +801,7 @@ window.exportToPDF = function() {
         const pln = allIncome.filter(i => i.project_id === p.id && i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
         const exp = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
         const pay = [...allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...allAdvances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
-        objRows += `<tr><td>${p.name}</td><td>${(inc/1000).toFixed(0)}k</td><td>${(pln/1000).toFixed(0)}k</td><td>${(exp/1000).toFixed(0)}k</td><td>${(pay/1000).toFixed(0)}k</td><td style="color:${inc-exp-pay>=0?'#065F46':'#991B1B'}">${((inc-exp-pay)/1000).toFixed(0)}k</td></tr>`;
+        objRows += `<tr><td>${escapeHtml(p.name)}</td><td>${(inc/1000).toFixed(0)}k</td><td>${(pln/1000).toFixed(0)}k</td><td>${(exp/1000).toFixed(0)}k</td><td>${(pay/1000).toFixed(0)}k</td><td style="color:${inc-exp-pay>=0?'#065F46':'#991B1B'}">${((inc-exp-pay)/1000).toFixed(0)}k</td></tr>`;
     });
     
     let catRows = '';
@@ -810,8 +812,7 @@ window.exportToPDF = function() {
         catRows += `<tr><td>${expenseCategories[k]||k}</td><td>${v.toLocaleString()} ₸</td><td>${catSum>0?Math.round(v/catSum*100):0}%</td></tr>`;
     });
     
-    const html = `
-    <!DOCTYPE html><html><head><meta charset="UTF-8"><title>Отчёт ДДС</title>
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Отчёт ДДС</title>
     <style>
         @media print { body { margin: 0; padding: 15mm; } @page { size: A4 landscape; margin: 10mm; } .no-print { display: none !important; } }
         body { font-family: 'Inter', sans-serif; color: #0F172A; line-height: 1.4; max-width: 280mm; margin: 0 auto; padding: 10mm; font-size: 10pt; }
@@ -827,37 +828,45 @@ window.exportToPDF = function() {
         .kpi-label { font-size: 8pt; color: #64748B; text-transform: uppercase; }
         .footer { text-align: center; font-size: 8pt; color: #94A3B8; margin-top: 20px; border-top: 1px solid #E2E8F0; padding-top: 10px; }
     </style></head><body>
-    <div class="no-print" style="text-align:center;margin-bottom:16px;">
-        <button onclick="window.print()" style="padding:12px 24px;background:#0F172A;color:white;border:none;border-radius:10px;font-size:14px;cursor:pointer;">🖨️ Печать / Сохранить как PDF</button>
-    </div>
-    
     <h1>ТОО "LamGroup Construction"</h1>
     <h2>ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ<br>за период: ${periodLabel}</h2>
-    
     <div class="kpi-grid">
         <div class="kpi-card"><div class="kpi-value" style="color:#10B981;">${(totalIncome/1000).toFixed(0)}k</div><div class="kpi-label">💰 Поступления</div></div>
         <div class="kpi-card"><div class="kpi-value" style="color:#3B82F6;">${(totalPlan/1000).toFixed(0)}k</div><div class="kpi-label">📥 План поступлений</div></div>
         <div class="kpi-card"><div class="kpi-value" style="color:#EF4444;">${(totalExp/1000).toFixed(0)}k</div><div class="kpi-label">📤 Расходы</div></div>
         <div class="kpi-card"><div class="kpi-value" style="color:#F59E0B;">${(totalPay/1000).toFixed(0)}k</div><div class="kpi-label">👷 Выплаты</div></div>
     </div>
-    
     <h3>📊 Сводка по объектам</h3>
     <table><thead><tr><th>Объект</th><th>💰 Поступления</th><th>📥 План</th><th>📤 Расходы</th><th>👷 Выплаты</th><th>Сальдо</th></tr></thead><tbody>${objRows}</tbody></table>
-    
     <h3>📂 Расходы по статьям</h3>
     <table><thead><tr><th>Статья</th><th>Сумма</th><th>Доля</th></tr></thead><tbody>${catRows}</tbody></table>
-    
     <div class="footer">
         <p>Дата формирования: ${new Date().toLocaleDateString('ru-RU')} | Ответственный: ${currentUser?.full_name || '—'}</p>
         <p>ТОО "LamGroup Construction" | г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215</p>
     </div>
-    
-    <script>setTimeout(function(){window.print();},500);<\\/script>
     </body></html>`;
     
-    const w = window.open('', '_blank', 'width=1000,height=700');
-    w.document.write(html);
-    w.document.close();
+    // Загружаем HTML в Supabase
+    const blob = new Blob([html], { type: 'text/html' });
+    const file = new File([blob], `ДДС_${periodLabel.replace(/\s/g,'_')}.html`);
+    const fileName = 'reports/' + Date.now() + '_dds_report.html';
+    const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: true });
+    
+    if (uploadError) {
+        console.error('Ошибка загрузки:', uploadError);
+        showMessage('❌ Ошибка', 'error');
+        return;
+    }
+    
+    const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+    
+    try { tg.openLink(urlData.publicUrl); } catch(e) {}
+    
+    setTimeout(function() {
+        showDownloadLink(urlData.publicUrl, 'PDF (откройте и нажмите Ctrl+P)');
+    }, 2000);
+    
+    showMessage('✅ Отчёт готов', 'success');
 };
   function setupFilters() {
     document.getElementById('filter-project').addEventListener('change', e => { selectedProjectId = e.target.value; loadAllData(); });
