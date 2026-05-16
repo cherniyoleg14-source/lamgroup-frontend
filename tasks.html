@@ -313,11 +313,10 @@
             
             <!-- Форма комментария -->
             <div style="border-top:1px solid var(--border);padding-top:10px;">
-                <textarea id="new-comment-text" class="form-input" rows="2" placeholder="Написать комментарий..." style="font-size:13px;margin-bottom:8px;"></textarea>
-                <div style="display:flex;gap:8px;align-items:center;">
-                    <input type="file" id="new-comment-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;flex:1;">
-                    <button class="btn btn-primary btn-sm" onclick="addComment('${t.id}')" style="white-space:nowrap;">📤 Отправить</button>
-                </div>
+    <textarea id="new-comment-text" class="form-input" rows="2" placeholder="Написать комментарий..." style="font-size:13px;margin-bottom:8px;"></textarea>
+    <input type="file" id="new-comment-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;margin-bottom:8px;">
+    <button class="btn btn-primary" onclick="addComment('${t.id}')" style="width:100%;">📤 Отправить</button>
+</div>
             </div>
         </div>
         
