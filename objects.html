@@ -429,47 +429,41 @@ window.openLetterFormAction = function() {
     alert('✉️ Для создания письма используйте:\n\n1. Нажмите "⏰ Сдвиг ГПР"\n2. Включите галочку "Сформировать письмо"\n3. Заполните данные и сохраните');
 };
 window.openShiftGPRForm = async function(axId, brId) {
-    // Загружаем этапы
     var { data: stages } = await supabase.from('axis_work_stages')
         .select('*, brigades(name)')
         .eq('axis_id', axId)
         .eq('brigade_id', brId);
     
-    if (!stages || !stages.length) { 
-        alert('Нет этапов для сдвига'); 
-        return; 
-    }
+    if (!stages || !stages.length) { alert('Нет этапов для сдвига'); return; }
     
     var br = stages[0]?.brigades?.name || 'Бригада';
     var ce = stages.reduce(function(max, s) { 
         return s.plan_end && (!max || s.plan_end > max) ? s.plan_end : max; 
     }, null);
     
-    // Загружаем ось и проект
     var { data: axis } = await supabase.from('axes')
         .select('*, blocks(project_id)')
-        .eq('id', axId)
-        .single();
+        .eq('id', axId).single();
     
     var projectId = axis?.blocks?.project_id || currentProjectId;
     
     var { data: project } = await supabase.from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single();
+        .select('*').eq('id', projectId).single();
     
-    // ИТР (ответственный за объект)
     var { data: itr } = await supabase.from('users')
         .select('full_name, phone')
-        .eq('id', project?.responsible_worker_id)
-        .single();
+        .eq('id', project?.responsible_worker_id).single();
     
     var itrName = itr?.full_name || currentUser?.full_name || '—';
     var itrPhone = itr?.phone || currentUser?.phone || '+7 (___) ___-__-__';
     
     var todayStr = new Date().toISOString().split('T')[0];
     
-    // Форма
+    // Данные заказчика
+    var customerCompany = project?.customer_company_name || 'Не указан';
+    var customerDirector = project?.customer_director_name || '';
+    var customerFull = customerDirector ? 'Директору ' + customerDirector : customerCompany;
+    
     var h = `
         <div class="form-group">
             <label class="form-label">👷 Бригада</label>
@@ -478,7 +472,7 @@ window.openShiftGPRForm = async function(axId, brId) {
         
         <div class="grid-2">
             <div class="form-group">
-                <label class="form-label">📅 Текущая дата</label>
+                <label class="form-label">📅 Текущая дата окончания</label>
                 <input class="form-input" value="${window.formatDate(ce)}" disabled>
             </div>
             <div class="form-group">
@@ -527,8 +521,13 @@ window.openShiftGPRForm = async function(axId, brId) {
                 </div>
                 <div class="form-group">
                     <label class="form-label">👤 Заказчик</label>
-                    <input class="form-input" value="${project?.customer_company || 'Не указан'}" disabled>
+                    <input class="form-input" value="${customerCompany}" disabled>
                 </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">👤 Кому (ФИО, должность)</label>
+                <input type="text" id="customer-full" class="form-input" value="${customerFull}" placeholder="Директору Иванову И.И.">
             </div>
             
             <div class="grid-2">
@@ -546,10 +545,6 @@ window.openShiftGPRForm = async function(axId, brId) {
                 <label class="form-label">👷 ИТР</label>
                 <input class="form-input" value="${itrName} | ${itrPhone}" disabled>
             </div>
-            
-            <button type="button" class="btn btn-outline" id="preview-letter-btn" style="width:100%;margin-bottom:16px;">
-                👁️ Предпросмотр письма
-            </button>
         </div>
     `;
     
@@ -565,9 +560,7 @@ window.openShiftGPRForm = async function(axId, brId) {
     function updateShiftDays() {
         var nd = newDateInput.value;
         if (nd && ce) {
-            var oldDate = new Date(ce);
-            var newDate = new Date(nd);
-            var diff = Math.ceil((newDate - oldDate) / (1000 * 60 * 60 * 24));
+            var diff = Math.ceil((new Date(nd) - new Date(ce)) / (1000 * 60 * 60 * 24));
             daysInfo.style.display = 'block';
             if (diff > 0) {
                 daysCount.textContent = '+ ' + diff + ' ' + getDaysWord(diff);
@@ -591,70 +584,10 @@ window.openShiftGPRForm = async function(axId, brId) {
         document.getElementById('letter-fields').style.display = this.checked ? 'block' : 'none';
     });
     
-        // Предпросмотр
-    document.getElementById('preview-letter-btn').addEventListener('click', function() {
-        var nd = document.getElementById('shift-new-date').value;
-        var ds = document.getElementById('shift-desc').value;
-        
-        if (!nd || !ds) { alert('Заполните дату и описание'); return; }
-        
-        var ld = document.getElementById('letter-date').value;
-        var cn = document.getElementById('contract-number').value;
-        var cd = document.getElementById('contract-date').value;
-        var diffDays = Math.ceil((new Date(nd) - new Date(ce)) / (1000 * 60 * 60 * 24));
-        console.log('DEBUG ds:', ds);
-
-        var letterData = {
-            letterNumber: '?',
-            letterDate: window.formatDate(ld),
-            customerCompany: project?.customer_company || 'Не указан',
-            customerName: project?.customer_name || '',
-            customerShortName: (project?.customer_name || 'Заказчик').split(' ').slice(-1)[0] || 'Заказчик',
-            objectName: project?.name || '',
-            objectAddress: project?.address || '',
-            contractInfo: cn ? '№ ' + cn + (cd ? ' от ' + window.formatDate(cd) : '') : '—',
-            delayReason: ds,
-            delayDays: diffDays,
-            oldEndDate: window.formatDate(ce),
-            newEndDate: window.formatDate(nd),
-            responsibleName: itrName,
-            responsiblePhone: itrPhone
-        };
-        console.log('letterData:', JSON.stringify(letterData));
-var letterHTML = generateLetterHTML(letterData);
-        var letterHTML = generateLetterHTML(letterData);
-        var previewHTML = `
-            <div style="background:white;padding:20px;border:1px solid #ccc;font-family:'Times New Roman',serif;font-size:12pt;line-height:1.5;color:#000;max-height:55vh;overflow-y:auto;">
-                ${letterHTML}
-            </div>
-            <div style="display:flex;gap:10px;margin-top:16px;">
-                <button class="btn btn-outline" id="preview-print-btn" style="flex:1;">📥 Печать</button>
-                <button class="btn btn-primary" onclick="document.getElementById('modal').classList.add('hidden')" style="flex:1;">✓ Закрыть</button>
-            </div>
-        `;
-        
-        // ← ВОТ ЭТУ СТРОКУ ДОБАВЬ:
-        document.getElementById('form-modal').classList.add('hidden');
-        
-        window.openModal('👁️ Предпросмотр письма', previewHTML);
-
-        setTimeout(function() {
-            var printBtn = document.getElementById('preview-print-btn');
-            if (printBtn) {
-                printBtn.addEventListener('click', function() {
-                    printLetterToNewWindow(letterData);
-                });
-            }
-        }, 100);
-    });
-    
-    // Кнопка сохранить
-    var sb = document.createElement('button');
-    
     // Кнопка сохранить
     var sb = document.createElement('button');
     sb.className = 'btn-primary';
-    sb.textContent = '💾 Сохранить сдвиг';
+    sb.textContent = '💾 Сохранить сдвиг и создать письмо';
     sb.style.marginTop = '16px';
     
     sb.addEventListener('click', async function() {
@@ -671,15 +604,10 @@ var letterHTML = generateLetterHTML(letterData);
         sb.disabled = true;
         
         try {
-            // Обновляем этапы
             for (var i = 0; i < stages.length; i++) {
                 await supabase.from('axis_work_stages').update({ plan_end: nd }).eq('id', stages[i].id);
             }
-            
-            // Обновляем ось
             await supabase.from('axes').update({ plan_end: nd }).eq('id', axId);
-            
-            // История
             await supabase.from('change_history').insert({
                 project_id: projectId,
                 entity_type: 'axis',
@@ -690,16 +618,15 @@ var letterHTML = generateLetterHTML(letterData);
                 changed_by_name: currentUser?.full_name
             });
             
-            // Письмо если галочка включена
             if (document.getElementById('create-letter-checkbox').checked) {
                 var ld = document.getElementById('letter-date').value;
                 var cn = document.getElementById('contract-number').value;
                 var cd = document.getElementById('contract-date').value;
+                var customerFullName = document.getElementById('customer-full').value;
                 
                 var nextNum = await getNextLetterNumber();
                 var fullNumber = formatLetterNumber(nextNum, ld);
                 
-                // Сохраняем договор если изменился
                 if (cn !== (project?.contract_number_customer || '') || cd !== (project?.contract_date_customer || '')) {
                     await supabase.from('projects').update({
                         contract_number_customer: cn,
@@ -707,111 +634,87 @@ var letterHTML = generateLetterHTML(letterData);
                     }).eq('id', projectId);
                 }
                 
-               // Создаём письмо (под твою таблицу)
-var { data: letterResult, error: letterError } = await supabase.from('letters').insert({
-    project_id: projectId,
-    letter_number: nextNum,
-    letter_date: ld,
-    customer_name: project?.customer_name || '',
-    customer_company: project?.customer_company || '',
-    contract_number_customer: cn || null,
-    contract_date_customer: cd || null,
-    object_name: project?.name || '',
-    object_address: project?.address || '',
-    delay_reason: rs,           // тип причины (customer/lamgroup/contractor)
-delay_description: ds,      // полное описание
-    delay_days: diffDays,
-    old_end_date: ce,
-    new_end_date: nd,
-    responsible_name: itrName,
-    responsible_phone: itrPhone,
-    created_by: currentUser?.id || null,
-    created_by_name: currentUser?.full_name || '',
-    created_at: new Date().toISOString(),
-    status: 'draft',
-    sent_to_office: false,
-    sent_to_customer: false,
-    letter_number_full: fullNumber
-}).select();
-
-if (letterError) {
-    console.error('Ошибка письма:', letterError);
-    alert('❌ Ошибка создания письма: ' + (letterError.message || 'Неизвестная ошибка'));
-    sb.textContent = '💾 Сохранить сдвиг';
-    sb.disabled = false;
-    return;
-}
-
-console.log('✅ Письмо создано:', letterResult);
-
-// Показываем успех с информацией о письме
-document.getElementById('form-modal').classList.add('hidden');
-
-var successMsg = `
-    <div style="text-align:center;">
-        <div style="font-size:48px;margin-bottom:16px;">✅</div>
-        <h3>Сдвиг ГПР сохранён!</h3>
-        <p>📅 ${window.formatDate(nd)} (+${diffDays} дн.)</p>
-        <div style="background:#F0F9FF;padding:16px;border-radius:12px;margin:16px 0;">
-            <b>✉️ Письмо создано</b><br>
-            ${fullNumber}<br>
-            <span style="font-size:12px;color:#64748B;">Статус: ⏳ Черновик</span>
-        </div>
-        <button class="btn btn-outline" id="success-print" style="width:100%;margin-bottom:8px;">📥 Распечатать</button>
-        <button class="btn btn-primary" id="success-close" style="width:100%;">✓ Закрыть</button>
-    </div>
-`;
-
-window.openModal('✅ Успешно', successMsg);
-
-setTimeout(function() {
-    var printBtn = document.getElementById('success-print');
-    var closeBtn = document.getElementById('success-close');
-    
-    if (printBtn) {
-        printBtn.onclick = function() {
-            console.log('DEBUG ds:', ds);
-            var letterPrintData = {
-                letterNumber: nextNum,
-                letterDate: window.formatDate(ld),
-                customerCompany: project?.customer_company || '',
-                customerName: project?.customer_name || '',
-                customerShortName: (project?.customer_name || '').split(' ').slice(-1)[0] || '',
-                objectName: project?.name || '',
-                objectAddress: project?.address || '',
-                contractInfo: cn ? '№ ' + cn + (cd ? ' от ' + window.formatDate(cd) : '') : '—',
-                delayReason: ds,
-                delayDays: diffDays,
-                oldEndDate: window.formatDate(ce),
-                newEndDate: window.formatDate(nd),
-                responsibleName: itrName,
-                responsiblePhone: itrPhone
-            };
-            printLetterToNewWindow(letterPrintData);
-        };
-    }
-    
-    if (closeBtn) {
-        closeBtn.onclick = function() {
-            document.getElementById('modal').classList.add('hidden');
-        };
-    }
-}, 200);
+                await supabase.from('letters').insert({
+                    project_id: projectId,
+                    letter_number: nextNum,
+                    letter_date: ld,
+                    customer_name: customerFullName,
+                    customer_company: customerCompany,
+                    contract_number_customer: cn || null,
+                    contract_date_customer: cd || null,
+                    object_name: project?.name || '',
+                    object_address: project?.address || '',
+                    delay_reason: rs,
+                    delay_description: ds,
+                    delay_days: diffDays,
+                    old_end_date: ce,
+                    new_end_date: nd,
+                    responsible_name: itrName,
+                    responsible_phone: itrPhone,
+                    created_by: currentUser?.id || null,
+                    created_by_name: currentUser?.full_name || '',
+                    created_at: new Date().toISOString(),
+                    status: 'draft',
+                    sent_to_office: false,
+                    sent_to_customer: false,
+                    letter_number_full: fullNumber
+                });
                 
+                document.getElementById('form-modal').classList.add('hidden');
                 
+                var letterPrintData = {
+                    letterNumber: nextNum,
+                    letterDate: window.formatDate(ld),
+                    customerCompany: customerCompany,
+                    customerName: customerFullName,
+                    customerShortName: customerFullName.split(' ').slice(-1)[0] || 'Заказчик',
+                    objectName: project?.name || '',
+                    objectAddress: project?.address || '',
+                    contractInfo: cn ? '№ ' + cn + (cd ? ' от ' + window.formatDate(cd) : '') : '—',
+                    delayReason: ds,
+                    delayDays: diffDays,
+                    oldEndDate: window.formatDate(ce),
+                    newEndDate: window.formatDate(nd),
+                    responsibleName: itrName,
+                    responsiblePhone: itrPhone
+                };
+                
+                var successMsg = `
+                    <div style="text-align:center;">
+                        <div style="font-size:48px;margin-bottom:16px;">✅</div>
+                        <h3>Сдвиг ГПР сохранён!</h3>
+                        <p>📅 ${window.formatDate(nd)} (+${diffDays} дн.)</p>
+                        <div style="background:#F0F9FF;padding:16px;border-radius:12px;margin:16px 0;">
+                            <b>✉️ Письмо создано</b><br>
+                            ${fullNumber}<br>
+                            <span style="font-size:12px;color:#64748B;">Статус: ⏳ Черновик</span>
+                        </div>
+                        <button class="btn btn-outline" id="success-print" style="width:100%;margin-bottom:8px;">📥 Распечатать</button>
+                        <button class="btn btn-primary" id="success-close" style="width:100%;">✓ Закрыть</button>
+                    </div>
+                `;
+                
+                document.getElementById('modal-title').textContent = '✅ Успешно';
+                document.getElementById('modal-content').innerHTML = successMsg;
+                document.getElementById('modal').classList.remove('hidden');
+                
+                setTimeout(function() {
+                    var printBtn = document.getElementById('success-print');
+                    var closeBtn = document.getElementById('success-close');
+                    if (printBtn) printBtn.onclick = function() { printLetterToNewWindow(letterPrintData); };
+                    if (closeBtn) closeBtn.onclick = function() { document.getElementById('modal').classList.add('hidden'); };
+                }, 200);
             } else {
                 document.getElementById('form-modal').classList.add('hidden');
                 alert('✅ Срок изменён. Сдвиг: +' + diffDays + ' дн.');
             }
             
-            // Обновляем страницу
             if (typeof window.openAxisDetailPage === 'function') {
                 window.openAxisDetailPage(axId);
             }
-            
         } catch (err) {
             alert('❌ Ошибка: ' + (err.message || 'Неизвестная ошибка'));
-            sb.textContent = '💾 Сохранить сдвиг';
+            sb.textContent = '💾 Сохранить сдвиг и создать письмо';
             sb.disabled = false;
         }
     });
