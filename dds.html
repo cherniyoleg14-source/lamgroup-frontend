@@ -647,6 +647,19 @@ window.openExpenseFormDDS = async function(editId) {
             this.classList.add('active'); document.getElementById('tab-'+this.dataset.tab).classList.add('active');
         }));
     }
+    function showDownloadLink(url, type) {
+    const modal = document.getElementById('modal');
+    document.getElementById('modal-title').textContent = '📥 Скачать ' + type;
+    document.getElementById('modal-content').innerHTML = `
+        <div style="text-align:center;padding:20px;">
+            <p style="margin-bottom:16px;">Нажмите на ссылку или скопируйте её в браузер:</p>
+            <div style="background:#F8FAFC;padding:12px;border-radius:10px;word-break:break-all;font-size:12px;margin-bottom:16px;text-align:left;">${url}</div>
+            <button class="btn btn-primary" onclick="navigator.clipboard.writeText('${url}');alert('✅ Ссылка скопирована!')">📋 Скопировать ссылку</button>
+            <button class="btn btn-outline" onclick="window.open('${url}','_blank')" style="margin-top:8px;">🔗 Открыть в браузере</button>
+        </div>
+    `;
+    modal.classList.remove('hidden');
+}
    window.exportToExcel = async function() {
     showMessage('⏳ Формирую отчёт...', 'success');
     
@@ -739,8 +752,20 @@ window.openExpenseFormDDS = async function(editId) {
     const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
     
     // Открываем в браузере
+  // Пробуем открыть через Telegram
+try {
     tg.openLink(urlData.publicUrl);
-    showMessage('✅ Отчёт открыт', 'success');
+} catch(e) {
+    // Если не работает — показываем ссылку
+    showDownloadLink(urlData.publicUrl, 'Excel');
+}
+showMessage('✅ Отчёт готов', 'success');
+
+// Если через 2 секунды не открылось — показываем ссылку
+setTimeout(function() {
+    const linkShown = document.getElementById('download-link-modal');
+    if (!linkShown) showDownloadLink(urlData.publicUrl, 'Excel');
+}, 2000);
 };
 // ========== ЭКСПОРТ В PDF (печать) ==========
 window.exportToPDF = function() {
