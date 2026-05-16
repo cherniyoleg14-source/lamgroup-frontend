@@ -418,14 +418,14 @@
         h += `<div id="exp-paid-group" class="form-group">
     <label class="form-label">👤 Кто оплатил *</label>
     <select id="exp-paid-by" class="form-input">
-        <option value="">Выберите...</option>
-        <option value="Карта ИТР">💳 Карта ИТР</option>
-        <option value="Наличка ИТР">💵 Наличка ИТР</option>
-        <option value="Маххабат Карта">💳 Маххабат Карта</option>
-        <option value="Маххабат Наличка">💵 Маххабат Наличка</option>
-        <option value="Володя Карта">💳 Володя Карта</option>
-        <option value="Володя Наличка">💵 Володя Наличка</option>
-    </select>
+    <option value="">Выберите...</option>
+    <option value="Маххабат Наличка">💵 Маххабат Наличка</option>
+    <option value="Маххабат Карта">💳 Маххабат Карта</option>
+    <option value="Володя Наличка">💵 Володя Наличка</option>
+    <option value="Володя Карта">💳 Володя Карта</option>
+    <option value="ИТР Наличка">💵 ИТР Наличка</option>
+    <option value="ИТР Карта">💳 ИТР Карта</option>
+</select>
 </div>`;
         h += `<div id="exp-plan-date-group" class="form-group"><label class="form-label">📅 Дата платежа</label><input type="date" id="exp-plan-date" class="form-input" value="${editData?.planned_payment_date||today}"></div>`;
         h += `<div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="exp-comment" class="form-input" rows="2">${escapeHtml(editData?.comment||'')}</textarea></div>`;
@@ -435,12 +435,19 @@
         document.getElementById('modal-content').innerHTML = h;
         document.getElementById('modal').classList.remove('hidden');
         
-        supabase.from('users').select('id, full_name').in('role',['manager','worker']).order('full_name').then(ur => {
-            const sel = document.getElementById('exp-paid-by');
-            if (sel && ur.data) {
-                sel.innerHTML = ur.data.map(u => `<option value="${u.full_name}" ${editData?.paid_by_name===u.full_name?'selected':''}>${u.full_name}</option>`).join('');
-            }
-        });
+        const payerOptions = [
+    { value: 'Маххабат Наличка', label: '💵 Маххабат Наличка' },
+    { value: 'Маххабат Карта', label: '💳 Маххабат Карта' },
+    { value: 'Володя Наличка', label: '💵 Володя Наличка' },
+    { value: 'Володя Карта', label: '💳 Володя Карта' },
+    { value: 'ИТР Наличка', label: '💵 ИТР Наличка' },
+    { value: 'ИТР Карта', label: '💳 ИТР Карта' }
+];
+const sel = document.getElementById('exp-paid-by');
+if (sel) {
+    sel.innerHTML = '<option value="">Выберите...</option>' + 
+        payerOptions.map(o => `<option value="${o.value}" ${editData?.paid_by_name===o.value?'selected':''}>${o.label}</option>`).join('');
+}
         
         window.toggleExpFieldsDDS = function() {
     const mt = document.getElementById('exp-method')?.value;
