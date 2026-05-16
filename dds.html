@@ -617,29 +617,36 @@ if (sel) {
         }));
     }
     
-    function setupFilters() {
-        document.getElementById('filter-project').addEventListener('change', e => { selectedProjectId = e.target.value; loadAllData(); });
-       document.getElementById('filter-period-month').addEventListener('change', () => loadAllData());
-document.getElementById('filter-date-from').addEventListener('change', () => loadAllData());
-document.getElementById('filter-date-to').addEventListener('change', () => loadAllData());
-document.getElementById('filter-period-type').addEventListener('change', () => { changePeriodType(); loadAllData(); });
-        document.getElementById('prev-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()-1); loadAllData(); });
-        document.getElementById('next-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()+1); loadAllData(); });
-        document.getElementById('today-month').addEventListener('click', () => { currentDisplayDate = new Date(); loadAllData(); });
-        document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal').classList.add('hidden'));
-        document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
-        document.getElementById('day-modal-close').addEventListener('click', () => document.getElementById('day-modal').classList.add('hidden'));
-        document.getElementById('day-modal').addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
-        
-        document.querySelectorAll('.income-fb').forEach(b => b.addEventListener('click', function() {
-            document.querySelectorAll('.income-fb').forEach(x => x.classList.remove('active'));
-            this.classList.add('active'); incomeFilter = this.dataset.f; renderIncomeList();
-        }));
-        document.querySelectorAll('.expense-fb').forEach(b => b.addEventListener('click', function() {
-            document.querySelectorAll('.expense-fb').forEach(x => x.classList.remove('active'));
-            this.classList.add('active'); expenseFilter = this.dataset.f; renderExpenseList();
-        }));
-    }
+  function setupFilters() {
+    document.getElementById('filter-project').addEventListener('change', e => { selectedProjectId = e.target.value; loadAllData(); });
+    
+    const periodMonth = document.getElementById('filter-period-month');
+    const dateFrom = document.getElementById('filter-date-from');
+    const dateTo = document.getElementById('filter-date-to');
+    const periodType = document.getElementById('filter-period-type');
+
+    if (periodMonth) periodMonth.addEventListener('change', () => loadAllData());
+    if (dateFrom) dateFrom.addEventListener('change', () => loadAllData());
+    if (dateTo) dateTo.addEventListener('change', () => loadAllData());
+    if (periodType) periodType.addEventListener('change', () => { changePeriodType(); loadAllData(); });
+    
+    document.getElementById('prev-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()-1); loadAllData(); });
+    document.getElementById('next-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()+1); loadAllData(); });
+    document.getElementById('today-month').addEventListener('click', () => { currentDisplayDate = new Date(); loadAllData(); });
+    document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal').classList.add('hidden'));
+    document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
+    document.getElementById('day-modal-close').addEventListener('click', () => document.getElementById('day-modal').classList.add('hidden'));
+    document.getElementById('day-modal').addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
+    
+    document.querySelectorAll('.income-fb').forEach(b => b.addEventListener('click', function() {
+        document.querySelectorAll('.income-fb').forEach(x => x.classList.remove('active'));
+        this.classList.add('active'); incomeFilter = this.dataset.f; renderIncomeList();
+    }));
+    document.querySelectorAll('.expense-fb').forEach(b => b.addEventListener('click', function() {
+        document.querySelectorAll('.expense-fb').forEach(x => x.classList.remove('active'));
+        this.classList.add('active'); expenseFilter = this.dataset.f; renderExpenseList();
+    }));
+}
     
     init();
 })();
