@@ -491,8 +491,14 @@ if (sel) {
             }
             
             let result;
+            console.log('Данные для сохранения:', JSON.stringify(data, null, 2));
             if (editId) {
                 result = await supabase.from('expenses').update(data).eq('id', editId);
+                if (result.error) { 
+    console.error('Ошибка сохранения:', result.error);
+    alert('Ошибка: ' + JSON.stringify(result.error)); 
+    return; 
+}
             } else {
                 result = await supabase.from('expenses').insert({...data, created_by: currentUser?.id});
                 if (!result.error) await supabase.from('document_numbers').upsert({doc_type:'expense', number: parseInt(expNum.replace('№-RAS-',''))}, {onConflict:'doc_type'});
