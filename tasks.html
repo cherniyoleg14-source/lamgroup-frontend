@@ -201,109 +201,262 @@
     }
     
     // ========== ВСЕ ЗАДАЧИ ==========
-    async function loadAllTasks() {
-        const c = document.getElementById('all-tasks-list'); 
-        if (!c) return;
-        c.innerHTML = '<div class="loading">Загрузка...</div>';
-        let query = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false });
-        query = query.or('type.is.null,type.not.in.(payment,order_review,advance)');
-        if (currentTaskFilter !== 'all') query = query.eq('status', currentTaskFilter);
-        if (currentRole !== 'manager') query = query.or(`created_by.eq.${currentUser?.id},responsible_ids.cs.{${currentUser?.id}}`);
-        const { data } = await query;
-        if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет задач</div>'; return; }
-        c.innerHTML = data.map(t => { const typeLabel = typeLabels[t.type] || '📌 Задача'; const statusLabel = statusLabels[t.status] || t.status; const st = statusTags[t.status] || 'tag-yellow'; const pc = t.priority === 'high' ? 'priority-high' : t.priority === 'medium' ? 'priority-medium' : 'priority-low'; return `<div class="task-card ${pc}" onclick="viewTaskDetail('${t.id}')"><div class="task-header"><span class="type-tag type-${t.type||'task'}">${typeLabel}</span><span class="tag ${st}">${statusLabel}</span></div><div class="task-title">${escapeHtml(t.title)}</div><div class="task-description">${escapeHtml((t.description||'').substring(0,100))}</div>${t.projects?.name ? `<div style="font-size:12px;color:var(--text-secondary);">🏗️ ${escapeHtml(t.projects.name)}</div>` : ''}<div class="task-meta"><span>📅 ${formatDateShort(t.created_at)}</span><span>👤 ${escapeHtml(t.created_by_name||'—')}</span><button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteTask('${t.id}','${t.type||'task'}')">🗑️</button></div></div>`; }).join('');
-    }
+  async function loadAllTasks() {
+    const c = document.getElementById('all-tasks-list'); 
+    if (!c) return;
+    c.innerHTML = '<div class="loading">Загрузка...</div>';
+    let query = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false });
+    query = query.or('type.is.null,type.not.in.(payment,order_review,advance)');
+    if (currentTaskFilter !== 'all') query = query.eq('status', currentTaskFilter);
+    if (currentRole !== 'manager') query = query.or(`created_by.eq.${currentUser?.id},responsible_ids.cs.{${currentUser?.id}}`);
+    const { data } = await query;
+    if (!data?.length) { c.innerHTML = '<div class="empty-state">Нет задач</div>'; return; }
+    c.innerHTML = data.map(t => { 
+        const typeLabel = typeLabels[t.type] || '📌 Задача'; 
+        const statusLabel = statusLabels[t.status] || t.status; 
+        const st = statusTags[t.status] || 'tag-yellow'; 
+        const pc = t.priority === 'high' ? 'priority-high' : t.priority === 'medium' ? 'priority-medium' : 'priority-low';
+        const deadlineInfo = t.deadline ? `<span style="margin-left:8px;">⏰ ${formatDateShort(t.deadline)}</span>` : '';
+        const responsibleInfo = t.responsible_names?.length ? `<span>👥 ${t.responsible_names.join(', ')}</span>` : '';
+        return `<div class="task-card ${pc}" onclick="viewTaskDetail('${t.id}')"><div class="task-header"><span class="type-tag type-${t.type||'task'}">${typeLabel}</span><span class="tag ${st}">${statusLabel}</span></div><div class="task-title">${escapeHtml(t.title)}</div><div class="task-description">${escapeHtml((t.description||'').substring(0,100))}</div>${t.projects?.name ? `<div style="font-size:12px;color:var(--text-secondary);">🏗️ ${escapeHtml(t.projects.name)}</div>` : ''}<div class="task-meta"><span>📅 ${formatDateShort(t.created_at)}${deadlineInfo}</span>${responsibleInfo}<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteTask('${t.id}','${t.type||'task'}')">🗑️</button></div></div>`; 
+    }).join('');
+}
     
     window.viewTaskDetail = async function(id) {
-        const { data: t } = await supabase.from('custom_tasks').select('*, projects(name)').eq('id', id).single();
-        if (!t) return;
-        
-        let html = `<div style="margin-bottom:12px;"><strong>${escapeHtml(t.title)}</strong></div>
-        <div style="background:#F8FAFC;padding:12px;border-radius:12px;margin:8px 0;">📝 ${escapeHtml(t.description || '—')}</div>`;
-        
-        if (t.projects?.name) html += `<div>🏗️ ${escapeHtml(t.projects.name)}</div>`;
-        html += `<div>👤 Создал: ${t.created_by_name || '—'} | 📅 ${formatDate(t.created_at)}</div>`;
-        html += `<div>📊 Статус: ${statusLabels[t.status] || t.status}</div>`;
-        html += `<div>⚡ Приоритет: ${t.priority === 'high' ? '🔴 Высокий' : t.priority === 'medium' ? '🟡 Средний' : '🟢 Низкий'}</div>`;
-        
-        if (t.responsible_names?.length) {
-            html += `<div>👥 Ответственные: ${t.responsible_names.join(', ')}</div>`;
-        }
-        
-        if (t.files && t.files.length) { 
-            html += '<div class="filter-bar" style="margin-top:12px;">'; 
-            t.files.forEach(f => { 
-                html += `<a href="${f.url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">📎 ${escapeHtml(f.name)}</a>`; 
-            }); 
-            html += '</div>'; 
-        }
-        
-        html += `
-            <div class="form-group" style="margin-top:16px;">
-                <label class="form-label">Статус</label>
-                <select id="task-status" class="form-input">
-                    <option value="pending" ${t.status === 'pending' ? 'selected' : ''}>⏳ Ожидает</option>
-                    <option value="in_progress" ${t.status === 'in_progress' ? 'selected' : ''}>🔵 В работе</option>
-                    <option value="completed" ${t.status === 'completed' ? 'selected' : ''}>✅ Сделано</option>
-                </select>
-            </div>
-            <button class="btn btn-primary" id="update-task-btn">💾 Обновить</button>`;
-        
-        openModal('📌 Задача', html);
-        
-        const updateBtn = document.getElementById('update-task-btn');
-        if (updateBtn) {
-            updateBtn.onclick = async function() {
-                const newStatus = document.getElementById('task-status')?.value;
-                if (!newStatus) return;
-                
-                const updateData = { 
-                    status: newStatus, 
-                    updated_at: new Date().toISOString() 
-                };
-                
-                if (newStatus === 'completed') {
-                    updateData.completed_at = new Date().toISOString();
-                }
-                
-                const { error } = await supabase.from('custom_tasks').update(updateData).eq('id', id);
-                
-                if (error) {
-                    showMessage('❌ Ошибка: ' + error.message, 'error');
-                    return;
-                }
-                
-                document.getElementById('modal').classList.add('hidden'); 
-                showMessage('✅ Обновлено', 'success'); 
-                loadAllTasks(); 
-            };
-        }
-    };
+    const { data: t } = await supabase.from('custom_tasks').select('*, projects(name)').eq('id', id).single();
+    if (!t) return;
     
-    async function openCreateTaskForm() {
-        const { data: projects } = await supabase.from('projects').select('id,name').order('name');
-        const { data: users } = await supabase.from('users').select('id,full_name').order('full_name');
-        let html = `<div class="form-group"><label class="form-label">Название *</label><input type="text" id="ct-title" class="form-input"></div><div class="form-group"><label class="form-label">Описание</label><textarea id="ct-desc" class="form-input" rows="2"></textarea></div><div class="form-group"><label class="form-label">Объект</label><select id="ct-project" class="form-input"><option value="">—</option>${(projects||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Приоритет</label><select id="ct-priority" class="form-input"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option></select></div><div class="form-group"><label class="form-label">Ответственный</label><select id="ct-responsible" class="form-input">${(users||[]).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">📎 Файлы</label><input type="file" id="ct-files" class="form-input" multiple></div><button class="btn btn-primary" id="save-ct-btn">📤 Создать</button>`;
-        openModal('➕ Новая задача', html);
-        document.getElementById('save-ct-btn').onclick = async function() {
-            const title = document.getElementById('ct-title')?.value?.trim();
-            if (!title) { showMessage('Введите название','error'); return; }
-            const respId = document.getElementById('ct-responsible')?.value;
-            const respName = document.getElementById('ct-responsible')?.selectedOptions[0]?.text||'';
-            const files = document.getElementById('ct-files')?.files || [];
-            const fileUrls = [];
-            for (const file of files) {
-                try {
-                    const result = await uploadFile(file, 'tasks');
-                    fileUrls.push({ name: file.name, url: result.url });
-                } catch(e) {
-                    console.error('Upload error:', e);
-                }
-            }
-            await supabase.from('custom_tasks').insert({ project_id: document.getElementById('ct-project')?.value||null, title, description: document.getElementById('ct-desc')?.value, priority: document.getElementById('ct-priority')?.value, responsible_ids: [respId], responsible_names: [respName], status: 'pending', type: 'task', created_by: currentUser?.id, created_by_name: currentUser?.full_name, created_at: new Date(), files: fileUrls });
-            document.getElementById('modal').classList.add('hidden'); showMessage('✅ Задача создана','success'); loadAllTasks();
-        };
+    // Загружаем комментарии
+    const { data: comments } = await supabase.from('task_comments').select('*').eq('task_id', id).order('created_at', { ascending: true });
+    
+    // Загружаем пользователей для выбора ответственных
+    const { data: users } = await supabase.from('users').select('id,full_name').order('full_name');
+    
+    const priorityEmoji = t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢';
+    const priorityText = t.priority === 'high' ? 'Высокий' : t.priority === 'medium' ? 'Средний' : 'Низкий';
+    
+    let html = `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+        
+        <!-- Основная информация -->
+        <div style="background:#F8FAFC;padding:14px;border-radius:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+                <span class="tag ${statusTags[t.status] || 'tag-yellow'}">${statusLabels[t.status] || t.status}</span>
+                <span style="font-size:12px;color:var(--text-secondary);">${priorityEmoji} ${priorityText}</span>
+            </div>
+            <div style="font-weight:700;font-size:16px;margin-bottom:4px;">${escapeHtml(t.title)}</div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">${escapeHtml(t.description || 'Нет описания')}</div>
+            ${t.projects?.name ? `<div style="font-size:12px;color:var(--text-secondary);">🏗️ ${escapeHtml(t.projects.name)}</div>` : ''}
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">
+                👤 Создал: ${t.created_by_name || '—'} | 📅 ${formatDate(t.created_at)}
+                ${t.deadline ? ` | ⏰ Дедлайн: <b>${formatDate(t.deadline)}</b>` : ''}
+            </div>
+        </div>
+        
+        <!-- Ответственные -->
+        <div style="background:white;padding:14px;border-radius:12px;border:1px solid var(--border);">
+            <div style="font-weight:600;font-size:13px;margin-bottom:8px;">👥 Ответственные</div>
+            <div id="responsible-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                ${(t.responsible_names || []).map((name, idx) => `
+                    <span style="background:#F1F5F9;padding:4px 10px;border-radius:20px;font-size:12px;display:flex;align-items:center;gap:6px;">
+                        👤 ${escapeHtml(name)}
+                        <span onclick="removeResponsible('${t.id}', ${idx})" style="cursor:pointer;color:var(--danger);font-weight:bold;">✕</span>
+                    </span>
+                `).join('')}
+            </div>
+            <select id="add-responsible-select" class="form-input" style="font-size:12px;padding:8px;" onchange="addResponsible('${t.id}', this.value)">
+                <option value="">+ Добавить ответственного</option>
+                ${(users || []).filter(u => !(t.responsible_ids || []).includes(u.id)).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}
+            </select>
+        </div>
+        
+        <!-- Статус -->
+        <div style="background:white;padding:14px;border-radius:12px;border:1px solid var(--border);">
+            <div style="font-weight:600;font-size:13px;margin-bottom:8px;">📊 Статус</div>
+            <div style="display:flex;gap:6px;">
+                <button class="sub-tab ${t.status === 'pending' ? 'active' : ''}" onclick="updateTaskStatus('${t.id}', 'pending')">⏳ Ожидает</button>
+                <button class="sub-tab ${t.status === 'in_progress' ? 'active' : ''}" onclick="updateTaskStatus('${t.id}', 'in_progress')">🔵 В работе</button>
+                <button class="sub-tab ${t.status === 'completed' ? 'active' : ''}" onclick="updateTaskStatus('${t.id}', 'completed')">✅ Сделано</button>
+            </div>
+        </div>
+        
+        <!-- Дедлайн -->
+        <div style="background:white;padding:14px;border-radius:12px;border:1px solid var(--border);">
+            <div style="font-weight:600;font-size:13px;margin-bottom:8px;">⏰ Дедлайн</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <input type="date" id="task-deadline" class="form-input" value="${t.deadline || ''}" style="flex:1;">
+                <button class="btn btn-sm btn-primary" onclick="updateTaskDeadline('${t.id}')">💾</button>
+            </div>
+        </div>
+        
+        <!-- Комментарии -->
+        <div style="background:white;padding:14px;border-radius:12px;border:1px solid var(--border);">
+            <div style="font-weight:600;font-size:13px;margin-bottom:12px;">💬 Комментарии (${(comments || []).length})</div>
+            
+            <div id="comments-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:300px;overflow-y:auto;">
+                ${(comments || []).length === 0 ? '<div style="text-align:center;color:var(--text-secondary);font-size:12px;padding:20px;">Нет комментариев</div>' : ''}
+                ${(comments || []).map(c => `
+                    <div style="background:#F8FAFC;padding:10px;border-radius:10px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                            <span style="font-weight:600;font-size:12px;">👤 ${escapeHtml(c.author_name || '—')}</span>
+                            <span style="font-size:10px;color:var(--text-secondary);">${formatDateShort(c.created_at)}</span>
+                        </div>
+                        <div style="font-size:13px;line-height:1.4;">${escapeHtml(c.text)}</div>
+                        ${(c.files || []).length > 0 ? `
+                            <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap;">
+                                ${c.files.map(f => `<a href="${f.url}" target="_blank" class="tag tag-blue" style="text-decoration:none;font-size:10px;">📎 ${escapeHtml(f.name)}</a>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+            
+            <!-- Форма комментария -->
+            <div style="border-top:1px solid var(--border);padding-top:10px;">
+                <textarea id="new-comment-text" class="form-input" rows="2" placeholder="Написать комментарий..." style="font-size:13px;margin-bottom:8px;"></textarea>
+                <div style="display:flex;gap:8px;align-items:center;">
+                    <input type="file" id="new-comment-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;flex:1;">
+                    <button class="btn btn-primary btn-sm" onclick="addComment('${t.id}')" style="white-space:nowrap;">📤 Отправить</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Удалить -->
+        <button class="btn btn-danger" onclick="deleteTask('${t.id}','${t.type||'task'}');document.getElementById('modal').classList.add('hidden');" style="width:100%;">
+            🗑️ Удалить задачу
+        </button>
+        
+    </div>`;
+    
+    openModal('📌 Задача', html);
+};
+
+// ========== ФУНКЦИИ ДЛЯ ЗАДАЧ ==========
+
+// Обновить статус
+window.updateTaskStatus = async function(taskId, newStatus) {
+    const updateData = { status: newStatus, updated_at: new Date().toISOString() };
+    if (newStatus === 'completed') updateData.completed_at = new Date().toISOString();
+    await supabase.from('custom_tasks').update(updateData).eq('id', taskId);
+    showMessage('✅ Статус обновлён', 'success');
+    viewTaskDetail(taskId);
+    loadAllTasks();
+};
+
+// Обновить дедлайн
+window.updateTaskDeadline = async function(taskId) {
+    const deadline = document.getElementById('task-deadline')?.value;
+    await supabase.from('custom_tasks').update({ deadline: deadline || null, updated_at: new Date().toISOString() }).eq('id', taskId);
+    showMessage('✅ Дедлайн обновлён', 'success');
+    viewTaskDetail(taskId);
+    loadAllTasks();
+};
+
+// Добавить ответственного
+window.addResponsible = async function(taskId, userId) {
+    if (!userId) return;
+    const { data: task } = await supabase.from('custom_tasks').select('responsible_ids, responsible_names').eq('id', taskId).single();
+    if (!task) return;
+    const { data: user } = await supabase.from('users').select('full_name').eq('id', userId).single();
+    const ids = [...(task.responsible_ids || []), userId];
+    const names = [...(task.responsible_names || []), user.full_name];
+    await supabase.from('custom_tasks').update({ responsible_ids: ids, responsible_names: names, updated_at: new Date().toISOString() }).eq('id', taskId);
+    viewTaskDetail(taskId);
+};
+
+// Удалить ответственного
+window.removeResponsible = async function(taskId, idx) {
+    const { data: task } = await supabase.from('custom_tasks').select('responsible_ids, responsible_names').eq('id', taskId).single();
+    if (!task) return;
+    const ids = (task.responsible_ids || []).filter((_, i) => i !== idx);
+    const names = (task.responsible_names || []).filter((_, i) => i !== idx);
+    await supabase.from('custom_tasks').update({ responsible_ids: ids, responsible_names: names, updated_at: new Date().toISOString() }).eq('id', taskId);
+    viewTaskDetail(taskId);
+};
+
+// Добавить комментарий
+window.addComment = async function(taskId) {
+    const textEl = document.getElementById('new-comment-text');
+    const fileEl = document.getElementById('new-comment-file');
+    const text = textEl?.value?.trim();
+    if (!text) { showMessage('Введите текст комментария', 'error'); return; }
+    
+    const files = [];
+    if (fileEl?.files[0]) {
+        try {
+            const result = await uploadFile(fileEl.files[0], 'comments');
+            files.push({ name: fileEl.files[0].name, url: result.url });
+        } catch(e) {
+            console.error('Upload error:', e);
+        }
     }
+    
+    await supabase.from('task_comments').insert({
+        task_id: taskId,
+        author_id: currentUser?.id,
+        author_name: currentUser?.full_name || 'Пользователь',
+        text: text,
+        files: files,
+        created_at: new Date().toISOString()
+    });
+    
+    textEl.value = '';
+    fileEl.value = '';
+    viewTaskDetail(taskId);
+    showMessage('✅ Комментарий добавлен', 'success');
+};
+
+// Функция загрузки файлов (если нет)
+async function uploadFile(file, folder) {
+    const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const fileName = folder + '/' + Date.now() + '_' + cleanName;
+    const { data, error } = await supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: false });
+    if (error) throw new Error('Ошибка загрузки: ' + error.message);
+    const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+    return { url: urlData.publicUrl, name: file.name };
+}
+            
+   async function openCreateTaskForm() {
+    const { data: projects } = await supabase.from('projects').select('id,name').order('name');
+    const { data: users } = await supabase.from('users').select('id,full_name').order('full_name');
+    let html = `<div class="form-group"><label class="form-label">Название *</label><input type="text" id="ct-title" class="form-input"></div><div class="form-group"><label class="form-label">Описание</label><textarea id="ct-desc" class="form-input" rows="2"></textarea></div><div class="form-group"><label class="form-label">Объект</label><select id="ct-project" class="form-input"><option value="">—</option>${(projects||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">Приоритет</label><select id="ct-priority" class="form-input"><option value="low">Низкий</option><option value="medium" selected>Средний</option><option value="high">Высокий</option></select></div>
+   
+    <div class="form-group"><label class="form-label">⏰ Дедлайн</label><input type="date" id="ct-deadline" class="form-input"></div>
+    <div class="form-group"><label class="form-label">Ответственный</label><select id="ct-responsible" class="form-input">${(users||[]).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}</select></div><div class="form-group"><label class="form-label">📎 Файлы</label><input type="file" id="ct-files" class="form-input" multiple></div><button class="btn btn-primary" id="save-ct-btn">📤 Создать</button>`;
+    openModal('➕ Новая задача', html);
+    document.getElementById('save-ct-btn').onclick = async function() {
+        const title = document.getElementById('ct-title')?.value?.trim();
+        if (!title) { showMessage('Введите название','error'); return; }
+        const respId = document.getElementById('ct-responsible')?.value;
+        const respName = document.getElementById('ct-responsible')?.selectedOptions[0]?.text||'';
+        const files = document.getElementById('ct-files')?.files || [];
+        const fileUrls = [];
+        for (const file of files) {
+            try {
+                const result = await uploadFile(file, 'tasks');
+                fileUrls.push({ name: file.name, url: result.url });
+            } catch(e) {
+                console.error('Upload error:', e);
+            }
+        }
+        await supabase.from('custom_tasks').insert({ 
+            project_id: document.getElementById('ct-project')?.value||null, 
+            title, 
+            description: document.getElementById('ct-desc')?.value, 
+            priority: document.getElementById('ct-priority')?.value, 
+            deadline: document.getElementById('ct-deadline')?.value || null,  
+            responsible_ids: [respId], 
+            responsible_names: [respName], 
+            status: 'pending', 
+            type: 'task', 
+            created_by: currentUser?.id, 
+            created_by_name: currentUser?.full_name, 
+            created_at: new Date(), 
+            files: fileUrls 
+        });
+        document.getElementById('modal').classList.add('hidden'); showMessage('✅ Задача создана','success'); loadAllTasks();
+    };
+}
     
     // ========== ФИНАНСЫ: РАСХОДЫ ==========
     async function loadFinanceExpenses() {
