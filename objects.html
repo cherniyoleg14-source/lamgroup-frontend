@@ -709,9 +709,9 @@ window.openShiftGPRForm = async function(axId, brId) {
                 alert('✅ Срок изменён. Сдвиг: +' + diffDays + ' дн.');
             }
             
-            if (typeof window.openAxisDetailPage === 'function') {
-                window.openAxisDetailPage(axId);
-            }
+                        // if (typeof window.openAxisDetailPage === 'function') {
+            //     window.openAxisDetailPage(axId);
+            // }
         } catch (err) {
             alert('❌ Ошибка: ' + (err.message || 'Неизвестная ошибка'));
             sb.textContent = '💾 Сохранить сдвиг и создать письмо';
