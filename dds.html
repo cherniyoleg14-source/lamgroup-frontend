@@ -465,20 +465,21 @@ if (sel) {
             if (!name || !amount || amount <= 0) { alert('Заполните наименование и сумму'); return; }
             
             const data = {
-                project_id: document.getElementById('exp-project').value || null,
-                name, amount,
-                category: document.getElementById('exp-category').value,
-                supplier: document.getElementById('exp-supplier').value,
-                quantity: parseFloat(document.getElementById('exp-qty').value) || 1,
-                date: document.getElementById('exp-date').value,
-                payment_method: document.getElementById('exp-method').value,
-                payment_status: document.getElementById('exp-status').value,
-                is_urgent: document.getElementById('exp-urgent').checked,
-                planned_payment_date: document.getElementById('exp-status').value==='pending' ? document.getElementById('exp-plan-date').value : null,
-                paid_by_name: document.getElementById('exp-status').value==='paid'&&document.getElementById('exp-method').value==='cash' ? document.getElementById('exp-paid-by').value : null,
-                comment: document.getElementById('exp-comment').value,
-                expense_number: expNum
-            };
+    project_id: document.getElementById('exp-project').value || null,
+    name, amount,
+    category: document.getElementById('exp-category').value,
+    supplier: document.getElementById('exp-supplier').value,
+    quantity: parseFloat(document.getElementById('exp-qty').value) || 1,
+    date: document.getElementById('exp-date').value,
+    payment_method: document.getElementById('exp-method').value,
+    payment_type: document.getElementById('exp-method').value === 'cash' ? 'cash' : 'invoice',
+    payment_status: document.getElementById('exp-status').value,
+    is_urgent: document.getElementById('exp-urgent').checked,
+    planned_payment_date: document.getElementById('exp-status').value === 'pending' ? document.getElementById('exp-plan-date').value : null,
+    paid_by_name: document.getElementById('exp-status').value === 'paid' && document.getElementById('exp-method').value === 'cash' ? document.getElementById('exp-paid-by').value : null,
+    comment: document.getElementById('exp-comment').value,
+    expense_number: expNum
+};
             
             // Загрузка файла
             const fi = document.getElementById('exp-invoice');
