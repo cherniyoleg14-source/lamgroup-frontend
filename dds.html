@@ -132,7 +132,19 @@
         
         <div class="filter-row">
             <select id="filter-project" class="form-select"><option value="">Все объекты</option></select>
-            <input type="month" id="filter-period" class="form-select" style="max-width:140px;">
+            <select id="filter-period-type" class="form-select" style="max-width:120px;" onchange="changePeriodType()">
+    <option value="month">Месяц</option>
+    <option value="quarter">Квартал</option>
+    <option value="year">Год</option>
+    <option value="custom">Свой период</option>
+</select>
+<input type="month" id="filter-period-month" class="form-select" style="max-width:140px;">
+<div id="filter-period-custom" class="hidden" style="display:flex;gap:6px;align-items:center;">
+    <span style="font-size:12px;">С:</span>
+    <input type="date" id="filter-date-from" class="form-input" style="padding:6px;font-size:12px;width:130px;">
+    <span style="font-size:12px;">По:</span>
+    <input type="date" id="filter-date-to" class="form-input" style="padding:6px;font-size:12px;width:130px;">
+</div>
         </div>
         
         <div class="tabs">
