@@ -623,7 +623,7 @@ async function loadLetters() {
     }
     
     c.innerHTML = data.map(l => {
-        const statusTag = (l.sent_to_customer || l.status === 'sent') 
+        const statusTag = (l.status === 'sent_to_customer' || l.sent_to_customer) 
     ? '<span class="tag tag-green">✅ Отправлено</span>'
     : '<span class="tag tag-yellow">⏳ Черновик</span>';
         
@@ -749,7 +749,7 @@ window.markLetterSent = async function(id) {
     if (!confirm('📨 Отметить письмо как отправленное заказчику?')) return;
     
     var { error } = await supabase.from('letters').update({
-        status: 'sent',
+        status: 'sent_to_customer',
         sent_to_customer: true,
         sent_at: new Date().toISOString()
     }).eq('id', id);
