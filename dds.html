@@ -132,7 +132,7 @@
         
         <div class="filter-row">
             <select id="filter-project" class="form-select"><option value="">Все объекты</option></select>
-           <select id="filter-period-type" class="form-select" style="max-width:120px;" onchange="window.changePeriodType()">
+           <select id="filter-period-type" class="form-select" style="max-width:120px;">
     <option value="month">Месяц</option>
     <option value="quarter">Квартал</option>
     <option value="year">Год</option>
@@ -426,68 +426,10 @@
         document.getElementById('modal').classList.add('hidden'); showMessage('✅ Утверждён','success'); loadAllData();
     };
     
-    // ФОРМА РАСХОДА (как в objects + дополнения)
-    window.openExpenseFormDDS = async function(editId) {
-        const today = new Date().toISOString().split('T')[0];
-        let editData = null;
-        if (editId) editData = allExpenses.find(x => x.id === editId);
-        
-        if (!editId) {
-            const { data: num } = await supabase.from('document_numbers').select('number').eq('doc_type','expense').order('number',{ascending:false}).limit(1);
-            const next = num?.length ? num[0].number + 1 : 1;
-            var expNum = '№-RAS-' + next;
-        } else {
-            var expNum = editData.expense_number || '';
-        }
-        
-        const opts = allProjects.map(p => `<option value="${p.id}" ${editData?.project_id===p.id?'selected':''}>${p.name}</option>`).join('');
-        const catOpts = Object.entries(expenseCategories).map(([k,v]) => `<option value="${k}" ${editData?.category===k?'selected':''}>${v}</option>`).join('');
-        
-        let h = `<div class="form-group"><label class="form-label">📄 Номер</label><input class="form-input" value="${expNum}" disabled></div>`;
-        h += `<div class="form-group"><label class="form-label">🏗️ Объект</label><select id="exp-project" class="form-input">${opts}</select></div>`;
-        h += `<div class="form-group"><label class="form-label">📂 Статья расхода</label><select id="exp-category" class="form-input">${catOpts}</select></div>`;
-        h += `<div class="form-group"><label class="form-label">📝 Наименование *</label><input id="exp-name" class="form-input" value="${escapeHtml(editData?.name||'')}"></div>`;
-        h += `<div class="form-group"><label class="form-label">🏢 Поставщик</label><input id="exp-supplier" class="form-input" value="${escapeHtml(editData?.supplier||'')}"></div>`;
-        h += `<div class="grid-2"><div class="form-group"><label class="form-label">Количество</label><input type="number" id="exp-qty" class="form-input" step="0.01" value="${editData?.quantity||1}"></div><div class="form-group"><label class="form-label">💰 Сумма *</label><input type="number" id="exp-amount" class="form-input" step="0.01" value="${editData?.amount||''}"></div></div>`;
-        h += `<div class="form-group"><label class="form-label">📅 Дата расхода</label><input type="date" id="exp-date" class="form-input" value="${editData?.date||today}"></div>`;
-        h += `<div class="form-group"><label class="form-label">💳 Метод оплаты</label><select id="exp-method" class="form-input" onchange="toggleExpFieldsDDS()"><option value="non_cash" ${editData?.payment_method==='non_cash'?'selected':''}>💳 Безнал</option><option value="cash" ${editData?.payment_method==='cash'?'selected':''}>💵 Наличка</option></select></div>`;
-        h += `<div class="form-group"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="exp-invoice" class="form-input">${editData?.invoice_url?`<div style="font-size:11px;margin-top:4px;">📎 <a href="${editData.invoice_url}" target="_blank">Текущий файл</a></div>`:''}</div>`;
-        h += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><input type="checkbox" id="exp-urgent" style="width:18px;height:18px;" ${editData?.is_urgent?'checked':''}><label>🚨 Срочный платёж</label></div>`;
-        h += `<div class="form-group"><label class="form-label">📊 Статус</label><select id="exp-status" class="form-input" onchange="toggleExpFieldsDDS()"><option value="paid" ${editData?.payment_status==='paid'?'selected':''}>💳 Оплатили</option><option value="pending" ${(!editData||editData?.payment_status!=='paid')?'selected':''}>📅 В план оплат</option></select></div>`;
-        h += `<div id="exp-paid-group" class="form-group">
-    <label class="form-label">👤 Кто оплатил *</label>
-    <select id="exp-paid-by" class="form-input">
-    <option value="">Выберите...</option>
-    <option value="Маххабат Наличка">💵 Маххабат Наличка</option>
-    <option value="Маххабат Карта">💳 Маххабат Карта</option>
-    <option value="Володя Наличка">💵 Володя Наличка</option>
-    <option value="Володя Карта">💳 Володя Карта</option>
-    <option value="ИТР Наличка">💵 ИТР Наличка</option>
-    <option value="ИТР Карта">💳 ИТР Карта</option>
-</select>
-</div>`;
-        h += `<div id="exp-plan-date-group" class="form-group"><label class="form-label">📅 Дата платежа</label><input type="date" id="exp-plan-date" class="form-input" value="${editData?.planned_payment_date||today}"></div>`;
-        h += `<div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="exp-comment" class="form-input" rows="2">${escapeHtml(editData?.comment||'')}</textarea></div>`;
-        h += `<button class="btn btn-primary" id="save-expense-btn">💾 ${editId?'Сохранить изменения':'Сохранить расход'}</button>`;
-        
-        document.getElementById('modal-title').textContent = editId ? '✏️ Редактировать расход' : '➕ Новый расход';
-        document.getElementById('modal-content').innerHTML = h;
-        document.getElementById('modal').classList.remove('hidden');
-        
-        const payerOptions = [
-    { value: 'Маххабат Наличка', label: '💵 Маххабат Наличка' },
-    { value: 'Маххабат Карта', label: '💳 Маххабат Карта' },
-    { value: 'Володя Наличка', label: '💵 Володя Наличка' },
-    { value: 'Володя Карта', label: '💳 Володя Карта' },
-    { value: 'ИТР Наличка', label: '💵 ИТР Наличка' },
-    { value: 'ИТР Карта', label: '💳 ИТР Карта' }
-];
-const sel = document.getElementById('exp-paid-by');
-if (sel) {
-    sel.innerHTML = '<option value="">Выберите...</option>' + 
-        payerOptions.map(o => `<option value="${o.value}" ${editData?.paid_by_name===o.value?'selected':''}>${o.label}</option>`).join('');
-}
-       window.changePeriodType = function() {
+    
+       // ========== ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ ФИЛЬТРОВ ==========
+
+window.changePeriodType = function() {
     const type = document.getElementById('filter-period-type')?.value;
     const monthEl = document.getElementById('filter-period-month');
     const customEl = document.getElementById('filter-period-custom');
@@ -499,7 +441,8 @@ if (sel) {
     }
     loadAllData();
 };
-        window.toggleExpFieldsDDS = function() {
+
+window.toggleExpFieldsDDS = function() {
     const mt = document.getElementById('exp-method')?.value;
     const st = document.getElementById('exp-status')?.value;
     const pg = document.getElementById('exp-paid-group');
@@ -507,65 +450,137 @@ if (sel) {
     if (pg) pg.style.display = (mt === 'cash') ? 'block' : 'none';
     if (dg) dg.style.display = (st === 'pending') ? 'block' : 'none';
 };
-        setTimeout(() => { if (typeof toggleExpFieldsDDS === 'function') toggleExpFieldsDDS(); }, 100);
+
+// ========== ФОРМА РАСХОДА ==========
+
+window.openExpenseFormDDS = async function(editId) {
+    const today = new Date().toISOString().split('T')[0];
+    let editData = null;
+    if (editId) editData = allExpenses.find(x => x.id === editId);
+    
+    if (!editId) {
+        const { data: num } = await supabase.from('document_numbers').select('number').eq('doc_type','expense').order('number',{ascending:false}).limit(1);
+        const next = num?.length ? num[0].number + 1 : 1;
+        var expNum = '№-RAS-' + next;
+    } else {
+        var expNum = editData.expense_number || '';
+    }
+    
+    const opts = allProjects.map(p => `<option value="${p.id}" ${editData?.project_id===p.id?'selected':''}>${p.name}</option>`).join('');
+    const catOpts = Object.entries(expenseCategories).map(([k,v]) => `<option value="${k}" ${editData?.category===k?'selected':''}>${v}</option>`).join('');
+    
+    let h = `<div class="form-group"><label class="form-label">📄 Номер</label><input class="form-input" value="${expNum}" disabled></div>`;
+    h += `<div class="form-group"><label class="form-label">🏗️ Объект</label><select id="exp-project" class="form-input">${opts}</select></div>`;
+    h += `<div class="form-group"><label class="form-label">📂 Статья расхода</label><select id="exp-category" class="form-input">${catOpts}</select></div>`;
+    h += `<div class="form-group"><label class="form-label">📝 Наименование *</label><input id="exp-name" class="form-input" value="${escapeHtml(editData?.name||'')}"></div>`;
+    h += `<div class="form-group"><label class="form-label">🏢 Поставщик</label><input id="exp-supplier" class="form-input" value="${escapeHtml(editData?.supplier||'')}"></div>`;
+    h += `<div class="grid-2"><div class="form-group"><label class="form-label">Количество</label><input type="number" id="exp-qty" class="form-input" step="0.01" value="${editData?.quantity||1}"></div><div class="form-group"><label class="form-label">💰 Сумма *</label><input type="number" id="exp-amount" class="form-input" step="0.01" value="${editData?.amount||''}"></div></div>`;
+    h += `<div class="form-group"><label class="form-label">📅 Дата расхода</label><input type="date" id="exp-date" class="form-input" value="${editData?.date||today}"></div>`;
+    h += `<div class="form-group"><label class="form-label">💳 Метод оплаты</label><select id="exp-method" class="form-input" onchange="window.toggleExpFieldsDDS()"><option value="non_cash" ${editData?.payment_method==='non_cash'?'selected':''}>💳 Безнал</option><option value="cash" ${editData?.payment_method==='cash'?'selected':''}>💵 Наличка</option></select></div>`;
+    h += `<div class="form-group">
+        <label class="form-label">📎 Счёт на оплату</label>
+        <button type="button" class="btn btn-outline" id="exp-invoice-btn" style="width:100%;">📁 Выбрать файл</button>
+        <span id="exp-invoice-name" style="font-size:11px;color:var(--text-secondary);display:block;margin-top:4px;">${editData?.invoice_url ? '📎 Уже прикреплён' : 'Файл не выбран'}</span>
+        <input type="file" id="exp-invoice" accept=".pdf,.jpg,.jpeg,.png" style="display:none;">
+    </div>`;
+    h += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><input type="checkbox" id="exp-urgent" style="width:18px;height:18px;" ${editData?.is_urgent?'checked':''}><label>🚨 Срочный платёж</label></div>`;
+    h += `<div class="form-group"><label class="form-label">📊 Статус</label><select id="exp-status" class="form-input" onchange="window.toggleExpFieldsDDS()"><option value="paid" ${editData?.payment_status==='paid'?'selected':''}>💳 Оплатили</option><option value="pending" ${(!editData||editData?.payment_status!=='paid')?'selected':''}>📅 В план оплат</option></select></div>`;
+    h += `<div id="exp-paid-group" class="form-group" style="display:none;">
+        <label class="form-label">👤 Кто оплатил *</label>
+        <select id="exp-paid-by" class="form-input">
+            <option value="">Выберите...</option>
+            <option value="Маххабат Наличка">💵 Маххабат Наличка</option>
+            <option value="Маххабат Карта">💳 Маххабат Карта</option>
+            <option value="Володя Наличка">💵 Володя Наличка</option>
+            <option value="Володя Карта">💳 Володя Карта</option>
+            <option value="ИТР Наличка">💵 ИТР Наличка</option>
+            <option value="ИТР Карта">💳 ИТР Карта</option>
+        </select>
+    </div>`;
+    h += `<div id="exp-plan-date-group" class="form-group" style="display:none;"><label class="form-label">📅 Дата платежа</label><input type="date" id="exp-plan-date" class="form-input" value="${editData?.planned_payment_date||today}"></div>`;
+    h += `<div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="exp-comment" class="form-input" rows="2">${escapeHtml(editData?.comment||'')}</textarea></div>`;
+    h += `<button class="btn btn-primary" id="save-expense-btn">💾 ${editId?'Сохранить изменения':'Сохранить расход'}</button>`;
+    
+    document.getElementById('modal-title').textContent = editId ? '✏️ Редактировать расход' : '➕ Новый расход';
+    document.getElementById('modal-content').innerHTML = h;
+    document.getElementById('modal').classList.remove('hidden');
+    
+    // Предустановка значения плательщика при редактировании
+    if (editData?.paid_by_name) {
+        setTimeout(() => {
+            const sel = document.getElementById('exp-paid-by');
+            if (sel) sel.value = editData.paid_by_name;
+        }, 150);
+    }
+    
+    // Обработчик файла
+    setTimeout(function() {
+        const fileBtn = document.getElementById('exp-invoice-btn');
+        const fileInput = document.getElementById('exp-invoice');
+        const fileName = document.getElementById('exp-invoice-name');
+        if (fileBtn && fileInput) {
+            fileBtn.addEventListener('click', function() { fileInput.click(); });
+            fileInput.addEventListener('change', function() {
+                fileName.textContent = fileInput.files[0] ? '📎 ' + fileInput.files[0].name : 'Файл не выбран';
+            });
+        }
+        window.toggleExpFieldsDDS();
+    }, 200);
+    
+    document.getElementById('save-expense-btn').addEventListener('click', async function() {
+        const name = document.getElementById('exp-name').value.trim();
+        const amount = parseFloat(document.getElementById('exp-amount').value);
+        if (!name || !amount || amount <= 0) { alert('Заполните наименование и сумму'); return; }
         
-        document.getElementById('save-expense-btn').addEventListener('click', async function() {
-            const name = document.getElementById('exp-name').value.trim();
-            const amount = parseFloat(document.getElementById('exp-amount').value);
-            if (!name || !amount || amount <= 0) { alert('Заполните наименование и сумму'); return; }
+        const data = {
+            project_id: document.getElementById('exp-project').value || null,
+            name, amount,
+            category: document.getElementById('exp-category').value,
+            supplier: document.getElementById('exp-supplier').value,
+            quantity: parseFloat(document.getElementById('exp-qty').value) || 1,
+            date: document.getElementById('exp-date').value,
+            payment_method: document.getElementById('exp-method').value,
+            payment_type: document.getElementById('exp-method').value === 'cash' ? 'cash' : 'invoice',
+            payment_status: document.getElementById('exp-status').value,
+            is_urgent: document.getElementById('exp-urgent').checked,
+            planned_payment_date: document.getElementById('exp-status').value === 'pending' ? document.getElementById('exp-plan-date').value : null,
+            paid_by_name: document.getElementById('exp-status').value === 'paid' && document.getElementById('exp-method').value === 'cash' ? document.getElementById('exp-paid-by').value : null,
+            comment: document.getElementById('exp-comment').value,
+            expense_number: expNum
+        };
+        
+        const fi = document.getElementById('exp-invoice');
+        if (fi?.files[0]) {
+            const fl = fi.files[0];
+            const cn = fl.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const { data: up, error: ue } = await supabase.storage.from('reports').upload('invoices/'+Date.now()+'_'+cn, fl);
+            if (!ue) { const { data: ud } = supabase.storage.from('reports').getPublicUrl(up.path); data.invoice_url = ud.publicUrl; data.invoice_name = fl.name; }
+        }
+        
+        let result;
+        if (editId) {
+            result = await supabase.from('expenses').update(data).eq('id', editId);
+        } else {
+            result = await supabase.from('expenses').insert({...data, created_by: currentUser?.id});
+            if (!result.error) await supabase.from('document_numbers').upsert({doc_type:'expense', number: parseInt(expNum.replace('№-RAS-',''))}, {onConflict:'doc_type'});
             
-            const data = {
-    project_id: document.getElementById('exp-project').value || null,
-    name, amount,
-    category: document.getElementById('exp-category').value,
-    supplier: document.getElementById('exp-supplier').value,
-    quantity: parseFloat(document.getElementById('exp-qty').value) || 1,
-    date: document.getElementById('exp-date').value,
-    payment_method: document.getElementById('exp-method').value,
-    payment_type: document.getElementById('exp-method').value === 'cash' ? 'cash' : 'invoice',
-    payment_status: document.getElementById('exp-status').value,
-    is_urgent: document.getElementById('exp-urgent').checked,
-    planned_payment_date: document.getElementById('exp-status').value === 'pending' ? document.getElementById('exp-plan-date').value : null,
-    paid_by_name: document.getElementById('exp-status').value === 'paid' && document.getElementById('exp-method').value === 'cash' ? document.getElementById('exp-paid-by').value : null,
-    comment: document.getElementById('exp-comment').value,
-    expense_number: expNum
+            if (data.payment_status === 'pending') {
+                await supabase.from('custom_tasks').insert({
+                    project_id: data.project_id,
+                    title: (data.is_urgent?'🚨 ':'')+'Расход '+expNum+': '+name,
+                    description: `Сумма: ${amount.toLocaleString()} ₸\nПоставщик: ${data.supplier||'—'}\nДата платежа: ${data.planned_payment_date||'—'}`,
+                    status: 'pending', priority: data.is_urgent?'high':'medium', type: 'payment',
+                    created_by: currentUser?.id, created_by_name: currentUser?.full_name
+                });
+            }
+        }
+        
+        if (result.error) { alert('Ошибка: '+result.error.message); return; }
+        document.getElementById('modal').classList.add('hidden');
+        showMessage(editId?'✅ Расход обновлён':'✅ Расход добавлен','success');
+        loadAllData();
+    });
 };
-            
-            // Загрузка файла
-            const fi = document.getElementById('exp-invoice');
-            if (fi?.files[0]) {
-                const fl = fi.files[0];
-                const cn = fl.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-                const { data: up, error: ue } = await supabase.storage.from('reports').upload('invoices/'+Date.now()+'_'+cn, fl);
-                if (!ue) { const { data: ud } = supabase.storage.from('reports').getPublicUrl(up.path); data.invoice_url = ud.publicUrl; data.invoice_name = fl.name; }
-            }
-            
-            let result;
-           
-            if (editId) {
-                result = await supabase.from('expenses').update(data).eq('id', editId);
-            
-            } else {
-                result = await supabase.from('expenses').insert({...data, created_by: currentUser?.id});
-                if (!result.error) await supabase.from('document_numbers').upsert({doc_type:'expense', number: parseInt(expNum.replace('№-RAS-',''))}, {onConflict:'doc_type'});
-                
-                if (data.payment_status === 'pending') {
-                    await supabase.from('custom_tasks').insert({
-                        project_id: data.project_id,
-                        title: (data.is_urgent?'🚨 ':'')+'Расход '+expNum+': '+name,
-                        description: `Сумма: ${amount.toLocaleString()} ₸\nПоставщик: ${data.supplier||'—'}\nДата платежа: ${data.planned_payment_date||'—'}`,
-                        status: 'pending', priority: data.is_urgent?'high':'medium', type: 'payment',
-                        created_by: currentUser?.id, created_by_name: currentUser?.full_name
-                    });
-                }
-            }
-            
-            if (result.error) { alert('Ошибка: '+result.error.message); return; }
-            document.getElementById('modal').classList.add('hidden');
-            showMessage(editId?'✅ Расход обновлён':'✅ Расход добавлен','success');
-            loadAllData();
-        });
-    };
     
     window.editExpense = function(id) { window.openExpenseFormDDS(id); };
     
@@ -640,7 +655,9 @@ if (sel) {
     if (periodMonth) periodMonth.addEventListener('change', () => loadAllData());
     if (dateFrom) dateFrom.addEventListener('change', () => loadAllData());
     if (dateTo) dateTo.addEventListener('change', () => loadAllData());
-    if (periodType) periodType.addEventListener('change', () => { changePeriodType(); loadAllData(); });
+   if (periodType) periodType.addEventListener('change', function() { 
+    window.changePeriodType(); 
+});
     
     document.getElementById('prev-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()-1); loadAllData(); });
     document.getElementById('next-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()+1); loadAllData(); });
