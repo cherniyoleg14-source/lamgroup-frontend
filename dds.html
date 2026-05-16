@@ -415,7 +415,7 @@
         h += `<div class="form-group"><label class="form-label">📎 Счёт на оплату</label><input type="file" id="exp-invoice" class="form-input">${editData?.invoice_url?`<div style="font-size:11px;margin-top:4px;">📎 <a href="${editData.invoice_url}" target="_blank">Текущий файл</a></div>`:''}</div>`;
         h += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><input type="checkbox" id="exp-urgent" style="width:18px;height:18px;" ${editData?.is_urgent?'checked':''}><label>🚨 Срочный платёж</label></div>`;
         h += `<div class="form-group"><label class="form-label">📊 Статус</label><select id="exp-status" class="form-input" onchange="toggleExpFieldsDDS()"><option value="paid" ${editData?.payment_status==='paid'?'selected':''}>💳 Оплатили</option><option value="pending" ${(!editData||editData?.payment_status!=='paid')?'selected':''}>📅 В план оплат</option></select></div>`;
-        h += `<div id="exp-paid-group" class="form-group" style="display:none;">
+        h += `<div id="exp-paid-group" class="form-group">
     <label class="form-label">👤 Кто оплатил *</label>
     <select id="exp-paid-by" class="form-input">
         <option value="">Выберите...</option>
@@ -427,7 +427,7 @@
         <option value="Володя Наличка">💵 Володя Наличка</option>
     </select>
 </div>`;
-        h += `<div id="exp-plan-date-group" class="form-group" style="display:none;"><label class="form-label">📅 Дата платежа</label><input type="date" id="exp-plan-date" class="form-input" value="${editData?.planned_payment_date||today}"></div>`;
+        h += `<div id="exp-plan-date-group" class="form-group"><label class="form-label">📅 Дата платежа</label><input type="date" id="exp-plan-date" class="form-input" value="${editData?.planned_payment_date||today}"></div>`;
         h += `<div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="exp-comment" class="form-input" rows="2">${escapeHtml(editData?.comment||'')}</textarea></div>`;
         h += `<button class="btn btn-primary" id="save-expense-btn">💾 ${editId?'Сохранить изменения':'Сохранить расход'}</button>`;
         
