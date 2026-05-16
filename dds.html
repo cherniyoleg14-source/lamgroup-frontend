@@ -443,13 +443,13 @@
         });
         
         window.toggleExpFieldsDDS = function() {
-            const mt = document.getElementById('exp-method')?.value;
-            const st = document.getElementById('exp-status')?.value;
-            const pg = document.getElementById('exp-paid-group');
-            const dg = document.getElementById('exp-plan-date-group');
-            if (pg) pg.style.display = (mt==='cash' && st==='paid') ? 'block' : 'none';
-            if (dg) dg.style.display = (st==='pending') ? 'block' : 'none';
-        };
+    const mt = document.getElementById('exp-method')?.value;
+    const st = document.getElementById('exp-status')?.value;
+    const pg = document.getElementById('exp-paid-group');
+    const dg = document.getElementById('exp-plan-date-group');
+    if (pg) pg.style.display = (mt === 'cash') ? 'block' : 'none';
+    if (dg) dg.style.display = (st === 'pending') ? 'block' : 'none';
+};
         setTimeout(() => { if (typeof toggleExpFieldsDDS === 'function') toggleExpFieldsDDS(); }, 100);
         
         document.getElementById('save-expense-btn').addEventListener('click', async function() {
