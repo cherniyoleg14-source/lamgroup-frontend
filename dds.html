@@ -188,7 +188,15 @@
     function formatMoney(a) { return (a||0).toLocaleString() + ' ₸'; }
     function showMessage(text, type) { const m = document.getElementById('message'); m.textContent = text; m.className = 'message ' + type; setTimeout(() => m.className = 'message', 3000); }
     
-    async function init() { await loadUser(); await loadProjects(); setupFilters(); setupTabs(); loadAllData(); renderCalendar(); }
+   async function init() { 
+    await loadUser(); 
+    await loadProjects(); 
+    setupFilters(); 
+    setupTabs(); 
+    loadAllData(); 
+    renderCalendar();
+    document.getElementById('filter-period-month').value = new Date().toISOString().slice(0, 7);
+}
     
     async function loadUser() { const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single(); if (data) { currentUser = data; currentRole = data.role; } document.getElementById('role-badge').textContent = currentRole === 'manager' ? '👑 Руководитель' : '👷 ИТР'; }
     
@@ -200,10 +208,29 @@
     }
     
     function getPeriodFilter() {
-        const monthVal = document.getElementById('filter-period')?.value;
-        if (monthVal) { const [y, m] = monthVal.split('-'); return { start: `${y}-${m}-01`, end: new Date(y, m, 0).toISOString().split('T')[0] }; }
-        return null;
+    const type = document.getElementById('filter-period-type')?.value;
+    const now = new Date();
+    
+    if (type === 'month') {
+        const val = document.getElementById('filter-period-month')?.value;
+        if (val) {
+            const [y, m] = val.split('-');
+            return { start: `${y}-${m}-01`, end: new Date(y, m, 0).toISOString().split('T')[0] };
+        }
+    } else if (type === 'quarter') {
+        const q = Math.floor(now.getMonth() / 3);
+        const start = new Date(now.getFullYear(), q * 3, 1);
+        const end = new Date(now.getFullYear(), (q + 1) * 3, 0);
+        return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+    } else if (type === 'year') {
+        return { start: `${now.getFullYear()}-01-01`, end: `${now.getFullYear()}-12-31` };
+    } else if (type === 'custom') {
+        const from = document.getElementById('filter-date-from')?.value;
+        const to = document.getElementById('filter-date-to')?.value;
+        if (from && to) return { start: from, end: to };
     }
+    return null;
+}
     
     async function loadAllData() {
         const period = getPeriodFilter();
@@ -448,7 +475,18 @@ if (sel) {
     sel.innerHTML = '<option value="">Выберите...</option>' + 
         payerOptions.map(o => `<option value="${o.value}" ${editData?.paid_by_name===o.value?'selected':''}>${o.label}</option>`).join('');
 }
-        
+        window.changePeriodType = function() {
+    const type = document.getElementById('filter-period-type')?.value;
+    const monthEl = document.getElementById('filter-period-month');
+    const customEl = document.getElementById('filter-period-custom');
+    
+    if (monthEl) monthEl.classList.toggle('hidden', type !== 'month');
+    if (customEl) {
+        customEl.classList.toggle('hidden', type !== 'custom');
+        customEl.style.display = type === 'custom' ? 'flex' : 'none';
+    }
+    loadAllData();
+};
         window.toggleExpFieldsDDS = function() {
     const mt = document.getElementById('exp-method')?.value;
     const st = document.getElementById('exp-status')?.value;
@@ -581,7 +619,10 @@ if (sel) {
     
     function setupFilters() {
         document.getElementById('filter-project').addEventListener('change', e => { selectedProjectId = e.target.value; loadAllData(); });
-        document.getElementById('filter-period').addEventListener('change', () => loadAllData());
+       document.getElementById('filter-period-month').addEventListener('change', () => loadAllData());
+document.getElementById('filter-date-from').addEventListener('change', () => loadAllData());
+document.getElementById('filter-date-to').addEventListener('change', () => loadAllData());
+document.getElementById('filter-period-type').addEventListener('change', () => { changePeriodType(); loadAllData(); });
         document.getElementById('prev-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()-1); loadAllData(); });
         document.getElementById('next-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()+1); loadAllData(); });
         document.getElementById('today-month').addEventListener('click', () => { currentDisplayDate = new Date(); loadAllData(); });
