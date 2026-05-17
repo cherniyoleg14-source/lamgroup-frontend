@@ -764,7 +764,7 @@ window.exportToExcel = async function() {
     showMessage('✅ Отчёт готов', 'success');
 };
 
-window.exportToPDF = function() {
+window.exportToPDF = async function() {
     showMessage('⏳ Формирую PDF...', 'success');
     
     const periodType = document.getElementById('filter-period-type')?.value || 'month';
@@ -800,54 +800,63 @@ window.exportToPDF = function() {
         objRows += `<tr><td>${escapeHtml(p.name)}</td><td>${inc.toLocaleString()} ₸</td><td>${pln.toLocaleString()} ₸</td><td>${exp.toLocaleString()} ₸</td><td>${pay.toLocaleString()} ₸</td><td>${(inc-exp-pay).toLocaleString()} ₸</td></tr>`;
     });
     
-    const w = window.open('', '_blank', 'width=1000,height=700');
-    if (!w) {
-        showMessage('❌ Разрешите всплывающие окна', 'error');
-        return;
-    }
+    const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Отчёт ДДС</title>
+    <style>
+        @media print { body { margin: 0; padding: 15mm; } @page { size: A4 landscape; margin: 10mm; } .no-print { display: none !important; } }
+        body { font-family: Arial, sans-serif; color: #000; line-height: 1.4; max-width: 100%; margin: 0 auto; padding: 10mm; font-size: 10pt; }
+        h1 { font-size: 16pt; text-align: center; margin-bottom: 4px; }
+        h2 { font-size: 12pt; text-align: center; color: #555; margin-bottom: 16px; }
+        h3 { font-size: 11pt; border-bottom: 2px solid #ddd; padding-bottom: 4px; margin: 16px 0 8px 0; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        th { background: #f0f0f0; padding: 6px 8px; text-align: left; font-weight: 600; font-size: 9pt; border: 1px solid #ddd; }
+        td { padding: 5px 8px; border: 1px solid #ddd; font-size: 9pt; }
+        .kpi-grid { display: flex; gap: 12px; margin-bottom: 16px; }
+        .kpi-card { flex: 1; background: #f8f8f8; border-radius: 8px; padding: 12px; text-align: center; border: 1px solid #ddd; }
+        .kpi-value { font-size: 16pt; font-weight: 800; }
+        .kpi-label { font-size: 8pt; color: #777; text-transform: uppercase; }
+        .footer { text-align: center; font-size: 8pt; color: #999; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
+    </style></head><body>
+    <h1>ТОО "LamGroup Construction"</h1>
+    <h2>ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ<br>за период: ${periodLabel}</h2>
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-value" style="color:#10B981;">${totalIncome.toLocaleString()} ₸</div><div class="kpi-label">💰 Поступления</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:#3B82F6;">${totalPlan.toLocaleString()} ₸</div><div class="kpi-label">📥 План поступлений</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:#EF4444;">${totalExp.toLocaleString()} ₸</div><div class="kpi-label">📤 Расходы</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:#F59E0B;">${totalPay.toLocaleString()} ₸</div><div class="kpi-label">👷 Выплаты</div></div>
+    </div>
+    <h3>📊 Сводка по объектам</h3>
+    <table><thead><tr><th>Объект</th><th>💰 Поступления</th><th>📥 План</th><th>📤 Расходы</th><th>👷 Выплаты</th><th>Сальдо</th></tr></thead><tbody>${objRows}</tbody></table>
+    <div class="footer">
+        <p>Дата: ${new Date().toLocaleDateString('ru-RU')} | Ответственный: ${currentUser?.full_name || '—'}</p>
+        <p>ТОО "LamGroup Construction" | г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215</p>
+    </div>
+    </body></html>`;
     
-    w.document.write(`
-        <!DOCTYPE html>
-        <html><head><meta charset="UTF-8"><title>Отчёт ДДС</title>
-        <style>
-            @media print { body { margin: 0; padding: 15mm; } @page { size: A4 landscape; margin: 10mm; } .no-print { display: none !important; } }
-            body { font-family: Arial, sans-serif; color: #000; line-height: 1.4; max-width: 100%; margin: 0 auto; padding: 10mm; font-size: 10pt; }
-            h1 { font-size: 16pt; text-align: center; margin-bottom: 4px; }
-            h2 { font-size: 12pt; text-align: center; color: #555; margin-bottom: 16px; }
-            h3 { font-size: 11pt; border-bottom: 2px solid #ddd; padding-bottom: 4px; margin: 16px 0 8px 0; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-            th { background: #f0f0f0; padding: 6px 8px; text-align: left; font-weight: 600; font-size: 9pt; border: 1px solid #ddd; }
-            td { padding: 5px 8px; border: 1px solid #ddd; font-size: 9pt; }
-            .kpi-grid { display: flex; gap: 12px; margin-bottom: 16px; }
-            .kpi-card { flex: 1; background: #f8f8f8; border-radius: 8px; padding: 12px; text-align: center; border: 1px solid #ddd; }
-            .kpi-value { font-size: 16pt; font-weight: 800; }
-            .kpi-label { font-size: 8pt; color: #777; text-transform: uppercase; }
-            .footer { text-align: center; font-size: 8pt; color: #999; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
-        </style></head><body>
-        <h1>ТОО "LamGroup Construction"</h1>
-        <h2>ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ<br>за период: ${periodLabel}</h2>
-        <div class="kpi-grid">
-            <div class="kpi-card"><div class="kpi-value" style="color:#10B981;">${totalIncome.toLocaleString()} ₸</div><div class="kpi-label">💰 Поступления</div></div>
-            <div class="kpi-card"><div class="kpi-value" style="color:#3B82F6;">${totalPlan.toLocaleString()} ₸</div><div class="kpi-label">📥 План поступлений</div></div>
-            <div class="kpi-card"><div class="kpi-value" style="color:#EF4444;">${totalExp.toLocaleString()} ₸</div><div class="kpi-label">📤 Расходы</div></div>
-            <div class="kpi-card"><div class="kpi-value" style="color:#F59E0B;">${totalPay.toLocaleString()} ₸</div><div class="kpi-label">👷 Выплаты</div></div>
+    // Загружаем в Supabase
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const file = new File([blob], 'dds_report.html');
+    const fileName = 'reports/' + Date.now() + '_dds_report.html';
+    
+    const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: true });
+    if (uploadError) { showMessage('❌ Ошибка', 'error'); return; }
+    
+    const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+    const publicUrl = urlData.publicUrl;
+    
+    // Показываем ссылку в модальном окне
+    const modal = document.getElementById('modal');
+    document.getElementById('modal-title').textContent = '📄 Отчёт готов';
+    document.getElementById('modal-content').innerHTML = `
+        <div style="text-align:center;padding:20px;">
+            <p style="margin-bottom:12px;font-weight:600;">Отчёт загружен. Выберите действие:</p>
+            <a href="${publicUrl}" target="_blank" rel="noopener" style="display:block;padding:14px;background:#0F172A;color:white;border-radius:12px;text-decoration:none;font-weight:600;margin-bottom:8px;">🔗 Открыть отчёт</a>
+            <button class="btn btn-outline" onclick="navigator.clipboard.writeText('${publicUrl}');alert('✅ Ссылка скопирована! Вставьте в браузер.')" style="width:100%;">📋 Скопировать ссылку</button>
+            <p style="font-size:10px;color:#94A3B8;margin-top:12px;">Откройте ссылку в браузере и нажмите Ctrl+P для печати</p>
         </div>
-        <h3>📊 Сводка по объектам</h3>
-        <table><thead><tr><th>Объект</th><th>💰 Поступления</th><th>📥 План</th><th>📤 Расходы</th><th>👷 Выплаты</th><th>Сальдо</th></tr></thead><tbody>${objRows}</tbody></table>
-        <div class="footer">
-            <p>Дата: ${new Date().toLocaleDateString('ru-RU')} | Ответственный: ${currentUser?.full_name || '—'}</p>
-            <p>ТОО "LamGroup Construction" | г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215</p>
-        </div>
-        </body></html>
-    `);
-    w.document.close();
+    `;
+    modal.classList.remove('hidden');
     
-    // Автопечать через 1 секунду
-    setTimeout(function() {
-        w.print();
-    }, 1000);
-    
-    showMessage('✅ Отчёт открыт', 'success');
+    showMessage('✅ Отчёт готов', 'success');
 };
 
 function setupFilters() {
