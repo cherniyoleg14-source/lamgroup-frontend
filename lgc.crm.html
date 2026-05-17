@@ -7,365 +7,93 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #F8FAFC;
-            --card: #FFFFFF;
-            --text: #0F172A;
-            --text-secondary: #64748B;
-            --border: #E2E8F0;
-            --gold: #F59E0B;
-            --primary: #0F172A;
-            --success: #10B981;
-            --danger: #EF4444;
-            --warning: #F59E0B;
-            --info: #3B82F6;
-            --sidebar-width: 240px;
-            --header-height: 64px;
-            --shadow: 0 4px 16px rgba(0,0,0,0.06);
-            --radius: 12px;
-            --radius-lg: 16px;
+            --bg: #F8FAFC; --card: #FFFFFF; --text: #0F172A; --text-secondary: #64748B;
+            --border: #E2E8F0; --gold: #F59E0B; --primary: #0F172A; --success: #10B981;
+            --danger: #EF4444; --warning: #F59E0B; --info: #3B82F6;
+            --sidebar-width: 240px; --header-height: 64px;
+            --shadow: 0 4px 16px rgba(0,0,0,0.06); --radius: 12px; --radius-lg: 16px;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-        /* ========== АВТОРИЗАЦИЯ ========== */
+        /* ===== АВТОРИЗАЦИЯ ===== */
         .auth-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10000;
-            padding: 20px;
+            display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px;
         }
         .auth-overlay.hidden { display: none; }
-
         .auth-card {
-            background: white;
-            border-radius: 24px;
-            padding: 48px 40px;
-            text-align: center;
-            max-width: 420px;
-            width: 100%;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.3);
+            background: white; border-radius: 24px; padding: 40px 36px; text-align: center;
+            max-width: 440px; width: 100%; box-shadow: 0 25px 60px rgba(0,0,0,0.3);
         }
-        .auth-card .logo {
-            font-size: 36px;
-            margin-bottom: 8px;
-        }
-        .auth-card h1 {
-            font-size: 24px;
-            font-weight: 800;
-            margin-bottom: 4px;
-            letter-spacing: -0.5px;
-        }
-        .auth-card p {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 32px;
-        }
-        .auth-card .login-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            background: linear-gradient(135deg, #2AABEE, #229ED9);
-            color: white;
-            border: none;
-            padding: 14px 32px;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-        }
-        .auth-card .login-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(42,171,238,0.3);
-        }
-        .auth-error {
-            color: var(--danger);
-            font-size: 12px;
-            margin-top: 12px;
-            display: none;
-        }
+        .auth-card .logo { font-size: 40px; margin-bottom: 4px; }
+        .auth-card h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+        .auth-card .subtitle { font-size: 12px; color: var(--text-secondary); margin-bottom: 24px; }
+        .form-group { margin-bottom: 14px; text-align: left; }
+        .form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 14px; font-family: inherit; text-align: center; }
+        .form-input:focus { outline: none; border-color: var(--gold); }
+        .btn { padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; width: 100%; transition: all 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-telegram { background: linear-gradient(135deg, #2AABEE, #229ED9); color: white; }
+        .btn-qr { background: #F1F5F9; color: var(--text); }
+        .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--text-secondary); font-size: 12px; }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        .auth-error { color: var(--danger); font-size: 12px; margin-top: 8px; display: none; }
+        .qr-popup { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10001; align-items: center; justify-content: center; }
+        .qr-popup.show { display: flex; }
+        .qr-popup-content { background: white; border-radius: 20px; padding: 30px; text-align: center; }
+        .qr-popup-content canvas { margin: 16px auto; }
 
-        /* ========== ЛЕЙАУТ ========== */
-        .app-layout {
-            display: flex;
-            min-height: 100vh;
-        }
+        /* ===== ЛЕЙАУТ ===== */
+        .app-layout { display: flex; min-height: 100vh; }
         .app-layout.hidden { display: none; }
-
-        /* ========== САЙДБАР ========== */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: white;
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            top: 0; left: 0; bottom: 0;
-            z-index: 100;
-            transition: transform 0.3s;
-        }
-        .sidebar-logo {
-            padding: 20px 24px;
-            font-weight: 800;
-            font-size: 18px;
-            border-bottom: 1px solid var(--border);
-            letter-spacing: -0.5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .sidebar-nav {
-            flex: 1;
-            padding: 12px 8px;
-            overflow-y: auto;
-        }
-        .sidebar-nav a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 16px;
-            border-radius: 10px;
-            text-decoration: none;
-            color: var(--text-secondary);
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.15s;
-            margin-bottom: 2px;
-        }
-        .sidebar-nav a:hover {
-            background: #F1F5F9;
-            color: var(--text);
-        }
-        .sidebar-nav a.active {
-            background: #F1F5F9;
-            color: var(--text);
-            font-weight: 600;
-        }
-        .sidebar-user {
-            padding: 16px 24px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-        }
-        .sidebar-user .avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--primary);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 14px;
-        }
-
-        /* ========== ОСНОВНОЕ ========== */
-        .main-content {
-            flex: 1;
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-        }
-        .page-header {
-            background: white;
-            border-bottom: 1px solid var(--border);
-            padding: 0 32px;
-            height: var(--header-height);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-        }
-        .page-header h1 {
-            font-size: 18px;
-            font-weight: 700;
-        }
-        .page-body {
-            padding: 24px 32px;
-        }
-
-        /* ========== KPI ========== */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-        .kpi-card {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-        }
-        .kpi-card .kpi-icon {
-            font-size: 24px;
-            margin-bottom: 8px;
-        }
-        .kpi-card .kpi-value {
-            font-size: 28px;
-            font-weight: 800;
-        }
-        .kpi-card .kpi-label {
-            font-size: 11px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 4px;
-        }
-
-        /* ========== КАРТОЧКИ ========== */
-        .card {
-            background: white;
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-            margin-bottom: 24px;
-        }
-        .card h2 {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 16px;
-        }
-
-        /* ========== ТАБЛИЦЫ ========== */
-        .table-wrap {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        th {
-            background: #F8FAFC;
-            padding: 10px 12px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 11px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            border-bottom: 2px solid var(--border);
-        }
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--border);
-        }
-        tr:hover td {
-            background: #F8FAFC;
-        }
-
-        /* ========== ГАНТ ========== */
-        .gantt-bar-wrap {
-            background: #F1F5F9;
-            border-radius: 6px;
-            height: 24px;
-            position: relative;
-            overflow: hidden;
-        }
-        .gantt-bar {
-            height: 100%;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            padding-left: 8px;
-            font-size: 10px;
-            font-weight: 600;
-            color: white;
-            white-space: nowrap;
-        }
-        .gantt-bar.green { background: linear-gradient(135deg, #10B981, #34D399); }
-        .gantt-bar.yellow { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
-        .gantt-bar.red { background: linear-gradient(135deg, #EF4444, #F87171); }
-        .gantt-bar.blue { background: linear-gradient(135deg, #3B82F6, #60A5FA); }
-
-        /* ========== ТЕГИ ========== */
-        .tag {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        .tag-green { background: #D1FAE5; color: #065F46; }
-        .tag-yellow { background: #FEF3C7; color: #92400E; }
-        .tag-red { background: #FEE2E2; color: #991B1B; }
-        .tag-blue { background: #DBEAFE; color: #1E40AF; }
-
-        /* ========== МОБИЛЬНАЯ ВЕРСИЯ ========== */
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            .main-content {
-                margin-left: 0;
-            }
-            .kpi-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .page-body {
-                padding: 16px;
-            }
-            .page-header {
-                padding: 0 16px;
-            }
-            .mobile-menu-btn {
-                display: block !important;
-            }
-        }
-
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.4);
-            z-index: 99;
-        }
-        .sidebar-overlay.open { display: block; }
-
+        .sidebar { width: var(--sidebar-width); background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
+        .sidebar-logo { padding: 20px 24px; font-weight: 800; font-size: 17px; border-bottom: 1px solid var(--border); }
+        .sidebar-nav { flex: 1; padding: 12px 8px; }
+        .sidebar-nav a { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 10px; text-decoration: none; color: var(--text-secondary); font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { background: #F1F5F9; color: var(--text); font-weight: 600; }
+        .sidebar-user { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-size: 13px; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .main-content { flex: 1; margin-left: var(--sidebar-width); }
+        .page-header { background: white; border-bottom: 1px solid var(--border); padding: 0 32px; height: var(--header-height); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+        .page-body { padding: 24px 32px; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .kpi-card { background: white; border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); }
+        .kpi-value { font-size: 26px; font-weight: 800; }
+        .kpi-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; margin-top: 4px; }
+        .card { background: white; border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; }
+        .card h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #F8FAFC; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 11px; color: var(--text-secondary); text-transform: uppercase; border-bottom: 2px solid var(--border); }
+        td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+        .gantt-bar-wrap { background: #F1F5F9; border-radius: 6px; height: 22px; overflow: hidden; }
+        .gantt-bar { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; font-size: 10px; font-weight: 600; color: white; }
+        .gantt-bar.green { background: #10B981; } .gantt-bar.yellow { background: #F59E0B; } .gantt-bar.red { background: #EF4444; } .gantt-bar.blue { background: #3B82F6; }
+        .tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .tag-green { background: #D1FAE5; color: #065F46; } .tag-yellow { background: #FEF3C7; color: #92400E; } .tag-red { background: #FEE2E2; color: #991B1B; } .tag-blue { background: #DBEAFE; color: #1E40AF; }
         .hidden { display: none !important; }
-        .text-success { color: var(--success); }
-        .text-danger { color: var(--danger); }
-        .text-warning { color: var(--warning); }
-        .text-info { color: var(--info); }
-        .text-right { text-align: right; }
-        .mt-16 { margin-top: 16px; }
-        .mb-16 { margin-bottom: 16px; }
-        .gap-8 { display: flex; gap: 8px; }
-        .gap-16 { display: flex; gap: 16px; flex-wrap: wrap; }
+        .text-success { color: var(--success); } .text-danger { color: var(--danger); } .text-warning { color: var(--warning); }
+        .table-wrap { overflow-x: auto; }
+
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .page-body { padding: 16px; }
+            .mobile-menu-btn { display: block !important; }
+        }
+        .mobile-menu-btn { display: none; background: none; border: none; font-size: 24px; cursor: pointer; }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 99; }
+        .sidebar-overlay.open { display: block; }
     </style>
 </head>
 <body>
@@ -375,16 +103,41 @@
         <div class="auth-card">
             <div class="logo">🏗️</div>
             <h1>LamGroup CRM</h1>
-            <p>Войдите через Telegram для доступа</p>
-            <div id="telegram-login-widget"></div>
-            <p class="auth-error" id="auth-error">⛔ Доступ запрещён. Обратитесь к руководителю.</p>
+            <p class="subtitle">Войдите в систему управления проектами</p>
+
+            <!-- Форма входа по ID + паролю -->
+            <div id="manual-login-form">
+                <div class="form-group">
+                    <label>📱 Telegram ID</label>
+                    <input type="text" id="auth-tg-id" class="form-input" placeholder="Например: 531738802">
+                </div>
+                <div class="form-group">
+                    <label>🔑 Пароль</label>
+                    <input type="password" id="auth-password" class="form-input" placeholder="Введите пароль">
+                </div>
+                <button class="btn btn-primary" onclick="loginWithPassword()">🔐 Войти</button>
+                <p class="auth-error" id="auth-error">⛔ Неверный ID или пароль</p>
+            </div>
+
+            <div class="divider">или</div>
+
+            <button class="btn btn-telegram" onclick="loginWithTelegram()">🔵 Войти через Telegram</button>
+            <button class="btn btn-qr" onclick="showQRCode()" style="margin-top:8px;">📱 Вход по QR-коду</button>
+        </div>
+    </div>
+
+    <!-- QR-код попап -->
+    <div class="qr-popup" id="qr-popup">
+        <div class="qr-popup-content">
+            <h3>📱 Вход по QR-коду</h3>
+            <p style="font-size:12px;color:var(--text-secondary);">Отсканируйте чтобы открыть CRM в Telegram</p>
+            <div id="qr-code"></div>
+            <button class="btn btn-primary" onclick="closeQR()">Закрыть</button>
         </div>
     </div>
 
     <!-- ПРИЛОЖЕНИЕ -->
     <div class="app-layout hidden" id="app-layout">
-
-        <!-- САЙДБАР -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-logo">🏗️ LamGroup</div>
             <nav class="sidebar-nav">
@@ -392,32 +145,22 @@
                 <a href="#" data-page="objects">🏗️ Объекты</a>
                 <a href="#" data-page="tasks">📋 Задачи</a>
                 <a href="#" data-page="finances">💰 Финансы</a>
-                <a href="#" data-page="reports">📊 Отчёты</a>
             </nav>
             <div class="sidebar-user">
                 <div class="avatar" id="user-avatar">?</div>
-                <div>
-                    <div style="font-weight:600;" id="user-name">—</div>
-                    <div style="font-size:11px;color:var(--text-secondary);" id="user-role">—</div>
-                </div>
+                <div><div style="font-weight:600;" id="user-name">—</div><div style="font-size:11px;color:var(--text-secondary);" id="user-role">—</div></div>
             </div>
         </div>
-
-        <!-- ОВЕРЛЕЙ ДЛЯ МОБИЛЬНОГО -->
         <div class="sidebar-overlay" id="sidebar-overlay"></div>
-
-        <!-- ОСНОВНОЙ КОНТЕНТ -->
         <div class="main-content">
             <header class="page-header">
-                <div class="gap-8" style="align-items:center;">
+                <div style="display:flex;align-items:center;gap:8px;">
                     <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
                     <h1 id="page-title">🏠 Дашборд</h1>
                 </div>
                 <button class="tag tag-red" id="logout-btn" style="cursor:pointer;border:none;">Выйти</button>
             </header>
-            <div class="page-body" id="page-body">
-                <!-- Контент загружается динамически -->
-            </div>
+            <div class="page-body" id="page-body"></div>
         </div>
     </div>
 
@@ -426,68 +169,99 @@
     const SUPABASE_URL = 'https://owagntywpiymqhbfoxye.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YWdudHl3cGl5bXFoYmZveHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTg5MDUsImV4cCI6MjA5MTg5NDkwNX0.p-3xAhbFgH5lcGnbBfkcQQFVza_Yc2qoY6VBlhmmFGg';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const tg = window.Telegram?.WebApp;
+    if (tg) { tg.ready(); tg.expand(); }
 
     let currentUser = null;
-    let currentPage = 'dashboard';
 
     function formatMoney(a) { return (a||0).toLocaleString() + ' ₸'; }
-    function escapeHtml(t) { if(!t) return ''; return String(t).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]||c;}); }
+    function escapeHtml(t) { if(!t) return ''; return String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]||c)); }
     function formatDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('ru-RU'); }
+    function showMessage(txt) { alert(txt); }
 
-    // ========== АВТОРИЗАЦИЯ ==========
-    async function checkAuth() {
-        const tg = window.Telegram?.WebApp;
-        if (!tg) {
-            // Не в Telegram — показываем ручной вход
-            document.getElementById('telegram-login-widget').innerHTML = `
-                <p style="margin-bottom:12px;">Введите ваш Telegram ID:</p>
-                <input type="text" id="manual-tg-id" placeholder="Например: 531738802" style="width:100%;padding:12px;border:1.5px solid #E2E8F0;border-radius:10px;font-size:14px;text-align:center;">
-                <button class="login-btn" onclick="window.manualLogin()" style="margin-top:12px;">🔐 Войти</button>
-            `;
-            return;
-        }
-
-        tg.ready();
-        const user = tg.initDataUnsafe?.user;
-        if (!user) {
-            document.getElementById('auth-error').style.display = 'block';
-            return;
-        }
-
-        await authenticateUser(user.id, user.first_name + ' ' + (user.last_name || ''), user.username);
+    // ===== ХЕШИРОВАНИЕ ПАРОЛЯ (простой SHA-256) =====
+    async function hashPassword(password) {
+        const msgBuffer = new TextEncoder().encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    window.manualLogin = async function() {
-        const id = document.getElementById('manual-tg-id')?.value?.trim();
-        if (!id) { alert('Введите Telegram ID'); return; }
-        await authenticateUser(parseInt(id), 'Пользователь ' + id, null);
-    };
+    // ===== ВХОД ПО ПАРОЛЮ =====
+    window.loginWithPassword = async function() {
+        const tgId = document.getElementById('auth-tg-id').value.trim();
+        const password = document.getElementById('auth-password').value.trim();
+        
+        if (!tgId || !password) { showMessage('Введите ID и пароль'); return; }
 
-    async function authenticateUser(telegramId, fullName, username) {
-        const { data: users, error } = await supabase.from('users').select('*').eq('telegram_id', telegramId);
+        const { data: users, error } = await supabase.from('users').select('*').eq('telegram_id', parseInt(tgId));
         
         if (error || !users?.length) {
             document.getElementById('auth-error').style.display = 'block';
             return;
         }
 
+        const user = users[0];
+        const hashed = await hashPassword(password);
+        
+        if (user.password_hash !== hashed) {
+            document.getElementById('auth-error').style.display = 'block';
+            return;
+        }
+
+        currentUser = user;
+        enterApp();
+    };
+
+    // ===== ВХОД ЧЕРЕЗ TELEGRAM =====
+    window.loginWithTelegram = async function() {
+        if (!tg) { showMessage('Откройте в Telegram'); return; }
+        
+        const tgUser = tg.initDataUnsafe?.user;
+        if (!tgUser) { showMessage('Ошибка авторизации Telegram'); return; }
+
+        const { data: users } = await supabase.from('users').select('*').eq('telegram_id', tgUser.id);
+        if (!users?.length) {
+            document.getElementById('auth-error').style.display = 'block';
+            return;
+        }
+
         currentUser = users[0];
         
-        // Обновляем имя если изменилось
-        if (fullName && fullName !== currentUser.full_name) {
-            await supabase.from('users').update({ full_name: fullName, username }).eq('id', currentUser.id);
+        // Обновляем имя
+        const fullName = tgUser.first_name + ' ' + (tgUser.last_name || '');
+        if (fullName !== currentUser.full_name) {
+            await supabase.from('users').update({ full_name: fullName }).eq('id', currentUser.id);
             currentUser.full_name = fullName;
         }
 
-        // Показываем приложение
+        enterApp();
+    };
+
+    // ===== QR-КОД =====
+    window.showQRCode = function() {
+        document.getElementById('qr-popup').classList.add('show');
+        document.getElementById('qr-code').innerHTML = '';
+        
+        const crmUrl = 'https://t.me/LGCFASAD_bot/app';
+        new QRCode(document.getElementById('qr-code'), {
+            text: crmUrl,
+            width: 200,
+            height: 200,
+            colorDark: '#0F172A',
+            colorLight: '#FFFFFF'
+        });
+    };
+
+    window.closeQR = function() {
+        document.getElementById('qr-popup').classList.remove('show');
+    };
+
+    // ===== ВХОД В ПРИЛОЖЕНИЕ =====
+    function enterApp() {
         document.getElementById('auth-overlay').classList.add('hidden');
         document.getElementById('app-layout').classList.remove('hidden');
-        
-        initApp();
-    }
 
-    // ========== ИНИЦИАЛИЗАЦИЯ ==========
-    function initApp() {
         document.getElementById('user-avatar').textContent = (currentUser.full_name || '?')[0].toUpperCase();
         document.getElementById('user-name').textContent = currentUser.full_name || '—';
         document.getElementById('user-role').textContent = currentUser.role === 'manager' ? 'Руководитель' : currentUser.role === 'worker' ? 'ИТР' : 'Бухгалтер';
@@ -496,7 +270,7 @@
         loadPage('dashboard');
     }
 
-    // ========== НАВИГАЦИЯ ==========
+    // ===== НАВИГАЦИЯ =====
     function setupNavigation() {
         document.querySelectorAll('.sidebar-nav a').forEach(link => {
             link.addEventListener('click', function(e) {
@@ -504,62 +278,47 @@
                 document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
                 this.classList.add('active');
                 loadPage(this.dataset.page);
-                // На мобильном закрываем меню
                 document.getElementById('sidebar').classList.remove('open');
                 document.getElementById('sidebar-overlay').classList.remove('open');
             });
         });
 
-        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
             document.getElementById('sidebar').classList.toggle('open');
             document.getElementById('sidebar-overlay').classList.toggle('open');
         });
-
-        document.getElementById('sidebar-overlay').addEventListener('click', () => {
+        document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
             document.getElementById('sidebar').classList.remove('open');
             document.getElementById('sidebar-overlay').classList.remove('open');
         });
-
-        document.getElementById('logout-btn').addEventListener('click', () => {
+        document.getElementById('logout-btn')?.addEventListener('click', () => {
             currentUser = null;
             document.getElementById('auth-overlay').classList.remove('hidden');
             document.getElementById('app-layout').classList.add('hidden');
         });
     }
 
-    // ========== ЗАГРУЗКА СТРАНИЦ ==========
+    // ===== ЗАГРУЗКА СТРАНИЦ =====
     async function loadPage(page) {
-        currentPage = page;
         const container = document.getElementById('page-body');
-        container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-secondary);">Загрузка...</div>';
-
-        const titles = { dashboard: '🏠 Дашборд', objects: '🏗️ Объекты', tasks: '📋 Задачи', finances: '💰 Финансы', reports: '📊 Отчёты' };
-        document.getElementById('page-title').textContent = titles[page] || '';
+        container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
+        document.getElementById('page-title').textContent = { dashboard:'🏠 Дашборд', objects:'🏗️ Объекты', tasks:'📋 Задачи', finances:'💰 Финансы' }[page] || '';
 
         switch(page) {
             case 'dashboard': await loadDashboard(container); break;
             case 'objects': await loadObjectsPage(container); break;
             case 'tasks': await loadTasksPage(container); break;
             case 'finances': await loadFinancesPage(container); break;
-            case 'reports': container.innerHTML = '<div class="card"><h2>📊 Отчёты</h2><p>Раздел в разработке</p></div>'; break;
         }
     }
 
-    // ========== ДАШБОРД ==========
     async function loadDashboard(container) {
-        const [projRes, tasksRes, incRes] = await Promise.all([
+        const [projRes, tasksRes] = await Promise.all([
             supabase.from('projects').select('*', { count: 'exact' }),
-            supabase.from('custom_tasks').select('*', { count: 'exact' }).in('status', ['pending','in_progress']),
-            supabase.from('incomes').select('amount').eq('status', 'paid')
+            supabase.from('custom_tasks').select('*', { count: 'exact' }).in('status', ['pending','in_progress'])
         ]);
 
-        const projectsCount = projRes.count || 0;
-        const tasksCount = tasksRes.count || 0;
-        const totalIncome = (incRes.data || []).reduce((s, i) => s + (i.amount || 0), 0);
-
-        // График прогресса
-        const { data: axes } = await supabase.from('axes').select('*, blocks!inner(project_id, projects(name))').order('name');
-        
+        const { data: axes } = await supabase.from('axes').select('*, blocks!inner(projects(name))');
         const projectProgress = {};
         (axes || []).forEach(ax => {
             const name = ax.blocks?.projects?.name || 'Без объекта';
@@ -567,79 +326,35 @@
             projectProgress[name].total += (ax.progress || 0);
             projectProgress[name].count++;
         });
-
         const labels = Object.keys(projectProgress);
         const data = labels.map(k => Math.round(projectProgress[k].total / projectProgress[k].count));
 
         container.innerHTML = `
             <div class="kpi-grid">
-                <div class="kpi-card"><div class="kpi-icon">🏗️</div><div class="kpi-value">${projectsCount}</div><div class="kpi-label">Объектов</div></div>
-                <div class="kpi-card"><div class="kpi-icon">📋</div><div class="kpi-value">${tasksCount}</div><div class="kpi-label">Активных задач</div></div>
-                <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-value" style="color:var(--success);">${formatMoney(totalIncome)}</div><div class="kpi-label">Поступило</div></div>
-                <div class="kpi-card"><div class="kpi-icon">👷</div><div class="kpi-value">—</div><div class="kpi-label">Бригад</div></div>
+                <div class="kpi-card"><div style="font-size:24px;">🏗️</div><div class="kpi-value">${projRes.count||0}</div><div class="kpi-label">Объектов</div></div>
+                <div class="kpi-card"><div style="font-size:24px;">📋</div><div class="kpi-value">${tasksRes.count||0}</div><div class="kpi-label">Активных задач</div></div>
+                <div class="kpi-card"><div style="font-size:24px;">💰</div><div class="kpi-value" style="color:var(--success);">—</div><div class="kpi-label">Поступило</div></div>
+                <div class="kpi-card"><div style="font-size:24px;">👷</div><div class="kpi-value">—</div><div class="kpi-label">Бригад</div></div>
             </div>
+            <div class="card"><h2>📊 Прогресс по объектам</h2><canvas id="progress-chart" height="80"></canvas></div>`;
 
-            <div class="card">
-                <h2>📊 Прогресс по объектам</h2>
-                <canvas id="progress-chart" height="80"></canvas>
-            </div>
-        `;
-
-        // Рисуем график
         setTimeout(() => {
             const ctx = document.getElementById('progress-chart');
-            if (ctx) {
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Прогресс %',
-                            data: data,
-                            backgroundColor: data.map(v => v >= 80 ? '#10B981' : v >= 50 ? '#F59E0B' : '#EF4444'),
-                            borderRadius: 8
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
-                    }
-                });
-            }
+            if (ctx) new Chart(ctx, { type:'bar', data:{ labels, datasets:[{ label:'Прогресс %', data, backgroundColor: data.map(v => v>=80?'#10B981':v>=50?'#F59E0B':'#EF4444'), borderRadius:8 }] }, options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } } } } });
         }, 300);
     }
 
-    // ========== ОБЪЕКТЫ ==========
     async function loadObjectsPage(container) {
-        let query = supabase.from('projects').select('*').order('name');
-        if (currentUser.role !== 'manager') query = query.eq('responsible_worker_id', currentUser.id);
-        
-        const { data: projects } = await query;
-        
-        if (!projects?.length) {
-            container.innerHTML = '<div class="card"><p style="text-align:center;color:var(--text-secondary);">Нет доступных объектов</p></div>';
-            return;
-        }
+        let q = supabase.from('projects').select('*').order('name');
+        if (currentUser.role !== 'manager') q = q.eq('responsible_worker_id', currentUser.id);
+        const { data: projects } = await q;
+        if (!projects?.length) { container.innerHTML = '<div class="card"><p style="text-align:center;">Нет объектов</p></div>'; return; }
 
-        let html = '<div class="gap-16">';
+        let html = '<div style="display:flex;flex-wrap:wrap;gap:16px;">';
         for (const p of projects) {
-            const { data: axes } = await supabase.from('axes').select('progress').eq('block_id', p.id).eq('status', 'in_progress');
-            const avgProgress = axes?.length ? Math.round(axes.reduce((s,a) => s + (a.progress||0), 0) / axes.length) : 0;
-            
-            html += `
-                <div class="card" style="flex:1;min-width:280px;cursor:pointer;" onclick="loadObjectDetail('${p.id}')">
-                    <h2>${escapeHtml(p.name)}</h2>
-                    <p style="font-size:13px;color:var(--text-secondary);">📍 ${escapeHtml(p.address||'—')}</p>
-                    <div style="margin-top:12px;">
-                        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
-                            <span>Прогресс</span><span>${avgProgress}%</span>
-                        </div>
-                        <div class="gantt-bar-wrap">
-                            <div class="gantt-bar ${avgProgress >= 80 ? 'green' : avgProgress >= 50 ? 'yellow' : 'red'}" style="width:${avgProgress}%;">${avgProgress}%</div>
-                        </div>
-                    </div>
-                </div>`;
+            const { data: axes } = await supabase.from('axes').select('progress').eq('block_id', p.id);
+            const avg = axes?.length ? Math.round(axes.reduce((s,a)=>s+(a.progress||0),0)/axes.length) : 0;
+            html += `<div class="card" style="flex:1;min-width:260px;cursor:pointer;" onclick="loadObjectDetail('${p.id}')"><h2>${escapeHtml(p.name)}</h2><p style="font-size:13px;color:var(--text-secondary);">📍 ${escapeHtml(p.address||'—')}</p><div style="margin-top:12px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>Прогресс</span><span>${avg}%</span></div><div class="gantt-bar-wrap"><div class="gantt-bar ${avg>=80?'green':avg>=50?'yellow':'red'}" style="width:${avg}%;">${avg}%</div></div></div></div>`;
         }
         html += '</div>';
         container.innerHTML = html;
@@ -653,117 +368,58 @@
         const { data: project } = await supabase.from('projects').select('*').eq('id', projectId).single();
         const { data: axes } = await supabase.from('axes').select('*, blocks(name)').eq('block_id', projectId).order('name');
 
-        let ganttRows = '';
+        let rows = '';
         (axes || []).forEach(ax => {
-            const progress = ax.progress || 0;
-            const barClass = progress >= 100 ? 'green' : progress >= 50 ? 'blue' : 'yellow';
-            ganttRows += `
-                <tr>
-                    <td><b>${escapeHtml(ax.name)}</b></td>
-                    <td>${formatDate(ax.plan_start)}</td>
-                    <td>${formatDate(ax.plan_end)}</td>
-                    <td>
-                        <div class="gantt-bar-wrap">
-                            <div class="gantt-bar ${barClass}" style="width:${progress}%;">${progress}%</div>
-                        </div>
-                    </td>
-                    <td><span class="tag ${progress >= 100 ? 'tag-green' : progress >= 50 ? 'tag-blue' : 'tag-yellow'}">${progress >= 100 ? '✅ Завершено' : progress >= 50 ? '🔵 В работе' : '⏳ Начало'}</span></td>
-                </tr>`;
+            const p = ax.progress || 0;
+            rows += `<tr><td><b>${escapeHtml(ax.name)}</b></td><td>${formatDate(ax.plan_start)}</td><td>${formatDate(ax.plan_end)}</td><td><div class="gantt-bar-wrap"><div class="gantt-bar ${p>=100?'green':p>=50?'blue':'yellow'}" style="width:${p}%;">${p}%</div></div></td><td><span class="tag ${p>=100?'tag-green':p>=50?'tag-blue':'tag-yellow'}">${p>=100?'✅ Завершено':p>=50?'🔵 В работе':'⏳ Начало'}</span></td></tr>`;
         });
 
         container.innerHTML = `
-            <button onclick="loadPage('objects')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к объектам</button>
-            <div class="card">
-                <h2>🏗️ ${escapeHtml(project.name)}</h2>
-                <p style="color:var(--text-secondary);">📍 ${escapeHtml(project.address||'—')} | 📋 Договор: ${escapeHtml(project.contract_number_customer||'—')} | 💰 Сумма: ${formatMoney(project.contract_price)}</p>
-            </div>
-            <div class="card">
-                <h2>📊 График производства работ (ГПР)</h2>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>Ось</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Статус</th></tr></thead>
-                        <tbody>${ganttRows || '<tr><td colspan="5" style="text-align:center;">Нет данных</td></tr>'}</tbody>
-                    </table>
-                </div>
-            </div>
-        `;
+            <button onclick="loadPage('objects')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад</button>
+            <div class="card"><h2>🏗️ ${escapeHtml(project.name)}</h2><p style="color:var(--text-secondary);">📍 ${escapeHtml(project.address||'—')} | 📋 Договор: ${escapeHtml(project.contract_number_customer||'—')} | 💰 Сумма: ${formatMoney(project.contract_price)}</p></div>
+            <div class="card"><h2>📊 ГПР</h2><div class="table-wrap"><table><thead><tr><th>Ось</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Статус</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Нет данных</td></tr>'}</tbody></table></div></div>`;
     };
 
-    // ========== ЗАДАЧИ ==========
     async function loadTasksPage(container) {
-        let query = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false }).limit(50);
-        if (currentUser.role !== 'manager') query = query.or(`created_by.eq.${currentUser.id},responsible_ids.cs.{${currentUser.id}}`);
-
-        const { data: tasks } = await query;
-
-        if (!tasks?.length) {
-            container.innerHTML = '<div class="card"><p style="text-align:center;color:var(--text-secondary);">Нет задач</p></div>';
-            return;
-        }
+        let q = supabase.from('custom_tasks').select('*, projects(name)').order('created_at',{ascending:false}).limit(50);
+        if (currentUser.role !== 'manager') q = q.or(`created_by.eq.${currentUser.id},responsible_ids.cs.{${currentUser.id}}`);
+        const { data: tasks } = await q;
+        if (!tasks?.length) { container.innerHTML = '<div class="card"><p style="text-align:center;">Нет задач</p></div>'; return; }
 
         let rows = '';
         tasks.forEach(t => {
-            const statusClass = t.status === 'completed' ? 'tag-green' : t.status === 'in_progress' ? 'tag-blue' : 'tag-yellow';
-            const statusLabel = t.status === 'completed' ? '✅ Сделано' : t.status === 'in_progress' ? '🔵 В работе' : '⏳ Ожидает';
-            rows += `
-                <tr>
-                    <td>${escapeHtml(t.title)}</td>
-                    <td>${escapeHtml(t.projects?.name||'—')}</td>
-                    <td><span class="tag ${statusClass}">${statusLabel}</span></td>
-                    <td>${escapeHtml(t.responsible_names?.join(', ')||'—')}</td>
-                    <td>${formatDate(t.created_at)}</td>
-                </tr>`;
+            const sc = t.status==='completed'?'tag-green':t.status==='in_progress'?'tag-blue':'tag-yellow';
+            const sl = t.status==='completed'?'✅ Сделано':t.status==='in_progress'?'🔵 В работе':'⏳ Ожидает';
+            rows += `<tr><td>${escapeHtml(t.title)}</td><td>${escapeHtml(t.projects?.name||'—')}</td><td><span class="tag ${sc}">${sl}</span></td><td>${escapeHtml(t.responsible_names?.join(', ')||'—')}</td><td>${formatDate(t.created_at)}</td></tr>`;
         });
 
-        container.innerHTML = `
-            <div class="card">
-                <h2>📋 Задачи</h2>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>Название</th><th>Объект</th><th>Статус</th><th>Ответственные</th><th>Создано</th></tr></thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
-            </div>`;
+        container.innerHTML = `<div class="card"><h2>📋 Задачи</h2><div class="table-wrap"><table><thead><tr><th>Название</th><th>Объект</th><th>Статус</th><th>Ответственные</th><th>Создано</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
     }
 
-    // ========== ФИНАНСЫ ==========
     async function loadFinancesPage(container) {
-        const { data: incomes } = await supabase.from('incomes').select('*').order('date', { ascending: false }).limit(20);
-        const totalIncome = (incomes || []).filter(i => i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
-        const totalPlan = (incomes || []).filter(i => i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+        const { data: incomes } = await supabase.from('incomes').select('*').order('date',{ascending:false}).limit(20);
+        const totalIn = (incomes||[]).filter(i=>i.status==='paid').reduce((s,i)=>s+(i.amount||0),0);
+        const totalPl = (incomes||[]).filter(i=>i.status==='pending').reduce((s,i)=>s+(i.amount||0),0);
 
         let rows = '';
-        (incomes || []).forEach(i => {
-            rows += `
-                <tr>
-                    <td>${formatDate(i.date)}</td>
-                    <td>📥 ${escapeHtml(i.description||'Поступление')}</td>
-                    <td class="text-right ${i.status === 'paid' ? 'text-success' : 'text-warning'}">${formatMoney(i.amount)}</td>
-                    <td><span class="tag ${i.status === 'paid' ? 'tag-green' : 'tag-yellow'}">${i.status === 'paid' ? 'Оплачен' : 'Ожидается'}</span></td>
-                </tr>`;
+        (incomes||[]).forEach(i => {
+            rows += `<tr><td>${formatDate(i.date)}</td><td>📥 ${escapeHtml(i.description||'')}</td><td class="${i.status==='paid'?'text-success':'text-warning'}" style="text-align:right;">${formatMoney(i.amount)}</td><td><span class="tag ${i.status==='paid'?'tag-green':'tag-yellow'}">${i.status==='paid'?'Оплачен':'Ожидается'}</span></td></tr>`;
         });
 
         container.innerHTML = `
             <div class="kpi-grid">
-                <div class="kpi-card"><div class="kpi-icon">💰</div><div class="kpi-value text-success">${formatMoney(totalIncome)}</div><div class="kpi-label">Поступило</div></div>
-                <div class="kpi-card"><div class="kpi-icon">📥</div><div class="kpi-value text-info">${formatMoney(totalPlan)}</div><div class="kpi-label">План поступлений</div></div>
-                <div class="kpi-card"><div class="kpi-icon">📤</div><div class="kpi-value">—</div><div class="kpi-label">Расходы</div></div>
-                <div class="kpi-card"><div class="kpi-icon">👷</div><div class="kpi-value">—</div><div class="kpi-label">Выплаты</div></div>
+                <div class="kpi-card"><div style="font-size:24px;">💰</div><div class="kpi-value text-success">${formatMoney(totalIn)}</div><div class="kpi-label">Поступило</div></div>
+                <div class="kpi-card"><div style="font-size:24px;">📥</div><div class="kpi-value" style="color:var(--info);">${formatMoney(totalPl)}</div><div class="kpi-label">План</div></div>
+                <div class="kpi-card"><div style="font-size:24px;">📤</div><div class="kpi-value">—</div><div class="kpi-label">Расходы</div></div>
+                <div class="kpi-card"><div style="font-size:24px;">👷</div><div class="kpi-value">—</div><div class="kpi-label">Выплаты</div></div>
             </div>
-            <div class="card">
-                <h2>💰 Поступления</h2>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>Дата</th><th>Описание</th><th>Сумма</th><th>Статус</th></tr></thead>
-                        <tbody>${rows || '<tr><td colspan="4" style="text-align:center;">Нет данных</td></tr>'}</tbody>
-                    </table>
-                </div>
-            </div>`;
+            <div class="card"><h2>💰 Поступления</h2><div class="table-wrap"><table><thead><tr><th>Дата</th><th>Описание</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>${rows||'<tr><td colspan="4">Нет данных</td></tr>'}</tbody></table></div></div>`;
     }
 
-    // ========== ЗАПУСК ==========
-    checkAuth();
+    // ===== АВТО-ВХОД ЕСЛИ В TELEGRAM =====
+    if (tg?.initDataUnsafe?.user) {
+        loginWithTelegram();
+    }
 })();
 </script>
 </body>
