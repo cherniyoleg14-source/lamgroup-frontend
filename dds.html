@@ -671,13 +671,70 @@ function showDownloadLink(url, type) {
 window.exportToExcel = async function() {
     showMessage('⏳ Формирую отчёт Excel...', 'success');
     
-    // ... (логика сбора данных и создания книги wb остаётся без изменений) ...
+    const periodType = document.getElementById('filter-period-type')?.value || 'month';
+    let periodLabel = '';
+    const now = new Date();
+    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
     
-    // Определяем, где открыто
+    if (periodType === 'month') {
+        const val = document.getElementById('filter-period-month')?.value;
+        if (val) { const [y, m] = val.split('-'); periodLabel = months[parseInt(m)-1] + ' ' + y; }
+    } else if (periodType === 'quarter') {
+        const q = Math.floor(now.getMonth() / 3) + 1;
+        periodLabel = q + '-й квартал ' + now.getFullYear();
+    } else if (periodType === 'year') {
+        periodLabel = now.getFullYear() + ' год';
+    } else {
+        const from = document.getElementById('filter-date-from')?.value;
+        const to = document.getElementById('filter-date-to')?.value;
+        periodLabel = from + ' – ' + to;
+    }
+    
+    const wb = XLSX.utils.book_new();
+    
+    const totalIncome = allIncome.filter(i => i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+    const totalPlan = allIncome.filter(i => i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+    const totalExp = allExpenses.filter(e => e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+    const totalPay = [...allWorkOrders.filter(o => o.payment_status === 'paid'), ...allAdvances.filter(a => a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
+    
+    const summaryData = [
+        ['ТОО "LamGroup Construction"'], ['ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ'], ['Период: ' + periodLabel], [''],
+        ['Показатель', 'Сумма, ₸'], ['Поступления (факт)', totalIncome], ['Поступления (план)', totalPlan],
+        ['Расходы (оплаченные)', totalExp], ['Выплаты бригадам', totalPay], [''],
+        ['Чистый денежный поток', totalIncome - totalExp - totalPay], [''],
+        ['Дата: ' + new Date().toLocaleDateString('ru-RU')], ['Ответственный: ' + (currentUser?.full_name || '—')]
+    ];
+    const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+    ws1['!cols'] = [{wch:35}, {wch:20}];
+    XLSX.utils.book_append_sheet(wb, ws1, 'Сводка');
+    
+    const objData = [['Объект', 'Поступления', 'План пост.', 'Расходы', 'Выплаты', 'Сальдо']];
+    allProjects.forEach(p => {
+        const inc = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+        const pln = allIncome.filter(i => i.project_id === p.id && i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+        const exp = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+        const pay = [...allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...allAdvances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
+        objData.push([p.name, inc, pln, exp, pay, inc - exp - pay]);
+    });
+    const ws2 = XLSX.utils.aoa_to_sheet(objData);
+    ws2['!cols'] = [{wch:25}, {wch:15}, {wch:15}, {wch:15}, {wch:15}, {wch:15}];
+    XLSX.utils.book_append_sheet(wb, ws2, 'Объекты');
+    
+    const opsData = [['Дата', 'Тип', 'Объект', 'Описание', 'Сумма', 'Статус']];
+    const allOps = [
+        ...allIncome.map(i => [i.date, 'Поступление', i.projects?.name||'', i.description||'', i.amount||0, i.status==='paid'?'Оплачен':'Ожидается']),
+        ...allExpenses.map(e => [e.date, 'Расход', e.projects?.name||'', e.name||'', -(e.amount||0), e.payment_status==='paid'?'Оплачен':'План']),
+        ...allWorkOrders.map(o => [(o.payment_date||o.created_at?.split('T')[0]), 'Наряд', o.projects?.name||'', o.work_type||'', -(o.total_amount||0), o.payment_status==='paid'?'Выплачен':'План']),
+        ...allAdvances.map(a => [(a.payment_date||a.created_at?.split('T')[0]), 'Аванс', a.projects?.name||'', 'Аванс', -(a.amount||0), a.status==='paid'?'Выплачен':'План'])
+    ].sort((a,b) => new Date(b[0]) - new Date(a[0]));
+    allOps.forEach(o => opsData.push(o));
+    const ws3 = XLSX.utils.aoa_to_sheet(opsData);
+    ws3['!cols'] = [{wch:12}, {wch:15}, {wch:20}, {wch:30}, {wch:15}, {wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws3, 'Операции');
+    
     const isTelegram = !!(window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
-
+    
     if (isTelegram) {
-        // Для Telegram — загружаем в Supabase и показываем ссылку
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
         const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const file = new File([blob], 'dds_report.xlsx');
@@ -690,7 +747,6 @@ window.exportToExcel = async function() {
         showDownloadLink(urlData.publicUrl, 'Excel');
         showMessage('✅ Ссылка на Excel готова', 'success');
     } else {
-        // Для браузера — скачиваем сразу
         XLSX.writeFile(wb, `ДДС_LamGroup_${periodLabel.replace(/\s/g,'_')}.xlsx`);
         showMessage('✅ Файл Excel скачан', 'success');
     }
@@ -700,78 +756,89 @@ window.exportToExcel = async function() {
 window.exportToPDF = function() {
     showMessage('⏳ Формирую отчёт для печати...', 'success');
     
-    // ... (логика сбора данных и формирования HTML остаётся без изменений) ...
+    const periodType = document.getElementById('filter-period-type')?.value || 'month';
+    let periodLabel = '';
+    const now = new Date();
+    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
     
-    // Финальный HTML для отчета
-    const printHTML = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Отчёт ДДС LamGroup</title>
-        <style>
-            @media print { body { margin: 0; padding: 15mm; } @page { size: A4 landscape; margin: 10mm; } }
-            body { font-family: Arial, sans-serif; color: #000; line-height: 1.4; margin: 0; padding: 10mm; font-size: 9pt; }
-            h1 { font-size: 14pt; text-align: center; margin: 0 0 4px 0; }
-            h2 { font-size: 10pt; text-align: center; color: #555; margin: 0 0 16px 0; }
-            h3 { font-size: 10pt; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin: 16px 0 8px 0; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-            th { background: #e8e8e8; padding: 4px 6px; text-align: left; font-weight: 600; font-size: 8pt; border: 1px solid #aaa; }
-            td { padding: 3px 6px; border: 1px solid #ccc; font-size: 8pt; }
-            .kpi-grid { display: flex; gap: 12px; margin-bottom: 16px; }
-            .kpi-card { flex: 1; background: #f5f5f5; border-radius: 6px; padding: 8px; text-align: center; border: 1px solid #ddd; }
-            .kpi-value { font-size: 14pt; font-weight: 800; }
-            .kpi-label { font-size: 7pt; color: #777; text-transform: uppercase; }
-            .footer { text-align: center; font-size: 7pt; color: #999; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 8px; }
-        </style>
-    </head>
-    <body>
-        <h1>ТОО "LamGroup Construction"</h1>
-        <h2>ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ<br>за период: ${periodLabel}</h2>
-        
-        <div class="kpi-grid">
-            <div class="kpi-card"><div class="kpi-value" style="color:#10B981;">${totalIncome.toLocaleString()} ₸</div><div class="kpi-label">💰 Поступления</div></div>
-            <div class="kpi-card"><div class="kpi-value" style="color:#3B82F6;">${totalPlan.toLocaleString()} ₸</div><div class="kpi-label">📥 План поступлений</div></div>
-            <div class="kpi-card"><div class="kpi-value" style="color:#EF4444;">${totalExp.toLocaleString()} ₸</div><div class="kpi-label">📤 Расходы</div></div>
-            <div class="kpi-card"><div class="kpi-value" style="color:#F59E0B;">${totalPay.toLocaleString()} ₸</div><div class="kpi-label">👷 Выплаты</div></div>
-        </div>
-        
-        <h3>Сводка по объектам</h3>
-        <table><thead><tr><th>Объект</th><th>💰 Поступления</th><th>📥 План</th><th>📤 Расходы</th><th>👷 Выплаты</th><th>Сальдо</th></tr></thead><tbody>${objRows}</tbody></table>
-        
-        <div class="footer">
-            <p>Дата формирования: ${new Date().toLocaleDateString('ru-RU')} | Ответственный: ${currentUser?.full_name || '—'}</p>
-            <p>ТОО "LamGroup Construction" | г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215 | +7 701 710 04 77</p>
-        </div>
-    </body>
-    </html>`;
-
-    // Пытаемся открыть окно печати (работает в обычном браузере)
+    if (periodType === 'month') {
+        const val = document.getElementById('filter-period-month')?.value;
+        if (val) { const [y, m] = val.split('-'); periodLabel = months[parseInt(m)-1] + ' ' + y; }
+    } else if (periodType === 'quarter') {
+        const q = Math.floor(now.getMonth() / 3) + 1;
+        periodLabel = q + '-й квартал ' + now.getFullYear();
+    } else if (periodType === 'year') {
+        periodLabel = now.getFullYear() + ' год';
+    } else {
+        const from = document.getElementById('filter-date-from')?.value;
+        const to = document.getElementById('filter-date-to')?.value;
+        periodLabel = from + ' – ' + to;
+    }
+    
+    const totalIncome = allIncome.filter(i => i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+    const totalPlan = allIncome.filter(i => i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+    const totalExp = allExpenses.filter(e => e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+    const totalPay = [...allWorkOrders.filter(o => o.payment_status === 'paid'), ...allAdvances.filter(a => a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
+    
+    let objRows = '';
+    allProjects.forEach(p => {
+        const inc = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+        const pln = allIncome.filter(i => i.project_id === p.id && i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+        const exp = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+        const pay = [...allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...allAdvances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
+        objRows += `<tr><td>${escapeHtml(p.name)}</td><td>${inc.toLocaleString()} ₸</td><td>${pln.toLocaleString()} ₸</td><td>${exp.toLocaleString()} ₸</td><td>${pay.toLocaleString()} ₸</td><td>${(inc-exp-pay).toLocaleString()} ₸</td></tr>`;
+    });
+    
+    const printHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Отчёт ДДС</title>
+    <style>
+        @media print { body { margin: 0; padding: 15mm; } @page { size: A4 landscape; margin: 10mm; } }
+        body { font-family: Arial, sans-serif; color: #000; line-height: 1.4; margin: 0; padding: 10mm; font-size: 9pt; }
+        h1 { font-size: 14pt; text-align: center; margin: 0 0 4px 0; }
+        h2 { font-size: 10pt; text-align: center; color: #555; margin: 0 0 16px 0; }
+        h3 { font-size: 10pt; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin: 16px 0 8px 0; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        th { background: #e8e8e8; padding: 4px 6px; text-align: left; font-weight: 600; font-size: 8pt; border: 1px solid #aaa; }
+        td { padding: 3px 6px; border: 1px solid #ccc; font-size: 8pt; }
+        .kpi-grid { display: flex; gap: 12px; margin-bottom: 16px; }
+        .kpi-card { flex: 1; background: #f5f5f5; border-radius: 6px; padding: 8px; text-align: center; border: 1px solid #ddd; }
+        .kpi-value { font-size: 14pt; font-weight: 800; }
+        .kpi-label { font-size: 7pt; color: #777; text-transform: uppercase; }
+        .footer { text-align: center; font-size: 7pt; color: #999; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 8px; }
+    </style></head><body>
+    <h1>ТОО "LamGroup Construction"</h1>
+    <h2>ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ<br>за период: ${periodLabel}</h2>
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-value" style="color:#10B981;">${totalIncome.toLocaleString()} ₸</div><div class="kpi-label">💰 Поступления</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:#3B82F6;">${totalPlan.toLocaleString()} ₸</div><div class="kpi-label">📥 План поступлений</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:#EF4444;">${totalExp.toLocaleString()} ₸</div><div class="kpi-label">📤 Расходы</div></div>
+        <div class="kpi-card"><div class="kpi-value" style="color:#F59E0B;">${totalPay.toLocaleString()} ₸</div><div class="kpi-label">👷 Выплаты</div></div>
+    </div>
+    <h3>📊 Сводка по объектам</h3>
+    <table><thead><tr><th>Объект</th><th>💰 Поступления</th><th>📥 План</th><th>📤 Расходы</th><th>👷 Выплаты</th><th>Сальдо</th></tr></thead><tbody>${objRows}</tbody></table>
+    <div class="footer">
+        <p>Дата формирования: ${new Date().toLocaleDateString('ru-RU')} | Ответственный: ${currentUser?.full_name || '—'}</p>
+        <p>ТОО "LamGroup Construction" | г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215 | +7 701 710 04 77</p>
+    </div>
+    </body></html>`;
+    
     const printWindow = window.open('', '_blank', 'width=1000,height=700');
     
     if (printWindow) {
-        // Если окно открылось, заполняем его контентом и запускаем печать
         printWindow.document.write(printHTML);
         printWindow.document.close();
-        // Небольшая задержка, чтобы окно успело загрузиться
         setTimeout(() => {
             printWindow.print();
             showMessage('✅ Окно печати открыто', 'success');
         }, 500);
     } else {
-        // Резервный план (fallback) для Telegram: загружаем в Supabase
-        showMessage('⏳ Всплывающие окна заблокированы. Загружаем ссылку...', 'success');
-        
+        showMessage('⏳ Загружаем ссылку...', 'success');
         const blob = new Blob([printHTML], { type: 'text/html;charset=UTF-8' });
         const file = new File([blob], 'dds_report.html', { type: 'text/html' });
         const fileName = 'reports/' + Date.now() + '_dds_pdf.html';
         
         supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: true })
             .then(uploadResult => {
-                if (uploadResult.error) {
-                    showMessage('❌ Не удалось загрузить отчёт', 'error');
-                    return;
-                }
+                if (uploadResult.error) { showMessage('❌ Не удалось загрузить отчёт', 'error'); return; }
                 const urlResult = supabase.storage.from('reports').getPublicUrl(fileName);
                 showDownloadLink(urlResult.data.publicUrl, 'PDF');
                 showMessage('✅ Ссылка на PDF готова', 'success');
