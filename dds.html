@@ -649,13 +649,17 @@ window.openExpenseFormDDS = async function(editId) {
     }
     function showDownloadLink(url, type) {
     const modal = document.getElementById('modal');
-    document.getElementById('modal-title').textContent = '📥 Скачать ' + type;
+    const title = type === 'Excel' ? '📥 Скачать Excel' : '📄 Печать PDF';
+    const btnLabel = type === 'Excel' ? '🔗 Открыть Excel' : '🖨️ Открыть для печати';
+    const hint = type === 'Excel' ? 'Нажмите на ссылку чтобы скачать файл:' : 'Откройте ссылку и нажмите Ctrl+P для сохранения PDF:';
+    
+    document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-content').innerHTML = `
         <div style="text-align:center;padding:20px;">
-            <p style="margin-bottom:16px;">Нажмите на ссылку или скопируйте её в браузер:</p>
+            <p style="margin-bottom:16px;">${hint}</p>
             <div style="background:#F8FAFC;padding:12px;border-radius:10px;word-break:break-all;font-size:12px;margin-bottom:16px;text-align:left;">${url}</div>
             <button class="btn btn-primary" onclick="navigator.clipboard.writeText('${url}');alert('✅ Ссылка скопирована!')">📋 Скопировать ссылку</button>
-            <button class="btn btn-outline" onclick="window.open('${url}','_blank')" style="margin-top:8px;">🔗 Открыть в браузере</button>
+            <button class="btn btn-outline" onclick="window.open('${url}','_blank')" style="margin-top:8px;">${btnLabel}</button>
         </div>
     `;
     modal.classList.remove('hidden');
