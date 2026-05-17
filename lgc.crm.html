@@ -345,40 +345,226 @@
     }
 
     async function loadObjectsPage(container) {
-        let q = supabase.from('projects').select('*').order('name');
-        if (currentUser.role !== 'manager') q = q.eq('responsible_worker_id', currentUser.id);
-        const { data: projects } = await q;
-        if (!projects?.length) { container.innerHTML = '<div class="card"><p style="text-align:center;">Нет объектов</p></div>'; return; }
-
-        let html = '<div style="display:flex;flex-wrap:wrap;gap:16px;">';
-        for (const p of projects) {
-            const { data: axes } = await supabase.from('axes').select('progress').eq('block_id', p.id);
-            const avg = axes?.length ? Math.round(axes.reduce((s,a)=>s+(a.progress||0),0)/axes.length) : 0;
-            html += `<div class="card" style="flex:1;min-width:260px;cursor:pointer;" onclick="loadObjectDetail('${p.id}')"><h2>${escapeHtml(p.name)}</h2><p style="font-size:13px;color:var(--text-secondary);">📍 ${escapeHtml(p.address||'—')}</p><div style="margin-top:12px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>Прогресс</span><span>${avg}%</span></div><div class="gantt-bar-wrap"><div class="gantt-bar ${avg>=80?'green':avg>=50?'yellow':'red'}" style="width:${avg}%;">${avg}%</div></div></div></div>`;
-        }
-        html += '</div>';
-        container.innerHTML = html;
+    let q = supabase.from('projects').select('*, axes:axes(progress, status)').order('name');
+    if (currentUser.role !== 'manager') q = q.eq('responsible_worker_id', currentUser.id);
+    
+    const { data: projects } = await q;
+    
+    if (!projects?.length) {
+        container.innerHTML = '<div class="card"><p style="text-align:center;color:var(--text-secondary);padding:40px;">Нет доступных объектов</p></div>';
+        return;
     }
 
+    let html = '<div class="kpi-grid"><div class="kpi-card"><div style="font-size:24px;">🏗️</div><div class="kpi-value">' + projects.length + '</div><div class="kpi-label">Всего объектов</div></div>';
+    
+    let inProgress = 0, completed = 0;
+    projects.forEach(p => {
+        const axes = p.axes || [];
+        const allDone = axes.length > 0 && axes.every(a => a.status === 'completed');
+        const anyProgress = axes.some(a => a.status === 'in_progress' || a.progress > 0);
+        if (allDone) completed++;
+        else if (anyProgress) inProgress++;
+    });
+    
+    html += '<div class="kpi-card"><div style="font-size:24px;">🔵</div><div class="kpi-value" style="color:var(--info);">' + inProgress + '</div><div class="kpi-label">В работе</div></div>';
+    html += '<div class="kpi-card"><div style="font-size:24px;">✅</div><div class="kpi-value" style="color:var(--success);">' + completed + '</div><div class="kpi-label">Завершено</div></div>';
+    html += '<div class="kpi-card"><div style="font-size:24px;">📅</div><div class="kpi-value">' + projects.filter(p => p.end_date_contract && new Date(p.end_date_contract) < new Date()).length + '</div><div class="kpi-label">Просрочено</div></div>';
+    html += '</div>';
+    
+    html += '<div style="display:flex;flex-wrap:wrap;gap:16px;">';
+    
+    for (const p of projects) {
+        const axes = p.axes || [];
+        const totalAxes = axes.length;
+        const completedAxes = axes.filter(a => a.status === 'completed').length;
+        const avgProgress = totalAxes > 0 ? Math.round(axes.reduce((s, a) => s + (a.progress || 0), 0) / totalAxes) : 0;
+        
+        const isOverdue = p.end_date_contract && new Date(p.end_date_contract) < new Date() && completedAxes < totalAxes;
+        const barColor = completedAxes === totalAxes ? 'green' : isOverdue ? 'red' : avgProgress >= 50 ? 'blue' : 'yellow';
+        
+        html += `
+            <div class="card" style="flex:1;min-width:300px;cursor:pointer;" onclick="loadObjectDetail('${p.id}')">
+                <div style="display:flex;justify-content:space-between;align-items:start;">
+                    <h2 style="margin:0;">${escapeHtml(p.name)}</h2>
+                    ${isOverdue ? '<span class="tag tag-red">⚠️ Просрочен</span>' : completedAxes === totalAxes ? '<span class="tag tag-green">✅ Завершён</span>' : '<span class="tag tag-blue">🔵 В работе</span>'}
+                </div>
+                <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">📍 ${escapeHtml(p.address || '—')}</p>
+                
+                <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+                    <div><span style="color:var(--text-secondary);">Оси:</span> <b>${completedAxes}/${totalAxes}</b></div>
+                    <div><span style="color:var(--text-secondary);">Договор:</span> <b>${formatMoney(p.contract_price)}</b></div>
+                    <div><span style="color:var(--text-secondary);">Начало:</span> <b>${formatDate(p.start_date)}</b></div>
+                    <div><span style="color:var(--text-secondary);">Конец:</span> <b>${formatDate(p.end_date_contract)}</b></div>
+                </div>
+                
+                <div style="margin-top:12px;">
+                    <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+                        <span style="color:var(--text-secondary);">Прогресс</span><span style="font-weight:600;">${avgProgress}%</span>
+                    </div>
+                    <div class="gantt-bar-wrap">
+                        <div class="gantt-bar ${barColor}" style="width:${avgProgress}%;">${avgProgress > 10 ? avgProgress + '%' : ''}</div>
+                    </div>
+                </div>
+            </div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+}
+
     window.loadObjectDetail = async function(projectId) {
-        const container = document.getElementById('page-body');
-        container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
-        document.getElementById('page-title').textContent = '🏗️ Детали объекта';
+         const container = document.getElementById('page-body');
+    container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
+    document.getElementById('page-title').textContent = '🏗️ Загрузка...';
 
-        const { data: project } = await supabase.from('projects').select('*').eq('id', projectId).single();
-        const { data: axes } = await supabase.from('axes').select('*, blocks(name)').eq('block_id', projectId).order('name');
+    const { data: project } = await supabase.from('projects').select('*').eq('id', projectId).single();
+    if (!project) { container.innerHTML = '<div class="card"><p>Объект не найден</p></div>'; return; }
 
-        let rows = '';
-        (axes || []).forEach(ax => {
-            const p = ax.progress || 0;
-            rows += `<tr><td><b>${escapeHtml(ax.name)}</b></td><td>${formatDate(ax.plan_start)}</td><td>${formatDate(ax.plan_end)}</td><td><div class="gantt-bar-wrap"><div class="gantt-bar ${p>=100?'green':p>=50?'blue':'yellow'}" style="width:${p}%;">${p}%</div></div></td><td><span class="tag ${p>=100?'tag-green':p>=50?'tag-blue':'tag-yellow'}">${p>=100?'✅ Завершено':p>=50?'🔵 В работе':'⏳ Начало'}</span></td></tr>`;
+    const { data: blocks } = await supabase.from('blocks').select('id,name').eq('project_id', projectId);
+    const blockIds = (blocks || []).map(b => b.id);
+    
+    let axes = [];
+    if (blockIds.length) {
+        const { data: axesData } = await supabase.from('axes').select('*, blocks(name), axis_work_stages!inner(progress, status, brigade_id, brigades(name))').in('block_id', blockIds).order('name');
+        axes = axesData || [];
+    }
+
+    const { data: letters } = await supabase.from('letters').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(5);
+    const { data: materials } = await supabase.from('material_incomes').select('*, material_income_items(*)').eq('project_id', projectId).order('created_at', { ascending: false }).limit(10);
+
+    document.getElementById('page-title').textContent = '🏗️ ' + project.name;
+
+    let ganttRows = '';
+    const brigadesMap = {};
+    
+    axes.forEach(ax => {
+        const stages = ax.axis_work_stages || [];
+        const avgProgress = stages.length > 0 ? Math.round(stages.reduce((s, st) => s + (st.progress || 0), 0) / stages.length) : 0;
+        const allCompleted = stages.length > 0 && stages.every(s => s.status === 'completed');
+        
+        stages.forEach(st => {
+            if (st.brigade_id && st.brigades?.name) {
+                brigadesMap[st.brigade_id] = st.brigades.name;
+            }
         });
 
-        container.innerHTML = `
-            <button onclick="loadPage('objects')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад</button>
-            <div class="card"><h2>🏗️ ${escapeHtml(project.name)}</h2><p style="color:var(--text-secondary);">📍 ${escapeHtml(project.address||'—')} | 📋 Договор: ${escapeHtml(project.contract_number_customer||'—')} | 💰 Сумма: ${formatMoney(project.contract_price)}</p></div>
-            <div class="card"><h2>📊 ГПР</h2><div class="table-wrap"><table><thead><tr><th>Ось</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Статус</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Нет данных</td></tr>'}</tbody></table></div></div>`;
-    };
+        const barClass = allCompleted ? 'green' : avgProgress >= 50 ? 'blue' : 'yellow';
+        const statusTag = allCompleted ? '<span class="tag tag-green">✅</span>' : avgProgress >= 50 ? '<span class="tag tag-blue">🔵</span>' : '<span class="tag tag-yellow">⏳</span>';
+        
+        ganttRows += `
+            <tr>
+                <td>${statusTag} <b>${escapeHtml(ax.name)}</b></td>
+                <td>${formatDate(ax.plan_start)}</td>
+                <td>${formatDate(ax.plan_end)}</td>
+                <td>
+                    <div class="gantt-bar-wrap">
+                        <div class="gantt-bar ${barClass}" style="width:${avgProgress}%;">${avgProgress}%</div>
+                    </div>
+                </td>
+                <td>${stages.length} этапов</td>
+            </tr>`;
+    });
+
+    let brigadesHtml = '';
+    Object.entries(brigadesMap).forEach(([id, name]) => {
+        brigadesHtml += `<span class="tag tag-blue" style="margin:2px;">👷 ${escapeHtml(name)}</span>`;
+    });
+
+    let lettersHtml = '';
+    (letters || []).forEach(l => {
+        lettersHtml += `
+            <tr>
+                <td>${l.letter_number_full || '№' + l.letter_number + '/LGC-ERP'}</td>
+                <td>${formatDate(l.letter_date)}</td>
+                <td>${escapeHtml((l.delay_reason || '').substring(0, 50))}</td>
+                <td><span class="tag ${l.status === 'sent_to_customer' ? 'tag-green' : 'tag-yellow'}">${l.status === 'sent_to_customer' ? 'Отправлено' : 'Черновик'}</span></td>
+            </tr>`;
+    });
+
+    let materialsHtml = '';
+    (materials || []).forEach(m => {
+        const items = m.material_income_items || [];
+        const totalQty = items.reduce((s, i) => s + (i.quantity || 0), 0);
+        materialsHtml += `
+            <tr>
+                <td>${formatDate(m.created_at)}</td>
+                <td>${items.map(i => escapeHtml(i.name || '')).join(', ')}</td>
+                <td>${totalQty}</td>
+                <td>${formatMoney(m.total_amount || 0)}</td>
+            </tr>`;
+    });
+
+    container.innerHTML = `
+        <button onclick="loadPage('objects')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к объектам</button>
+        
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div style="font-size:24px;">📋</div>
+                <div class="kpi-value">${formatMoney(project.contract_price)}</div>
+                <div class="kpi-label">Сумма договора</div>
+            </div>
+            <div class="kpi-card">
+                <div style="font-size:24px;">📅</div>
+                <div class="kpi-value">${formatDate(project.start_date)} — ${formatDate(project.end_date_contract)}</div>
+                <div class="kpi-label">Сроки</div>
+            </div>
+            <div class="kpi-card">
+                <div style="font-size:24px;">👷</div>
+                <div class="kpi-value">${Object.keys(brigadesMap).length}</div>
+                <div class="kpi-label">Бригад</div>
+            </div>
+            <div class="kpi-card">
+                <div style="font-size:24px;">📍</div>
+                <div class="kpi-value">${axes.length}</div>
+                <div class="kpi-label">Осей</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h2 style="margin:0;">🏗️ ${escapeHtml(project.name)}</h2>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+                <div><span style="color:var(--text-secondary);">Адрес:</span> <b>${escapeHtml(project.address || '—')}</b></div>
+                <div><span style="color:var(--text-secondary);">Заказчик:</span> <b>${escapeHtml(project.customer_company_name || '—')}</b></div>
+                <div><span style="color:var(--text-secondary);">Договор:</span> <b>${escapeHtml(project.contract_number_customer || '—')} ${project.contract_date_customer ? 'от ' + formatDate(project.contract_date_customer) : ''}</b></div>
+                <div><span style="color:var(--text-secondary);">Руководитель:</span> <b>${escapeHtml(project.manager_name || '—')}</b></div>
+            </div>
+            ${Object.keys(brigadesMap).length > 0 ? '<div style="margin-top:12px;"><span style="color:var(--text-secondary);font-size:13px;">Бригады:</span> ' + brigadesHtml + '</div>' : ''}
+        </div>
+
+        <div class="card">
+            <h2>📊 График производства работ (ГПР)</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Ось</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Этапы</th></tr></thead>
+                    <tbody>${ganttRows || '<tr><td colspan="5" style="text-align:center;">Нет данных по осям</td></tr>'}</tbody>
+                </table>
+            </div>
+        </div>
+
+        ${lettersHtml ? `
+        <div class="card">
+            <h2>✉️ Письма заказчику</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Номер</th><th>Дата</th><th>Причина</th><th>Статус</th></tr></thead>
+                    <tbody>${lettersHtml}</tbody>
+                </table>
+            </div>
+        </div>` : ''}
+
+        ${materialsHtml ? `
+        <div class="card">
+            <h2>📦 Материалы</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Дата</th><th>Наименование</th><th>Кол-во</th><th>Сумма</th></tr></thead>
+                    <tbody>${materialsHtml}</tbody>
+                </table>
+            </div>
+        </div>` : ''}
+    `;
+};
 
     async function loadTasksPage(container) {
         let q = supabase.from('custom_tasks').select('*, projects(name)').order('created_at',{ascending:false}).limit(50);
