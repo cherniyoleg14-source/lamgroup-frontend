@@ -765,132 +765,78 @@ window.exportToExcel = async function() {
 };
 
 window.exportToPDF = async function() {
-    showMessage('⏳ Формирую PDF...', 'success');
+    showMessage('Формирую отчёт...', 'success');
     
-    const periodType = document.getElementById('filter-period-type')?.value || 'month';
-    let periodLabel = '';
-    const now = new Date();
     const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-    
-    if (periodType === 'month') {
-        const val = document.getElementById('filter-period-month')?.value;
-        if (val) { const [y, m] = val.split('-'); periodLabel = months[parseInt(m)-1] + ' ' + y; }
-    } else if (periodType === 'quarter') {
-        const q = Math.floor(now.getMonth() / 3) + 1;
-        periodLabel = q + '-й квартал ' + now.getFullYear();
-    } else if (periodType === 'year') {
-        periodLabel = now.getFullYear() + ' год';
-    } else {
-        const from = document.getElementById('filter-date-from')?.value;
-        const to = document.getElementById('filter-date-to')?.value;
-        periodLabel = from + ' – ' + to;
-    }
+    const now = new Date();
+    const periodType = document.getElementById('filter-period-type')?.value || 'month';
+    let periodLabel = months[now.getMonth()] + ' ' + now.getFullYear();
     
     const totalIncome = allIncome.filter(i => i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
-    const totalPlan = allIncome.filter(i => i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
     const totalExp = allExpenses.filter(e => e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
     const totalPay = [...allWorkOrders.filter(o => o.payment_status === 'paid'), ...allAdvances.filter(a => a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
     
-    let objRows = '';
+    let rows = '';
     allProjects.forEach(p => {
         const inc = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
-        const pln = allIncome.filter(i => i.project_id === p.id && i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
         const exp = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
         const pay = [...allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...allAdvances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
-        objRows += `<tr><td>${escapeHtml(p.name)}</td><td>${inc.toLocaleString()} ₸</td><td>${pln.toLocaleString()} ₸</td><td>${exp.toLocaleString()} ₸</td><td>${pay.toLocaleString()} ₸</td><td>${(inc-exp-pay).toLocaleString()} ₸</td></tr>`;
+        rows += '<tr><td>' + escapeHtml(p.name) + '</td><td>' + inc.toLocaleString() + ' ₸</td><td>' + exp.toLocaleString() + ' ₸</td><td>' + pay.toLocaleString() + ' ₸</td><td>' + (inc-exp-pay).toLocaleString() + ' ₸</td></tr>';
     });
     
-    const htmlContent = `<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>ДДС LamGroup - ${periodLabel}</title>
-    <style>
-        @media print { 
-            body { margin: 0; padding: 10mm; } 
-            @page { size: A4 landscape; margin: 8mm; } 
-        }
-        body { 
-            font-family: Arial, sans-serif; 
-            color: #000; 
-            line-height: 1.3; 
-            margin: 0; 
-            padding: 10mm; 
-            font-size: 9pt; 
-        }
-        h1 { font-size: 14pt; text-align: center; margin: 0 0 2px 0; }
-        h2 { font-size: 10pt; text-align: center; color: #555; margin: 0 0 12px 0; }
-        h3 { font-size: 10pt; border-bottom: 1px solid #ccc; padding-bottom: 3px; margin: 10px 0 6px 0; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-        th { background: #e8e8e8; padding: 4px 6px; text-align: left; font-weight: 600; font-size: 8pt; border: 1px solid #bbb; }
-        td { padding: 3px 6px; border: 1px solid #ddd; font-size: 8pt; }
-        .kpi-grid { display: flex; gap: 8px; margin-bottom: 12px; }
-        .kpi-card { flex: 1; background: #f5f5f5; border-radius: 6px; padding: 8px; text-align: center; border: 1px solid #ddd; }
-        .kpi-value { font-size: 14pt; font-weight: 800; }
-        .kpi-label { font-size: 7pt; color: #777; text-transform: uppercase; }
-        .footer { text-align: center; font-size: 7pt; color: #999; margin-top: 16px; border-top: 1px solid #ddd; padding-top: 8px; }
-    </style>
-</head>
-<body>
-    <h1>ТОО "LamGroup Construction"</h1>
-    <h2>ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ<br>Период: ${periodLabel}</h2>
-    
-    <div class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-value" style="color:#10B981;">${totalIncome.toLocaleString()} ₸</div><div class="kpi-label">Поступления</div></div>
-        <div class="kpi-card"><div class="kpi-value" style="color:#3B82F6;">${totalPlan.toLocaleString()} ₸</div><div class="kpi-label">План поступлений</div></div>
-        <div class="kpi-card"><div class="kpi-value" style="color:#EF4444;">${totalExp.toLocaleString()} ₸</div><div class="kpi-label">Расходы (оплач.)</div></div>
-        <div class="kpi-card"><div class="kpi-value" style="color:#F59E0B;">${totalPay.toLocaleString()} ₸</div><div class="kpi-label">Выплаты (оплач.)</div></div>
-    </div>
-    
-    <h3>Сводка по объектам</h3>
-    <table>
-        <thead><tr><th>Объект</th><th>Поступления</th><th>План пост.</th><th>Расходы</th><th>Выплаты</th><th>Сальдо</th></tr></thead>
-        <tbody>${objRows}</tbody>
-    </table>
-    
-    <div class="footer">
-        <p>Дата формирования: ${new Date().toLocaleDateString('ru-RU')} | Ответственный: ${currentUser?.full_name || '—'}</p>
-        <p>ТОО "LamGroup Construction" | г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215 | +7 701 710 04 77</p>
-    </div>
-    
-    <script>
-        // Автоматически открываем печать при загрузке
-        window.onload = function() {
-            setTimeout(function() {
-                window.print();
-            }, 300);
-        };
-    </script>
-</body>
-</html>`;
+    // Простой HTML БЕЗ кнопок, БЕЗ скриптов авто-печати
+    // Только чистый отчёт
+    const html = '<!DOCTYPE html>' +
+    '<html><head><meta charset="UTF-8"><title>ДДС LamGroup - ' + periodLabel + '</title>' +
+    '<style>' +
+    'body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; padding: 8mm; margin: 0; }' +
+    'h1 { font-size: 14pt; text-align: center; margin: 0 0 2px 0; }' +
+    'h2 { font-size: 10pt; text-align: center; color: #555; margin: 0 0 10px 0; }' +
+    'h3 { font-size: 9pt; border-bottom: 1px solid #ccc; padding-bottom: 2px; margin: 10px 0 5px 0; }' +
+    'table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }' +
+    'th { background: #e8e8e8; padding: 3px 5px; text-align: left; font-size: 8pt; border: 1px solid #aaa; }' +
+    'td { padding: 2px 5px; font-size: 8pt; border: 1px solid #ccc; }' +
+    '.footer { text-align: center; font-size: 7pt; color: #999; margin-top: 14px; border-top: 1px solid #ccc; padding-top: 6px; }' +
+    '@media print { body { padding: 10mm; } @page { size: A4 landscape; margin: 8mm; } }' +
+    '</style></head><body>' +
+    '<h1>ТОО "LamGroup Construction"</h1>' +
+    '<h2>ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ<br>Период: ' + periodLabel + '</h2>' +
+    '<h3>Сводка по объектам</h3>' +
+    '<table><thead><tr><th>Объект</th><th>Поступления</th><th>Расходы</th><th>Выплаты</th><th>Сальдо</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+    '<div class="footer">' +
+    '<p>Дата: ' + new Date().toLocaleDateString('ru-RU') + ' | Ответственный: ' + (currentUser?.full_name || '—') + '</p>' +
+    '<p>ТОО "LamGroup Construction" | г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215 | +7 701 710 04 77</p>' +
+    '</div>' +
+    '</body></html>';
     
     // Загружаем в Supabase
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=UTF-8' });
+    const blob = new Blob([html], { type: 'text/html;charset=UTF-8' });
     const file = new File([blob], 'dds_report.html', { type: 'text/html' });
     const fileName = 'reports/' + Date.now() + '_dds_report.html';
     
-    const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file, { 
-        cacheControl: '3600', 
-        upsert: true,
-        contentType: 'text/html;charset=UTF-8'
-    });
+    const upResult = await supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: true });
     
-    if (uploadError) { 
-        showMessage('❌ Ошибка загрузки', 'error'); 
-        return; 
+    if (upResult.error) {
+        showMessage('Ошибка загрузки', 'error');
+        return;
     }
     
-    const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+    const urlResult = supabase.storage.from('reports').getPublicUrl(fileName);
+    const publicUrl = urlResult.data.publicUrl;
     
-    // Открываем ссылку через Telegram API
-    try {
-        tg.openLink(urlData.publicUrl);
-    } catch(e) {
-        // Если не получилось — показываем ссылку
-        alert('Ссылка на отчёт:\n\n' + urlData.publicUrl + '\n\nСкопируйте и откройте в браузере. Нажмите Ctrl+P для сохранения PDF.');
-    }
+    // Показываем модалку с ссылкой (без открытия новых окон)
+    const modal = document.getElementById('modal');
+    document.getElementById('modal-title').textContent = '📄 Отчёт готов';
+    document.getElementById('modal-content').innerHTML = 
+        '<div style="text-align:center;padding:16px;">' +
+        '<p style="margin-bottom:12px;font-weight:600;">Ссылка на отчёт:</p>' +
+        '<div style="background:#F8FAFC;padding:10px;border-radius:8px;word-break:break-all;font-size:11px;margin-bottom:12px;text-align:left;border:1px solid #ddd;">' + publicUrl + '</div>' +
+        '<button class="btn btn-primary" onclick="navigator.clipboard.writeText(\'' + publicUrl + '\');alert(\'Ссылка скопирована! Откройте в браузере и нажмите Ctrl+P.\')" style="width:100%;">📋 Скопировать ссылку</button>' +
+        '<p style="font-size:10px;color:#94A3B8;margin-top:10px;">Откройте ссылку в браузере<br>Нажмите Ctrl+P → Сохранить как PDF</p>' +
+        '</div>';
+    modal.classList.remove('hidden');
     
-    showMessage('✅ Отчёт открыт в браузере', 'success');
+    showMessage('Отчёт готов', 'success');
 };
 function setupFilters() {
     document.getElementById('filter-project').addEventListener('change', e => { selectedProjectId = e.target.value; loadAllData(); });
