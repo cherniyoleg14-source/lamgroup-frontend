@@ -345,7 +345,7 @@
     }
 
     async function loadObjectsPage(container) {
-    let q = supabase.from('projects').select('*, axes:axes(progress, status)').order('name');
+    let q = supabase.from('projects').select('*').order('name');
     if (currentUser.role !== 'manager') q = q.eq('responsible_worker_id', currentUser.id);
     
     const { data: projects } = await q;
@@ -355,48 +355,67 @@
         return;
     }
 
-    let html = '<div class="kpi-grid"><div class="kpi-card"><div style="font-size:24px;">🏗️</div><div class="kpi-value">' + projects.length + '</div><div class="kpi-label">Всего объектов</div></div>';
+    // Получаем блоки и оси для всех проектов
+    const projectIds = projects.map(p => p.id);
+    const { data: blocks } = await supabase.from('blocks').select('id, project_id').in('project_id', projectIds);
+    const blockIds = (blocks || []).map(b => b.id);
     
-    let inProgress = 0, completed = 0;
+    let axesMap = {};
+    if (blockIds.length) {
+        const { data: axes } = await supabase.from('axes').select('progress, status, block_id').in('block_id', blockIds);
+        (axes || []).forEach(ax => {
+            const block = blocks.find(b => b.id === ax.block_id);
+            if (block) {
+                if (!axesMap[block.project_id]) axesMap[block.project_id] = [];
+                axesMap[block.project_id].push(ax);
+            }
+        });
+    }
+
+    let inProgress = 0, completed = 0, overdue = 0;
+    
     projects.forEach(p => {
-        const axes = p.axes || [];
+        const axes = axesMap[p.id] || [];
         const allDone = axes.length > 0 && axes.every(a => a.status === 'completed');
         const anyProgress = axes.some(a => a.status === 'in_progress' || a.progress > 0);
         if (allDone) completed++;
         else if (anyProgress) inProgress++;
+        if (p.end_date_contract && new Date(p.end_date_contract) < new Date() && !allDone) overdue++;
     });
-    
+
+    let html = '<div class="kpi-grid"><div class="kpi-card"><div style="font-size:24px;">🏗️</div><div class="kpi-value">' + projects.length + '</div><div class="kpi-label">Всего объектов</div></div>';
     html += '<div class="kpi-card"><div style="font-size:24px;">🔵</div><div class="kpi-value" style="color:var(--info);">' + inProgress + '</div><div class="kpi-label">В работе</div></div>';
     html += '<div class="kpi-card"><div style="font-size:24px;">✅</div><div class="kpi-value" style="color:var(--success);">' + completed + '</div><div class="kpi-label">Завершено</div></div>';
-    html += '<div class="kpi-card"><div style="font-size:24px;">📅</div><div class="kpi-value">' + projects.filter(p => p.end_date_contract && new Date(p.end_date_contract) < new Date()).length + '</div><div class="kpi-label">Просрочено</div></div>';
+    html += '<div class="kpi-card"><div style="font-size:24px;">⚠️</div><div class="kpi-value" style="color:var(--danger);">' + overdue + '</div><div class="kpi-label">Просрочено</div></div>';
     html += '</div>';
     
     html += '<div style="display:flex;flex-wrap:wrap;gap:16px;">';
     
     for (const p of projects) {
-        const axes = p.axes || [];
+        const axes = axesMap[p.id] || [];
         const totalAxes = axes.length;
         const completedAxes = axes.filter(a => a.status === 'completed').length;
         const avgProgress = totalAxes > 0 ? Math.round(axes.reduce((s, a) => s + (a.progress || 0), 0) / totalAxes) : 0;
         
         const isOverdue = p.end_date_contract && new Date(p.end_date_contract) < new Date() && completedAxes < totalAxes;
-        const barColor = completedAxes === totalAxes ? 'green' : isOverdue ? 'red' : avgProgress >= 50 ? 'blue' : 'yellow';
+        const barColor = completedAxes === totalAxes && totalAxes > 0 ? 'green' : isOverdue ? 'red' : avgProgress >= 50 ? 'blue' : 'yellow';
         
         html += `
             <div class="card" style="flex:1;min-width:300px;cursor:pointer;" onclick="loadObjectDetail('${p.id}')">
                 <div style="display:flex;justify-content:space-between;align-items:start;">
                     <h2 style="margin:0;">${escapeHtml(p.name)}</h2>
-                    ${isOverdue ? '<span class="tag tag-red">⚠️ Просрочен</span>' : completedAxes === totalAxes ? '<span class="tag tag-green">✅ Завершён</span>' : '<span class="tag tag-blue">🔵 В работе</span>'}
+                    ${isOverdue ? '<span class="tag tag-red">⚠️ Просрочен</span>' : completedAxes === totalAxes && totalAxes > 0 ? '<span class="tag tag-green">✅ Завершён</span>' : '<span class="tag tag-blue">🔵 В работе</span>'}
                 </div>
                 <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">📍 ${escapeHtml(p.address || '—')}</p>
                 
                 <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
-                    <div><span style="color:var(--text-secondary);">Оси:</span> <b>${completedAxes}/${totalAxes}</b></div>
-                    <div><span style="color:var(--text-secondary);">Договор:</span> <b>${formatMoney(p.contract_price)}</b></div>
+                    <div><span style="color:var(--text-secondary);">Осей:</span> <b>${totalAxes}</b></div>
+                    <div><span style="color:var(--text-secondary);">Заказчик:</span> <b>${escapeHtml(p.customer_company_name || '—')}</b></div>
                     <div><span style="color:var(--text-secondary);">Начало:</span> <b>${formatDate(p.start_date)}</b></div>
                     <div><span style="color:var(--text-secondary);">Конец:</span> <b>${formatDate(p.end_date_contract)}</b></div>
                 </div>
                 
+                ${totalAxes > 0 ? `
                 <div style="margin-top:12px;">
                     <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
                         <span style="color:var(--text-secondary);">Прогресс</span><span style="font-weight:600;">${avgProgress}%</span>
@@ -404,7 +423,7 @@
                     <div class="gantt-bar-wrap">
                         <div class="gantt-bar ${barColor}" style="width:${avgProgress}%;">${avgProgress > 10 ? avgProgress + '%' : ''}</div>
                     </div>
-                </div>
+                </div>` : '<p style="font-size:11px;color:var(--text-secondary);margin-top:8px;">Нет данных по осям</p>'}
             </div>`;
     }
     html += '</div>';
