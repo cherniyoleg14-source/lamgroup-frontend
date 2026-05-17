@@ -133,24 +133,26 @@
         
         <div class="filter-row">
             <select id="filter-project" class="form-select"><option value="">Все объекты</option></select>
-           <select id="filter-period-type" class="form-select" style="max-width:120px;">
-    <option value="month">Месяц</option>
-    <option value="quarter">Квартал</option>
-    <option value="year">Год</option>
-    <option value="custom">Свой период</option>
-</select>
-<input type="month" id="filter-period-month" class="form-select" style="max-width:140px;">
-<div id="filter-period-custom" class="hidden" style="display:flex;gap:6px;align-items:center;">
-    <span style="font-size:12px;">С:</span>
-    <input type="date" id="filter-date-from" class="form-input" style="padding:6px;font-size:12px;width:130px;">
-    <span style="font-size:12px;">По:</span>
-    <input type="date" id="filter-date-to" class="form-input" style="padding:6px;font-size:12px;width:130px;">
-</div>
+            <select id="filter-period-type" class="form-select" style="max-width:120px;">
+                <option value="month">Месяц</option>
+                <option value="quarter">Квартал</option>
+                <option value="year">Год</option>
+                <option value="custom">Свой период</option>
+            </select>
+            <input type="month" id="filter-period-month" class="form-select" style="max-width:140px;">
+            <div id="filter-period-custom" class="hidden" style="display:flex;gap:6px;align-items:center;">
+                <span style="font-size:12px;">С:</span>
+                <input type="date" id="filter-date-from" class="form-input" style="padding:6px;font-size:12px;width:130px;">
+                <span style="font-size:12px;">По:</span>
+                <input type="date" id="filter-date-to" class="form-input" style="padding:6px;font-size:12px;width:130px;">
+            </div>
         </div>
+        
         <div style="display:flex;gap:8px;margin-bottom:12px;">
-    <button class="btn btn-outline btn-sm" id="export-excel" style="flex:1;">📥 Скачать Excel</button>
-    <button class="btn btn-outline btn-sm" id="export-pdf" style="flex:1;">📄 Печать / PDF</button>
-</div>
+            <button class="btn btn-outline btn-sm" id="export-excel" style="flex:1;">📥 Скачать Excel</button>
+            <button class="btn btn-outline btn-sm" id="export-pdf" style="flex:1;">📄 Печать / PDF</button>
+        </div>
+        
         <div class="tabs">
             <button class="tab active" data-tab="summary">📊 Сводка</button>
             <button class="tab" data-tab="income">📥 Поступления</button>
@@ -204,15 +206,15 @@
     function formatMoney(a) { return (a||0).toLocaleString() + ' ₸'; }
     function showMessage(text, type) { const m = document.getElementById('message'); m.textContent = text; m.className = 'message ' + type; setTimeout(() => m.className = 'message', 3000); }
     
-   async function init() { 
-    await loadUser(); 
-    await loadProjects(); 
-    setupFilters(); 
-    setupTabs(); 
-    loadAllData(); 
-    renderCalendar();
-    document.getElementById('filter-period-month').value = new Date().toISOString().slice(0, 7);
-}
+    async function init() { 
+        await loadUser(); 
+        await loadProjects(); 
+        setupFilters(); 
+        setupTabs(); 
+        loadAllData(); 
+        renderCalendar();
+        document.getElementById('filter-period-month').value = new Date().toISOString().slice(0, 7);
+    }
     
     async function loadUser() { const { data } = await supabase.from('users').select('*').eq('telegram_id', userId).single(); if (data) { currentUser = data; currentRole = data.role; } document.getElementById('role-badge').textContent = currentRole === 'manager' ? '👑 Руководитель' : '👷 ИТР'; }
     
@@ -223,30 +225,30 @@
         document.getElementById('filter-project').innerHTML = '<option value="">Все объекты</option>' + allProjects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
     }
     
-   function getPeriodFilter() {
-    const type = document.getElementById('filter-period-type')?.value;
-    const now = new Date();
-    
-    if (type === 'month') {
-        const val = document.getElementById('filter-period-month')?.value;
-        if (val) {
-            const [y, m] = val.split('-');
-            return { start: `${y}-${m}-01`, end: new Date(y, m, 0).toISOString().split('T')[0] };
+    function getPeriodFilter() {
+        const type = document.getElementById('filter-period-type')?.value;
+        const now = new Date();
+        
+        if (type === 'month') {
+            const val = document.getElementById('filter-period-month')?.value;
+            if (val) {
+                const [y, m] = val.split('-');
+                return { start: `${y}-${m}-01`, end: new Date(y, m, 0).toISOString().split('T')[0] };
+            }
+        } else if (type === 'quarter') {
+            const q = Math.floor(now.getMonth() / 3);
+            const start = new Date(now.getFullYear(), q * 3, 1);
+            const end = new Date(now.getFullYear(), (q + 1) * 3, 0);
+            return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
+        } else if (type === 'year') {
+            return { start: `${now.getFullYear()}-01-01`, end: `${now.getFullYear()}-12-31` };
+        } else if (type === 'custom') {
+            const from = document.getElementById('filter-date-from')?.value;
+            const to = document.getElementById('filter-date-to')?.value;
+            if (from && to) return { start: from, end: to };
         }
-    } else if (type === 'quarter') {
-        const q = Math.floor(now.getMonth() / 3);
-        const start = new Date(now.getFullYear(), q * 3, 1);
-        const end = new Date(now.getFullYear(), (q + 1) * 3, 0);
-        return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
-    } else if (type === 'year') {
-        return { start: `${now.getFullYear()}-01-01`, end: `${now.getFullYear()}-12-31` };
-    } else if (type === 'custom') {
-        const from = document.getElementById('filter-date-from')?.value;
-        const to = document.getElementById('filter-date-to')?.value;
-        if (from && to) return { start: from, end: to };
+        return null;
     }
-    return null;
-}
     
     async function loadAllData() {
         const period = getPeriodFilter();
@@ -319,7 +321,6 @@
     
     function renderAll() { renderSummary(); renderIncomeList(); renderExpenseList(); renderPayoutsList(); }
     
-    // ===== СВОДКА =====
     function renderSummary() {
         const c = document.getElementById('summary-content');
         if (!allProjects.length) { c.innerHTML = '<div class="empty-state">Нет объектов</div>'; return; }
@@ -335,7 +336,6 @@
         c.innerHTML = `<table class="summary-table"><thead><tr><th>Объект</th><th>💰 Приход</th><th>📥 План</th><th>📤 Расходы</th><th>👷 Выплаты</th></tr></thead><tbody>${rows}</tbody><tfoot style="font-weight:700;background:#F8FAFC;"><tr><td>ИТОГО</td><td style="color:var(--success);">${formatMoney(ti)}</td><td style="color:var(--info);">${formatMoney(tp)}</td><td style="color:var(--danger);">${formatMoney(te)}</td><td style="color:var(--warning);">${formatMoney(tpa)}</td></tr></tfoot></table>`;
     }
     
-    // ===== ПОСТУПЛЕНИЯ =====
     function renderIncomeList() {
         let f = allIncome; if (incomeFilter==='paid') f=f.filter(i=>i.status==='paid'); if (incomeFilter==='pending') f=f.filter(i=>i.status==='pending');
         const c = document.getElementById('income-list');
@@ -369,7 +369,6 @@
         document.getElementById('modal').classList.add('hidden'); showMessage('✅ Удалено','success'); loadAllData();
     };
     
-    // ===== РАСХОДЫ =====
     function renderExpenseList() {
         let f = allExpenses; if (expenseFilter==='paid') f=f.filter(e=>e.payment_status==='paid'); if (expenseFilter==='pending') f=f.filter(e=>e.payment_status!=='paid');
         const c = document.getElementById('expense-list');
@@ -430,165 +429,157 @@
         document.getElementById('modal').classList.add('hidden'); showMessage('✅ Утверждён','success'); loadAllData();
     };
     
-    
-       // ========== ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ ФИЛЬТРОВ ==========
-
-window.changePeriodType = function() {
-    const type = document.getElementById('filter-period-type')?.value;
-    const monthEl = document.getElementById('filter-period-month');
-    const customEl = document.getElementById('filter-period-custom');
-    
-    if (monthEl) monthEl.classList.toggle('hidden', type !== 'month');
-    if (customEl) {
-        customEl.classList.toggle('hidden', type !== 'custom');
-        customEl.style.display = type === 'custom' ? 'flex' : 'none';
-    }
-    loadAllData();
-};
-
-window.toggleExpFieldsDDS = function() {
-    const mt = document.getElementById('exp-method')?.value;
-    const st = document.getElementById('exp-status')?.value;
-    const pg = document.getElementById('exp-paid-group');
-    const dg = document.getElementById('exp-plan-date-group');
-    if (pg) pg.style.display = (mt === 'cash') ? 'block' : 'none';
-    if (dg) dg.style.display = (st === 'pending') ? 'block' : 'none';
-};
-
-// ========== ФОРМА РАСХОДА ==========
-
-window.openExpenseFormDDS = async function(editId) {
-    const today = new Date().toISOString().split('T')[0];
-    let editData = null;
-    if (editId) editData = allExpenses.find(x => x.id === editId);
-    
-    if (!editId) {
-        const { data: num } = await supabase.from('document_numbers').select('number').eq('doc_type','expense').order('number',{ascending:false}).limit(1);
-        const next = num?.length ? num[0].number + 1 : 1;
-        var expNum = '№-RAS-' + next;
-    } else {
-        var expNum = editData.expense_number || '';
-    }
-    
-    const opts = allProjects.map(p => `<option value="${p.id}" ${editData?.project_id===p.id?'selected':''}>${p.name}</option>`).join('');
-    const catOpts = Object.entries(expenseCategories).map(([k,v]) => `<option value="${k}" ${editData?.category===k?'selected':''}>${v}</option>`).join('');
-    
-    let h = `<div class="form-group"><label class="form-label">📄 Номер</label><input class="form-input" value="${expNum}" disabled></div>`;
-    h += `<div class="form-group"><label class="form-label">🏗️ Объект</label><select id="exp-project" class="form-input">${opts}</select></div>`;
-    h += `<div class="form-group"><label class="form-label">📂 Статья расхода</label><select id="exp-category" class="form-input">${catOpts}</select></div>`;
-    h += `<div class="form-group"><label class="form-label">📝 Наименование *</label><input id="exp-name" class="form-input" value="${escapeHtml(editData?.name||'')}"></div>`;
-    h += `<div class="form-group"><label class="form-label">🏢 Поставщик</label><input id="exp-supplier" class="form-input" value="${escapeHtml(editData?.supplier||'')}"></div>`;
-    h += `<div class="grid-2"><div class="form-group"><label class="form-label">Количество</label><input type="number" id="exp-qty" class="form-input" step="0.01" value="${editData?.quantity||1}"></div><div class="form-group"><label class="form-label">💰 Сумма *</label><input type="number" id="exp-amount" class="form-input" step="0.01" value="${editData?.amount||''}"></div></div>`;
-    h += `<div class="form-group"><label class="form-label">📅 Дата расхода</label><input type="date" id="exp-date" class="form-input" value="${editData?.date||today}"></div>`;
-    h += `<div class="form-group"><label class="form-label">💳 Метод оплаты</label><select id="exp-method" class="form-input" onchange="window.toggleExpFieldsDDS()"><option value="non_cash" ${editData?.payment_method==='non_cash'?'selected':''}>💳 Безнал</option><option value="cash" ${editData?.payment_method==='cash'?'selected':''}>💵 Наличка</option></select></div>`;
-    h += `<div class="form-group">
-        <label class="form-label">📎 Счёт на оплату</label>
-        <button type="button" class="btn btn-outline" id="exp-invoice-btn" style="width:100%;">📁 Выбрать файл</button>
-        <span id="exp-invoice-name" style="font-size:11px;color:var(--text-secondary);display:block;margin-top:4px;">${editData?.invoice_url ? '📎 Уже прикреплён' : 'Файл не выбран'}</span>
-        <input type="file" id="exp-invoice" accept=".pdf,.jpg,.jpeg,.png" style="display:none;">
-    </div>`;
-    h += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><input type="checkbox" id="exp-urgent" style="width:18px;height:18px;" ${editData?.is_urgent?'checked':''}><label>🚨 Срочный платёж</label></div>`;
-    h += `<div class="form-group"><label class="form-label">📊 Статус</label><select id="exp-status" class="form-input" onchange="window.toggleExpFieldsDDS()"><option value="paid" ${editData?.payment_status==='paid'?'selected':''}>💳 Оплатили</option><option value="pending" ${(!editData||editData?.payment_status!=='paid')?'selected':''}>📅 В план оплат</option></select></div>`;
-    h += `<div id="exp-paid-group" class="form-group" style="display:none;">
-        <label class="form-label">👤 Кто оплатил *</label>
-        <select id="exp-paid-by" class="form-input">
-            <option value="">Выберите...</option>
-            <option value="Маххабат Наличка">💵 Маххабат Наличка</option>
-            <option value="Маххабат Карта">💳 Маххабат Карта</option>
-            <option value="Володя Наличка">💵 Володя Наличка</option>
-            <option value="Володя Карта">💳 Володя Карта</option>
-            <option value="ИТР Наличка">💵 ИТР Наличка</option>
-            <option value="ИТР Карта">💳 ИТР Карта</option>
-        </select>
-    </div>`;
-    h += `<div id="exp-plan-date-group" class="form-group" style="display:none;"><label class="form-label">📅 Дата платежа</label><input type="date" id="exp-plan-date" class="form-input" value="${editData?.planned_payment_date||today}"></div>`;
-    h += `<div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="exp-comment" class="form-input" rows="2">${escapeHtml(editData?.comment||'')}</textarea></div>`;
-    h += `<button class="btn btn-primary" id="save-expense-btn">💾 ${editId?'Сохранить изменения':'Сохранить расход'}</button>`;
-    
-    document.getElementById('modal-title').textContent = editId ? '✏️ Редактировать расход' : '➕ Новый расход';
-    document.getElementById('modal-content').innerHTML = h;
-    document.getElementById('modal').classList.remove('hidden');
-    
-    // Предустановка значения плательщика при редактировании
-    if (editData?.paid_by_name) {
-        setTimeout(() => {
-            const sel = document.getElementById('exp-paid-by');
-            if (sel) sel.value = editData.paid_by_name;
-        }, 150);
-    }
-    
-    // Обработчик файла
-    setTimeout(function() {
-        const fileBtn = document.getElementById('exp-invoice-btn');
-        const fileInput = document.getElementById('exp-invoice');
-        const fileName = document.getElementById('exp-invoice-name');
-        if (fileBtn && fileInput) {
-            fileBtn.addEventListener('click', function() { fileInput.click(); });
-            fileInput.addEventListener('change', function() {
-                fileName.textContent = fileInput.files[0] ? '📎 ' + fileInput.files[0].name : 'Файл не выбран';
-            });
+    window.changePeriodType = function() {
+        const type = document.getElementById('filter-period-type')?.value;
+        const monthEl = document.getElementById('filter-period-month');
+        const customEl = document.getElementById('filter-period-custom');
+        
+        if (monthEl) monthEl.classList.toggle('hidden', type !== 'month');
+        if (customEl) {
+            customEl.classList.toggle('hidden', type !== 'custom');
+            customEl.style.display = type === 'custom' ? 'flex' : 'none';
         }
-        window.toggleExpFieldsDDS();
-    }, 200);
+        loadAllData();
+    };
     
-    document.getElementById('save-expense-btn').addEventListener('click', async function() {
-        const name = document.getElementById('exp-name').value.trim();
-        const amount = parseFloat(document.getElementById('exp-amount').value);
-        if (!name || !amount || amount <= 0) { alert('Заполните наименование и сумму'); return; }
+    window.toggleExpFieldsDDS = function() {
+        const mt = document.getElementById('exp-method')?.value;
+        const st = document.getElementById('exp-status')?.value;
+        const pg = document.getElementById('exp-paid-group');
+        const dg = document.getElementById('exp-plan-date-group');
+        if (pg) pg.style.display = (mt === 'cash') ? 'block' : 'none';
+        if (dg) dg.style.display = (st === 'pending') ? 'block' : 'none';
+    };
+    
+    window.openExpenseFormDDS = async function(editId) {
+        const today = new Date().toISOString().split('T')[0];
+        let editData = null;
+        if (editId) editData = allExpenses.find(x => x.id === editId);
         
-        const data = {
-            project_id: document.getElementById('exp-project').value || null,
-            name, amount,
-            category: document.getElementById('exp-category').value,
-            supplier: document.getElementById('exp-supplier').value,
-            quantity: parseFloat(document.getElementById('exp-qty').value) || 1,
-            date: document.getElementById('exp-date').value,
-            payment_method: document.getElementById('exp-method').value,
-            payment_type: document.getElementById('exp-method').value === 'cash' ? 'cash' : 'invoice',
-            payment_status: document.getElementById('exp-status').value,
-            is_urgent: document.getElementById('exp-urgent').checked,
-            planned_payment_date: document.getElementById('exp-status').value === 'pending' ? document.getElementById('exp-plan-date').value : null,
-            paid_by_name: document.getElementById('exp-status').value === 'paid' && document.getElementById('exp-method').value === 'cash' ? document.getElementById('exp-paid-by').value : null,
-            comment: document.getElementById('exp-comment').value,
-            expense_number: expNum
-        };
-        
-        const fi = document.getElementById('exp-invoice');
-        if (fi?.files[0]) {
-            const fl = fi.files[0];
-            const cn = fl.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-            const { data: up, error: ue } = await supabase.storage.from('reports').upload('invoices/'+Date.now()+'_'+cn, fl);
-            if (!ue) { const { data: ud } = supabase.storage.from('reports').getPublicUrl(up.path); data.invoice_url = ud.publicUrl; data.invoice_name = fl.name; }
-        }
-        
-        let result;
-        if (editId) {
-            result = await supabase.from('expenses').update(data).eq('id', editId);
+        if (!editId) {
+            const { data: num } = await supabase.from('document_numbers').select('number').eq('doc_type','expense').order('number',{ascending:false}).limit(1);
+            const next = num?.length ? num[0].number + 1 : 1;
+            var expNum = '№-RAS-' + next;
         } else {
-            result = await supabase.from('expenses').insert({...data, created_by: currentUser?.id});
-            if (!result.error) await supabase.from('document_numbers').upsert({doc_type:'expense', number: parseInt(expNum.replace('№-RAS-',''))}, {onConflict:'doc_type'});
-            
-            if (data.payment_status === 'pending') {
-                await supabase.from('custom_tasks').insert({
-                    project_id: data.project_id,
-                    title: (data.is_urgent?'🚨 ':'')+'Расход '+expNum+': '+name,
-                    description: `Сумма: ${amount.toLocaleString()} ₸\nПоставщик: ${data.supplier||'—'}\nДата платежа: ${data.planned_payment_date||'—'}`,
-                    status: 'pending', priority: data.is_urgent?'high':'medium', type: 'payment',
-                    created_by: currentUser?.id, created_by_name: currentUser?.full_name
+            var expNum = editData.expense_number || '';
+        }
+        
+        const opts = allProjects.map(p => `<option value="${p.id}" ${editData?.project_id===p.id?'selected':''}>${p.name}</option>`).join('');
+        const catOpts = Object.entries(expenseCategories).map(([k,v]) => `<option value="${k}" ${editData?.category===k?'selected':''}>${v}</option>`).join('');
+        
+        let h = `<div class="form-group"><label class="form-label">📄 Номер</label><input class="form-input" value="${expNum}" disabled></div>`;
+        h += `<div class="form-group"><label class="form-label">🏗️ Объект</label><select id="exp-project" class="form-input">${opts}</select></div>`;
+        h += `<div class="form-group"><label class="form-label">📂 Статья расхода</label><select id="exp-category" class="form-input">${catOpts}</select></div>`;
+        h += `<div class="form-group"><label class="form-label">📝 Наименование *</label><input id="exp-name" class="form-input" value="${escapeHtml(editData?.name||'')}"></div>`;
+        h += `<div class="form-group"><label class="form-label">🏢 Поставщик</label><input id="exp-supplier" class="form-input" value="${escapeHtml(editData?.supplier||'')}"></div>`;
+        h += `<div class="grid-2"><div class="form-group"><label class="form-label">Количество</label><input type="number" id="exp-qty" class="form-input" step="0.01" value="${editData?.quantity||1}"></div><div class="form-group"><label class="form-label">💰 Сумма *</label><input type="number" id="exp-amount" class="form-input" step="0.01" value="${editData?.amount||''}"></div></div>`;
+        h += `<div class="form-group"><label class="form-label">📅 Дата расхода</label><input type="date" id="exp-date" class="form-input" value="${editData?.date||today}"></div>`;
+        h += `<div class="form-group"><label class="form-label">💳 Метод оплаты</label><select id="exp-method" class="form-input" onchange="window.toggleExpFieldsDDS()"><option value="non_cash" ${editData?.payment_method==='non_cash'?'selected':''}>💳 Безнал</option><option value="cash" ${editData?.payment_method==='cash'?'selected':''}>💵 Наличка</option></select></div>`;
+        h += `<div class="form-group">
+            <label class="form-label">📎 Счёт на оплату</label>
+            <button type="button" class="btn btn-outline" id="exp-invoice-btn" style="width:100%;">📁 Выбрать файл</button>
+            <span id="exp-invoice-name" style="font-size:11px;color:var(--text-secondary);display:block;margin-top:4px;">${editData?.invoice_url ? '📎 Уже прикреплён' : 'Файл не выбран'}</span>
+            <input type="file" id="exp-invoice" accept=".pdf,.jpg,.jpeg,.png" style="display:none;">
+        </div>`;
+        h += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><input type="checkbox" id="exp-urgent" style="width:18px;height:18px;" ${editData?.is_urgent?'checked':''}><label>🚨 Срочный платёж</label></div>`;
+        h += `<div class="form-group"><label class="form-label">📊 Статус</label><select id="exp-status" class="form-input" onchange="window.toggleExpFieldsDDS()"><option value="paid" ${editData?.payment_status==='paid'?'selected':''}>💳 Оплатили</option><option value="pending" ${(!editData||editData?.payment_status!=='paid')?'selected':''}>📅 В план оплат</option></select></div>`;
+        h += `<div id="exp-paid-group" class="form-group" style="display:none;">
+            <label class="form-label">👤 Кто оплатил *</label>
+            <select id="exp-paid-by" class="form-input">
+                <option value="">Выберите...</option>
+                <option value="Маххабат Наличка">💵 Маххабат Наличка</option>
+                <option value="Маххабат Карта">💳 Маххабат Карта</option>
+                <option value="Володя Наличка">💵 Володя Наличка</option>
+                <option value="Володя Карта">💳 Володя Карта</option>
+                <option value="ИТР Наличка">💵 ИТР Наличка</option>
+                <option value="ИТР Карта">💳 ИТР Карта</option>
+            </select>
+        </div>`;
+        h += `<div id="exp-plan-date-group" class="form-group" style="display:none;"><label class="form-label">📅 Дата платежа</label><input type="date" id="exp-plan-date" class="form-input" value="${editData?.planned_payment_date||today}"></div>`;
+        h += `<div class="form-group"><label class="form-label">📝 Комментарий</label><textarea id="exp-comment" class="form-input" rows="2">${escapeHtml(editData?.comment||'')}</textarea></div>`;
+        h += `<button class="btn btn-primary" id="save-expense-btn">💾 ${editId?'Сохранить изменения':'Сохранить расход'}</button>`;
+        
+        document.getElementById('modal-title').textContent = editId ? '✏️ Редактировать расход' : '➕ Новый расход';
+        document.getElementById('modal-content').innerHTML = h;
+        document.getElementById('modal').classList.remove('hidden');
+        
+        if (editData?.paid_by_name) {
+            setTimeout(() => {
+                const sel = document.getElementById('exp-paid-by');
+                if (sel) sel.value = editData.paid_by_name;
+            }, 150);
+        }
+        
+        setTimeout(function() {
+            const fileBtn = document.getElementById('exp-invoice-btn');
+            const fileInput = document.getElementById('exp-invoice');
+            const fileName = document.getElementById('exp-invoice-name');
+            if (fileBtn && fileInput) {
+                fileBtn.addEventListener('click', function() { fileInput.click(); });
+                fileInput.addEventListener('change', function() {
+                    fileName.textContent = fileInput.files[0] ? '📎 ' + fileInput.files[0].name : 'Файл не выбран';
                 });
             }
-        }
+            window.toggleExpFieldsDDS();
+        }, 200);
         
-        if (result.error) { alert('Ошибка: '+result.error.message); return; }
-        document.getElementById('modal').classList.add('hidden');
-        showMessage(editId?'✅ Расход обновлён':'✅ Расход добавлен','success');
-        loadAllData();
-    });
-};
+        document.getElementById('save-expense-btn').addEventListener('click', async function() {
+            const name = document.getElementById('exp-name').value.trim();
+            const amount = parseFloat(document.getElementById('exp-amount').value);
+            if (!name || !amount || amount <= 0) { alert('Заполните наименование и сумму'); return; }
+            
+            const data = {
+                project_id: document.getElementById('exp-project').value || null,
+                name, amount,
+                category: document.getElementById('exp-category').value,
+                supplier: document.getElementById('exp-supplier').value,
+                quantity: parseFloat(document.getElementById('exp-qty').value) || 1,
+                date: document.getElementById('exp-date').value,
+                payment_method: document.getElementById('exp-method').value,
+                payment_type: document.getElementById('exp-method').value === 'cash' ? 'cash' : 'invoice',
+                payment_status: document.getElementById('exp-status').value,
+                is_urgent: document.getElementById('exp-urgent').checked,
+                planned_payment_date: document.getElementById('exp-status').value === 'pending' ? document.getElementById('exp-plan-date').value : null,
+                paid_by_name: document.getElementById('exp-status').value === 'paid' && document.getElementById('exp-method').value === 'cash' ? document.getElementById('exp-paid-by').value : null,
+                comment: document.getElementById('exp-comment').value,
+                expense_number: expNum
+            };
+            
+            const fi = document.getElementById('exp-invoice');
+            if (fi?.files[0]) {
+                const fl = fi.files[0];
+                const cn = fl.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                const { data: up, error: ue } = await supabase.storage.from('reports').upload('invoices/'+Date.now()+'_'+cn, fl);
+                if (!ue) { const { data: ud } = supabase.storage.from('reports').getPublicUrl(up.path); data.invoice_url = ud.publicUrl; data.invoice_name = fl.name; }
+            }
+            
+            let result;
+            if (editId) {
+                result = await supabase.from('expenses').update(data).eq('id', editId);
+            } else {
+                result = await supabase.from('expenses').insert({...data, created_by: currentUser?.id});
+                if (!result.error) await supabase.from('document_numbers').upsert({doc_type:'expense', number: parseInt(expNum.replace('№-RAS-',''))}, {onConflict:'doc_type'});
+                
+                if (data.payment_status === 'pending') {
+                    await supabase.from('custom_tasks').insert({
+                        project_id: data.project_id,
+                        title: (data.is_urgent?'🚨 ':'')+'Расход '+expNum+': '+name,
+                        description: `Сумма: ${amount.toLocaleString()} ₸\nПоставщик: ${data.supplier||'—'}\nДата платежа: ${data.planned_payment_date||'—'}`,
+                        status: 'pending', priority: data.is_urgent?'high':'medium', type: 'payment',
+                        created_by: currentUser?.id, created_by_name: currentUser?.full_name
+                    });
+                }
+            }
+            
+            if (result.error) { alert('Ошибка: '+result.error.message); return; }
+            document.getElementById('modal').classList.add('hidden');
+            showMessage(editId?'✅ Расход обновлён':'✅ Расход добавлен','success');
+            loadAllData();
+        });
+    };
     
     window.editExpense = function(id) { window.openExpenseFormDDS(id); };
     
-    // ===== ВЫПЛАТЫ =====
     function renderPayoutsList() {
         const all = [...allWorkOrders.map(o=>({...o,type:'order',amount:o.total_amount,date:o.payment_date||o.created_at?.split('T')[0],status:o.payment_status==='paid'?'paid':'pending'})),...allAdvances.map(a=>({...a,type:'advance',amount:a.amount,date:a.payment_date||a.created_at?.split('T')[0],status:a.status==='paid'?'paid':'pending'}))].sort((a,b)=>new Date(b.date)-new Date(a.date));
         const c = document.getElementById('payouts-list');
@@ -596,7 +587,6 @@ window.openExpenseFormDDS = async function(editId) {
         c.innerHTML = all.map(x => `<div class="expense-card"><div class="expense-header"><span class="expense-title">${x.type==='order'?'📋 Наряд':'💳 Аванс'} ${escapeHtml(x.work_type||'')}</span><span class="expense-amount" style="color:var(--danger);">-${formatMoney(x.amount)}</span></div><div style="font-size:12px;color:var(--text-secondary);">👷 ${escapeHtml(x.brigades?.name||'—')} | 🏗️ ${escapeHtml(x.projects?.name||'—')}</div><div class="expense-meta"><span>📅 ${formatDate(x.date)}</span><span class="tag ${x.status==='paid'?'tag-green':'tag-yellow'}">${x.status==='paid'?'✅ Выплачен':'⏳ План'}</span></div></div>`).join('');
     }
     
-    // ===== ФОРМА ПОСТУПЛЕНИЙ =====
     document.getElementById('show-income-form').addEventListener('click', () => {
         document.getElementById('modal-title').textContent = '➕ Поступление';
         document.getElementById('modal-content').innerHTML = `
@@ -639,7 +629,6 @@ window.openExpenseFormDDS = async function(editId) {
     
     document.getElementById('show-expense-form').addEventListener('click', () => window.openExpenseFormDDS());
     
-    // ===== НАСТРОЙКИ =====
     function setupTabs() {
         document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', function() {
             document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
@@ -647,279 +636,270 @@ window.openExpenseFormDDS = async function(editId) {
             this.classList.add('active'); document.getElementById('tab-'+this.dataset.tab).classList.add('active');
         }));
     }
-    // Вспомогательная функция: показать модальное окно с ссылкой на скачивание
-function showDownloadLink(url, type) {
-    const modal = document.getElementById('modal');
-    const title = type === 'excel' ? '📥 Скачать Excel' : '📄 Печать PDF';
-    const hint = type === 'excel' ? 
-        'Скопируйте ссылку и откройте её в браузере, чтобы скачать файл Excel.' : 
-        'Скопируйте ссылку и откройте её в браузере. Нажмите Ctrl+P (или Поделиться → Печать), чтобы сохранить как PDF.';
-    const btnLabel = '📋 Скопировать ссылку';
 
-    document.getElementById('modal-title').textContent = title;
-    document.getElementById('modal-content').innerHTML = `
-        <div style="text-align:center;padding:20px;">
-            <p style="margin-bottom:16px; font-weight: 600;">${hint}</p>
-            <div style="background:#F8FAFC; padding:12px; border-radius:10px; word-break:break-all; font-size:12px; margin-bottom:16px; text-align:left; border:1px solid var(--border);">${url}</div>
-            <button class="btn btn-primary" id="copy-link-btn" data-url="${url}">${btnLabel}</button>
-        </div>
-    `;
-    modal.classList.remove('hidden');
-    
-    // Обработчик для копирования
-    document.getElementById('copy-link-btn').addEventListener('click', function() {
-        navigator.clipboard.writeText(this.dataset.url).then(() => {
-            showMessage('✅ Ссылка скопирована!', 'success');
-        }).catch(() => {
-            showMessage('❌ Не удалось скопировать', 'error');
+    // ==========================================
+    // НОВЫЕ ФУНКЦИИ ЭКСПОРТА (замена старых)
+    // ==========================================
+
+    // Функция показа окна со ссылкой на скачивание
+    function showDownloadLink(url, type) {
+        const modal = document.getElementById('modal');
+        const title = type === 'excel' ? '📥 Скачать Excel' : '📄 Печать PDF';
+        const hint = type === 'excel' ? 
+            'Скопируйте ссылку и откройте её в браузере, чтобы скачать файл Excel.' : 
+            'Скопируйте ссылку и откройте её в браузере. Нажмите Ctrl+P (или Поделиться → Печать), чтобы сохранить как PDF.';
+
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('modal-content').innerHTML = `
+            <div style="text-align:center;padding:20px;">
+                <p style="margin-bottom:16px; font-weight: 600;">${hint}</p>
+                <div style="background:#F8FAFC; padding:12px; border-radius:10px; word-break:break-all; font-size:12px; margin-bottom:16px; text-align:left; border:1px solid var(--border);">${url}</div>
+                <button class="btn btn-primary" id="copy-link-btn" data-url="${url}">📋 Скопировать ссылку</button>
+                <button class="btn btn-outline" id="open-link-btn" data-url="${url}" style="margin-top:8px;">🔗 Открыть в браузере</button>
+            </div>
+        `;
+        modal.classList.remove('hidden');
+        
+        document.getElementById('copy-link-btn').addEventListener('click', function() {
+            navigator.clipboard.writeText(this.dataset.url).then(() => {
+                showMessage('✅ Ссылка скопирована!', 'success');
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = this.dataset.url;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showMessage('✅ Ссылка скопирована!', 'success');
+            });
         });
-    });
-}
-// Функция-хелпер для определения, что мы в десктопном/мобильном Telegram WebView
-function isTelegramDesktop() {
-    // Если нет Telegram Web App API — точно браузер
-    if (!window.Telegram?.WebApp?.initDataUnsafe?.user?.id) return false;
-    // Если есть параметр tgWebAppData в URL — это Web-версия Telegram (работает как браузер)
-    if (window.location.href.includes('tgWebAppData')) return false;
-    // Иначе — нативное приложение Telegram (Desktop или мобильное)
-    return true;
-}
-// Экспорт в Excel
-// Экспорт в Excel (обновлённый)
-window.exportToExcel = async function() {
-    showMessage('⏳ Формирую отчёт Excel...', 'success');
-    
-    // 1. Определяем период
-    const periodType = document.getElementById('filter-period-type')?.value || 'month';
-    let periodLabel = '';
-    const now = new Date();
-    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-    
-    if (periodType === 'month') {
-        const val = document.getElementById('filter-period-month')?.value;
-        if (val) { const [y, m] = val.split('-'); periodLabel = months[parseInt(m)-1] + ' ' + y; }
-    } else if (periodType === 'quarter') {
-        const q = Math.floor(now.getMonth() / 3) + 1;
-        periodLabel = q + '-й квартал ' + now.getFullYear();
-    } else if (periodType === 'year') {
-        periodLabel = now.getFullYear() + ' год';
-    } else {
-        const from = document.getElementById('filter-date-from')?.value;
-        const to = document.getElementById('filter-date-to')?.value;
-        periodLabel = from + ' – ' + to;
+        
+        document.getElementById('open-link-btn').addEventListener('click', function() {
+            window.open(this.dataset.url, '_blank');
+        });
     }
-    
-    // 2. Собираем данные (как и раньше)
-    const totalIncome = allIncome.filter(i => i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
-    const totalPlan = allIncome.filter(i => i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
-    const totalExp = allExpenses.filter(e => e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
-    const totalPay = [...allWorkOrders.filter(o => o.payment_status === 'paid'), ...allAdvances.filter(a => a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
-    
-    // Готовим книгу Excel
-    const wb = XLSX.utils.book_new();
-    
-    // Лист 1: Сводка
-    const summaryData = [
-        ['ТОО "LamGroup Construction"'], ['ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ'], ['Период: ' + periodLabel], [''],
-        ['Показатель', 'Сумма, ₸'], ['Поступления (факт)', totalIncome], ['Поступления (план)', totalPlan],
-        ['Расходы (оплаченные)', totalExp], ['Выплаты бригадам', totalPay], [''],
-        ['Чистый денежный поток', totalIncome - totalExp - totalPay], [''],
-        ['Дата: ' + new Date().toLocaleDateString('ru-RU')], ['Ответственный: ' + (currentUser?.full_name || '—')]
-    ];
-    const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
-    ws1['!cols'] = [{wch:35}, {wch:20}];
-    XLSX.utils.book_append_sheet(wb, ws1, 'Сводка');
-    
-    // Лист 2: Объекты
-    const objData = [['Объект', 'Поступления', 'План пост.', 'Расходы', 'Выплаты', 'Сальдо']];
-    allProjects.forEach(p => {
-        const inc = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
-        const pln = allIncome.filter(i => i.project_id === p.id && i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
-        const exp = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
-        const pay = [...allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...allAdvances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
-        objData.push([p.name, inc, pln, exp, pay, inc - exp - pay]);
-    });
-    const ws2 = XLSX.utils.aoa_to_sheet(objData);
-    ws2['!cols'] = [{wch:25}, {wch:15}, {wch:15}, {wch:15}, {wch:15}, {wch:15}];
-    XLSX.utils.book_append_sheet(wb, ws2, 'Объекты');
-    
-    // Лист 3: Операции
-    const opsData = [['Дата', 'Тип', 'Объект', 'Описание', 'Сумма', 'Статус']];
-    const allOps = [
-        ...allIncome.map(i => [i.date, 'Поступление', i.projects?.name||'', i.description||'', i.amount||0, i.status==='paid'?'Оплачен':'Ожидается']),
-        ...allExpenses.map(e => [e.date, 'Расход', e.projects?.name||'', e.name||'', -(e.amount||0), e.payment_status==='paid'?'Оплачен':'План']),
-        ...allWorkOrders.map(o => [(o.payment_date||o.created_at?.split('T')[0]), 'Наряд', o.projects?.name||'', o.work_type||'', -(o.total_amount||0), o.payment_status==='paid'?'Выплачен':'План']),
-        ...allAdvances.map(a => [(a.payment_date||a.created_at?.split('T')[0]), 'Аванс', a.projects?.name||'', 'Аванс', -(a.amount||0), a.status==='paid'?'Выплачен':'План'])
-    ].sort((a,b) => new Date(b[0]) - new Date(a[0]));
-    allOps.forEach(o => opsData.push(o));
-    const ws3 = XLSX.utils.aoa_to_sheet(opsData);
-    ws3['!cols'] = [{wch:12}, {wch:15}, {wch:20}, {wch:30}, {wch:15}, {wch:12}];
-    XLSX.utils.book_append_sheet(wb, ws3, 'Операции');
-    
-    // 3. Генерируем файл и решаем, как отдавать
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const fileName = `ДДС_LamGroup_${periodLabel.replace(/[^a-zA-Zа-яА-Я0-9]/g, '_')}.xlsx`;
-    
-    if (isTelegramDesktop()) {
-        // Telegram Desktop/Mobile: загружаем в Storage и показываем ссылку
+
+    // Экспорт в Excel
+    window.exportToExcel = async function() {
+        showMessage('⏳ Формирую отчёт Excel...', 'success');
+        
+        const periodType = document.getElementById('filter-period-type')?.value || 'month';
+        let periodLabel = '';
+        const now = new Date();
+        const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+        
+        if (periodType === 'month') {
+            const val = document.getElementById('filter-period-month')?.value;
+            if (val) { const [y, m] = val.split('-'); periodLabel = months[parseInt(m)-1] + ' ' + y; }
+        } else if (periodType === 'quarter') {
+            const q = Math.floor(now.getMonth() / 3) + 1;
+            periodLabel = q + '-й квартал ' + now.getFullYear();
+        } else if (periodType === 'year') {
+            periodLabel = now.getFullYear() + ' год';
+        } else {
+            const from = document.getElementById('filter-date-from')?.value;
+            const to = document.getElementById('filter-date-to')?.value;
+            periodLabel = from + ' – ' + to;
+        }
+        
+        const totalIncome = allIncome.filter(i => i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+        const totalPlan = allIncome.filter(i => i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+        const totalExp = allExpenses.filter(e => e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+        const totalPay = [...allWorkOrders.filter(o => o.payment_status === 'paid'), ...allAdvances.filter(a => a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
+        
+        const wb = XLSX.utils.book_new();
+        
+        const summaryData = [
+            ['ТОО "LamGroup Construction"'], ['ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ'], ['Период: ' + periodLabel], [''],
+            ['Показатель', 'Сумма, ₸'], ['Поступления (факт)', totalIncome], ['Поступления (план)', totalPlan],
+            ['Расходы (оплаченные)', totalExp], ['Выплаты бригадам', totalPay], [''],
+            ['Чистый денежный поток', totalIncome - totalExp - totalPay], [''],
+            ['Дата: ' + new Date().toLocaleDateString('ru-RU')], ['Ответственный: ' + (currentUser?.full_name || '—')]
+        ];
+        const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+        ws1['!cols'] = [{wch:35}, {wch:20}];
+        XLSX.utils.book_append_sheet(wb, ws1, 'Сводка');
+        
+        const objData = [['Объект', 'Поступления', 'План пост.', 'Расходы', 'Выплаты', 'Сальдо']];
+        allProjects.forEach(p => {
+            const inc = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+            const pln = allIncome.filter(i => i.project_id === p.id && i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+            const exp = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+            const pay = [...allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...allAdvances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
+            objData.push([p.name, inc, pln, exp, pay, inc - exp - pay]);
+        });
+        const ws2 = XLSX.utils.aoa_to_sheet(objData);
+        ws2['!cols'] = [{wch:25}, {wch:15}, {wch:15}, {wch:15}, {wch:15}, {wch:15}];
+        XLSX.utils.book_append_sheet(wb, ws2, 'Объекты');
+        
+        const opsData = [['Дата', 'Тип', 'Объект', 'Описание', 'Сумма', 'Статус']];
+        const allOps = [
+            ...allIncome.map(i => [i.date, 'Поступление', i.projects?.name||'', i.description||'', i.amount||0, i.status==='paid'?'Оплачен':'Ожидается']),
+            ...allExpenses.map(e => [e.date, 'Расход', e.projects?.name||'', e.name||'', -(e.amount||0), e.payment_status==='paid'?'Оплачен':'План']),
+            ...allWorkOrders.map(o => [(o.payment_date||o.created_at?.split('T')[0]), 'Наряд', o.projects?.name||'', o.work_type||'', -(o.total_amount||0), o.payment_status==='paid'?'Выплачен':'План']),
+            ...allAdvances.map(a => [(a.payment_date||a.created_at?.split('T')[0]), 'Аванс', a.projects?.name||'', 'Аванс', -(a.amount||0), a.status==='paid'?'Выплачен':'План'])
+        ].sort((a,b) => new Date(b[0]) - new Date(a[0]));
+        allOps.forEach(o => opsData.push(o));
+        const ws3 = XLSX.utils.aoa_to_sheet(opsData);
+        ws3['!cols'] = [{wch:12}, {wch:15}, {wch:20}, {wch:30}, {wch:15}, {wch:12}];
+        XLSX.utils.book_append_sheet(wb, ws3, 'Операции');
+        
+        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const cleanName = periodLabel.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, '').replace(/\s+/g, '_');
+        const fileName = `ДДС_LamGroup_${cleanName}.xlsx`;
         const file = new File([new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })], fileName);
-        const { data: uploadData, error: uploadError } = await supabase.storage.from('reports').upload('excel/' + Date.now() + '_' + fileName, file, { cacheControl: '3600', upsert: true });
+        
+        const storagePath = 'reports/excel/' + Date.now() + '_' + fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('reports')
+            .upload(storagePath, file, { 
+                cacheControl: '3600', 
+                upsert: true,
+                contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            });
         
         if (uploadError) {
+            console.error('Upload error:', uploadError);
             showMessage('❌ Ошибка загрузки отчёта: ' + uploadError.message, 'error');
             return;
         }
         
         const { data: urlData } = supabase.storage.from('reports').getPublicUrl(uploadData.path);
         showDownloadLink(urlData.publicUrl, 'excel');
-        showMessage('✅ Ссылка на Excel готова', 'success');
-    } else {
-        // Браузер / Web Telegram: сразу скачиваем
-        XLSX.writeFile(wb, fileName);
-        showMessage('✅ Файл Excel скачан', 'success');
-    }
-};
-// Экспорт в PDF (обновлённый)
-window.exportToPDF = async function() {
-    showMessage('⏳ Формирую отчёт для печати...', 'success');
-    
-    // 1. Определяем период
-    const periodType = document.getElementById('filter-period-type')?.value || 'month';
-    let periodLabel = '';
-    const now = new Date();
-    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-    
-    if (periodType === 'month') {
-        const val = document.getElementById('filter-period-month')?.value;
-        if (val) { const [y, m] = val.split('-'); periodLabel = months[parseInt(m)-1] + ' ' + y; }
-    } else if (periodType === 'quarter') {
-        const q = Math.floor(now.getMonth() / 3) + 1;
-        periodLabel = q + '-й квартал ' + now.getFullYear();
-    } else if (periodType === 'year') {
-        periodLabel = now.getFullYear() + ' год';
-    } else {
-        const from = document.getElementById('filter-date-from')?.value;
-        const to = document.getElementById('filter-date-to')?.value;
-        periodLabel = from + ' – ' + to;
-    }
-    
-    // 2. Собираем данные
-    const totalIncome = allIncome.filter(i => i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
-    const totalPlan = allIncome.filter(i => i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
-    const totalExp = allExpenses.filter(e => e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
-    const totalPay = [...allWorkOrders.filter(o => o.payment_status === 'paid'), ...allAdvances.filter(a => a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
-    
-    let objRows = '';
-    allProjects.forEach(p => {
-        const inc = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
-        const pln = allIncome.filter(i => i.project_id === p.id && i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
-        const exp = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
-        const pay = [...allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...allAdvances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
-        objRows += `<tr><td>${escapeHtml(p.name)}</td><td>${inc.toLocaleString()} ₸</td><td>${pln.toLocaleString()} ₸</td><td>${exp.toLocaleString()} ₸</td><td>${pay.toLocaleString()} ₸</td><td style="font-weight:600;">${(inc-exp-pay).toLocaleString()} ₸</td></tr>`;
-    });
-    
-    // 3. Генерируем HTML для печати
-    const printHTML = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Отчёт ДДС LamGroup</title>
-    <style>
-        @media print { body { margin: 0; padding: 15mm; } @page { size: A4 landscape; margin: 10mm; } }
-        body { font-family: Arial, sans-serif; color: #000; line-height: 1.4; margin: 0; padding: 10mm; font-size: 9pt; }
-        h1 { font-size: 14pt; text-align: center; margin: 0 0 4px 0; }
-        h2 { font-size: 10pt; text-align: center; color: #555; margin: 0 0 16px 0; }
-        h3 { font-size: 10pt; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin: 16px 0 8px 0; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
-        th { background: #e8e8e8; padding: 4px 6px; text-align: left; font-weight: 600; font-size: 8pt; border: 1px solid #aaa; }
-        td { padding: 3px 6px; border: 1px solid #ccc; font-size: 8pt; }
-        .kpi-grid { display: flex; gap: 12px; margin-bottom: 16px; }
-        .kpi-card { flex: 1; background: #f5f5f5; border-radius: 6px; padding: 8px; text-align: center; border: 1px solid #ddd; }
-        .kpi-value { font-size: 14pt; font-weight: 800; }
-        .kpi-label { font-size: 7pt; color: #777; text-transform: uppercase; }
-        .footer { text-align: center; font-size: 7pt; color: #999; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 8px; }
-        @media print { .no-print { display: none; } }
-        .print-hint { text-align: center; background: #fef3c7; padding: 8px; margin-bottom: 12px; border-radius: 6px; font-weight: 600; font-size: 10px; }
-    </style></head><body>
-    <div class="print-hint no-print">Нажмите Ctrl+P (или Поделиться → Печать) и выберите "Сохранить как PDF"</div>
-    <h1>ТОО "LamGroup Construction"</h1>
-    <h2>ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ<br>за период: ${periodLabel}</h2>
-    <div class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-value" style="color:#10B981;">${totalIncome.toLocaleString()} ₸</div><div class="kpi-label">💰 Поступления</div></div>
-        <div class="kpi-card"><div class="kpi-value" style="color:#3B82F6;">${totalPlan.toLocaleString()} ₸</div><div class="kpi-label">📥 План поступлений</div></div>
-        <div class="kpi-card"><div class="kpi-value" style="color:#EF4444;">${totalExp.toLocaleString()} ₸</div><div class="kpi-label">📤 Расходы</div></div>
-        <div class="kpi-card"><div class="kpi-value" style="color:#F59E0B;">${totalPay.toLocaleString()} ₸</div><div class="kpi-label">👷 Выплаты</div></div>
-    </div>
-    <h3>📊 Сводка по объектам</h3>
-    <table><thead><tr><th>Объект</th><th>💰 Поступления</th><th>📥 План</th><th>📤 Расходы</th><th>👷 Выплаты</th><th>Сальдо</th></tr></thead><tbody>${objRows}</tbody></table>
-    <div class="footer">
-        <p>Дата формирования: ${new Date().toLocaleDateString('ru-RU')} | Ответственный: ${currentUser?.full_name || '—'}</p>
-        <p>ТОО "LamGroup Construction" | г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215 | +7 701 710 04 77</p>
-    </div>
-    </body></html>`;
-    
-    if (isTelegramDesktop()) {
-        // Telegram Desktop/Mobile: загружаем HTML в Storage и показываем ссылку
-        const blob = new Blob([printHTML], { type: 'text/html;charset=UTF-8' });
-        const file = new File([blob], 'dds_report_print.html');
-        const filePath = 'reports/pdf/' + Date.now() + '_dds_print.html';
+        showMessage('✅ Отчёт Excel готов', 'success');
+    };
+
+    // Экспорт в PDF
+    window.exportToPDF = async function() {
+        showMessage('⏳ Формирую отчёт для печати...', 'success');
         
-        const { data: uploadData, error: uploadError } = await supabase.storage.from('reports').upload(filePath, file, { cacheControl: '3600', upsert: true });
+        const periodType = document.getElementById('filter-period-type')?.value || 'month';
+        let periodLabel = '';
+        const now = new Date();
+        const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+        
+        if (periodType === 'month') {
+            const val = document.getElementById('filter-period-month')?.value;
+            if (val) { const [y, m] = val.split('-'); periodLabel = months[parseInt(m)-1] + ' ' + y; }
+        } else if (periodType === 'quarter') {
+            const q = Math.floor(now.getMonth() / 3) + 1;
+            periodLabel = q + '-й квартал ' + now.getFullYear();
+        } else if (periodType === 'year') {
+            periodLabel = now.getFullYear() + ' год';
+        } else {
+            const from = document.getElementById('filter-date-from')?.value;
+            const to = document.getElementById('filter-date-to')?.value;
+            periodLabel = from + ' – ' + to;
+        }
+        
+        const totalIncome = allIncome.filter(i => i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+        const totalPlan = allIncome.filter(i => i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+        const totalExp = allExpenses.filter(e => e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+        const totalPay = [...allWorkOrders.filter(o => o.payment_status === 'paid'), ...allAdvances.filter(a => a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
+        
+        let objRows = '';
+        allProjects.forEach(p => {
+            const inc = allIncome.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s,i) => s + (i.amount||0), 0);
+            const pln = allIncome.filter(i => i.project_id === p.id && i.status === 'pending').reduce((s,i) => s + (i.amount||0), 0);
+            const exp = allExpenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s,e) => s + (e.amount||0), 0);
+            const pay = [...allWorkOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...allAdvances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s,x) => s + (x.amount||x.total_amount||0), 0);
+            objRows += `<tr><td>${escapeHtml(p.name)}</td><td>${inc.toLocaleString()} ₸</td><td>${pln.toLocaleString()} ₸</td><td>${exp.toLocaleString()} ₸</td><td>${pay.toLocaleString()} ₸</td><td style="font-weight:600;">${(inc-exp-pay).toLocaleString()} ₸</td></tr>`;
+        });
+        
+        const printHTML = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Отчёт ДДС LamGroup</title>
+        <style>
+            @media print { body { margin: 0; padding: 15mm; } @page { size: A4 landscape; margin: 10mm; } }
+            body { font-family: Arial, sans-serif; color: #000; line-height: 1.4; margin: 0; padding: 10mm; font-size: 9pt; }
+            h1 { font-size: 14pt; text-align: center; margin: 0 0 4px 0; }
+            h2 { font-size: 10pt; text-align: center; color: #555; margin: 0 0 16px 0; }
+            h3 { font-size: 10pt; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin: 16px 0 8px 0; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+            th { background: #e8e8e8; padding: 4px 6px; text-align: left; font-weight: 600; font-size: 8pt; border: 1px solid #aaa; }
+            td { padding: 3px 6px; border: 1px solid #ccc; font-size: 8pt; }
+            .kpi-grid { display: flex; gap: 12px; margin-bottom: 16px; }
+            .kpi-card { flex: 1; background: #f5f5f5; border-radius: 6px; padding: 8px; text-align: center; border: 1px solid #ddd; }
+            .kpi-value { font-size: 14pt; font-weight: 800; }
+            .kpi-label { font-size: 7pt; color: #777; text-transform: uppercase; }
+            .footer { text-align: center; font-size: 7pt; color: #999; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 8px; }
+            @media print { .no-print { display: none; } }
+            .print-hint { text-align: center; background: #fef3c7; padding: 8px; margin-bottom: 12px; border-radius: 6px; font-weight: 600; font-size: 10px; }
+        </style></head><body>
+        <div class="print-hint no-print">Нажмите Ctrl+P (или Поделиться → Печать) и выберите "Сохранить как PDF"</div>
+        <h1>ТОО "LamGroup Construction"</h1>
+        <h2>ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ<br>за период: ${periodLabel}</h2>
+        <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-value" style="color:#10B981;">${totalIncome.toLocaleString()} ₸</div><div class="kpi-label">💰 Поступления</div></div>
+            <div class="kpi-card"><div class="kpi-value" style="color:#3B82F6;">${totalPlan.toLocaleString()} ₸</div><div class="kpi-label">📥 План поступлений</div></div>
+            <div class="kpi-card"><div class="kpi-value" style="color:#EF4444;">${totalExp.toLocaleString()} ₸</div><div class="kpi-label">📤 Расходы</div></div>
+            <div class="kpi-card"><div class="kpi-value" style="color:#F59E0B;">${totalPay.toLocaleString()} ₸</div><div class="kpi-label">👷 Выплаты</div></div>
+        </div>
+        <h3>📊 Сводка по объектам</h3>
+        <table><thead><tr><th>Объект</th><th>💰 Поступления</th><th>📥 План</th><th>📤 Расходы</th><th>👷 Выплаты</th><th>Сальдо</th></tr></thead><tbody>${objRows}</tbody></table>
+        <div class="footer">
+            <p>Дата формирования: ${new Date().toLocaleDateString('ru-RU')} | Ответственный: ${currentUser?.full_name || '—'}</p>
+            <p>ТОО "LamGroup Construction" | г. Алматы, пр. Ермек Серкебаева, д. 97, н.п. 215 | +7 701 710 04 77</p>
+        </div>
+        </body></html>`;
+        
+        const cleanName = periodLabel.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, '').replace(/\s+/g, '_');
+        const blob = new Blob([printHTML], { type: 'text/html;charset=UTF-8' });
+        const file = new File([blob], `ДДС_печать_${cleanName}.html`, { type: 'text/html' });
+        
+        const storagePath = 'reports/pdf/' + Date.now() + '_dds_print.html';
+        const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('reports')
+            .upload(storagePath, file, { 
+                cacheControl: '3600', 
+                upsert: true,
+                contentType: 'text/html'
+            });
         
         if (uploadError) {
-            showMessage('❌ Ошибка загрузки отчёта', 'error');
+            console.error('Upload error:', uploadError);
+            showMessage('❌ Ошибка загрузки отчёта: ' + uploadError.message, 'error');
             return;
         }
         
         const { data: urlData } = supabase.storage.from('reports').getPublicUrl(uploadData.path);
         showDownloadLink(urlData.publicUrl, 'pdf');
-        showMessage('✅ Ссылка для печати готова', 'success');
-    } else {
-        // Браузер / Web Telegram: открываем новое окно и сразу печатаем
-        const printWindow = window.open('', '_blank', 'width=1000,height=700');
-        if (printWindow) {
-            printWindow.document.write(printHTML);
-            printWindow.document.close();
-            printWindow.focus();
-            // Небольшая задержка, чтобы окно успело отрендерить контент
-            setTimeout(() => { printWindow.print(); }, 800);
-            showMessage('✅ Окно печати открыто', 'success');
-        } else {
-            showMessage('❌ Разрешите всплывающие окна в браузере', 'error');
-        }
-    }
-};
+        showMessage('✅ Отчёт для печати готов', 'success');
+    };
 
-// Запуск приложения
-init();
-function setupFilters() {
-    document.getElementById('filter-project').addEventListener('change', e => { selectedProjectId = e.target.value; loadAllData(); });
-    document.getElementById('export-excel')?.addEventListener('click', () => window.exportToExcel());
-    document.getElementById('export-pdf')?.addEventListener('click', () => window.exportToPDF());
-    
-    const periodMonth = document.getElementById('filter-period-month');
-    const dateFrom = document.getElementById('filter-date-from');
-    const dateTo = document.getElementById('filter-date-to');
-    const periodType = document.getElementById('filter-period-type');
+    function setupFilters() {
+        document.getElementById('filter-project').addEventListener('change', e => { selectedProjectId = e.target.value; loadAllData(); });
+        document.getElementById('export-excel')?.addEventListener('click', () => window.exportToExcel());
+        document.getElementById('export-pdf')?.addEventListener('click', () => window.exportToPDF());
+        
+        const periodMonth = document.getElementById('filter-period-month');
+        const dateFrom = document.getElementById('filter-date-from');
+        const dateTo = document.getElementById('filter-date-to');
+        const periodType = document.getElementById('filter-period-type');
 
-    if (periodMonth) periodMonth.addEventListener('change', () => loadAllData());
-    if (dateFrom) dateFrom.addEventListener('change', () => loadAllData());
-    if (dateTo) dateTo.addEventListener('change', () => loadAllData());
-    if (periodType) periodType.addEventListener('change', function() { window.changePeriodType(); });
+        if (periodMonth) periodMonth.addEventListener('change', () => loadAllData());
+        if (dateFrom) dateFrom.addEventListener('change', () => loadAllData());
+        if (dateTo) dateTo.addEventListener('change', () => loadAllData());
+        if (periodType) periodType.addEventListener('change', function() { window.changePeriodType(); });
+        
+        document.getElementById('prev-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()-1); loadAllData(); });
+        document.getElementById('next-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()+1); loadAllData(); });
+        document.getElementById('today-month').addEventListener('click', () => { currentDisplayDate = new Date(); loadAllData(); });
+        document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal').classList.add('hidden'));
+        document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
+        document.getElementById('day-modal-close').addEventListener('click', () => document.getElementById('day-modal').classList.add('hidden'));
+        document.getElementById('day-modal').addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
+        
+        document.querySelectorAll('.income-fb').forEach(b => b.addEventListener('click', function() {
+            document.querySelectorAll('.income-fb').forEach(x => x.classList.remove('active'));
+            this.classList.add('active'); incomeFilter = this.dataset.f; renderIncomeList();
+        }));
+        document.querySelectorAll('.expense-fb').forEach(b => b.addEventListener('click', function() {
+            document.querySelectorAll('.expense-fb').forEach(x => x.classList.remove('active'));
+            this.classList.add('active'); expenseFilter = this.dataset.f; renderExpenseList();
+        }));
+    }    
     
-    document.getElementById('prev-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()-1); loadAllData(); });
-    document.getElementById('next-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()+1); loadAllData(); });
-    document.getElementById('today-month').addEventListener('click', () => { currentDisplayDate = new Date(); loadAllData(); });
-    document.getElementById('modal-close').addEventListener('click', () => document.getElementById('modal').classList.add('hidden'));
-    document.getElementById('modal').addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
-    document.getElementById('day-modal-close').addEventListener('click', () => document.getElementById('day-modal').classList.add('hidden'));
-    document.getElementById('day-modal').addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
-    
-    document.querySelectorAll('.income-fb').forEach(b => b.addEventListener('click', function() {
-        document.querySelectorAll('.income-fb').forEach(x => x.classList.remove('active'));
-        this.classList.add('active'); incomeFilter = this.dataset.f; renderIncomeList();
-    }));
-    document.querySelectorAll('.expense-fb').forEach(b => b.addEventListener('click', function() {
-        document.querySelectorAll('.expense-fb').forEach(x => x.classList.remove('active'));
-        this.classList.add('active'); expenseFilter = this.dataset.f; renderExpenseList();
-    }));
-}    
     init();
 })();
 </script>
