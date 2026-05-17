@@ -664,7 +664,8 @@ window.openExpenseFormDDS = async function(editId) {
     `;
     modal.classList.remove('hidden');
 }
-  window.exportToExcel = async function() {
+
+window.exportToExcel = async function() {
     showMessage('⏳ Формирую отчёт...', 'success');
     
     const periodType = document.getElementById('filter-period-type')?.value || 'month';
@@ -741,7 +742,6 @@ window.openExpenseFormDDS = async function(editId) {
     const isTelegram = !!(window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
     
     if (isTelegram) {
-        // Загружаем в Supabase и открываем ссылку
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
         const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const file = new File([blob], 'dds_report.xlsx');
@@ -752,21 +752,18 @@ window.openExpenseFormDDS = async function(editId) {
         
         const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
         tg.openLink(urlData.publicUrl);
+        
+        // Резервный вариант — показать ссылку
+        setTimeout(function() {
+            showDownloadLink(urlData.publicUrl, 'Excel');
+        }, 2000);
     } else {
-        // В браузере — скачиваем сразу
         XLSX.writeFile(wb, `ДДС_LamGroup_${periodLabel.replace(/\s/g,'_')}.xlsx`);
     }
     
     showMessage('✅ Отчёт готов', 'success');
 };
 
-// Если через 2 секунды не открылось — показываем ссылку
-setTimeout(function() {
-    const linkShown = document.getElementById('download-link-modal');
-    if (!linkShown) showDownloadLink(urlData.publicUrl, 'Excel');
-}, 2000);
-};
-// ========== ЭКСПОРТ В PDF (печать) ==========
 window.exportToPDF = function() {
     showMessage('⏳ Формирую PDF...', 'success');
     
@@ -851,22 +848,21 @@ window.exportToPDF = function() {
     <script>setTimeout(function(){window.print();},600);<\\/script>
     </body></html>`;
     
-    // В браузере — открываем окно печати сразу
     const w = window.open('', '_blank', 'width=1000,height=700');
     if (w) {
         w.document.write(html);
         w.document.close();
     } else {
-        // Если окно не открылось (Telegram) — показываем ссылку
         showMessage('❌ Разрешите всплывающие окна', 'error');
     }
     
     showMessage('✅ Отчёт открыт', 'success');
 };
-  function setupFilters() {
+
+function setupFilters() {
     document.getElementById('filter-project').addEventListener('change', e => { selectedProjectId = e.target.value; loadAllData(); });
-      document.getElementById('export-excel')?.addEventListener('click', () => window.exportToExcel());
-document.getElementById('export-pdf')?.addEventListener('click', () => window.exportToPDF());
+    document.getElementById('export-excel')?.addEventListener('click', () => window.exportToExcel());
+    document.getElementById('export-pdf')?.addEventListener('click', () => window.exportToPDF());
     
     const periodMonth = document.getElementById('filter-period-month');
     const dateFrom = document.getElementById('filter-date-from');
@@ -876,9 +872,7 @@ document.getElementById('export-pdf')?.addEventListener('click', () => window.ex
     if (periodMonth) periodMonth.addEventListener('change', () => loadAllData());
     if (dateFrom) dateFrom.addEventListener('change', () => loadAllData());
     if (dateTo) dateTo.addEventListener('change', () => loadAllData());
-   if (periodType) periodType.addEventListener('change', function() { 
-    window.changePeriodType(); 
-});
+    if (periodType) periodType.addEventListener('change', function() { window.changePeriodType(); });
     
     document.getElementById('prev-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()-1); loadAllData(); });
     document.getElementById('next-month').addEventListener('click', () => { currentDisplayDate.setMonth(currentDisplayDate.getMonth()+1); loadAllData(); });
@@ -896,8 +890,7 @@ document.getElementById('export-pdf')?.addEventListener('click', () => window.ex
         document.querySelectorAll('.expense-fb').forEach(x => x.classList.remove('active'));
         this.classList.add('active'); expenseFilter = this.dataset.f; renderExpenseList();
     }));
-}
-    
+}    
     init();
 })();
 </script>
