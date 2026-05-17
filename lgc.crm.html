@@ -22,17 +22,9 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-        /* ===== АВТОРИЗАЦИЯ ===== */
-        .auth-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
-            display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px;
-        }
+        .auth-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
         .auth-overlay.hidden { display: none; }
-        .auth-card {
-            background: white; border-radius: 24px; padding: 40px 36px; text-align: center;
-            max-width: 440px; width: 100%; box-shadow: 0 25px 60px rgba(0,0,0,0.3);
-        }
+        .auth-card { background: white; border-radius: 24px; padding: 40px 36px; text-align: center; max-width: 440px; width: 100%; box-shadow: 0 25px 60px rgba(0,0,0,0.3); }
         .auth-card .logo { font-size: 40px; margin-bottom: 4px; }
         .auth-card h1 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
         .auth-card .subtitle { font-size: 12px; color: var(--text-secondary); margin-bottom: 24px; }
@@ -52,7 +44,6 @@
         .qr-popup-content { background: white; border-radius: 20px; padding: 30px; text-align: center; }
         .qr-popup-content canvas { margin: 16px auto; }
 
-        /* ===== ЛЕЙАУТ ===== */
         .app-layout { display: flex; min-height: 100vh; }
         .app-layout.hidden { display: none; }
         .sidebar { width: var(--sidebar-width); background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
@@ -98,35 +89,23 @@
 </head>
 <body>
 
-    <!-- АВТОРИЗАЦИЯ -->
     <div class="auth-overlay" id="auth-overlay">
         <div class="auth-card">
             <div class="logo">🏗️</div>
             <h1>LamGroup CRM</h1>
             <p class="subtitle">Войдите в систему управления проектами</p>
-
-            <!-- Форма входа по ID + паролю -->
             <div id="manual-login-form">
-                <div class="form-group">
-                    <label>📱 Telegram ID</label>
-                    <input type="text" id="auth-tg-id" class="form-input" placeholder="Например: 531738802">
-                </div>
-                <div class="form-group">
-                    <label>🔑 Пароль</label>
-                    <input type="password" id="auth-password" class="form-input" placeholder="Введите пароль">
-                </div>
+                <div class="form-group"><label>📱 Telegram ID</label><input type="text" id="auth-tg-id" class="form-input" placeholder="Например: 531738802"></div>
+                <div class="form-group"><label>🔑 Пароль</label><input type="password" id="auth-password" class="form-input" placeholder="Введите пароль"></div>
                 <button class="btn btn-primary" onclick="loginWithPassword()">🔐 Войти</button>
                 <p class="auth-error" id="auth-error">⛔ Неверный ID или пароль</p>
             </div>
-
             <div class="divider">или</div>
-
             <button class="btn btn-telegram" onclick="loginWithTelegram()">🔵 Войти через Telegram</button>
             <button class="btn btn-qr" onclick="showQRCode()" style="margin-top:8px;">📱 Вход по QR-коду</button>
         </div>
     </div>
 
-    <!-- QR-код попап -->
     <div class="qr-popup" id="qr-popup">
         <div class="qr-popup-content">
             <h3>📱 Вход по QR-коду</h3>
@@ -136,7 +115,6 @@
         </div>
     </div>
 
-    <!-- ПРИЛОЖЕНИЕ -->
     <div class="app-layout hidden" id="app-layout">
         <div class="sidebar" id="sidebar">
             <div class="sidebar-logo">🏗️ LamGroup</div>
@@ -177,9 +155,8 @@
     function formatMoney(a) { return (a||0).toLocaleString() + ' ₸'; }
     function escapeHtml(t) { if(!t) return ''; return String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]||c)); }
     function formatDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('ru-RU'); }
-    function showMessage(txt) { alert(txt); }
 
-    // ===== ХЕШИРОВАНИЕ ПАРОЛЯ (простой SHA-256) =====
+    // ===== ХЕШИРОВАНИЕ =====
     async function hashPassword(password) {
         const msgBuffer = new TextEncoder().encode(password);
         const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -187,85 +164,79 @@
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // ===== ВХОД ПО ПАРОЛЮ =====
+    // ===== СЕССИЯ =====
+    function saveSession(user) {
+        localStorage.setItem('lamgroup_crm_user', JSON.stringify({
+            id: user.id, telegram_id: user.telegram_id,
+            full_name: user.full_name, role: user.role, phone: user.phone
+        }));
+    }
+    function loadSession() {
+        const saved = localStorage.getItem('lamgroup_crm_user');
+        if (saved) { try { return JSON.parse(saved); } catch(e) { return null; } }
+        return null;
+    }
+    function clearSession() { localStorage.removeItem('lamgroup_crm_user'); }
+
+    // ===== АВТОРИЗАЦИЯ =====
+    async function checkAuth() {
+        const savedUser = loadSession();
+        if (savedUser?.id) {
+            const { data: users } = await supabase.from('users').select('*').eq('id', savedUser.id).single();
+            if (users) { currentUser = users; enterApp(); return; }
+            clearSession();
+        }
+        document.getElementById('auth-overlay').classList.remove('hidden');
+        document.getElementById('app-layout').classList.add('hidden');
+        if (tg?.initDataUnsafe?.user) loginWithTelegram();
+    }
+
     window.loginWithPassword = async function() {
         const tgId = document.getElementById('auth-tg-id').value.trim();
         const password = document.getElementById('auth-password').value.trim();
-        
-        if (!tgId || !password) { showMessage('Введите ID и пароль'); return; }
-
-        const { data: users, error } = await supabase.from('users').select('*').eq('telegram_id', parseInt(tgId));
-        
-        if (error || !users?.length) {
-            document.getElementById('auth-error').style.display = 'block';
-            return;
-        }
-
+        if (!tgId || !password) return;
+        const { data: users } = await supabase.from('users').select('*').eq('telegram_id', parseInt(tgId));
+        if (!users?.length) { document.getElementById('auth-error').style.display = 'block'; return; }
         const user = users[0];
         const hashed = await hashPassword(password);
-        
-        if (user.password_hash !== hashed) {
-            document.getElementById('auth-error').style.display = 'block';
-            return;
-        }
-
+        if (user.password_hash !== hashed) { document.getElementById('auth-error').style.display = 'block'; return; }
         currentUser = user;
         enterApp();
     };
 
-    // ===== ВХОД ЧЕРЕЗ TELEGRAM =====
     window.loginWithTelegram = async function() {
-        if (!tg) { showMessage('Откройте в Telegram'); return; }
-        
+        if (!tg) return;
         const tgUser = tg.initDataUnsafe?.user;
-        if (!tgUser) { showMessage('Ошибка авторизации Telegram'); return; }
-
+        if (!tgUser) return;
         const { data: users } = await supabase.from('users').select('*').eq('telegram_id', tgUser.id);
-        if (!users?.length) {
-            document.getElementById('auth-error').style.display = 'block';
-            return;
-        }
-
+        if (!users?.length) { document.getElementById('auth-error').style.display = 'block'; return; }
         currentUser = users[0];
-        
-        // Обновляем имя
         const fullName = tgUser.first_name + ' ' + (tgUser.last_name || '');
         if (fullName !== currentUser.full_name) {
             await supabase.from('users').update({ full_name: fullName }).eq('id', currentUser.id);
             currentUser.full_name = fullName;
         }
-
         enterApp();
     };
 
-    // ===== QR-КОД =====
     window.showQRCode = function() {
         document.getElementById('qr-popup').classList.add('show');
         document.getElementById('qr-code').innerHTML = '';
-        
-        const crmUrl = 'https://t.me/LGCFASAD_bot/app';
         new QRCode(document.getElementById('qr-code'), {
-            text: crmUrl,
-            width: 200,
-            height: 200,
-            colorDark: '#0F172A',
-            colorLight: '#FFFFFF'
+            text: 'https://t.me/LGCFASAD_bot/app',
+            width: 200, height: 200,
+            colorDark: '#0F172A', colorLight: '#FFFFFF'
         });
     };
+    window.closeQR = function() { document.getElementById('qr-popup').classList.remove('show'); };
 
-    window.closeQR = function() {
-        document.getElementById('qr-popup').classList.remove('show');
-    };
-
-    // ===== ВХОД В ПРИЛОЖЕНИЕ =====
     function enterApp() {
+        saveSession(currentUser);
         document.getElementById('auth-overlay').classList.add('hidden');
         document.getElementById('app-layout').classList.remove('hidden');
-
         document.getElementById('user-avatar').textContent = (currentUser.full_name || '?')[0].toUpperCase();
         document.getElementById('user-name').textContent = currentUser.full_name || '—';
         document.getElementById('user-role').textContent = currentUser.role === 'manager' ? 'Руководитель' : currentUser.role === 'worker' ? 'ИТР' : 'Бухгалтер';
-
         setupNavigation();
         loadPage('dashboard');
     }
@@ -282,7 +253,6 @@
                 document.getElementById('sidebar-overlay').classList.remove('open');
             });
         });
-
         document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
             document.getElementById('sidebar').classList.toggle('open');
             document.getElementById('sidebar-overlay').classList.toggle('open');
@@ -292,18 +262,16 @@
             document.getElementById('sidebar-overlay').classList.remove('open');
         });
         document.getElementById('logout-btn')?.addEventListener('click', () => {
-            currentUser = null;
+            clearSession(); currentUser = null;
             document.getElementById('auth-overlay').classList.remove('hidden');
             document.getElementById('app-layout').classList.add('hidden');
         });
     }
 
-    // ===== ЗАГРУЗКА СТРАНИЦ =====
     async function loadPage(page) {
         const container = document.getElementById('page-body');
         container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
         document.getElementById('page-title').textContent = { dashboard:'🏠 Дашборд', objects:'🏗️ Объекты', tasks:'📋 Задачи', finances:'💰 Финансы' }[page] || '';
-
         switch(page) {
             case 'dashboard': await loadDashboard(container); break;
             case 'objects': await loadObjectsPage(container); break;
@@ -312,12 +280,12 @@
         }
     }
 
+    // ===== ДАШБОРД =====
     async function loadDashboard(container) {
         const [projRes, tasksRes] = await Promise.all([
             supabase.from('projects').select('*', { count: 'exact' }),
             supabase.from('custom_tasks').select('*', { count: 'exact' }).in('status', ['pending','in_progress'])
         ]);
-
         const { data: axes } = await supabase.from('axes').select('*, blocks!inner(projects(name))');
         const projectProgress = {};
         (axes || []).forEach(ax => {
@@ -344,273 +312,218 @@
         }, 300);
     }
 
+    // ===== ОБЪЕКТЫ (СПИСОК) =====
     async function loadObjectsPage(container) {
-    let q = supabase.from('projects').select('*').order('name');
-    if (currentUser.role !== 'manager') q = q.eq('responsible_worker_id', currentUser.id);
-    
-    const { data: projects } = await q;
-    
-    if (!projects?.length) {
-        container.innerHTML = '<div class="card"><p style="text-align:center;color:var(--text-secondary);padding:40px;">Нет доступных объектов</p></div>';
-        return;
-    }
+        let q = supabase.from('projects').select('*').order('name');
+        if (currentUser.role !== 'manager') q = q.eq('responsible_worker_id', currentUser.id);
+        const { data: projects } = await q;
+        if (!projects?.length) { container.innerHTML = '<div class="card"><p style="text-align:center;padding:40px;">Нет объектов</p></div>'; return; }
 
-    // Получаем блоки и оси для всех проектов
-    const projectIds = projects.map(p => p.id);
-    const { data: blocks } = await supabase.from('blocks').select('id, project_id').in('project_id', projectIds);
-    const blockIds = (blocks || []).map(b => b.id);
-    
-    let axesMap = {};
-    if (blockIds.length) {
-        const { data: axes } = await supabase.from('axes').select('progress, status, block_id').in('block_id', blockIds);
-        (axes || []).forEach(ax => {
-            const block = blocks.find(b => b.id === ax.block_id);
-            if (block) {
-                if (!axesMap[block.project_id]) axesMap[block.project_id] = [];
-                axesMap[block.project_id].push(ax);
-            }
+        const projectIds = projects.map(p => p.id);
+        const { data: blocks } = await supabase.from('blocks').select('id, project_id').in('project_id', projectIds);
+        const blockIds = (blocks || []).map(b => b.id);
+        let axesMap = {};
+        if (blockIds.length) {
+            const { data: axes } = await supabase.from('axes').select('progress, status, block_id').in('block_id', blockIds);
+            (axes || []).forEach(ax => {
+                const block = blocks.find(b => b.id === ax.block_id);
+                if (block) { if (!axesMap[block.project_id]) axesMap[block.project_id] = []; axesMap[block.project_id].push(ax); }
+            });
+        }
+        const { data: allIssues } = await supabase.from('project_issues').select('project_id').in('status', ['open','in_progress']);
+        const issuesMap = {};
+        (allIssues || []).forEach(i => { issuesMap[i.project_id] = (issuesMap[i.project_id] || 0) + 1; });
+
+        let inProgress = 0, completed = 0, overdue = 0;
+        projects.forEach(p => {
+            const axes = axesMap[p.id] || [];
+            const allDone = axes.length > 0 && axes.every(a => a.status === 'completed');
+            if (allDone) completed++;
+            else if (axes.some(a => a.status === 'in_progress' || a.progress > 0)) inProgress++;
+            if (p.end_date_contract && new Date(p.end_date_contract) < new Date() && !allDone) overdue++;
         });
-    }
 
-    let inProgress = 0, completed = 0, overdue = 0;
-    
-    projects.forEach(p => {
-        const axes = axesMap[p.id] || [];
-        const allDone = axes.length > 0 && axes.every(a => a.status === 'completed');
-        const anyProgress = axes.some(a => a.status === 'in_progress' || a.progress > 0);
-        if (allDone) completed++;
-        else if (anyProgress) inProgress++;
-        if (p.end_date_contract && new Date(p.end_date_contract) < new Date() && !allDone) overdue++;
-    });
+        let html = '<div class="kpi-grid"><div class="kpi-card"><div style="font-size:24px;">🏗️</div><div class="kpi-value">' + projects.length + '</div><div class="kpi-label">Всего</div></div>';
+        html += '<div class="kpi-card"><div style="font-size:24px;">🔵</div><div class="kpi-value" style="color:var(--info);">' + inProgress + '</div><div class="kpi-label">В работе</div></div>';
+        html += '<div class="kpi-card"><div style="font-size:24px;">✅</div><div class="kpi-value" style="color:var(--success);">' + completed + '</div><div class="kpi-label">Завершено</div></div>';
+        html += '<div class="kpi-card"><div style="font-size:24px;">⚠️</div><div class="kpi-value" style="color:var(--danger);">' + overdue + '</div><div class="kpi-label">Просрочено</div></div></div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:16px;">';
 
-    let html = '<div class="kpi-grid"><div class="kpi-card"><div style="font-size:24px;">🏗️</div><div class="kpi-value">' + projects.length + '</div><div class="kpi-label">Всего объектов</div></div>';
-    html += '<div class="kpi-card"><div style="font-size:24px;">🔵</div><div class="kpi-value" style="color:var(--info);">' + inProgress + '</div><div class="kpi-label">В работе</div></div>';
-    html += '<div class="kpi-card"><div style="font-size:24px;">✅</div><div class="kpi-value" style="color:var(--success);">' + completed + '</div><div class="kpi-label">Завершено</div></div>';
-    html += '<div class="kpi-card"><div style="font-size:24px;">⚠️</div><div class="kpi-value" style="color:var(--danger);">' + overdue + '</div><div class="kpi-label">Просрочено</div></div>';
-    html += '</div>';
-    
-    html += '<div style="display:flex;flex-wrap:wrap;gap:16px;">';
-    
-    for (const p of projects) {
-        const axes = axesMap[p.id] || [];
-        const totalAxes = axes.length;
-        const completedAxes = axes.filter(a => a.status === 'completed').length;
-        const avgProgress = totalAxes > 0 ? Math.round(axes.reduce((s, a) => s + (a.progress || 0), 0) / totalAxes) : 0;
-        
-        const isOverdue = p.end_date_contract && new Date(p.end_date_contract) < new Date() && completedAxes < totalAxes;
-        const barColor = completedAxes === totalAxes && totalAxes > 0 ? 'green' : isOverdue ? 'red' : avgProgress >= 50 ? 'blue' : 'yellow';
-        
-        html += `
-            <div class="card" style="flex:1;min-width:300px;cursor:pointer;" onclick="loadObjectDetail('${p.id}')">
+        for (const p of projects) {
+            const axes = axesMap[p.id] || [];
+            const totalAxes = axes.length;
+            const completedAxes = axes.filter(a => a.status === 'completed').length;
+            const avgProgress = totalAxes > 0 ? Math.round(axes.reduce((s, a) => s + (a.progress || 0), 0) / totalAxes) : 0;
+            const issuesCount = issuesMap[p.id] || 0;
+            const isOverdue = p.end_date_contract && new Date(p.end_date_contract) < new Date() && completedAxes < totalAxes;
+            const barColor = completedAxes === totalAxes && totalAxes > 0 ? 'green' : isOverdue ? 'red' : avgProgress >= 50 ? 'blue' : 'yellow';
+
+            html += `<div class="card" style="flex:1;min-width:300px;cursor:pointer;" onclick="loadObjectDetail('${p.id}')">
                 <div style="display:flex;justify-content:space-between;align-items:start;">
                     <h2 style="margin:0;">${escapeHtml(p.name)}</h2>
                     ${isOverdue ? '<span class="tag tag-red">⚠️ Просрочен</span>' : completedAxes === totalAxes && totalAxes > 0 ? '<span class="tag tag-green">✅ Завершён</span>' : '<span class="tag tag-blue">🔵 В работе</span>'}
                 </div>
                 <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">📍 ${escapeHtml(p.address || '—')}</p>
-                
                 <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
                     <div><span style="color:var(--text-secondary);">Осей:</span> <b>${totalAxes}</b></div>
-                    <div><span style="color:var(--text-secondary);">Заказчик:</span> <b>${escapeHtml(p.customer_company_name || '—')}</b></div>
+                    <div><span style="color:var(--text-secondary);">Проблем:</span> <b style="color:${issuesCount > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">${issuesCount}</b></div>
                     <div><span style="color:var(--text-secondary);">Начало:</span> <b>${formatDate(p.start_date)}</b></div>
                     <div><span style="color:var(--text-secondary);">Конец:</span> <b>${formatDate(p.end_date_contract)}</b></div>
                 </div>
-                
-                ${totalAxes > 0 ? `
-                <div style="margin-top:12px;">
-                    <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
-                        <span style="color:var(--text-secondary);">Прогресс</span><span style="font-weight:600;">${avgProgress}%</span>
-                    </div>
-                    <div class="gantt-bar-wrap">
-                        <div class="gantt-bar ${barColor}" style="width:${avgProgress}%;">${avgProgress > 10 ? avgProgress + '%' : ''}</div>
-                    </div>
-                </div>` : '<p style="font-size:11px;color:var(--text-secondary);margin-top:8px;">Нет данных по осям</p>'}
+                ${totalAxes > 0 ? `<div style="margin-top:12px;"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span>Прогресс</span><span>${avgProgress}%</span></div><div class="gantt-bar-wrap"><div class="gantt-bar ${barColor}" style="width:${avgProgress}%;">${avgProgress > 10 ? avgProgress + '%' : ''}</div></div></div>` : ''}
             </div>`;
+        }
+        html += '</div>';
+        container.innerHTML = html;
     }
-    html += '</div>';
-    container.innerHTML = html;
-}
 
+    // ===== ОБЪЕКТ (ДЕТАЛЬНО) =====
     window.loadObjectDetail = async function(projectId) {
-         const container = document.getElementById('page-body');
-    container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
-    document.getElementById('page-title').textContent = '🏗️ Загрузка...';
+        const container = document.getElementById('page-body');
+        container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
+        document.getElementById('page-title').textContent = '🏗️ Загрузка...';
 
-    const { data: project } = await supabase.from('projects').select('*').eq('id', projectId).single();
-    if (!project) { container.innerHTML = '<div class="card"><p>Объект не найден</p></div>'; return; }
+        const { data: project } = await supabase.from('projects').select('*').eq('id', projectId).single();
+        if (!project) { container.innerHTML = '<div class="card"><p>Объект не найден</p></div>'; return; }
 
-    const { data: blocks } = await supabase.from('blocks').select('id,name').eq('project_id', projectId);
-    const blockIds = (blocks || []).map(b => b.id);
-    
-    let axes = [];
-    if (blockIds.length) {
-        const { data: axesData } = await supabase.from('axes').select('*, blocks(name), axis_work_stages!inner(progress, status, brigade_id, brigades(name))').in('block_id', blockIds).order('name');
-        axes = axesData || [];
-    }
+        const { data: blocks } = await supabase.from('blocks').select('id,name').eq('project_id', projectId);
+        const blockIds = (blocks || []).map(b => b.id);
+        let axes = [];
+        if (blockIds.length) {
+            const { data: axesData } = await supabase.from('axes').select('*, blocks(name)').in('block_id', blockIds).order('name');
+            axes = axesData || [];
+        }
 
-    const { data: letters } = await supabase.from('letters').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(5);
-    const { data: materials } = await supabase.from('material_incomes').select('*, material_income_items(*)').eq('project_id', projectId).order('created_at', { ascending: false }).limit(10);
+        const axisIds = axes.map(a => a.id);
+        let stagesMap = {}, brigadesMap = {};
+        if (axisIds.length) {
+            const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').in('axis_id', axisIds).order('sub_axis_name');
+            (stages || []).forEach(st => {
+                if (!stagesMap[st.axis_id]) stagesMap[st.axis_id] = [];
+                stagesMap[st.axis_id].push(st);
+                if (st.brigade_id && st.brigades?.name) brigadesMap[st.brigade_id] = st.brigades.name;
+            });
+        }
 
-    document.getElementById('page-title').textContent = '🏗️ ' + project.name;
+        let historyMap = {};
+        if (axisIds.length) {
+            const { data: history } = await supabase.from('change_history').select('*').eq('entity_type', 'axis').in('entity_id', axisIds).order('created_at', { ascending: true });
+            (history || []).forEach(h => {
+                if (!historyMap[h.entity_id]) historyMap[h.entity_id] = [];
+                historyMap[h.entity_id].push(h);
+            });
+        }
 
-    let ganttRows = '';
-    const brigadesMap = {};
-    
-    axes.forEach(ax => {
-        const stages = ax.axis_work_stages || [];
-        const avgProgress = stages.length > 0 ? Math.round(stages.reduce((s, st) => s + (st.progress || 0), 0) / stages.length) : 0;
-        const allCompleted = stages.length > 0 && stages.every(s => s.status === 'completed');
-        
-        stages.forEach(st => {
-            if (st.brigade_id && st.brigades?.name) {
-                brigadesMap[st.brigade_id] = st.brigades.name;
-            }
+        const { data: letters } = await supabase.from('letters').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(10);
+        const { data: materials } = await supabase.from('material_incomes').select('*, material_income_items(*)').eq('project_id', projectId).order('created_at', { ascending: false }).limit(10);
+        const { data: issues } = await supabase.from('project_issues').select('*').eq('project_id', projectId).in('status', ['open','in_progress']).order('created_at', { ascending: false });
+
+        document.getElementById('page-title').textContent = '🏗️ ' + project.name;
+
+        let ganttRows = '', totalShiftDays = 0;
+        axes.forEach((ax, axIndex) => {
+            const stages = stagesMap[ax.id] || [];
+            const history = historyMap[ax.id] || [];
+            const avgProgress = stages.length > 0 ? Math.round(stages.reduce((s, st) => s + (st.progress || 0), 0) / stages.length) : 0;
+            const allCompleted = stages.length > 0 && stages.every(s => s.status === 'completed');
+            let totalShift = 0;
+            history.forEach(h => { const m = (h.comment || '').match(/\+(\d+)\s*дн/); if (m) totalShift += parseInt(m[1]); });
+            totalShiftDays += totalShift;
+            let shiftBadge = '';
+            if (totalShift > 15) shiftBadge = '<span class="tag tag-red">🔴 +' + totalShift + 'дн</span>';
+            else if (totalShift > 5) shiftBadge = '<span class="tag tag-yellow">🟠 +' + totalShift + 'дн</span>';
+            else if (totalShift > 0) shiftBadge = '<span class="tag tag-blue">🟡 +' + totalShift + 'дн</span>';
+            const barClass = allCompleted ? 'green' : totalShift > 15 ? 'red' : totalShift > 5 ? 'yellow' : avgProgress >= 50 ? 'blue' : 'yellow';
+            const statusTag = allCompleted ? '<span class="tag tag-green">✅</span>' : totalShift > 15 ? '<span class="tag tag-red">🔴</span>' : totalShift > 5 ? '<span class="tag tag-yellow">🟠</span>' : '<span class="tag tag-blue">🔵</span>';
+            const axisId = 'axis-' + axIndex;
+
+            ganttRows += `<tr style="cursor:pointer;" onclick="toggleAxisDetail('${axisId}')">
+                <td>${statusTag} <b>${escapeHtml(ax.name)}</b></td><td>${formatDate(ax.plan_start)}</td><td>${formatDate(ax.plan_end)}</td>
+                <td><div class="gantt-bar-wrap"><div class="gantt-bar ${barClass}" style="width:${avgProgress}%;">${avgProgress}%</div></div></td>
+                <td>${stages.length} эт.</td><td>${shiftBadge || '—'}</td><td><span id="${axisId}-arrow">▸</span></td></tr>
+            <tr id="${axisId}" class="hidden"><td colspan="7" style="background:#F8FAFC;padding:16px;">
+                <div style="font-size:12px;line-height:1.8;">
+                    <b>📅 Даты:</b><br>
+                    Начало: <b>${formatDate(ax.plan_start)}</b><br>
+                    ${history.length > 0 ? 'Изначально завершение: <b>' + formatDate(history[0].old_end_date || ax.plan_end) + '</b><br>' : ''}
+                    Текущее завершение: <b>${formatDate(ax.plan_end)}</b><br>
+                    ${totalShift > 0 ? '⏱ Общий сдвиг: <b style="color:var(--danger);">+' + totalShift + ' дн.</b><br>' : ''}
+                    ${history.length > 0 ? `<br><b>📅 История переносов:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Дата</th><th>Сдвиг</th><th>Причина</th><th>Новая дата</th><th>Кто</th></tr></thead><tbody>${history.map(h => { const m = (h.comment||'').match(/(\d+)\s*дн/); const days = m ? m[1] : '?'; const reason = (h.comment||'').replace(/\|.*/,'').replace('Сдвиг:','').trim(); return `<tr><td>${formatDate(h.created_at)}</td><td>+${days} дн.</td><td>${escapeHtml(reason)}</td><td>${formatDate(h.new_end_date||'')}</td><td>${escapeHtml(h.changed_by_name||'—')}</td></tr>`; }).join('')}</tbody></table>` : ''}
+                    <br><b>📋 Этапы работ:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Этап</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Статус</th><th>Бригада</th></tr></thead><tbody>${stages.length > 0 ? stages.map(st => `<tr><td>${escapeHtml(st.sub_axis_name || st.stage_id || '—')}</td><td>${formatDate(st.plan_start)}</td><td>${formatDate(st.plan_end)}</td><td><div class="gantt-bar-wrap" style="width:80px;display:inline-block;"><div class="gantt-bar ${(st.progress||0) >= 100 ? 'green' : (st.progress||0) >= 50 ? 'blue' : 'yellow'}" style="width:${st.progress||0}%;">${st.progress||0}%</div></div></td><td><span class="tag ${st.status==='completed'?'tag-green':st.status==='in_progress'?'tag-blue':'tag-yellow'}">${st.status==='completed'?'✅':st.status==='in_progress'?'🔵':'⏳'}</span></td><td>${escapeHtml(st.brigades?.name||'—')}</td></tr>`).join('') : '<tr><td colspan="6">Нет этапов</td></tr>'}</tbody></table></div></td></tr>`;
         });
 
-        const barClass = allCompleted ? 'green' : avgProgress >= 50 ? 'blue' : 'yellow';
-        const statusTag = allCompleted ? '<span class="tag tag-green">✅</span>' : avgProgress >= 50 ? '<span class="tag tag-blue">🔵</span>' : '<span class="tag tag-yellow">⏳</span>';
-        
-        ganttRows += `
-            <tr>
-                <td>${statusTag} <b>${escapeHtml(ax.name)}</b></td>
-                <td>${formatDate(ax.plan_start)}</td>
-                <td>${formatDate(ax.plan_end)}</td>
-                <td>
-                    <div class="gantt-bar-wrap">
-                        <div class="gantt-bar ${barClass}" style="width:${avgProgress}%;">${avgProgress}%</div>
-                    </div>
-                </td>
-                <td>${stages.length} этапов</td>
-            </tr>`;
-    });
+        let lettersHtml = '';
+        (letters || []).forEach(l => {
+            lettersHtml += `<tr style="cursor:pointer;" onclick="alert('Письмо: ${escapeHtml(l.letter_number_full||'')}\\n\\nПричина: ${escapeHtml(l.delay_description || l.delay_reason || '—')}\\n\\nСдвиг: +${l.delay_days||0} дн.')"><td>${escapeHtml(l.letter_number_full || '№'+l.letter_number+'/LGC-ERP')}</td><td>${formatDate(l.letter_date)}</td><td>${escapeHtml((l.delay_description || l.delay_reason || '').substring(0, 60))}</td><td>+${l.delay_days||0} дн.</td><td><span class="tag ${l.status==='sent_to_customer'?'tag-green':'tag-yellow'}">${l.status==='sent_to_customer'?'✅ Отправлено':'⏳ Черновик'}</span></td></tr>`;
+        });
 
-    let brigadesHtml = '';
-    Object.entries(brigadesMap).forEach(([id, name]) => {
-        brigadesHtml += `<span class="tag tag-blue" style="margin:2px;">👷 ${escapeHtml(name)}</span>`;
-    });
+        let materialsHtml = '';
+        (materials || []).forEach(m => {
+            const items = m.material_income_items || [];
+            materialsHtml += `<tr><td>${formatDate(m.created_at)}</td><td>${items.map(i => escapeHtml(i.name||'')).join(', ')}</td><td>${items.reduce((s,i) => s + (i.quantity||0), 0)}</td><td>${formatMoney(m.total_amount||0)}</td></tr>`;
+        });
 
-    let lettersHtml = '';
-    (letters || []).forEach(l => {
-        lettersHtml += `
-            <tr>
-                <td>${l.letter_number_full || '№' + l.letter_number + '/LGC-ERP'}</td>
-                <td>${formatDate(l.letter_date)}</td>
-                <td>${escapeHtml((l.delay_reason || '').substring(0, 50))}</td>
-                <td><span class="tag ${l.status === 'sent_to_customer' ? 'tag-green' : 'tag-yellow'}">${l.status === 'sent_to_customer' ? 'Отправлено' : 'Черновик'}</span></td>
-            </tr>`;
-    });
+        let issuesHtml = '';
+        (issues || []).forEach(issue => {
+            const sc = issue.status === 'overdue' ? 'tag-red' : issue.status === 'in_progress' ? 'tag-blue' : 'tag-yellow';
+            const sl = issue.status === 'overdue' ? '🔴 Просрочена' : issue.status === 'in_progress' ? '🔵 В работе' : '🟡 Открыта';
+            issuesHtml += `<tr><td><span class="tag ${sc}">${sl}</span></td><td><b>${escapeHtml(issue.title)}</b></td><td>${escapeHtml((issue.description||'').substring(0, 80))}</td><td>${formatDate(issue.created_at)}</td></tr>`;
+        });
 
-    let materialsHtml = '';
-    (materials || []).forEach(m => {
-        const items = m.material_income_items || [];
-        const totalQty = items.reduce((s, i) => s + (i.quantity || 0), 0);
-        materialsHtml += `
-            <tr>
-                <td>${formatDate(m.created_at)}</td>
-                <td>${items.map(i => escapeHtml(i.name || '')).join(', ')}</td>
-                <td>${totalQty}</td>
-                <td>${formatMoney(m.total_amount || 0)}</td>
-            </tr>`;
-    });
+        container.innerHTML = `
+            <button onclick="loadPage('objects')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к объектам</button>
+            <div class="kpi-grid">
+                <div class="kpi-card"><div style="font-size:24px;">📋</div><div class="kpi-value">${formatMoney(project.contract_price)}</div><div class="kpi-label">Сумма договора</div></div>
+                <div class="kpi-card"><div style="font-size:24px;">📅</div><div class="kpi-value" style="font-size:14px;">${formatDate(project.start_date)} — ${formatDate(project.end_date_contract)}</div><div class="kpi-label">Сроки</div></div>
+                <div class="kpi-card"><div style="font-size:24px;">👷</div><div class="kpi-value">${Object.keys(brigadesMap).length}</div><div class="kpi-label">Бригад</div></div>
+                <div class="kpi-card"><div style="font-size:24px;">⚠️</div><div class="kpi-value" style="color:${(issues||[]).length > 0 ? 'var(--danger)' : 'var(--text)'};">${(issues||[]).length}</div><div class="kpi-label">Проблем</div></div>
+            </div>
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h2 style="margin:0;">🏗️ ${escapeHtml(project.name)}</h2>${totalShiftDays > 0 ? '<span class="tag tag-red">⚠️ Общий сдвиг: +' + totalShiftDays + ' дн.</span>' : ''}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
+                    <div><span style="color:var(--text-secondary);">Адрес:</span> <b>${escapeHtml(project.address||'—')}</b></div>
+                    <div><span style="color:var(--text-secondary);">Заказчик:</span> <b>${escapeHtml(project.customer_company_name||'—')}</b></div>
+                    <div><span style="color:var(--text-secondary);">Договор:</span> <b>${escapeHtml(project.contract_number_customer||'—')} ${project.contract_date_customer ? 'от '+formatDate(project.contract_date_customer) : ''}</b></div>
+                    <div><span style="color:var(--text-secondary);">Руководитель:</span> <b>${escapeHtml(project.manager_name||'—')}</b></div>
+                </div>
+                ${Object.keys(brigadesMap).length > 0 ? '<div style="margin-top:12px;">' + Object.values(brigadesMap).map(n => '<span class="tag tag-blue" style="margin:2px;">👷 '+escapeHtml(n)+'</span>').join('') + '</div>' : ''}
+            </div>
+            <div class="card"><h2>📊 ГПР</h2><div class="table-wrap"><table><thead><tr><th>Ось</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Этапы</th><th>Сдвиг</th><th></th></tr></thead><tbody>${ganttRows || '<tr><td colspan="7">Нет осей</td></tr>'}</tbody></table></div></div>
+            ${issuesHtml ? `<div class="card"><h2>⚠️ Проблемы (${(issues||[]).length})</h2><div class="table-wrap"><table><thead><tr><th>Статус</th><th>Название</th><th>Описание</th><th>Дата</th></tr></thead><tbody>${issuesHtml}</tbody></table></div></div>` : ''}
+            ${lettersHtml ? `<div class="card"><h2>✉️ Письма (${(letters||[]).length})</h2><div class="table-wrap"><table><thead><tr><th>Номер</th><th>Дата</th><th>Причина</th><th>Сдвиг</th><th>Статус</th></tr></thead><tbody>${lettersHtml}</tbody></table></div></div>` : ''}
+            ${materialsHtml ? `<div class="card"><h2>📦 Материалы</h2><div class="table-wrap"><table><thead><tr><th>Дата</th><th>Наименование</th><th>Кол-во</th><th>Сумма</th></tr></thead><tbody>${materialsHtml}</tbody></table></div></div>` : ''}`;
+    };
 
-    container.innerHTML = `
-        <button onclick="loadPage('objects')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к объектам</button>
-        
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div style="font-size:24px;">📋</div>
-                <div class="kpi-value">${formatMoney(project.contract_price)}</div>
-                <div class="kpi-label">Сумма договора</div>
-            </div>
-            <div class="kpi-card">
-                <div style="font-size:24px;">📅</div>
-                <div class="kpi-value">${formatDate(project.start_date)} — ${formatDate(project.end_date_contract)}</div>
-                <div class="kpi-label">Сроки</div>
-            </div>
-            <div class="kpi-card">
-                <div style="font-size:24px;">👷</div>
-                <div class="kpi-value">${Object.keys(brigadesMap).length}</div>
-                <div class="kpi-label">Бригад</div>
-            </div>
-            <div class="kpi-card">
-                <div style="font-size:24px;">📍</div>
-                <div class="kpi-value">${axes.length}</div>
-                <div class="kpi-label">Осей</div>
-            </div>
-        </div>
+    window.toggleAxisDetail = function(axisId) {
+        const row = document.getElementById(axisId);
+        const arrow = document.getElementById(axisId + '-arrow');
+        if (row && arrow) { row.classList.toggle('hidden'); arrow.textContent = row.classList.contains('hidden') ? '▸' : '▾'; }
+    };
 
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                <h2 style="margin:0;">🏗️ ${escapeHtml(project.name)}</h2>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
-                <div><span style="color:var(--text-secondary);">Адрес:</span> <b>${escapeHtml(project.address || '—')}</b></div>
-                <div><span style="color:var(--text-secondary);">Заказчик:</span> <b>${escapeHtml(project.customer_company_name || '—')}</b></div>
-                <div><span style="color:var(--text-secondary);">Договор:</span> <b>${escapeHtml(project.contract_number_customer || '—')} ${project.contract_date_customer ? 'от ' + formatDate(project.contract_date_customer) : ''}</b></div>
-                <div><span style="color:var(--text-secondary);">Руководитель:</span> <b>${escapeHtml(project.manager_name || '—')}</b></div>
-            </div>
-            ${Object.keys(brigadesMap).length > 0 ? '<div style="margin-top:12px;"><span style="color:var(--text-secondary);font-size:13px;">Бригады:</span> ' + brigadesHtml + '</div>' : ''}
-        </div>
-
-        <div class="card">
-            <h2>📊 График производства работ (ГПР)</h2>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Ось</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Этапы</th></tr></thead>
-                    <tbody>${ganttRows || '<tr><td colspan="5" style="text-align:center;">Нет данных по осям</td></tr>'}</tbody>
-                </table>
-            </div>
-        </div>
-
-        ${lettersHtml ? `
-        <div class="card">
-            <h2>✉️ Письма заказчику</h2>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Номер</th><th>Дата</th><th>Причина</th><th>Статус</th></tr></thead>
-                    <tbody>${lettersHtml}</tbody>
-                </table>
-            </div>
-        </div>` : ''}
-
-        ${materialsHtml ? `
-        <div class="card">
-            <h2>📦 Материалы</h2>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Дата</th><th>Наименование</th><th>Кол-во</th><th>Сумма</th></tr></thead>
-                    <tbody>${materialsHtml}</tbody>
-                </table>
-            </div>
-        </div>` : ''}
-    `;
-};
-
+    // ===== ЗАДАЧИ =====
     async function loadTasksPage(container) {
         let q = supabase.from('custom_tasks').select('*, projects(name)').order('created_at',{ascending:false}).limit(50);
         if (currentUser.role !== 'manager') q = q.or(`created_by.eq.${currentUser.id},responsible_ids.cs.{${currentUser.id}}`);
         const { data: tasks } = await q;
         if (!tasks?.length) { container.innerHTML = '<div class="card"><p style="text-align:center;">Нет задач</p></div>'; return; }
-
         let rows = '';
         tasks.forEach(t => {
             const sc = t.status==='completed'?'tag-green':t.status==='in_progress'?'tag-blue':'tag-yellow';
             const sl = t.status==='completed'?'✅ Сделано':t.status==='in_progress'?'🔵 В работе':'⏳ Ожидает';
             rows += `<tr><td>${escapeHtml(t.title)}</td><td>${escapeHtml(t.projects?.name||'—')}</td><td><span class="tag ${sc}">${sl}</span></td><td>${escapeHtml(t.responsible_names?.join(', ')||'—')}</td><td>${formatDate(t.created_at)}</td></tr>`;
         });
-
         container.innerHTML = `<div class="card"><h2>📋 Задачи</h2><div class="table-wrap"><table><thead><tr><th>Название</th><th>Объект</th><th>Статус</th><th>Ответственные</th><th>Создано</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
     }
 
+    // ===== ФИНАНСЫ =====
     async function loadFinancesPage(container) {
         const { data: incomes } = await supabase.from('incomes').select('*').order('date',{ascending:false}).limit(20);
         const totalIn = (incomes||[]).filter(i=>i.status==='paid').reduce((s,i)=>s+(i.amount||0),0);
         const totalPl = (incomes||[]).filter(i=>i.status==='pending').reduce((s,i)=>s+(i.amount||0),0);
-
         let rows = '';
         (incomes||[]).forEach(i => {
             rows += `<tr><td>${formatDate(i.date)}</td><td>📥 ${escapeHtml(i.description||'')}</td><td class="${i.status==='paid'?'text-success':'text-warning'}" style="text-align:right;">${formatMoney(i.amount)}</td><td><span class="tag ${i.status==='paid'?'tag-green':'tag-yellow'}">${i.status==='paid'?'Оплачен':'Ожидается'}</span></td></tr>`;
         });
-
         container.innerHTML = `
             <div class="kpi-grid">
                 <div class="kpi-card"><div style="font-size:24px;">💰</div><div class="kpi-value text-success">${formatMoney(totalIn)}</div><div class="kpi-label">Поступило</div></div>
@@ -621,10 +534,7 @@
             <div class="card"><h2>💰 Поступления</h2><div class="table-wrap"><table><thead><tr><th>Дата</th><th>Описание</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>${rows||'<tr><td colspan="4">Нет данных</td></tr>'}</tbody></table></div></div>`;
     }
 
-    // ===== АВТО-ВХОД ЕСЛИ В TELEGRAM =====
-    if (tg?.initDataUnsafe?.user) {
-        loginWithTelegram();
-    }
+    checkAuth();
 })();
 </script>
 </body>
