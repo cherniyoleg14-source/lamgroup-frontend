@@ -860,11 +860,24 @@ window.exportToPDF = async function() {
     
     const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
     
-    try { tg.openLink(urlData.publicUrl); } catch(e) {}
+          // Определяем где открыто
+    const isTelegram = !!window.Telegram?.WebApp?.initDataUnsafe?.user;
     
-    setTimeout(function() {
-        showDownloadLink(urlData.publicUrl, 'PDF (откройте и нажмите Ctrl+P)');
-    }, 2000);
+    if (isTelegram) {
+        // В Telegram — открываем ссылку
+        try { tg.openLink(urlData.publicUrl); } catch(e) {}
+        setTimeout(function() {
+            showDownloadLink(urlData.publicUrl, 'Excel');
+        }, 2000);
+    } else {
+        // В браузере — скачиваем сразу
+        const a = document.createElement('a');
+        a.href = urlData.publicUrl;
+        a.download = `ДДС_${periodLabel.replace(/\s/g,'_')}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
     
     showMessage('✅ Отчёт готов', 'success');
 };
