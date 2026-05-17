@@ -802,8 +802,8 @@ window.exportToPDF = async function() {
     
     const htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Отчёт ДДС</title>
     <style>
-        @media print { body { margin: 0; padding: 15mm; } @page { size: A4 landscape; margin: 10mm; } .no-print { display: none !important; } }
-        body { font-family: Arial, sans-serif; color: #000; line-height: 1.4; max-width: 100%; margin: 0 auto; padding: 10mm; font-size: 10pt; }
+        @media print { body { margin: 0; padding: 15mm; } @page { size: A4 landscape; margin: 10mm; } }
+        body { font-family: Arial, sans-serif; color: #000; line-height: 1.4; margin: 0 auto; padding: 10mm; font-size: 10pt; }
         h1 { font-size: 16pt; text-align: center; margin-bottom: 4px; }
         h2 { font-size: 12pt; text-align: center; color: #555; margin-bottom: 16px; }
         h3 { font-size: 11pt; border-bottom: 2px solid #ddd; padding-bottom: 4px; margin: 16px 0 8px 0; }
@@ -813,7 +813,7 @@ window.exportToPDF = async function() {
         .kpi-grid { display: flex; gap: 12px; margin-bottom: 16px; }
         .kpi-card { flex: 1; background: #f8f8f8; border-radius: 8px; padding: 12px; text-align: center; border: 1px solid #ddd; }
         .kpi-value { font-size: 16pt; font-weight: 800; }
-        .kpi-label { font-size: 8pt; color: #777; text-transform: uppercase; }
+        .kpi-label { font-size: 8pt; color: #777; }
         .footer { text-align: center; font-size: 8pt; color: #999; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
     </style></head><body>
     <h1>ТОО "LamGroup Construction"</h1>
@@ -843,22 +843,21 @@ window.exportToPDF = async function() {
     const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
     const publicUrl = urlData.publicUrl;
     
-    // Показываем ссылку в модальном окне
+    // Показываем ТОЛЬКО копирование ссылки (без открытия новых окон)
     const modal = document.getElementById('modal');
     document.getElementById('modal-title').textContent = '📄 Отчёт готов';
     document.getElementById('modal-content').innerHTML = `
         <div style="text-align:center;padding:20px;">
-            <p style="margin-bottom:12px;font-weight:600;">Отчёт загружен. Выберите действие:</p>
-            <a href="${publicUrl}" target="_blank" rel="noopener" style="display:block;padding:14px;background:#0F172A;color:white;border-radius:12px;text-decoration:none;font-weight:600;margin-bottom:8px;">🔗 Открыть отчёт</a>
-            <button class="btn btn-outline" onclick="navigator.clipboard.writeText('${publicUrl}');alert('✅ Ссылка скопирована! Вставьте в браузер.')" style="width:100%;">📋 Скопировать ссылку</button>
-            <p style="font-size:10px;color:#94A3B8;margin-top:12px;">Откройте ссылку в браузере и нажмите Ctrl+P для печати</p>
+            <p style="margin-bottom:16px;font-weight:600;">Отчёт сформирован!</p>
+            <div style="background:#F8FAFC;padding:12px;border-radius:10px;word-break:break-all;font-size:11px;margin-bottom:16px;text-align:left;border:1px solid var(--border);">${publicUrl}</div>
+            <button class="btn btn-primary" onclick="navigator.clipboard.writeText('${publicUrl}').then(function(){ alert('✅ Ссылка скопирована!\\nВставьте её в браузер и нажмите Ctrl+P для сохранения PDF.'); })" style="width:100%;">📋 Скопировать ссылку</button>
+            <p style="font-size:10px;color:#94A3B8;margin-top:12px;">Скопируйте ссылку и откройте в браузере<br>Затем нажмите <b>Ctrl+P</b> → Сохранить как PDF</p>
         </div>
     `;
     modal.classList.remove('hidden');
     
     showMessage('✅ Отчёт готов', 'success');
 };
-
 function setupFilters() {
     document.getElementById('filter-project').addEventListener('change', e => { selectedProjectId = e.target.value; loadAllData(); });
     document.getElementById('export-excel')?.addEventListener('click', () => window.exportToExcel());
