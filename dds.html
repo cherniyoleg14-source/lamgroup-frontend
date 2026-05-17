@@ -651,7 +651,7 @@ window.openExpenseFormDDS = async function(editId) {
     const modal = document.getElementById('modal');
     const title = type === 'Excel' ? '📥 Скачать Excel' : '📄 Печать PDF';
     const btnLabel = type === 'Excel' ? '🔗 Открыть Excel' : '🖨️ Открыть для печати';
-    const hint = type === 'Excel' ? 'Нажмите на ссылку чтобы скачать файл:' : 'Откройте ссылку и нажмите Ctrl+P для сохранения PDF:';
+    const hint = type === 'Excel' ? 'Скопируйте ссылку и откройте в браузере, чтобы скачать файл:' : 'Скопируйте ссылку и откройте в браузере. Нажмите Ctrl+P для сохранения PDF:';
     
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-content').innerHTML = `
@@ -659,7 +659,7 @@ window.openExpenseFormDDS = async function(editId) {
             <p style="margin-bottom:16px;">${hint}</p>
             <div style="background:#F8FAFC;padding:12px;border-radius:10px;word-break:break-all;font-size:12px;margin-bottom:16px;text-align:left;">${url}</div>
             <button class="btn btn-primary" onclick="navigator.clipboard.writeText('${url}');alert('✅ Ссылка скопирована!')">📋 Скопировать ссылку</button>
-            <button class="btn btn-outline" onclick="window.open('${url}','_blank')" style="margin-top:8px;">${btnLabel}</button>
+            <a href="${url}" target="_blank" class="btn btn-outline" style="margin-top:8px;text-decoration:none;">${btnLabel}</a>
         </div>
     `;
     modal.classList.remove('hidden');
@@ -827,6 +827,7 @@ window.exportToPDF = async function() {
     </style></head><body>
     <div class="no-print" style="text-align:center;margin-bottom:20px;">
         <button class="print-btn" onclick="window.print()">🖨️ Печать / Сохранить как PDF</button>
+        <p style="color:#64748B;font-size:11px;margin-top:8px;">Выберите "Сохранить как PDF" в настройках принтера</p>
     </div>
     <h1>ТОО "LamGroup Construction"</h1>
     <h2>ОТЧЁТ О ДВИЖЕНИИ ДЕНЕЖНЫХ СРЕДСТВ<br>за период: ${periodLabel}</h2>
@@ -857,7 +858,7 @@ window.exportToPDF = async function() {
     
     const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
     
-    // Показываем ссылку
+    // Показываем ссылку для всех платформ
     showDownloadLink(urlData.publicUrl, 'PDF');
     showMessage('✅ Отчёт готов', 'success');
 };
