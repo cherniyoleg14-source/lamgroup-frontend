@@ -732,7 +732,10 @@ window.exportToExcel = async function() {
     ws3['!cols'] = [{wch:12}, {wch:15}, {wch:20}, {wch:30}, {wch:15}, {wch:12}];
     XLSX.utils.book_append_sheet(wb, ws3, 'Операции');
     
-    const isTelegram = !!(window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
+    // Определяем где открыто: Telegram Desktop/Mobile или Web/Браузер
+const isTelegramApp = !!(window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
+const isTelegramWeb = window.location.href.includes('tgWebAppData');
+const isTelegram = isTelegramApp && !isTelegramWeb;
     
     if (isTelegram) {
         const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -821,16 +824,12 @@ window.exportToPDF = function() {
     </div>
     </body></html>`;
     
-    const printWindow = window.open('', '_blank', 'width=1000,height=700');
+        const isTelegramApp = !!(window.Telegram?.WebApp?.initDataUnsafe?.user?.id);
+    const isTelegramWeb = window.location.href.includes('tgWebAppData');
+    const isTelegram = isTelegramApp && !isTelegramWeb;
     
-    if (printWindow) {
-        printWindow.document.write(printHTML);
-        printWindow.document.close();
-        setTimeout(() => {
-            printWindow.print();
-            showMessage('✅ Окно печати открыто', 'success');
-        }, 500);
-    } else {
+    if (isTelegram) {
+        // Telegram Desktop/Mobile — загружаем в Supabase
         showMessage('⏳ Загружаем ссылку...', 'success');
         const blob = new Blob([printHTML], { type: 'text/html;charset=UTF-8' });
         const file = new File([blob], 'dds_report.html', { type: 'text/html' });
@@ -838,11 +837,22 @@ window.exportToPDF = function() {
         
         supabase.storage.from('reports').upload(fileName, file, { cacheControl: '3600', upsert: true })
             .then(uploadResult => {
-                if (uploadResult.error) { showMessage('❌ Не удалось загрузить отчёт', 'error'); return; }
+                if (uploadResult.error) { showMessage('❌ Ошибка', 'error'); return; }
                 const urlResult = supabase.storage.from('reports').getPublicUrl(fileName);
                 showDownloadLink(urlResult.data.publicUrl, 'PDF');
-                showMessage('✅ Ссылка на PDF готова', 'success');
+                showMessage('✅ Ссылка готова', 'success');
             });
+    } else {
+        // Web-версия Telegram или обычный браузер — открываем окно печати
+        const printWindow = window.open('', '_blank', 'width=1000,height=700');
+        if (printWindow) {
+            printWindow.document.write(printHTML);
+            printWindow.document.close();
+            setTimeout(() => { printWindow.print(); }, 500);
+            showMessage('✅ Окно печати открыто', 'success');
+        } else {
+            showMessage('❌ Разрешите всплывающие окна', 'error');
+        }
     }
 };
 
