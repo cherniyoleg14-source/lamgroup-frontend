@@ -12,6 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
+        
         :root {
             --bg: #F8FAFC; --card: #FFFFFF; --text: #0F172A; --text-secondary: #64748B;
             --border: #E2E8F0; --gold: #F59E0B; --primary: #0F172A; --success: #10B981;
@@ -85,6 +86,98 @@
         .mobile-menu-btn { display: none; background: none; border: none; font-size: 24px; cursor: pointer; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 99; }
         .sidebar-overlay.open { display: block; }
+                /* ===== УЛУЧШЕННЫЕ КНОПКИ ===== */
+        .btn-sm-compact {
+            padding: 6px 12px;
+            font-size: 11px;
+            border-radius: 8px;
+            font-weight: 500;
+            width: auto;
+            min-width: auto;
+        }
+        .btn-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .btn-group .btn {
+            width: auto;
+            flex: 0 0 auto;
+        }
+
+        /* ===== УЛУЧШЕННЫЕ КАРТОЧКИ ЗАДАЧ ===== */
+        .task-card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 12px;
+        }
+        .task-card-item {
+            background: white;
+            border-radius: var(--radius);
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .task-card-item:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            transform: translateY(-1px);
+        }
+        .task-card-item.overdue {
+            border-left: 4px solid var(--danger);
+        }
+        .task-card-item .task-priority {
+            font-size: 16px;
+        }
+        .task-card-item .task-name {
+            font-weight: 600;
+            font-size: 14px;
+            margin: 6px 0;
+        }
+        .task-card-item .task-info {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .task-card-item .task-tags {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        /* ===== КОМПАКТНЫЕ ФОРМЫ ===== */
+        .compact-form {
+            max-width: 600px;
+        }
+        .compact-form .form-input {
+            padding: 8px 12px;
+            font-size: 13px;
+        }
+        .compact-form .btn {
+            width: auto;
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        /* ===== ГРИД ДЛЯ ДЕТАЛЕЙ ЗАДАЧИ ===== */
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 768px) {
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+            .task-card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -569,7 +662,7 @@ async function loadTasksPage(container) {
         </div>
 
         <!-- КНОПКА СОЗДАТЬ -->
-        <button class="btn btn-primary" onclick="openCreateTaskForm()" style="margin-bottom:16px;">➕ Создать задачу</button>
+        <button class="btn btn-primary btn-sm-compact" onclick="openCreateTaskForm()" style="margin-bottom:16px;">➕ Создать задачу</button>
 
         <!-- СПИСОК ЗАДАЧ -->
         <div id="tasks-list-container"></div>
@@ -581,16 +674,12 @@ async function loadTasksPage(container) {
 function renderFilteredTasks(allTasks) {
     let filtered = allTasks;
 
-    // Фильтр по статусу
     if (tasksFilter.status === 'pending') filtered = filtered.filter(t => t.status === 'pending');
     else if (tasksFilter.status === 'in_progress') filtered = filtered.filter(t => t.status === 'in_progress');
     else if (tasksFilter.status === 'completed') filtered = filtered.filter(t => t.status === 'completed');
     else if (tasksFilter.status === 'overdue') filtered = filtered.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed');
 
-    // Фильтр по приоритету
     if (tasksFilter.priority !== 'all') filtered = filtered.filter(t => t.priority === tasksFilter.priority);
-
-    // Фильтр по объекту
     if (tasksFilter.project !== 'all') filtered = filtered.filter(t => t.projects?.name === tasksFilter.project);
 
     const container = document.getElementById('tasks-list-container');
@@ -601,30 +690,27 @@ function renderFilteredTasks(allTasks) {
         return;
     }
 
-    let html = '<div style="display:flex;flex-direction:column;gap:10px;">';
+    let html = '<div class="task-card-grid">';
     filtered.forEach(t => {
         const pc = t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢';
         const sc = t.status === 'completed' ? 'tag-green' : t.status === 'in_progress' ? 'tag-blue' : 'tag-yellow';
-        const sl = t.status === 'completed' ? '✅ Сделано' : t.status === 'in_progress' ? '🔵 В работе' : '⏳ Ожидает';
+        const sl = t.status === 'completed' ? '✅' : t.status === 'in_progress' ? '🔵' : '⏳';
         const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
 
         html += `
-            <div class="card" style="cursor:pointer;padding:16px;${isOverdue ? 'border-left:4px solid var(--danger);' : ''}" onclick="viewTaskDetail('${t.id}')">
-                <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
-                    <div style="flex:1;">
-                        <div style="font-weight:700;font-size:15px;margin-bottom:4px;">${pc} ${escapeHtml(t.title)}</div>
-                        <div style="font-size:12px;color:var(--text-secondary);">
-                            🏗️ ${escapeHtml(t.projects?.name || 'Без объекта')} 
-                            ${t.responsible_names?.length ? '| 👥 ' + t.responsible_names.join(', ') : ''}
-                        </div>
-                    </div>
-                    <div style="text-align:right;">
-                        <span class="tag ${sc}">${sl}</span>
-                        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">
-                            📅 ${formatDate(t.created_at)}
-                            ${t.deadline ? ' | ⏰ ' + formatDate(t.deadline) : ''}
-                        </div>
-                    </div>
+            <div class="task-card-item ${isOverdue ? 'overdue' : ''}" onclick="viewTaskDetail('${t.id}')">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span class="task-priority">${pc}</span>
+                    <span class="tag ${sc}">${sl} ${t.status==='completed'?'Сделано':t.status==='in_progress'?'В работе':'Ожидает'}</span>
+                </div>
+                <div class="task-name">${escapeHtml(t.title)}</div>
+                <div class="task-info">
+                    <span>🏗️ ${escapeHtml(t.projects?.name || '—')}</span>
+                    ${t.responsible_names?.length ? '<span>👤 ' + t.responsible_names.slice(0, 2).join(', ') + (t.responsible_names.length > 2 ? '...' : '') + '</span>' : ''}
+                </div>
+                <div class="task-info">
+                    <span>📅 ${formatDate(t.created_at)}</span>
+                    ${t.deadline ? '<span style="color:' + (isOverdue ? 'var(--danger)' : 'var(--text-secondary)') + ';">⏰ ' + formatDate(t.deadline) + '</span>' : ''}
                 </div>
             </div>`;
     });
@@ -669,7 +755,10 @@ window.openCreateTaskForm = async function() {
             <div class="form-group"><label class="form-label">⏰ Дедлайн</label><input type="date" id="ct-deadline" class="form-input"></div>
             <div class="form-group"><label class="form-label">👤 Ответственный</label><select id="ct-responsible" class="form-input">${(users||[]).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}</select></div>
             <div class="form-group"><label class="form-label">📎 Файлы</label><input type="file" id="ct-files" class="form-input" multiple></div>
-            <button class="btn btn-primary" id="save-ct-btn">📤 Создать задачу</button>
+            <div style="display:flex;gap:8px;">
+    <button class="btn btn-primary btn-sm-compact" id="save-ct-btn">📤 Создать</button>
+    <button class="btn btn-outline btn-sm-compact" onclick="loadPage('tasks')">Отмена</button>
+</div>
         </div>
     `;
 
@@ -764,19 +853,18 @@ window.viewTaskDetail = async function(taskId) {
 
             <div class="card">
                 <div style="font-weight:600;margin-bottom:8px;">📊 Статус</div>
-                <div style="display:flex;gap:6px;">
-                    <button class="btn btn-sm ${t.status==='pending'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','pending')">⏳ Ожидает</button>
-                    <button class="btn btn-sm ${t.status==='in_progress'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','in_progress')">🔵 В работе</button>
-                    <button class="btn btn-sm ${t.status==='completed'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','completed')">✅ Сделано</button>
-                </div>
+               <div style="display:flex;gap:6px;">
+    <button class="btn btn-sm-compact ${t.status==='pending'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','pending')">⏳ Ожидает</button>
+    <button class="btn btn-sm-compact ${t.status==='in_progress'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','in_progress')">🔵 В работе</button>
+    <button class="btn btn-sm-compact ${t.status==='completed'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','completed')">✅ Сделано</button>
+</div>
             </div>
 
             <div class="card">
-                <div style="font-weight:600;margin-bottom:8px;">⏰ Дедлайн</div>
                 <div style="display:flex;gap:8px;">
-                    <input type="date" id="task-deadline-input" class="form-input" value="${t.deadline || ''}" style="flex:1;">
-                    <button class="btn btn-primary btn-sm" onclick="updateTaskDeadline('${t.id}')">💾</button>
-                </div>
+    <input type="date" id="task-deadline-input" class="form-input" value="${t.deadline || ''}" style="flex:1;max-width:200px;">
+    <button class="btn btn-primary btn-sm-compact" onclick="updateTaskDeadline('${t.id}')">💾</button>
+</div>
             </div>
 
             <div class="card">
@@ -800,11 +888,11 @@ window.viewTaskDetail = async function(taskId) {
                         <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">📎 Прикрепить файл</label>
                         <input type="file" id="new-comment-file" class="form-input" style="font-size:12px;">
                     </div>
-                    <button class="btn btn-primary" onclick="addTaskComment('${t.id}')" style="width:100%;">📤 Отправить</button>
+                   <button class="btn btn-primary btn-sm-compact" onclick="addTaskComment('${t.id}')">📤 Отправить</button>
                 </div>
             </div>
 
-            <button class="btn btn-danger" onclick="deleteTaskAndGoBack('${t.id}')" style="width:100%;">🗑️ Удалить задачу</button>
+            <button class="btn btn-danger btn-sm-compact" onclick="deleteTaskAndGoBack('${t.id}')">🗑️ Удалить</button>
         </div>
     `;
 };
