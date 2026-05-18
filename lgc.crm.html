@@ -268,7 +268,7 @@
         });
     }
 
-    async function loadPage(page) {
+        window.loadPage = async function(page) {
         const container = document.getElementById('page-body');
         container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
         document.getElementById('page-title').textContent = { dashboard:'🏠 Дашборд', objects:'🏗️ Объекты', tasks:'📋 Задачи', finances:'💰 Финансы' }[page] || '';
@@ -278,7 +278,7 @@
             case 'tasks': await loadTasksPage(container); break;
             case 'finances': await loadFinancesPage(container); break;
         }
-    }
+    };
 
     // ===== ДАШБОРД =====
     async function loadDashboard(container) {
@@ -443,10 +443,10 @@
                 <td>${stages.length} эт.</td><td>${shiftBadge || '—'}</td><td><span id="${axisId}-arrow">▸</span></td></tr>
             <tr id="${axisId}" class="hidden"><td colspan="7" style="background:#F8FAFC;padding:16px;">
                 <div style="font-size:12px;line-height:1.8;">
-                    <b>📅 Даты:</b><br>
+                                        <b>📅 Даты:</b><br>
                     Начало: <b>${formatDate(ax.plan_start)}</b><br>
-                    ${history.length > 0 ? 'Изначально завершение: <b>' + formatDate(history[0].old_end_date || ax.plan_end) + '</b><br>' : ''}
-                    Текущее завершение: <b>${formatDate(ax.plan_end)}</b><br>
+                    План завершения: <b>${formatDate(ax.plan_end)}</b><br>
+                    Факт завершения: ${allCompleted ? '<b style="color:var(--success);">' + formatDate(ax.plan_end) + '</b>' : '<b style="color:var(--danger);">Не завершено</b>'}<br>
                     ${totalShift > 0 ? '⏱ Общий сдвиг: <b style="color:var(--danger);">+' + totalShift + ' дн.</b><br>' : ''}
                     ${history.length > 0 ? `<br><b>📅 История переносов:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Дата</th><th>Сдвиг</th><th>Причина</th><th>Новая дата</th><th>Кто</th></tr></thead><tbody>${history.map(h => { const m = (h.comment||'').match(/(\d+)\s*дн/); const days = m ? m[1] : '?'; const reason = (h.comment||'').replace(/\|.*/,'').replace('Сдвиг:','').trim(); return `<tr><td>${formatDate(h.created_at)}</td><td>+${days} дн.</td><td>${escapeHtml(reason)}</td><td>${formatDate(h.new_end_date||'')}</td><td>${escapeHtml(h.changed_by_name||'—')}</td></tr>`; }).join('')}</tbody></table>` : ''}
                     <br><b>📋 Этапы работ:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Этап</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Статус</th><th>Бригада</th></tr></thead><tbody>${stages.length > 0 ? stages.map(st => `<tr><td>${escapeHtml(st.sub_axis_name || st.stage_id || '—')}</td><td>${formatDate(st.plan_start)}</td><td>${formatDate(st.plan_end)}</td><td><div class="gantt-bar-wrap" style="width:80px;display:inline-block;"><div class="gantt-bar ${(st.progress||0) >= 100 ? 'green' : (st.progress||0) >= 50 ? 'blue' : 'yellow'}" style="width:${st.progress||0}%;">${st.progress||0}%</div></div></td><td><span class="tag ${st.status==='completed'?'tag-green':st.status==='in_progress'?'tag-blue':'tag-yellow'}">${st.status==='completed'?'✅':st.status==='in_progress'?'🔵':'⏳'}</span></td><td>${escapeHtml(st.brigades?.name||'—')}</td></tr>`).join('') : '<tr><td colspan="6">Нет этапов</td></tr>'}</tbody></table></div></td></tr>`;
@@ -475,7 +475,7 @@
             <div class="kpi-grid">
                 <div class="kpi-card"><div style="font-size:24px;">📋</div><div class="kpi-value">${formatMoney(project.contract_price)}</div><div class="kpi-label">Сумма договора</div></div>
                 <div class="kpi-card"><div style="font-size:24px;">📅</div><div class="kpi-value" style="font-size:14px;">${formatDate(project.start_date)} — ${formatDate(project.end_date_contract)}</div><div class="kpi-label">Сроки</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">👷</div><div class="kpi-value">${Object.keys(brigadesMap).length}</div><div class="kpi-label">Бригад</div></div>
+                            <div class="kpi-card"><div style="font-size:24px;">🏁</div><div class="kpi-value" style="font-size:14px;color:${axes.every(a => a.status === 'completed') && axes.length > 0 ? 'var(--success)' : 'var(--warning)'};">${axes.length > 0 ? formatDate(axes.reduce((max, a) => new Date(a.plan_end) > new Date(max) ? a.plan_end : max, axes[0].plan_end)) : '—'}</div><div class="kpi-label">Завершение по ГПР</div></div>
                 <div class="kpi-card"><div style="font-size:24px;">⚠️</div><div class="kpi-value" style="color:${(issues||[]).length > 0 ? 'var(--danger)' : 'var(--text)'};">${(issues||[]).length}</div><div class="kpi-label">Проблем</div></div>
             </div>
             <div class="card">
@@ -486,7 +486,7 @@
                     <div><span style="color:var(--text-secondary);">Договор:</span> <b>${escapeHtml(project.contract_number_customer||'—')} ${project.contract_date_customer ? 'от '+formatDate(project.contract_date_customer) : ''}</b></div>
                     <div><span style="color:var(--text-secondary);">Руководитель:</span> <b>${escapeHtml(project.manager_name||'—')}</b></div>
                 </div>
-                ${Object.keys(brigadesMap).length > 0 ? '<div style="margin-top:12px;">' + Object.values(brigadesMap).map(n => '<span class="tag tag-blue" style="margin:2px;">👷 '+escapeHtml(n)+'</span>').join('') + '</div>' : ''}
+                                ${Object.keys(brigadesMap).length > 0 ? '<div style="margin-top:12px;"><span style="color:var(--text-secondary);font-size:13px;">👷 Бригады: </span>' + Object.values(brigadesMap).map(n => '<span class="tag tag-blue" style="margin:2px;">'+escapeHtml(n)+'</span>').join('') + '</div>' : ''}
             </div>
             <div class="card"><h2>📊 ГПР</h2><div class="table-wrap"><table><thead><tr><th>Ось</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Этапы</th><th>Сдвиг</th><th></th></tr></thead><tbody>${ganttRows || '<tr><td colspan="7">Нет осей</td></tr>'}</tbody></table></div></div>
             ${issuesHtml ? `<div class="card"><h2>⚠️ Проблемы (${(issues||[]).length})</h2><div class="table-wrap"><table><thead><tr><th>Статус</th><th>Название</th><th>Описание</th><th>Дата</th></tr></thead><tbody>${issuesHtml}</tbody></table></div></div>` : ''}
