@@ -364,7 +364,7 @@
         window.loadPage = async function(page) {
         const container = document.getElementById('page-body');
         container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
-        document.getElementById('page-title').textContent = { dashboard:'🏠 Основаная', objects:'🏗️ Объекты', tasks:'📋 Задачи', finances:'💰 Финансы' }[page] || '';
+        document.getElementById('page-title').textContent = { dashboard:'🏠 Основная', objects:'🏗️ Объекты', tasks:'📋 Задачи', finances:'💰 Финансы' }[page] || '';
         switch(page) {
            case 'dashboard': await loadMainPage(container); break;
             case 'objects': await loadObjectsPage(container); break;
