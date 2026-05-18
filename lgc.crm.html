@@ -968,7 +968,224 @@ window.deleteTaskAndGoBack = async function(taskId) {
     await supabase.from('custom_tasks').delete().eq('id', taskId);
     loadPage('tasks');
 };
+// ===== ФИНАНСЫ (ПОЛНАЯ ЗАМЕНА) =====
 
+let financeFilter = { project: 'all', period: 'month' };
+let financePeriodLabel = '';
+
+async function loadFinancesPage(container) {
+    const now = new Date();
+    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    financePeriodLabel = months[now.getMonth()] + ' ' + now.getFullYear();
+
+    // Загружаем проекты для фильтра
+    let pq = supabase.from('projects').select('id,name').order('name');
+    if (currentUser.role !== 'manager') pq = pq.eq('responsible_worker_id', currentUser.id);
+    const { data: projects } = await pq;
+    const allProjects = projects || [];
+
+    // Загружаем все финансовые данные
+    let incQ = supabase.from('incomes').select('*, projects(name)').order('date', { ascending: false });
+    let expQ = supabase.from('expenses').select('*, projects(name)').order('date', { ascending: false });
+    let ordQ = supabase.from('work_orders').select('*, projects(name), brigades(name)').order('created_at', { ascending: false });
+    let advQ = supabase.from('advances').select('*, projects(name), brigades(name)').order('created_at', { ascending: false });
+
+    if (currentUser.role !== 'manager') {
+        const pids = allProjects.map(p => p.id);
+        if (pids.length) { incQ = incQ.in('project_id', pids); expQ = expQ.in('project_id', pids); ordQ = ordQ.in('project_id', pids); advQ = advQ.in('project_id', pids); }
+    }
+    if (financeFilter.project !== 'all') {
+        incQ = incQ.eq('project_id', financeFilter.project);
+        expQ = expQ.eq('project_id', financeFilter.project);
+        ordQ = ordQ.eq('project_id', financeFilter.project);
+        advQ = advQ.eq('project_id', financeFilter.project);
+    }
+
+    const [incR, expR, ordR, advR] = await Promise.all([incQ, expQ, ordQ, advQ]);
+    const incomes = incR.data || [];
+    const expenses = expR.data || [];
+    const workOrders = ordR.data || [];
+    const advances = advR.data || [];
+
+    // Фильтр по месяцу
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+    const filterMonth = (arr, field = 'date') => arr.filter(x => x[field] >= monthStart && x[field] <= monthEnd);
+
+    const mIncomes = filterMonth(incomes);
+    const mExpenses = filterMonth(expenses);
+    const mOrders = filterMonth(workOrders, 'created_at');
+    const mAdvances = filterMonth(advances, 'created_at');
+
+    // KPI
+    const totalIncome = mIncomes.filter(i => i.status === 'paid').reduce((s, i) => s + (i.amount || 0), 0);
+    const totalPlanIncome = mIncomes.filter(i => i.status === 'pending').reduce((s, i) => s + (i.amount || 0), 0);
+    const totalExpense = mExpenses.filter(e => e.payment_status === 'paid').reduce((s, e) => s + (e.amount || 0), 0);
+    const totalPayouts = [...mOrders.filter(o => o.payment_status === 'paid'), ...mAdvances.filter(a => a.status === 'paid')].reduce((s, x) => s + (x.amount || x.total_amount || 0), 0);
+
+    // Планирование по датам
+    const dateMap = {};
+    const addToDate = (date, type, amount) => {
+        if (!date) return;
+        if (!dateMap[date]) dateMap[date] = { income: 0, expense: 0, payout: 0 };
+        dateMap[date][type] += amount;
+    };
+    mIncomes.forEach(i => addToDate(i.date, 'income', i.amount || 0));
+    mExpenses.forEach(e => addToDate(e.date, 'expense', e.amount || 0));
+    mOrders.forEach(o => addToDate(o.payment_date || o.created_at?.split('T')[0], 'payout', o.total_amount || 0));
+    mAdvances.forEach(a => addToDate(a.payment_date || a.created_at?.split('T')[0], 'payout', a.amount || 0));
+
+    const dateRows = Object.entries(dateMap).sort((a, b) => a[0].localeCompare(b[0])).map(([date, vals]) => {
+        const balance = vals.income - vals.expense - vals.payout;
+        return `<tr>
+            <td>${formatDate(date)}</td>
+            <td class="text-success">${vals.income > 0 ? '+' + vals.income.toLocaleString() + ' ₸' : '—'}</td>
+            <td class="text-danger">${vals.expense > 0 ? '-' + vals.expense.toLocaleString() + ' ₸' : '—'}</td>
+            <td class="text-warning">${vals.payout > 0 ? '-' + vals.payout.toLocaleString() + ' ₸' : '—'}</td>
+            <td style="font-weight:700;color:${balance >= 0 ? 'var(--success)' : 'var(--danger)'};">${balance >= 0 ? '+' : ''}${balance.toLocaleString()} ₸</td>
+        </tr>`;
+    }).join('');
+
+    // Объекты
+    const projectFinances = {};
+    allProjects.forEach(p => {
+        const pInc = incomes.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s, i) => s + (i.amount || 0), 0);
+        const pExp = expenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s, e) => s + (e.amount || 0), 0);
+        const pPay = [...workOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...advances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s, x) => s + (x.amount || x.total_amount || 0), 0);
+        projectFinances[p.id] = { name: p.name, income: pInc, expense: pExp, payout: pPay, balance: pInc - pExp - pPay };
+    });
+
+    const projectRows = Object.values(projectFinances).map(p => `
+        <tr style="cursor:pointer;" onclick="alert('${escapeHtml(p.name)}\\nПриход: ${p.income.toLocaleString()} ₸\\nРасходы: ${p.expense.toLocaleString()} ₸\\nВыплаты: ${p.payout.toLocaleString()} ₸\\nСальдо: ${p.balance.toLocaleString()} ₸')">
+            <td><b>${escapeHtml(p.name)}</b></td>
+            <td class="text-success">${p.income.toLocaleString()} ₸</td>
+            <td class="text-danger">${p.expense.toLocaleString()} ₸</td>
+            <td class="text-warning">${p.payout.toLocaleString()} ₸</td>
+            <td style="font-weight:700;color:${p.balance >= 0 ? 'var(--success)' : 'var(--danger)'};">${p.balance.toLocaleString()} ₸</td>
+            <td>
+                <div class="gantt-bar-wrap" style="width:60px;display:inline-block;">
+                    <div class="gantt-bar ${p.balance >= 0 ? 'green' : 'red'}" style="width:${Math.min(100, Math.abs(p.balance) / (p.income || 1) * 100)}%;"></div>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+
+    // Опции для фильтра
+    const projectOpts = '<option value="all">Все объекты</option>' + allProjects.map(p => `<option value="${p.id}" ${financeFilter.project === p.id ? 'selected' : ''}>${p.name}</option>`).join('');
+
+    container.innerHTML = `
+        <!-- ФИЛЬТР -->
+        <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+            <select id="finance-filter-project" class="form-input" style="flex:1;min-width:160px;padding:10px;" onchange="setFinanceFilter('project', this.value)">${projectOpts}</select>
+            <input type="month" id="finance-filter-period" class="form-input" style="flex:1;min-width:140px;padding:10px;" value="${now.toISOString().slice(0,7)}" onchange="setFinanceFilter('period', this.value)">
+        </div>
+
+        <!-- ЧАСТЬ 1: KPI + ГРАФИК -->
+        <div class="kpi-grid">
+            <div class="kpi-card" style="border-left:4px solid var(--success);">
+                <div style="font-size:20px;">💰</div>
+                <div class="kpi-value text-success">${totalIncome.toLocaleString()} ₸</div>
+                <div class="kpi-label">Приход (зашло)</div>
+            </div>
+            <div class="kpi-card" style="border-left:4px solid var(--info);">
+                <div style="font-size:20px;">📥</div>
+                <div class="kpi-value" style="color:var(--info);">${totalPlanIncome.toLocaleString()} ₸</div>
+                <div class="kpi-label">План поступлений</div>
+            </div>
+            <div class="kpi-card" style="border-left:4px solid var(--danger);">
+                <div style="font-size:20px;">📤</div>
+                <div class="kpi-value text-danger">${totalExpense.toLocaleString()} ₸</div>
+                <div class="kpi-label">Расходы (оплач.)</div>
+            </div>
+            <div class="kpi-card" style="border-left:4px solid var(--warning);">
+                <div style="font-size:20px;">👷</div>
+                <div class="kpi-value" style="color:var(--warning);">${totalPayouts.toLocaleString()} ₸</div>
+                <div class="kpi-label">Выплаты (оплач.)</div>
+            </div>
+        </div>
+
+        <!-- ГРАФИК -->
+        <div class="card">
+            <h2>📊 Приходы и расходы — ${financePeriodLabel}</h2>
+            <canvas id="finance-chart" height="60"></canvas>
+        </div>
+
+        <!-- ЧАСТЬ 2: ПЛАНИРОВАНИЕ ПО ДАТАМ -->
+        <div class="card">
+            <h2>📅 Планирование по датам</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Дата</th><th>💰 Приход</th><th>📤 Расход</th><th>👷 Выплаты</th><th>Баланс</th></tr></thead>
+                    <tbody>${dateRows || '<tr><td colspan="5" style="text-align:center;">Нет данных за период</td></tr>'}</tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ЧАСТЬ 3: ОБЪЕКТЫ -->
+        <div class="card">
+            <h2>🏗️ Объекты</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Объект</th><th>💰 Приход</th><th>📤 Расходы</th><th>👷 Выплаты</th><th>Сальдо</th><th></th></tr></thead>
+                    <tbody>${projectRows || '<tr><td colspan="6" style="text-align:center;">Нет объектов</td></tr>'}</tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ЧАСТЬ 4: ОТЧЁТЫ -->
+        <div class="card">
+            <h2>📊 Отчёты</h2>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <button class="btn btn-outline btn-sm-compact" onclick="generateFinanceReport('full')">📊 Полный финансовый отчёт</button>
+                <button class="btn btn-outline btn-sm-compact" onclick="generateFinanceReport('income')">📥 Отчёт по приходу</button>
+                <button class="btn btn-outline btn-sm-compact" onclick="generateFinanceReport('expense')">📤 Отчёт по расходам</button>
+                <button class="btn btn-outline btn-sm-compact" onclick="generateFinanceReport('payout')">👷 Отчёт по выплатам</button>
+            </div>
+        </div>
+    `;
+
+    // Рисуем график
+    setTimeout(() => {
+        const ctx = document.getElementById('finance-chart');
+        if (ctx) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Приход', 'План поступлений', 'Расходы', 'Выплаты'],
+                    datasets: [{
+                        label: 'Сумма (₸)',
+                        data: [totalIncome, totalPlanIncome, totalExpense, totalPayouts],
+                        backgroundColor: ['#10B981', '#3B82F6', '#EF4444', '#F59E0B'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: v => (v/1000000).toFixed(1) + 'M ₸' } }
+                    }
+                }
+            });
+        }
+    }, 300);
+}
+
+window.setFinanceFilter = function(type, value) {
+    financeFilter[type] = value;
+    loadFinancesPage(document.getElementById('page-body'));
+};
+
+window.generateFinanceReport = function(type) {
+    const titles = {
+        full: '📊 Полный финансовый отчёт',
+        income: '📥 Отчёт по приходу',
+        expense: '📤 Отчёт по расходам',
+        payout: '👷 Отчёт по выплатам'
+    };
+    alert(titles[type] + '\n\nФункция формирования отчёта будет добавлена.\nДанные уже загружены в таблицы выше.');
+};
     checkAuth();
 })();
 </script>
