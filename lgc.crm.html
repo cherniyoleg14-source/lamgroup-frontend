@@ -1067,14 +1067,13 @@ const weekAdvances = advances.filter(a => a.status !== 'paid');
         dateSumIncome += vals.income;
         dateSumExpense += vals.expense;
         dateSumPayout += vals.payout;
-        const dayTotal = vals.income - vals.expense - vals.payout;
-        return `<tr>
-            <td>${formatDate(date)}</td>
-            <td class="text-success">${vals.income > 0 ? '+' + vals.income.toLocaleString() + ' ₸' : '—'}</td>
-            <td class="text-danger">${vals.expense > 0 ? '-' + vals.expense.toLocaleString() + ' ₸' : '—'}</td>
-            <td class="text-warning">${vals.payout > 0 ? '-' + vals.payout.toLocaleString() + ' ₸' : '—'}</td>
-            <td style="font-weight:700;color:${dayTotal >= 0 ? 'var(--success)' : 'var(--danger)'};">${dayTotal >= 0 ? '+' : ''}${dayTotal.toLocaleString()} ₸</td>
-        </tr>`;
+       
+  return `<tr>
+    <td>${formatDate(date)}</td>
+    <td class="text-success">${vals.income > 0 ? '+' + vals.income.toLocaleString() + ' ₸' : '—'}</td>
+    <td class="text-danger">${vals.expense > 0 ? '-' + vals.expense.toLocaleString() + ' ₸' : '—'}</td>
+    <td class="text-warning">${vals.payout > 0 ? '-' + vals.payout.toLocaleString() + ' ₸' : '—'}</td>
+</tr>`;
     }).join('');
 
     // Объекты
