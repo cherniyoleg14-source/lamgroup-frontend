@@ -500,39 +500,386 @@
         if (row && arrow) { row.classList.toggle('hidden'); arrow.textContent = row.classList.contains('hidden') ? '▸' : '▾'; }
     };
 
-    // ===== ЗАДАЧИ =====
-    async function loadTasksPage(container) {
-        let q = supabase.from('custom_tasks').select('*, projects(name)').order('created_at',{ascending:false}).limit(50);
-        if (currentUser.role !== 'manager') q = q.or(`created_by.eq.${currentUser.id},responsible_ids.cs.{${currentUser.id}}`);
-        const { data: tasks } = await q;
-        if (!tasks?.length) { container.innerHTML = '<div class="card"><p style="text-align:center;">Нет задач</p></div>'; return; }
-        let rows = '';
-        tasks.forEach(t => {
-            const sc = t.status==='completed'?'tag-green':t.status==='in_progress'?'tag-blue':'tag-yellow';
-            const sl = t.status==='completed'?'✅ Сделано':t.status==='in_progress'?'🔵 В работе':'⏳ Ожидает';
-            rows += `<tr><td>${escapeHtml(t.title)}</td><td>${escapeHtml(t.projects?.name||'—')}</td><td><span class="tag ${sc}">${sl}</span></td><td>${escapeHtml(t.responsible_names?.join(', ')||'—')}</td><td>${formatDate(t.created_at)}</td></tr>`;
-        });
-        container.innerHTML = `<div class="card"><h2>📋 Задачи</h2><div class="table-wrap"><table><thead><tr><th>Название</th><th>Объект</th><th>Статус</th><th>Ответственные</th><th>Создано</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    // ===== ЗАДАЧИ (ПОЛНАЯ ЗАМЕНА) =====
+
+let tasksFilter = { status: 'all', priority: 'all', project: 'all' };
+
+async function loadTasksPage(container) {
+    let q = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false }).limit(100);
+    if (currentUser.role !== 'manager') q = q.or(`created_by.eq.${currentUser.id},responsible_ids.cs.{${currentUser.id}}`);
+
+    const { data: tasks } = await q;
+    const allTasks = tasks || [];
+
+    // KPI
+    const pendingCount = allTasks.filter(t => t.status === 'pending').length;
+    const inProgressCount = allTasks.filter(t => t.status === 'in_progress').length;
+    const completedCount = allTasks.filter(t => t.status === 'completed').length;
+    const overdueCount = allTasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
+
+    // Уникальные объекты для фильтра
+    const projectSet = new Set();
+    allTasks.forEach(t => { if (t.projects?.name) projectSet.add(t.projects.name); });
+    const projectOptions = ['<option value="all">Все объекты</option>'];
+    projectSet.forEach(name => { projectOptions.push(`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`); });
+
+    container.innerHTML = `
+        <!-- KPI КЛИКАБЕЛЬНЫЕ -->
+        <div class="kpi-grid" style="margin-bottom:16px;">
+            <div class="kpi-card" style="cursor:pointer;" onclick="setTaskFilter('status','pending')">
+                <div style="font-size:24px;">⏳</div>
+                <div class="kpi-value" style="color:var(--warning);">${pendingCount}</div>
+                <div class="kpi-label">Ожидают</div>
+            </div>
+            <div class="kpi-card" style="cursor:pointer;" onclick="setTaskFilter('status','in_progress')">
+                <div style="font-size:24px;">🔵</div>
+                <div class="kpi-value" style="color:var(--info);">${inProgressCount}</div>
+                <div class="kpi-label">В работе</div>
+            </div>
+            <div class="kpi-card" style="cursor:pointer;" onclick="setTaskFilter('status','completed')">
+                <div style="font-size:24px;">✅</div>
+                <div class="kpi-value" style="color:var(--success);">${completedCount}</div>
+                <div class="kpi-label">Готово</div>
+            </div>
+            <div class="kpi-card" style="cursor:pointer;" onclick="setTaskFilter('status','overdue')">
+                <div style="font-size:24px;">⚠️</div>
+                <div class="kpi-value" style="color:var(--danger);">${overdueCount}</div>
+                <div class="kpi-label">Просрочено</div>
+            </div>
+        </div>
+
+        <!-- ФИЛЬТРЫ -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+            <select id="task-filter-status" class="form-input" style="flex:1;min-width:120px;padding:8px;" onchange="setTaskFilter('status', this.value)">
+                <option value="all">Все статусы</option>
+                <option value="pending">⏳ Ожидают</option>
+                <option value="in_progress">🔵 В работе</option>
+                <option value="completed">✅ Готово</option>
+                <option value="overdue">⚠️ Просрочено</option>
+            </select>
+            <select id="task-filter-project" class="form-input" style="flex:1;min-width:140px;padding:8px;" onchange="setTaskFilter('project', this.value)">
+                ${projectOptions.join('')}
+            </select>
+            <select id="task-filter-priority" class="form-input" style="flex:1;min-width:120px;padding:8px;" onchange="setTaskFilter('priority', this.value)">
+                <option value="all">Все приоритеты</option>
+                <option value="high">🔴 Высокий</option>
+                <option value="medium">🟡 Средний</option>
+                <option value="low">🟢 Низкий</option>
+            </select>
+        </div>
+
+        <!-- КНОПКА СОЗДАТЬ -->
+        <button class="btn btn-primary" onclick="openCreateTaskForm()" style="margin-bottom:16px;">➕ Создать задачу</button>
+
+        <!-- СПИСОК ЗАДАЧ -->
+        <div id="tasks-list-container"></div>
+    `;
+
+    renderFilteredTasks(allTasks);
+}
+
+function renderFilteredTasks(allTasks) {
+    let filtered = allTasks;
+
+    // Фильтр по статусу
+    if (tasksFilter.status === 'pending') filtered = filtered.filter(t => t.status === 'pending');
+    else if (tasksFilter.status === 'in_progress') filtered = filtered.filter(t => t.status === 'in_progress');
+    else if (tasksFilter.status === 'completed') filtered = filtered.filter(t => t.status === 'completed');
+    else if (tasksFilter.status === 'overdue') filtered = filtered.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed');
+
+    // Фильтр по приоритету
+    if (tasksFilter.priority !== 'all') filtered = filtered.filter(t => t.priority === tasksFilter.priority);
+
+    // Фильтр по объекту
+    if (tasksFilter.project !== 'all') filtered = filtered.filter(t => t.projects?.name === tasksFilter.project);
+
+    const container = document.getElementById('tasks-list-container');
+    if (!container) return;
+
+    if (!filtered.length) {
+        container.innerHTML = '<div class="card"><p style="text-align:center;color:var(--text-secondary);padding:20px;">Нет задач</p></div>';
+        return;
     }
 
-    // ===== ФИНАНСЫ =====
-    async function loadFinancesPage(container) {
-        const { data: incomes } = await supabase.from('incomes').select('*').order('date',{ascending:false}).limit(20);
-        const totalIn = (incomes||[]).filter(i=>i.status==='paid').reduce((s,i)=>s+(i.amount||0),0);
-        const totalPl = (incomes||[]).filter(i=>i.status==='pending').reduce((s,i)=>s+(i.amount||0),0);
-        let rows = '';
-        (incomes||[]).forEach(i => {
-            rows += `<tr><td>${formatDate(i.date)}</td><td>📥 ${escapeHtml(i.description||'')}</td><td class="${i.status==='paid'?'text-success':'text-warning'}" style="text-align:right;">${formatMoney(i.amount)}</td><td><span class="tag ${i.status==='paid'?'tag-green':'tag-yellow'}">${i.status==='paid'?'Оплачен':'Ожидается'}</span></td></tr>`;
-        });
-        container.innerHTML = `
-            <div class="kpi-grid">
-                <div class="kpi-card"><div style="font-size:24px;">💰</div><div class="kpi-value text-success">${formatMoney(totalIn)}</div><div class="kpi-label">Поступило</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">📥</div><div class="kpi-value" style="color:var(--info);">${formatMoney(totalPl)}</div><div class="kpi-label">План</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">📤</div><div class="kpi-value">—</div><div class="kpi-label">Расходы</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">👷</div><div class="kpi-value">—</div><div class="kpi-label">Выплаты</div></div>
-            </div>
-            <div class="card"><h2>💰 Поступления</h2><div class="table-wrap"><table><thead><tr><th>Дата</th><th>Описание</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>${rows||'<tr><td colspan="4">Нет данных</td></tr>'}</tbody></table></div></div>`;
+    let html = '<div style="display:flex;flex-direction:column;gap:10px;">';
+    filtered.forEach(t => {
+        const pc = t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢';
+        const sc = t.status === 'completed' ? 'tag-green' : t.status === 'in_progress' ? 'tag-blue' : 'tag-yellow';
+        const sl = t.status === 'completed' ? '✅ Сделано' : t.status === 'in_progress' ? '🔵 В работе' : '⏳ Ожидает';
+        const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
+
+        html += `
+            <div class="card" style="cursor:pointer;padding:16px;${isOverdue ? 'border-left:4px solid var(--danger);' : ''}" onclick="viewTaskDetail('${t.id}')">
+                <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
+                    <div style="flex:1;">
+                        <div style="font-weight:700;font-size:15px;margin-bottom:4px;">${pc} ${escapeHtml(t.title)}</div>
+                        <div style="font-size:12px;color:var(--text-secondary);">
+                            🏗️ ${escapeHtml(t.projects?.name || 'Без объекта')} 
+                            ${t.responsible_names?.length ? '| 👥 ' + t.responsible_names.join(', ') : ''}
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <span class="tag ${sc}">${sl}</span>
+                        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">
+                            📅 ${formatDate(t.created_at)}
+                            ${t.deadline ? ' | ⏰ ' + formatDate(t.deadline) : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+window.setTaskFilter = function(type, value) {
+    tasksFilter[type] = value;
+    // Обновить выпадающие списки
+    if (type === 'status') {
+        const sel = document.getElementById('task-filter-status');
+        if (sel) sel.value = value;
     }
+    if (type === 'project') {
+        const sel = document.getElementById('task-filter-project');
+        if (sel) sel.value = value;
+    }
+    if (type === 'priority') {
+        const sel = document.getElementById('task-filter-priority');
+        if (sel) sel.value = value;
+    }
+    // Перезагрузить список
+    loadTasksPage(document.getElementById('page-body'));
+};
+
+// ===== СОЗДАНИЕ ЗАДАЧИ =====
+window.openCreateTaskForm = async function() {
+    const container = document.getElementById('page-body');
+    
+    const { data: projects } = await supabase.from('projects').select('id,name').order('name');
+    const { data: users } = await supabase.from('users').select('id,full_name').order('full_name');
+
+    container.innerHTML = `
+        <button onclick="loadPage('tasks')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к задачам</button>
+        <div class="card">
+            <h2>➕ Новая задача</h2>
+            <div class="form-group"><label class="form-label">Название *</label><input type="text" id="ct-title" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Описание</label><textarea id="ct-desc" class="form-input" rows="3"></textarea></div>
+            <div class="form-group"><label class="form-label">🏗️ Объект</label><select id="ct-project" class="form-input"><option value="">—</option>${(projects||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">⚡ Приоритет</label><select id="ct-priority" class="form-input"><option value="low">🟢 Низкий</option><option value="medium" selected>🟡 Средний</option><option value="high">🔴 Высокий</option></select></div>
+            <div class="form-group"><label class="form-label">⏰ Дедлайн</label><input type="date" id="ct-deadline" class="form-input"></div>
+            <div class="form-group"><label class="form-label">👤 Ответственный</label><select id="ct-responsible" class="form-input">${(users||[]).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">📎 Файлы</label><input type="file" id="ct-files" class="form-input" multiple></div>
+            <button class="btn btn-primary" id="save-ct-btn">📤 Создать задачу</button>
+        </div>
+    `;
+
+    document.getElementById('save-ct-btn').addEventListener('click', async () => {
+        const title = document.getElementById('ct-title').value.trim();
+        if (!title) { alert('Введите название'); return; }
+        const respId = document.getElementById('ct-responsible').value;
+        const respName = document.getElementById('ct-responsible').selectedOptions[0]?.text || '';
+        const files = document.getElementById('ct-files').files || [];
+        const fileUrls = [];
+        
+        for (const file of files) {
+            const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const fileName = 'tasks/' + Date.now() + '_' + cleanName;
+            const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
+            if (!uploadError) {
+                const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+                fileUrls.push({ name: file.name, url: urlData.publicUrl });
+            }
+        }
+
+        const { error } = await supabase.from('custom_tasks').insert({
+            project_id: document.getElementById('ct-project').value || null,
+            title,
+            description: document.getElementById('ct-desc').value,
+            priority: document.getElementById('ct-priority').value,
+            deadline: document.getElementById('ct-deadline').value || null,
+            responsible_ids: [respId],
+            responsible_names: [respName],
+            status: 'pending',
+            type: 'task',
+            created_by: currentUser.id,
+            created_by_name: currentUser.full_name,
+            created_at: new Date().toISOString(),
+            files: fileUrls
+        });
+
+        if (error) { alert('Ошибка: ' + error.message); return; }
+        loadPage('tasks');
+    });
+};
+
+// ===== ДЕТАЛИ ЗАДАЧИ =====
+window.viewTaskDetail = async function(taskId) {
+    const container = document.getElementById('page-body');
+    container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
+    document.getElementById('page-title').textContent = '📋 Задача';
+
+    const { data: t } = await supabase.from('custom_tasks').select('*, projects(name)').eq('id', taskId).single();
+    if (!t) { container.innerHTML = '<div class="card"><p>Задача не найдена</p></div>'; return; }
+
+    const { data: comments } = await supabase.from('task_comments').select('*').eq('task_id', taskId).order('created_at', { ascending: true });
+    const { data: users } = await supabase.from('users').select('id,full_name').order('full_name');
+
+    const priorityEmoji = t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢';
+    const priorityText = t.priority === 'high' ? 'Высокий' : t.priority === 'medium' ? 'Средний' : 'Низкий';
+    const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
+
+    container.innerHTML = `
+        <button onclick="loadPage('tasks')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к задачам</button>
+        
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            <div class="card" style="${isOverdue ? 'border-left:4px solid var(--danger);' : ''}">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+                    <span class="tag ${t.status==='completed'?'tag-green':t.status==='in_progress'?'tag-blue':'tag-yellow'}">${t.status==='completed'?'✅ Сделано':t.status==='in_progress'?'🔵 В работе':'⏳ Ожидает'}</span>
+                    <span style="font-size:12px;">${priorityEmoji} ${priorityText}</span>
+                </div>
+                <h2 style="margin:0 0 8px 0;">${escapeHtml(t.title)}</h2>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">${escapeHtml(t.description || 'Нет описания')}</p>
+                ${t.projects?.name ? `<div style="font-size:12px;">🏗️ ${escapeHtml(t.projects.name)}</div>` : ''}
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">
+                    👤 ${t.created_by_name || '—'} | 📅 ${formatDate(t.created_at)}
+                    ${t.deadline ? ` | ⏰ Дедлайн: <b style="color:${isOverdue ? 'var(--danger)' : 'var(--text)'};">${formatDate(t.deadline)}</b>` : ''}
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="font-weight:600;margin-bottom:8px;">👥 Ответственные</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                    ${(t.responsible_names || []).map((name, idx) => `
+                        <span style="background:#F1F5F9;padding:4px 10px;border-radius:20px;font-size:12px;display:flex;align-items:center;gap:6px;">
+                            👤 ${escapeHtml(name)}
+                            <span onclick="removeTaskResponsible('${t.id}', ${idx})" style="cursor:pointer;color:var(--danger);font-weight:bold;">✕</span>
+                        </span>
+                    `).join('')}
+                </div>
+                <select class="form-input" style="font-size:12px;padding:8px;" onchange="addTaskResponsible('${t.id}', this.value)">
+                    <option value="">+ Добавить</option>
+                    ${(users || []).filter(u => !(t.responsible_ids || []).includes(u.id)).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}
+                </select>
+            </div>
+
+            <div class="card">
+                <div style="font-weight:600;margin-bottom:8px;">📊 Статус</div>
+                <div style="display:flex;gap:6px;">
+                    <button class="btn btn-sm ${t.status==='pending'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','pending')">⏳ Ожидает</button>
+                    <button class="btn btn-sm ${t.status==='in_progress'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','in_progress')">🔵 В работе</button>
+                    <button class="btn btn-sm ${t.status==='completed'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','completed')">✅ Сделано</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="font-weight:600;margin-bottom:8px;">⏰ Дедлайн</div>
+                <div style="display:flex;gap:8px;">
+                    <input type="date" id="task-deadline-input" class="form-input" value="${t.deadline || ''}" style="flex:1;">
+                    <button class="btn btn-primary btn-sm" onclick="updateTaskDeadline('${t.id}')">💾</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="font-weight:600;margin-bottom:12px;">💬 Комментарии (${(comments||[]).length})</div>
+                <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:300px;overflow-y:auto;">
+                    ${(comments||[]).length === 0 ? '<p style="text-align:center;color:var(--text-secondary);font-size:12px;">Нет комментариев</p>' : ''}
+                    ${(comments||[]).map(c => `
+                        <div style="background:#F8FAFC;padding:10px;border-radius:10px;">
+                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                <span style="font-weight:600;font-size:12px;">👤 ${escapeHtml(c.author_name||'—')}</span>
+                                <span style="font-size:10px;color:var(--text-secondary);">${formatDate(c.created_at)}</span>
+                            </div>
+                            <div style="font-size:13px;">${escapeHtml(c.text)}</div>
+                            ${(c.files||[]).length > 0 ? `<div style="margin-top:6px;">${c.files.map(f => `<a href="${f.url}" target="_blank" class="tag tag-blue" style="text-decoration:none;font-size:10px;">📎 ${escapeHtml(f.name)}</a>`).join(' ')}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                <div style="border-top:1px solid var(--border);padding-top:10px;">
+                    <textarea id="new-comment-text" class="form-input" rows="2" placeholder="Написать комментарий..." style="font-size:13px;margin-bottom:8px;"></textarea>
+                    <div style="margin-bottom:8px;">
+                        <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">📎 Прикрепить файл</label>
+                        <input type="file" id="new-comment-file" class="form-input" style="font-size:12px;">
+                    </div>
+                    <button class="btn btn-primary" onclick="addTaskComment('${t.id}')" style="width:100%;">📤 Отправить</button>
+                </div>
+            </div>
+
+            <button class="btn btn-danger" onclick="deleteTaskAndGoBack('${t.id}')" style="width:100%;">🗑️ Удалить задачу</button>
+        </div>
+    `;
+};
+
+// ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
+
+window.updateTaskField = async function(taskId, field, value) {
+    await supabase.from('custom_tasks').update({ [field]: value, updated_at: new Date().toISOString() }).eq('id', taskId);
+    viewTaskDetail(taskId);
+};
+
+window.updateTaskDeadline = async function(taskId) {
+    const deadline = document.getElementById('task-deadline-input')?.value;
+    await supabase.from('custom_tasks').update({ deadline: deadline || null, updated_at: new Date().toISOString() }).
+            viewTaskDetail(taskId);
+};
+
+window.addTaskResponsible = async function(taskId, userId) {
+    if (!userId) return;
+    const { data: task } = await supabase.from('custom_tasks').select('responsible_ids, responsible_names').eq('id', taskId).single();
+    if (!task) return;
+    const { data: user } = await supabase.from('users').select('full_name').eq('id', userId).single();
+    if (!user) return;
+    const ids = [...(task.responsible_ids || []), userId];
+    const names = [...(task.responsible_names || []), user.full_name];
+    await supabase.from('custom_tasks').update({ responsible_ids: ids, responsible_names: names, updated_at: new Date().toISOString() }).eq('id', taskId);
+    viewTaskDetail(taskId);
+};
+
+window.removeTaskResponsible = async function(taskId, idx) {
+    const { data: task } = await supabase.from('custom_tasks').select('responsible_ids, responsible_names').eq('id', taskId).single();
+    if (!task) return;
+    const ids = (task.responsible_ids || []).filter((_, i) => i !== idx);
+    const names = (task.responsible_names || []).filter((_, i) => i !== idx);
+    await supabase.from('custom_tasks').update({ responsible_ids: ids, responsible_names: names, updated_at: new Date().toISOString() }).eq('id', taskId);
+    viewTaskDetail(taskId);
+};
+
+window.addTaskComment = async function(taskId) {
+    const textEl = document.getElementById('new-comment-text');
+    const fileEl = document.getElementById('new-comment-file');
+    const text = textEl?.value?.trim();
+    if (!text) { alert('Введите текст комментария'); return; }
+
+    const files = [];
+    if (fileEl?.files[0]) {
+        const file = fileEl.files[0];
+        const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const fileName = 'comments/' + Date.now() + '_' + cleanName;
+        const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
+        if (!uploadError) {
+            const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
+            files.push({ name: file.name, url: urlData.publicUrl });
+        }
+    }
+
+    await supabase.from('task_comments').insert({
+        task_id: taskId,
+        author_id: currentUser?.id,
+        author_name: currentUser?.full_name || 'Пользователь',
+        text: text,
+        files: files,
+        created_at: new Date().toISOString()
+    });
+
+    textEl.value = '';
+    if (fileEl) fileEl.value = '';
+    viewTaskDetail(taskId);
+};
+
+window.deleteTaskAndGoBack = async function(taskId) {
+    if (!confirm('⚠️ Удалить задачу? Это нельзя отменить.')) return;
+    await supabase.from('custom_tasks').delete().eq('id', taskId);
+    loadPage('tasks');
+};
 
     checkAuth();
 })();
