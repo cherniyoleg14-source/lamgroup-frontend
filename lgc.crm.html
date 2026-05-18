@@ -1040,10 +1040,11 @@ async function loadFinancesPage(container) {
     const weekEndStr = weekEnd.toISOString().split('T')[0];
     const todayStr = now.toISOString().split('T')[0];
 
-    const weekIncomes = incomes.filter(i => i.date >= todayStr && i.date <= weekEndStr && i.status === 'pending');
-    const weekExpenses = expenses.filter(e => e.date >= todayStr && e.date <= weekEndStr && e.payment_status !== 'paid');
-    const weekOrders = workOrders.filter(o => (o.payment_date || o.created_at?.split('T')[0]) >= todayStr && (o.payment_date || o.created_at?.split('T')[0]) <= weekEndStr && o.payment_status !== 'paid');
-    const weekAdvances = advances.filter(a => (a.payment_date || a.created_at?.split('T')[0]) >= todayStr && (a.payment_date || a.created_at?.split('T')[0]) <= weekEndStr && a.status !== 'paid');
+    // Берём ВСЕ неоплаченные (включая просроченные) + на неделю вперёд
+const weekIncomes = incomes.filter(i => i.status === 'pending');
+const weekExpenses = expenses.filter(e => e.payment_status !== 'paid');
+const weekOrders = workOrders.filter(o => o.payment_status !== 'paid');
+const weekAdvances = advances.filter(a => a.status !== 'paid');
 
     const weekIncomeTotal = weekIncomes.reduce((s, i) => s + (i.amount || 0), 0);
     const weekExpenseTotal = weekExpenses.reduce((s, e) => s + (e.amount || 0), 0);
