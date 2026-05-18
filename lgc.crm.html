@@ -212,7 +212,7 @@
         <div class="sidebar" id="sidebar">
             <div class="sidebar-logo">🏗️ LamGroup</div>
             <nav class="sidebar-nav">
-                <a href="#" class="active" data-page="dashboard">🏠 Дашборд</a>
+                <a href="#" class="active" data-page="dashboard">🏠 Основная</a>
                 <a href="#" data-page="objects">🏗️ Объекты</a>
                 <a href="#" data-page="tasks">📋 Задачи</a>
                 <a href="#" data-page="finances">💰 Финансы</a>
@@ -227,7 +227,7 @@
             <header class="page-header">
                 <div style="display:flex;align-items:center;gap:8px;">
                     <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
-                    <h1 id="page-title">🏠 Дашборд</h1>
+                    <h1 id="page-title">🏠 Основаная</h1>
                 </div>
                 <button class="tag tag-red" id="logout-btn" style="cursor:pointer;border:none;">Выйти</button>
             </header>
@@ -364,7 +364,7 @@
         window.loadPage = async function(page) {
         const container = document.getElementById('page-body');
         container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
-        document.getElementById('page-title').textContent = { dashboard:'🏠 Дашборд', objects:'🏗️ Объекты', tasks:'📋 Задачи', finances:'💰 Финансы' }[page] || '';
+        document.getElementById('page-title').textContent = { dashboard:'🏠 Основаная', objects:'🏗️ Объекты', tasks:'📋 Задачи', finances:'💰 Финансы' }[page] || '';
         switch(page) {
            case 'dashboard': await loadMainPage(container); break;
             case 'objects': await loadObjectsPage(container); break;
