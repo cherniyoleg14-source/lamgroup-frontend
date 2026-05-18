@@ -407,7 +407,7 @@
 
         let historyMap = {};
         if (axisIds.length) {
-            const { data: history } = await supabase.from('change_history').select('*').eq('entity_type', 'axis').in('entity_id', axisIds).order('created_at', { ascending: true });
+            const { data: history } = await supabase.from('change_history').select('*').eq('entity_type', 'axis').in('entity_id', axisIds).order('changed_at', { ascending: true });
             (history || []).forEach(h => {
                 if (!historyMap[h.entity_id]) historyMap[h.entity_id] = [];
                 historyMap[h.entity_id].push(h);
@@ -448,7 +448,7 @@
                     План завершения: <b>${formatDate(ax.plan_end)}</b><br>
                     Факт завершения: ${allCompleted ? '<b style="color:var(--success);">' + formatDate(ax.plan_end) + '</b>' : '<b style="color:var(--danger);">Не завершено</b>'}<br>
                     ${totalShift > 0 ? '⏱ Общий сдвиг: <b style="color:var(--danger);">+' + totalShift + ' дн.</b><br>' : ''}
-                    ${history.length > 0 ? `<br><b>📅 История переносов:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Дата</th><th>Сдвиг</th><th>Причина</th><th>Новая дата</th><th>Кто</th></tr></thead><tbody>${history.map(h => { const m = (h.comment||'').match(/(\d+)\s*дн/); const days = m ? m[1] : '?'; const reason = (h.comment||'').replace(/\|.*/,'').replace('Сдвиг:','').trim(); return `<tr><td>${formatDate(h.created_at)}</td><td>+${days} дн.</td><td>${escapeHtml(reason)}</td><td>${formatDate(h.new_end_date||'')}</td><td>${escapeHtml(h.changed_by_name||'—')}</td></tr>`; }).join('')}</tbody></table>` : ''}
+                    ${history.length > 0 ? `<br><b>📅 История переносов:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Дата</th><th>Сдвиг</th><th>Причина</th><th>Новая дата</th><th>Кто</th></tr></thead><tbody>${history.map(h => { const m = (h.comment||'').match(/(\d+)\s*дн/); const days = m ? m[1] : '?'; const reason = (h.comment||'').replace(/\|.*/,'').replace('Сдвиг:','').trim(); return `<tr><td>${formatDate(h.changed_at)}</td><td>+${days} дн.</td><td>${escapeHtml(reason)}</td><td>${formatDate(h.new_end_date||'')}</td><td>${escapeHtml(h.changed_by_name||'—')}</td></tr>`; }).join('')}</tbody></table>` : ''}
                     <br><b>📋 Этапы работ:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Этап</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Статус</th><th>Бригада</th></tr></thead><tbody>${stages.length > 0 ? stages.map(st => `<tr><td>${escapeHtml(st.sub_axis_name || st.stage_id || '—')}</td><td>${formatDate(st.plan_start)}</td><td>${formatDate(st.plan_end)}</td><td><div class="gantt-bar-wrap" style="width:80px;display:inline-block;"><div class="gantt-bar ${(st.progress||0) >= 100 ? 'green' : (st.progress||0) >= 50 ? 'blue' : 'yellow'}" style="width:${st.progress||0}%;">${st.progress||0}%</div></div></td><td><span class="tag ${st.status==='completed'?'tag-green':st.status==='in_progress'?'tag-blue':'tag-yellow'}">${st.status==='completed'?'✅':st.status==='in_progress'?'🔵':'⏳'}</span></td><td>${escapeHtml(st.brigades?.name||'—')}</td></tr>`).join('') : '<tr><td colspan="6">Нет этапов</td></tr>'}</tbody></table></div></td></tr>`;
         });
 
