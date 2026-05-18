@@ -376,244 +376,36 @@
     // ===== ОСНОВНАЯ (РАБОЧИЙ СТОЛ) — ПОЛНАЯ ЗАМЕНА loadDashboard =====
 
 async function loadMainPage(container) {
-    // Загружаем проекты
-    let pq = supabase.from('projects').select('*').order('name');
-    if (currentUser.role !== 'manager') pq = pq.eq('responsible_worker_id', currentUser.id);
-    const { data: projects } = await pq;
-    const allProjects = projects || [];
-
-    // Получаем блоки и оси
-    const projectIds = allProjects.map(p => p.id);
-    const { data: blocks } = await supabase.from('blocks').select('id, project_id').in('project_id', projectIds);
-    const blockIds = (blocks || []).map(b => b.id);
-    
-    let axesMap = {};
-    if (blockIds.length) {
-        const { data: axes } = await supabase.from('axes').select('progress, status, block_id').in('block_id', blockIds);
-        (axes || []).forEach(ax => {
-            const block = blocks.find(b => b.id === ax.block_id);
-            if (block) {
-                if (!axesMap[block.project_id]) axesMap[block.project_id] = [];
-                axesMap[block.project_id].push(ax);
-            }
-        });
-    }
-
-    // Проблемы
-    const { data: allIssues } = await supabase.from('project_issues').select('project_id').in('status', ['open', 'in_progress']);
-    const issuesMap = {};
-    (allIssues || []).forEach(i => { issuesMap[i.project_id] = (issuesMap[i.project_id] || 0) + 1; });
-
-    // Задачи
-    const { data: allTasks } = await supabase.from('custom_tasks').select('project_id, status, title, deadline').in('status', ['pending', 'in_progress']).order('created_at', { ascending: false });
-    const tasksMap = {};
-    (allTasks || []).forEach(t => { tasksMap[t.project_id] = (tasksMap[t.project_id] || 0) + 1; });
-
-    // Задачи в работе и просроченные
-    const tasksInProgress = (allTasks || []).filter(t => t.status === 'in_progress').slice(0, 5);
-    const tasksOverdue = (allTasks || []).filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').slice(0, 5);
-
-    // Последние платежи
-    const { data: recentIncomes } = await supabase.from('incomes').select('*, projects(name)').order('date', { ascending: false }).limit(5);
-    const { data: recentExpenses } = await supabase.from('expenses').select('*, projects(name)').order('date', { ascending: false }).limit(5);
-
-    // План на сегодня
-    const todayStr = new Date().toISOString().split('T')[0];
-    const todayIncomes = (await supabase.from('incomes').select('*').eq('date', todayStr)).data || [];
-    const todayExpenses = (await supabase.from('expenses').select('*').eq('date', todayStr)).data || [];
-    const todayOrders = (await supabase.from('work_orders').select('*').eq('payment_date', todayStr)).data || [];
-
-    // Карточки объектов
-    let objectCards = '';
-    const displayProjects = allProjects.slice(0, 4); // Показываем первые 4
-    
-    displayProjects.forEach(p => {
-        const axes = axesMap[p.id] || [];
-        const avgProgress = axes.length > 0 ? Math.round(axes.reduce((s, a) => s + (a.progress || 0), 0) / axes.length) : 0;
-        const issues = issuesMap[p.id] || 0;
-        const tasks = tasksMap[p.id] || 0;
-        const barColor = avgProgress >= 80 ? 'green' : avgProgress >= 50 ? 'blue' : avgProgress >= 20 ? 'yellow' : 'red';
-
-        objectCards += `
-            <div class="card" style="flex:1;min-width:200px;text-align:center;cursor:pointer;" onclick="loadObjectDetail('${p.id}')">
-                <div style="font-size:32px;margin-bottom:8px;">🏗️</div>
-                <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${escapeHtml(p.name)}</div>
-                <div class="gantt-bar-wrap" style="margin-bottom:8px;">
-                    <div class="gantt-bar ${barColor}" style="width:${avgProgress}%;">${avgProgress}%</div>
-                </div>
-                <div style="font-size:11px;color:var(--text-secondary);">
-                    ${issues > 0 ? '⚠️' + issues + ' ' : ''}${tasks > 0 ? '📋' + tasks : ''}
-                </div>
-                <button class="btn btn-sm-compact btn-outline" style="margin-top:8px;" onclick="event.stopPropagation();loadObjectDetail('${p.id}')">Открыть</button>
-            </div>`;
-    });
-
-    if (allProjects.length > 4) {
-        objectCards += `
-            <div class="card" style="flex:1;min-width:150px;text-align:center;cursor:pointer;display:flex;align-items:center;justify-content:center;" onclick="loadPage('objects')">
-                <div>
-                    <div style="font-size:32px;">📋</div>
-                    <div style="font-weight:600;font-size:14px;">+Все объекты</div>
-                    <div style="font-size:11px;color:var(--text-secondary);">${allProjects.length} шт.</div>
-                </div>
-            </div>`;
-    }
-
-    // Задачи в работе
-    let inProgressHtml = '';
-    tasksInProgress.forEach(t => {
-        inProgressHtml += `
-            <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer;" onclick="viewTaskDetail('${t.id}')">
-                <span style="color:var(--info);">📋</span> ${escapeHtml(t.title.substring(0, 30))}${t.title.length > 30 ? '...' : ''}
-                <span style="color:var(--text-secondary);font-size:10px;display:block;">🏗️ ${escapeHtml(t.projects?.name||'—')} ⏰ ${formatDate(t.deadline)}</span>
-            </div>`;
-    });
-
-    // Просроченные задачи
-    let overdueHtml = '';
-    tasksOverdue.forEach(t => {
-        overdueHtml += `
-            <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer;background:#FEF2F2;" onclick="viewTaskDetail('${t.id}')">
-                <span style="color:var(--danger);">⚠️</span> ${escapeHtml(t.title.substring(0, 30))}${t.title.length > 30 ? '...' : ''}
-                <span style="color:var(--text-secondary);font-size:10px;display:block;">🏗️ ${escapeHtml(t.projects?.name||'—')} ⏰ ${formatDate(t.deadline)}</span>
-            </div>`;
-    });
-
-    // Последние платежи
-    let paymentsHtml = '';
-    const allPayments = [
-        ...(recentIncomes || []).map(i => ({ ...i, type: 'income', amount: i.amount, desc: i.description })),
-        ...(recentExpenses || []).map(e => ({ ...e, type: 'expense', amount: e.amount, desc: e.name }))
-    ].sort((a, b) => new Date(b.date || b.created_at) - new Date(a.date || a.created_at)).slice(0, 5);
-
-    allPayments.forEach(p => {
-        const isIncome = p.type === 'income';
-        paymentsHtml += `
-            <div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:11px;">
-                <span style="color:${isIncome ? 'var(--success)' : 'var(--danger)'};">${isIncome ? '📥 +' : '📤 -'}${(p.amount||0).toLocaleString()} ₸</span>
-                <span style="color:var(--text-secondary);">${escapeHtml(p.desc||'').substring(0, 25)}</span>
-            </div>`;
-    });
-
     container.innerHTML = `
-        <!-- БЫСТРЫЕ ДЕЙСТВИЯ -->
-        <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
-            <button class="btn btn-primary btn-sm-compact" onclick="openCreateProjectForm()">➕ Объект</button>
-            <button class="btn btn-outline btn-sm-compact" onclick="openCreateBrigadeForm()">👷 Бригада</button>
-            <button class="btn btn-outline btn-sm-compact" onclick="openCreateExpenseForm()">📤 Расход</button>
-            <button class="btn btn-outline btn-sm-compact" onclick="loadPage('tasks');setTimeout(()=>openCreateTaskForm(),300)">📋 Задача</button>
-        </div>
-
-        <!-- ОБЪЕКТЫ -->
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <h2 style="margin:0;">🏗️ Объекты</h2>
-                <button class="btn btn-sm-compact btn-outline" onclick="loadPage('objects')">Все объекты →</button>
-            </div>
-            ${allProjects.length > 0 ? 
-                `<div style="display:flex;gap:12px;flex-wrap:wrap;">${objectCards}</div>` :
-                `<div style="text-align:center;padding:20px;">
-                    <p style="color:var(--text-secondary);margin-bottom:12px;">Нет объектов</p>
-                    <button class="btn btn-primary btn-sm-compact" onclick="openCreateProjectForm()">➕ Создать объект</button>
-                </div>`
-            }
-        </div>
-
-        <!-- ЗАДАЧИ + ПЛАТЕЖИ -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;min-height:70vh;">
             
-            <!-- ЗАДАЧИ -->
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                    <h2 style="margin:0;">📋 Задачи</h2>
-                    <button class="btn btn-sm-compact btn-outline" onclick="loadPage('tasks')">Все →</button>
-                </div>
-                
-                <!-- В работе -->
-                <div style="margin-bottom:12px;">
-                    <h3 style="font-size:12px;color:var(--info);margin-bottom:6px;">🔵 В РАБОТЕ (${tasksInProgress.length})</h3>
-                    ${inProgressHtml || '<p style="font-size:11px;color:var(--text-secondary);">Нет задач</p>'}
-                </div>
-                
-                <!-- Просроченные -->
-                <div>
-                    <h3 style="font-size:12px;color:var(--danger);margin-bottom:6px;">⚠️ ПРОСРОЧЕННЫЕ (${tasksOverdue.length})</h3>
-                    ${overdueHtml || '<p style="font-size:11px;color:var(--text-secondary);">Нет просроченных</p>'}
-                </div>
+            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:250px;" onclick="loadPage('objects')">
+                <div style="font-size:48px;margin-bottom:12px;">🏗️</div>
+                <h2 style="margin:0;font-size:18px;">ОБЪЕКТЫ</h2>
+                <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Управление проектами</p>
             </div>
-
-            <!-- ПОСЛЕДНИЕ ПЛАТЕЖИ -->
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                    <h2 style="margin:0;">💰 Последние операции</h2>
-                    <button class="btn btn-sm-compact btn-outline" onclick="loadPage('finances')">Финансы →</button>
-                </div>
-                ${paymentsHtml || '<p style="font-size:11px;color:var(--text-secondary);">Нет операций</p>'}
+            
+            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:250px;" onclick="loadPage('finances')">
+                <div style="font-size:48px;margin-bottom:12px;">💰</div>
+                <h2 style="margin:0;font-size:18px;">ДВИЖЕНИЕ СРЕДСТВ</h2>
+                <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Финансовый учёт</p>
             </div>
-        </div>
-
-        <!-- ПЛАН НА СЕГОДНЯ -->
-        <div class="card" style="margin-top:16px;">
-            <h2>📅 План на сегодня (${formatDate(todayStr)})</h2>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:12px;">
-                <div>
-                    <b>📤 Расходы:</b> ${todayExpenses.length > 0 ? 
-                        todayExpenses.map(e => `<div style="color:var(--danger);">• ${escapeHtml(e.name)} — ${(e.amount||0).toLocaleString()} ₸</div>`).join('') : 
-                        '<div style="color:var(--text-secondary);">Нет</div>'}
-                </div>
-                <div>
-                    <b>👷 Выплаты:</b> ${todayOrders.length > 0 ? 
-                        todayOrders.map(o => `<div style="color:var(--warning);">• Наряд — ${(o.total_amount||0).toLocaleString()} ₸</div>`).join('') : 
-                        '<div style="color:var(--text-secondary);">Нет</div>'}
-                </div>
-                <div>
-                    <b>📥 Поступления:</b> ${todayIncomes.length > 0 ? 
-                        todayIncomes.map(i => `<div style="color:var(--success);">• ${escapeHtml(i.description||'')} — ${(i.amount||0).toLocaleString()} ₸</div>`).join('') : 
-                        '<div style="color:var(--text-secondary);">Нет</div>'}
-                </div>
+            
+            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:250px;" onclick="loadPage('tasks')">
+                <div style="font-size:48px;margin-bottom:12px;">📋</div>
+                <h2 style="margin:0;font-size:18px;">ЗАДАЧИ</h2>
+                <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Управление задачами</p>
             </div>
+            
+            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:250px;" onclick="loadPage('finances')">
+                <div style="font-size:48px;margin-bottom:12px;">📅</div>
+                <h2 style="margin:0;font-size:18px;">ПЛАН ОПЛАТ</h2>
+                <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Планирование платежей</p>
+            </div>
+            
         </div>
     `;
 }
-
-// ===== ФОРМА СОЗДАНИЯ БРИГАДЫ =====
-window.openCreateBrigadeForm = function() {
-    const container = document.getElementById('page-body');
-    container.innerHTML = `
-        <button onclick="loadPage('dashboard')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад</button>
-        <div class="card">
-            <h2>👷 Создать бригаду</h2>
-            <div class="form-group"><label class="form-label">Название бригады *</label><input type="text" id="brigade-name" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Бригадир</label><input type="text" id="brigade-foreman" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Телефон</label><input type="text" id="brigade-phone" class="form-input"></div>
-            <div class="form-group"><label class="form-label">ИП / ТОО</label><input type="text" id="brigade-company" class="form-input" placeholder="Название ИП или ТОО"></div>
-            <div class="form-group"><label class="form-label">ИИН / БИН</label><input type="text" id="brigade-iin" class="form-input"></div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-                <input type="checkbox" id="brigade-noip" style="width:18px;height:18px;">
-                <label>Без ИП</label>
-            </div>
-            <button class="btn btn-primary" id="save-brigade">💾 Создать бригаду</button>
-        </div>
-    `;
-
-    document.getElementById('save-brigade').addEventListener('click', async () => {
-        const name = document.getElementById('brigade-name').value.trim();
-        if (!name) { alert('Введите название бригады'); return; }
-
-        const { error } = await supabase.from('brigades').insert({
-            name: name,
-            foreman_name: document.getElementById('brigade-foreman').value,
-            phone: document.getElementById('brigade-phone').value,
-            company_name: document.getElementById('brigade-company').value,
-            iin_bin: document.getElementById('brigade-iin').value,
-            no_ip: document.getElementById('brigade-noip').checked,
-            status: 'active'
-        });
-
-        if (error) { alert('Ошибка: ' + error.message); return; }
-        loadPage('dashboard');
-    });
-};
 
 // ===== ФОРМА СОЗДАНИЯ ОБЪЕКТА =====
 window.openCreateProjectForm = function() {
