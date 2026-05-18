@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>LamGroup CRM</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -12,17 +12,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        
         :root {
             --bg: #F8FAFC; --card: #FFFFFF; --text: #0F172A; --text-secondary: #64748B;
             --border: #E2E8F0; --gold: #F59E0B; --primary: #0F172A; --success: #10B981;
             --danger: #EF4444; --warning: #F59E0B; --info: #3B82F6;
-            --sidebar-width: 240px; --header-height: 64px;
+            --sidebar-width: 240px; --header-height: 60px;
             --shadow: 0 4px 16px rgba(0,0,0,0.06); --radius: 12px; --radius-lg: 16px;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
+        /* АВТОРИЗАЦИЯ */
         .auth-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
         .auth-overlay.hidden { display: none; }
         .auth-card { background: white; border-radius: 24px; padding: 40px 36px; text-align: center; max-width: 440px; width: 100%; box-shadow: 0 25px 60px rgba(0,0,0,0.3); }
@@ -31,209 +31,133 @@
         .auth-card .subtitle { font-size: 12px; color: var(--text-secondary); margin-bottom: 24px; }
         .form-group { margin-bottom: 14px; text-align: left; }
         .form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 14px; font-family: inherit; text-align: center; }
+        .form-input { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 14px; font-family: inherit; }
         .form-input:focus { outline: none; border-color: var(--gold); }
-        .btn { padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; width: 100%; transition: all 0.2s; }
+        .btn { padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
         .btn-primary { background: var(--primary); color: white; }
-        .btn-telegram { background: linear-gradient(135deg, #2AABEE, #229ED9); color: white; }
-        .btn-qr { background: #F1F5F9; color: var(--text); }
+        .btn-outline { background: white; border: 1.5px solid var(--border); }
+        .btn-sm { padding: 6px 12px; font-size: 11px; border-radius: 8px; }
+        .btn-danger { background: #FEE2E2; color: #991B1B; }
+        .btn-success { background: #D1FAE5; color: #065F46; }
+        .btn-telegram { background: linear-gradient(135deg, #2AABEE, #229ED9); color: white; width: 100%; }
+        .btn-qr { background: #F1F5F9; color: var(--text); width: 100%; }
         .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--text-secondary); font-size: 12px; }
         .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
         .auth-error { color: var(--danger); font-size: 12px; margin-top: 8px; display: none; }
         .qr-popup { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10001; align-items: center; justify-content: center; }
         .qr-popup.show { display: flex; }
         .qr-popup-content { background: white; border-radius: 20px; padding: 30px; text-align: center; }
-        .qr-popup-content canvas { margin: 16px auto; }
 
+        /* ЛЕЙАУТ */
         .app-layout { display: flex; min-height: 100vh; }
         .app-layout.hidden { display: none; }
         .sidebar { width: var(--sidebar-width); background: white; border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; }
-        .sidebar-logo { padding: 20px 24px; font-weight: 800; font-size: 17px; border-bottom: 1px solid var(--border); }
-        .sidebar-nav { flex: 1; padding: 12px 8px; }
-        .sidebar-nav a { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 10px; text-decoration: none; color: var(--text-secondary); font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+        .sidebar-logo { padding: 16px 20px; font-weight: 800; font-size: 16px; border-bottom: 1px solid var(--border); }
+        .sidebar-nav { flex: 1; padding: 8px; }
+        .sidebar-nav a { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; text-decoration: none; color: var(--text-secondary); font-size: 13px; font-weight: 500; margin-bottom: 2px; }
         .sidebar-nav a:hover, .sidebar-nav a.active { background: #F1F5F9; color: var(--text); font-weight: 600; }
-        .sidebar-user { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-size: 13px; }
-        .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .sidebar-user { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; font-size: 12px; }
+        .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
         .main-content { flex: 1; margin-left: var(--sidebar-width); }
-        .page-header { background: white; border-bottom: 1px solid var(--border); padding: 0 32px; height: var(--header-height); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
-        .page-body { padding: 24px 32px; }
-        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-        .kpi-card { background: white; border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); }
-        .kpi-value { font-size: 26px; font-weight: 800; }
-        .kpi-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; margin-top: 4px; }
-        .card { background: white; border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow); margin-bottom: 24px; }
-        .card h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th { background: #F8FAFC; padding: 10px 12px; text-align: left; font-weight: 600; font-size: 11px; color: var(--text-secondary); text-transform: uppercase; border-bottom: 2px solid var(--border); }
-        td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
-        .gantt-bar-wrap { background: #F1F5F9; border-radius: 6px; height: 22px; overflow: hidden; }
+        .page-header { background: white; border-bottom: 1px solid var(--border); padding: 0 24px; height: var(--header-height); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+        .page-header h1 { font-size: 16px; font-weight: 700; }
+        .page-body { padding: 20px 24px; max-width: 1200px; }
+
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+        .kpi-card { background: white; border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow); }
+        .kpi-value { font-size: 24px; font-weight: 800; }
+        .kpi-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; margin-top: 2px; }
+        .card { background: white; border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; }
+        .card h2 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { background: #F8FAFC; padding: 8px 10px; text-align: left; font-weight: 600; font-size: 10px; color: var(--text-secondary); text-transform: uppercase; border-bottom: 2px solid var(--border); }
+        td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+
+        .gantt-bar-wrap { background: #F1F5F9; border-radius: 6px; height: 20px; overflow: hidden; }
         .gantt-bar { height: 100%; border-radius: 6px; display: flex; align-items: center; padding-left: 8px; font-size: 10px; font-weight: 600; color: white; }
         .gantt-bar.green { background: #10B981; } .gantt-bar.yellow { background: #F59E0B; } .gantt-bar.red { background: #EF4444; } .gantt-bar.blue { background: #3B82F6; }
-        .tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .tag-green { background: #D1FAE5; color: #065F46; } .tag-yellow { background: #FEF3C7; color: #92400E; } .tag-red { background: #FEE2E2; color: #991B1B; } .tag-blue { background: #DBEAFE; color: #1E40AF; }
+
+        .tag { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+        .tag-green { background: #D1FAE5; color: #065F46; } .tag-yellow { background: #FEF3C7; color: #92400E; }
+        .tag-red { background: #FEE2E2; color: #991B1B; } .tag-blue { background: #DBEAFE; color: #1E40AF; }
+
         .hidden { display: none !important; }
         .text-success { color: var(--success); } .text-danger { color: var(--danger); } .text-warning { color: var(--warning); }
         .table-wrap { overflow-x: auto; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .tabs-row { display: flex; gap: 4px; border-bottom: 2px solid var(--border); margin-bottom: 16px; overflow-x: auto; scrollbar-width: none; }
+        .tabs-row .tab-btn { padding: 8px 14px; background: none; border: none; font-size: 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; }
+        .tabs-row .tab-btn.active { color: var(--text); border-bottom-color: var(--gold); }
+        .tab-content { display: none; } .tab-content.active { display: block; }
+
+        .mobile-menu-btn { display: none; background: none; border: none; font-size: 22px; cursor: pointer; }
+        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 99; }
+        .sidebar-overlay.open { display: block; }
 
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
             .main-content { margin-left: 0; }
             .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-            .page-body { padding: 16px; }
+            .page-body { padding: 12px; }
+            .page-header { padding: 0 12px; }
+            .grid-2 { grid-template-columns: 1fr; }
             .mobile-menu-btn { display: block !important; }
-        }
-        .mobile-menu-btn { display: none; background: none; border: none; font-size: 24px; cursor: pointer; }
-        .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); z-index: 99; }
-        .sidebar-overlay.open { display: block; }
-                /* ===== УЛУЧШЕННЫЕ КНОПКИ ===== */
-        .btn-sm-compact {
-            padding: 6px 12px;
-            font-size: 11px;
-            border-radius: 8px;
-            font-weight: 500;
-            width: auto;
-            min-width: auto;
-        }
-        .btn-group {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        .btn-group .btn {
-            width: auto;
-            flex: 0 0 auto;
-        }
-
-        /* ===== УЛУЧШЕННЫЕ КАРТОЧКИ ЗАДАЧ ===== */
-        .task-card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 12px;
-        }
-        .task-card-item {
-            background: white;
-            border-radius: var(--radius);
-            padding: 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            border: 1px solid var(--border);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .task-card-item:hover {
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-            transform: translateY(-1px);
-        }
-        .task-card-item.overdue {
-            border-left: 4px solid var(--danger);
-        }
-        .task-card-item .task-priority {
-            font-size: 16px;
-        }
-        .task-card-item .task-name {
-            font-weight: 600;
-            font-size: 14px;
-            margin: 6px 0;
-        }
-        .task-card-item .task-info {
-            font-size: 11px;
-            color: var(--text-secondary);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
-        }
-        .task-card-item .task-tags {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-            margin-top: 8px;
-        }
-
-        /* ===== КОМПАКТНЫЕ ФОРМЫ ===== */
-        .compact-form {
-            max-width: 600px;
-        }
-        .compact-form .form-input {
-            padding: 8px 12px;
-            font-size: 13px;
-        }
-        .compact-form .btn {
-            width: auto;
-            padding: 8px 16px;
-            font-size: 13px;
-        }
-
-        /* ===== ГРИД ДЛЯ ДЕТАЛЕЙ ЗАДАЧИ ===== */
-        .detail-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        @media (max-width: 768px) {
-            .detail-grid {
-                grid-template-columns: 1fr;
-            }
-            .task-card-grid {
-                grid-template-columns: 1fr;
-            }
         }
     </style>
 </head>
 <body>
 
-    <div class="auth-overlay" id="auth-overlay">
-        <div class="auth-card">
-            <div class="logo">🏗️</div>
-            <h1>LamGroup CRM</h1>
-            <p class="subtitle">Войдите в систему управления проектами</p>
-            <div id="manual-login-form">
-                <div class="form-group"><label>📱 Telegram ID</label><input type="text" id="auth-tg-id" class="form-input" placeholder="Например: 531738802"></div>
-                <div class="form-group"><label>🔑 Пароль</label><input type="password" id="auth-password" class="form-input" placeholder="Введите пароль"></div>
-                <button class="btn btn-primary" onclick="loginWithPassword()">🔐 Войти</button>
-                <p class="auth-error" id="auth-error">⛔ Неверный ID или пароль</p>
-            </div>
-            <div class="divider">или</div>
-            <button class="btn btn-telegram" onclick="loginWithTelegram()">🔵 Войти через Telegram</button>
-            <button class="btn btn-qr" onclick="showQRCode()" style="margin-top:8px;">📱 Вход по QR-коду</button>
-        </div>
+<div class="auth-overlay" id="auth-overlay">
+    <div class="auth-card">
+        <div class="logo">🏗️</div>
+        <h1>LamGroup CRM</h1>
+        <p class="subtitle">Войдите в систему управления проектами</p>
+        <div class="form-group"><label>📱 Telegram ID</label><input type="text" id="auth-tg-id" class="form-input" placeholder="531738802"></div>
+        <div class="form-group"><label>🔑 Пароль</label><input type="password" id="auth-password" class="form-input" placeholder="Введите пароль"></div>
+        <button class="btn btn-primary" onclick="loginWithPassword()" style="width:100%;">🔐 Войти</button>
+        <p class="auth-error" id="auth-error">⛔ Неверный ID или пароль</p>
+        <div class="divider">или</div>
+        <button class="btn btn-telegram" onclick="loginWithTelegram()">🔵 Войти через Telegram</button>
+        <button class="btn btn-qr" onclick="showQRCode()" style="margin-top:8px;">📱 Вход по QR-коду</button>
     </div>
+</div>
 
-    <div class="qr-popup" id="qr-popup">
-        <div class="qr-popup-content">
-            <h3>📱 Вход по QR-коду</h3>
-            <p style="font-size:12px;color:var(--text-secondary);">Отсканируйте чтобы открыть CRM в Telegram</p>
-            <div id="qr-code"></div>
-            <button class="btn btn-primary" onclick="closeQR()">Закрыть</button>
-        </div>
+<div class="qr-popup" id="qr-popup">
+    <div class="qr-popup-content">
+        <h3>📱 Вход по QR-коду</h3>
+        <div id="qr-code"></div>
+        <button class="btn btn-primary" onclick="closeQR()">Закрыть</button>
     </div>
+</div>
 
-    <div class="app-layout hidden" id="app-layout">
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-logo">🏗️ LamGroup</div>
-            <nav class="sidebar-nav">
-                <a href="#" class="active" data-page="dashboard">🏠 Основная</a>
-                <a href="#" data-page="objects">🏗️ Объекты</a>
-                <a href="#" data-page="tasks">📋 Задачи</a>
-                <a href="#" data-page="finances">💰 Финансы</a>
-            </nav>
-            <div class="sidebar-user">
-                <div class="avatar" id="user-avatar">?</div>
-                <div><div style="font-weight:600;" id="user-name">—</div><div style="font-size:11px;color:var(--text-secondary);" id="user-role">—</div></div>
-            </div>
-        </div>
-        <div class="sidebar-overlay" id="sidebar-overlay"></div>
-        <div class="main-content">
-            <header class="page-header">
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
-                    <h1 id="page-title">🏠 Основная</h1>
-                </div>
-                <button class="tag tag-red" id="logout-btn" style="cursor:pointer;border:none;">Выйти</button>
-            </header>
-            <div class="page-body" id="page-body"></div>
+<div class="app-layout hidden" id="app-layout">
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-logo">🏗️ LamGroup</div>
+        <nav class="sidebar-nav">
+            <a href="#" class="active" data-page="dashboard">🏠 Основная</a>
+            <a href="#" data-page="objects">🏗️ Объекты</a>
+            <a href="#" data-page="tasks">📋 Задачи</a>
+            <a href="#" data-page="finances">💰 Финансы</a>
+        </nav>
+        <div class="sidebar-user">
+            <div class="avatar" id="user-avatar">?</div>
+            <div><div style="font-weight:600;" id="user-name">—</div><div style="font-size:10px;color:var(--text-secondary);" id="user-role">—</div></div>
         </div>
     </div>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <div class="main-content">
+        <header class="page-header">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+                <h1 id="page-title">🏠 Основная</h1>
+            </div>
+            <button class="tag tag-red" id="logout-btn" style="cursor:pointer;border:none;">Выйти</button>
+        </header>
+        <div class="page-body" id="page-body"></div>
+    </div>
+</div>
 
 <script>
 (function() {
@@ -244,82 +168,57 @@
     if (tg) { tg.ready(); tg.expand(); }
 
     let currentUser = null;
+    let currentProjectId = null;
+    let currentObjectTab = 'info';
 
     function formatMoney(a) { return (a||0).toLocaleString() + ' ₸'; }
     function escapeHtml(t) { if(!t) return ''; return String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]||c)); }
     function formatDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('ru-RU'); }
-
-    // ===== ХЕШИРОВАНИЕ =====
-    async function hashPassword(password) {
-        const msgBuffer = new TextEncoder().encode(password);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
+    function formatDateLong(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}); }
 
     // ===== СЕССИЯ =====
-    function saveSession(user) {
-        localStorage.setItem('lamgroup_crm_user', JSON.stringify({
-            id: user.id, telegram_id: user.telegram_id,
-            full_name: user.full_name, role: user.role, phone: user.phone
-        }));
-    }
-    function loadSession() {
-        const saved = localStorage.getItem('lamgroup_crm_user');
-        if (saved) { try { return JSON.parse(saved); } catch(e) { return null; } }
-        return null;
-    }
+    function saveSession(user) { localStorage.setItem('lamgroup_crm_user', JSON.stringify({id:user.id,telegram_id:user.telegram_id,full_name:user.full_name,role:user.role,phone:user.phone})); }
+    function loadSession() { try { return JSON.parse(localStorage.getItem('lamgroup_crm_user')); } catch(e) { return null; } }
     function clearSession() { localStorage.removeItem('lamgroup_crm_user'); }
 
     // ===== АВТОРИЗАЦИЯ =====
     async function checkAuth() {
-        const savedUser = loadSession();
-        if (savedUser?.id) {
-            const { data: users } = await supabase.from('users').select('*').eq('id', savedUser.id).single();
-            if (users) { currentUser = users; enterApp(); return; }
+        const saved = loadSession();
+        if (saved?.id) {
+            const { data: u } = await supabase.from('users').select('*').eq('id', saved.id).single();
+            if (u) { currentUser = u; enterApp(); return; }
             clearSession();
         }
         document.getElementById('auth-overlay').classList.remove('hidden');
-        document.getElementById('app-layout').classList.add('hidden');
         if (tg?.initDataUnsafe?.user) loginWithTelegram();
     }
 
+    async function hashPassword(p) { const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p)); return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
+
     window.loginWithPassword = async function() {
-        const tgId = document.getElementById('auth-tg-id').value.trim();
-        const password = document.getElementById('auth-password').value.trim();
-        if (!tgId || !password) return;
-        const { data: users } = await supabase.from('users').select('*').eq('telegram_id', parseInt(tgId));
-        if (!users?.length) { document.getElementById('auth-error').style.display = 'block'; return; }
-        const user = users[0];
-        const hashed = await hashPassword(password);
-        if (user.password_hash !== hashed) { document.getElementById('auth-error').style.display = 'block'; return; }
-        currentUser = user;
+        const id = document.getElementById('auth-tg-id').value.trim();
+        const pw = document.getElementById('auth-password').value.trim();
+        if (!id || !pw) return;
+        const { data: users } = await supabase.from('users').select('*').eq('telegram_id', parseInt(id));
+        if (!users?.length) { document.getElementById('auth-error').style.display='block'; return; }
+        if (users[0].password_hash !== await hashPassword(pw)) { document.getElementById('auth-error').style.display='block'; return; }
+        currentUser = users[0];
         enterApp();
     };
 
     window.loginWithTelegram = async function() {
-        if (!tg) return;
-        const tgUser = tg.initDataUnsafe?.user;
-        if (!tgUser) return;
-        const { data: users } = await supabase.from('users').select('*').eq('telegram_id', tgUser.id);
-        if (!users?.length) { document.getElementById('auth-error').style.display = 'block'; return; }
+        const u = tg?.initDataUnsafe?.user;
+        if (!u) return;
+        const { data: users } = await supabase.from('users').select('*').eq('telegram_id', u.id);
+        if (!users?.length) { document.getElementById('auth-error').style.display='block'; return; }
         currentUser = users[0];
-        const fullName = tgUser.first_name + ' ' + (tgUser.last_name || '');
-        if (fullName !== currentUser.full_name) {
-            await supabase.from('users').update({ full_name: fullName }).eq('id', currentUser.id);
-            currentUser.full_name = fullName;
-        }
         enterApp();
     };
 
     window.showQRCode = function() {
         document.getElementById('qr-popup').classList.add('show');
         document.getElementById('qr-code').innerHTML = '';
-        new QRCode(document.getElementById('qr-code'), {
-            text: 'https://t.me/LGCFASAD_bot/app',
-            width: 200, height: 200,
-            colorDark: '#0F172A', colorLight: '#FFFFFF'
-        });
+        new QRCode(document.getElementById('qr-code'), { text:'https://t.me/LGCFASAD_bot/app', width:200, height:200, colorDark:'#0F172A', colorLight:'#FFFFFF' });
     };
     window.closeQR = function() { document.getElementById('qr-popup').classList.remove('show'); };
 
@@ -327,1148 +226,258 @@
         saveSession(currentUser);
         document.getElementById('auth-overlay').classList.add('hidden');
         document.getElementById('app-layout').classList.remove('hidden');
-        document.getElementById('user-avatar').textContent = (currentUser.full_name || '?')[0].toUpperCase();
-        document.getElementById('user-name').textContent = currentUser.full_name || '—';
-        document.getElementById('user-role').textContent = currentUser.role === 'manager' ? 'Руководитель' : currentUser.role === 'worker' ? 'ИТР' : 'Бухгалтер';
-        setupNavigation();
+        document.getElementById('user-avatar').textContent = (currentUser.full_name||'?')[0].toUpperCase();
+        document.getElementById('user-name').textContent = currentUser.full_name||'—';
+        document.getElementById('user-role').textContent = currentUser.role==='manager'?'Руководитель':currentUser.role==='worker'?'ИТР':'Бухгалтер';
+        setupNav();
         loadPage('dashboard');
     }
 
-    // ===== НАВИГАЦИЯ =====
-    function setupNavigation() {
-        document.querySelectorAll('.sidebar-nav a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-                loadPage(this.dataset.page);
-                document.getElementById('sidebar').classList.remove('open');
-                document.getElementById('sidebar-overlay').classList.remove('open');
-            });
-        });
-        document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('sidebar-overlay').classList.toggle('open');
-        });
-        document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('sidebar-overlay').classList.remove('open');
-        });
-        document.getElementById('logout-btn')?.addEventListener('click', () => {
-            clearSession(); currentUser = null;
-            document.getElementById('auth-overlay').classList.remove('hidden');
-            document.getElementById('app-layout').classList.add('hidden');
-        });
+    function setupNav() {
+        document.querySelectorAll('.sidebar-nav a').forEach(a=>a.addEventListener('click',function(e){e.preventDefault();document.querySelectorAll('.sidebar-nav a').forEach(l=>l.classList.remove('active'));this.classList.add('active');loadPage(this.dataset.page);document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').classList.remove('open');}));
+        document.getElementById('mobile-menu-btn').addEventListener('click',()=>{document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('open');});
+        document.getElementById('sidebar-overlay').addEventListener('click',()=>{document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebar-overlay').classList.remove('open');});
+        document.getElementById('logout-btn').addEventListener('click',()=>{clearSession();currentUser=null;document.getElementById('auth-overlay').classList.remove('hidden');document.getElementById('app-layout').classList.add('hidden');});
     }
 
-        window.loadPage = async function(page) {
-        const container = document.getElementById('page-body');
-        container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
-        document.getElementById('page-title').textContent = { dashboard:'🏠 Основная', objects:'🏗️ Объекты', tasks:'📋 Задачи', finances:'💰 Финансы' }[page] || '';
+    window.loadPage = function(page) {
+        currentProjectId = null;
+        const c = document.getElementById('page-body');
+        c.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
+        document.getElementById('page-title').textContent = { dashboard:'🏠 Основная', objects:'🏗️ Объекты', tasks:'📋 Задачи', finances:'💰 Финансы' }[page]||'';
         switch(page) {
-           case 'dashboard': await loadMainPage(container); break;
-            case 'objects': await loadObjectsPage(container); break;
-            case 'tasks': await loadTasksPage(container); break;
-            case 'finances': await loadFinancesPage(container); break;
+            case 'dashboard': loadMainPage(c); break;
+            case 'objects': loadObjectsList(c); break;
+            case 'tasks': loadTasksPage(c); break;
+            case 'finances': loadFinancesPage(c); break;
         }
     };
 
-    // ===== ОСНОВНАЯ (РАБОЧИЙ СТОЛ) — ПОЛНАЯ ЗАМЕНА loadDashboard =====
-
-async function loadMainPage(container) {
-    container.innerHTML = `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;min-height:70vh;">
-            
-            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:250px;" onclick="loadPage('objects')">
-                <div style="font-size:48px;margin-bottom:12px;">🏗️</div>
-                <h2 style="margin:0;font-size:18px;">ОБЪЕКТЫ</h2>
-                <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Управление проектами</p>
-            </div>
-            
-            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:250px;" onclick="loadPage('finances')">
-                <div style="font-size:48px;margin-bottom:12px;">💰</div>
-                <h2 style="margin:0;font-size:18px;">ДВИЖЕНИЕ СРЕДСТВ</h2>
-                <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Финансовый учёт</p>
-            </div>
-            
-            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:250px;" onclick="loadPage('tasks')">
-                <div style="font-size:48px;margin-bottom:12px;">📋</div>
-                <h2 style="margin:0;font-size:18px;">ЗАДАЧИ</h2>
-                <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Управление задачами</p>
-            </div>
-            
-            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:250px;" onclick="loadPage('finances')">
-                <div style="font-size:48px;margin-bottom:12px;">📅</div>
-                <h2 style="margin:0;font-size:18px;">ПЛАН ОПЛАТ</h2>
-                <p style="color:var(--text-secondary);font-size:12px;margin-top:4px;">Планирование платежей</p>
-            </div>
-            
-        </div>
-    `;
-}
-
-// ===== ФОРМА СОЗДАНИЯ ОБЪЕКТА =====
-window.openCreateProjectForm = function() {
-    const container = document.getElementById('page-body');
-    container.innerHTML = `
-        <button onclick="loadPage('dashboard')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад</button>
-        <div class="card">
-            <h2>➕ Создать объект</h2>
-            <div class="form-group"><label class="form-label">Название объекта *</label><input type="text" id="new-project-name" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Адрес</label><input type="text" id="new-project-address" class="form-input"></div>
-            <div class="grid-2">
-                <div class="form-group"><label class="form-label">Дата начала</label><input type="date" id="new-project-start" class="form-input"></div>
-                <div class="form-group"><label class="form-label">Дата окончания</label><input type="date" id="new-project-end" class="form-input"></div>
-            </div>
-            <div class="form-group"><label class="form-label">Сумма договора</label><input type="number" id="new-project-price" class="form-input" step="0.01"></div>
-            <div class="form-group"><label class="form-label">Заказчик (компания)</label><input type="text" id="new-project-customer" class="form-input"></div>
-            <button class="btn btn-primary" id="save-new-project">💾 Создать объект</button>
-        </div>
-    `;
-
-    document.getElementById('save-new-project').addEventListener('click', async () => {
-        const name = document.getElementById('new-project-name').value.trim();
-        if (!name) { alert('Введите название объекта'); return; }
-
-        const { error } = await supabase.from('projects').insert({
-            name: name,
-            address: document.getElementById('new-project-address').value,
-            start_date: document.getElementById('new-project-start').value || null,
-            end_date_contract: document.getElementById('new-project-end').value || null,
-            contract_price: parseFloat(document.getElementById('new-project-price').value) || 0,
-            customer_company_name: document.getElementById('new-project-customer').value,
-            responsible_worker_id: currentUser.id,
-            manager_name: currentUser.full_name,
-            status: 'active'
-        });
-
-        if (error) { alert('Ошибка: ' + error.message); return; }
-        loadPage('dashboard');
-    });
-};
-
-// ===== ФОРМА СОЗДАНИЯ РАСХОДА (БЫСТРАЯ) =====
-window.openCreateExpenseForm = async function() {
-    const container = document.getElementById('page-body');
-    const { data: projects } = await supabase.from('projects').select('id,name').order('name');
-    const { data: num } = await supabase.from('document_numbers').select('number').eq('doc_type', 'expense').order('number', { ascending: false }).limit(1);
-    const nextNum = num?.length ? num[0].number + 1 : 1;
-    const expNum = '№-RAS-' + nextNum;
-
-    container.innerHTML = `
-        <button onclick="loadPage('dashboard')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад</button>
-        <div class="card">
-            <h2>📤 Создать расход</h2>
-            <div class="form-group"><label class="form-label">Номер</label><input class="form-input" value="${expNum}" disabled></div>
-            <div class="form-group"><label class="form-label">Объект</label><select id="exp-project" class="form-input">${(projects||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">Наименование *</label><input type="text" id="exp-name" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Категория</label><select id="exp-category" class="form-input"><option value="delivery">🚛 Доставка</option><option value="consumables">🔧 Расходники</option><option value="cradles">🏗️ Люльки</option><option value="scaffolding">🪜 Леса</option><option value="rent">🏢 Аренда</option><option value="other">📄 Прочее</option></select></div>
-            <div class="grid-2">
-                <div class="form-group"><label class="form-label">Сумма *</label><input type="number" id="exp-amount" class="form-input" step="0.01"></div>
-                <div class="form-group"><label class="form-label">Дата</label><input type="date" id="exp-date" class="form-input" value="${new Date().toISOString().split('T')[0]}"></div>
-            </div>
-            <div class="form-group"><label class="form-label">Статус</label><select id="exp-status" class="form-input"><option value="pending">📅 План оплат</option><option value="paid">💳 Оплачен</option></select></div>
-            <button class="btn btn-primary" id="save-expense">💾 Сохранить</button>
-        </div>
-    `;
-
-    document.getElementById('save-expense').addEventListener('click', async () => {
-        const name = document.getElementById('exp-name').value.trim();
-        const amount = parseFloat(document.getElementById('exp-amount').value);
-        if (!name || !amount) { alert('Заполните наименование и сумму'); return; }
-
-        await supabase.from('expenses').insert({
-            project_id: document.getElementById('exp-project').value || null,
-            name, amount,
-            category: document.getElementById('exp-category').value,
-            date: document.getElementById('exp-date').value,
-            payment_status: document.getElementById('exp-status').value,
-            expense_number: expNum,
-            created_by: currentUser.id
-        });
-        await supabase.from('document_numbers').upsert({ doc_type: 'expense', number: nextNum }, { onConflict: 'doc_type' });
-
-        loadPage('dashboard');
-    });
-};
+    // ===== ОСНОВНАЯ (4 КВАДРАТА) =====
+    function loadMainPage(c) {
+        c.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;min-height:70vh;">
+            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:250px;" onclick="loadPage('objects')"><div style="font-size:48px;margin-bottom:12px;">🏗️</div><h2>ОБЪЕКТЫ</h2></div>
+            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:250px;" onclick="loadPage('finances')"><div style="font-size:48px;margin-bottom:12px;">💰</div><h2>ДВИЖЕНИЕ СРЕДСТВ</h2></div>
+            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:250px;" onclick="loadPage('tasks')"><div style="font-size:48px;margin-bottom:12px;">📋</div><h2>ЗАДАЧИ</h2></div>
+            <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:250px;" onclick="loadPage('finances')"><div style="font-size:48px;margin-bottom:12px;">📅</div><h2>ПЛАН ОПЛАТ</h2></div>
+        </div>`;
+    }
 
     // ===== ОБЪЕКТЫ (СПИСОК) =====
-    async function loadObjectsPage(container) {
+    async function loadObjectsList(c) {
         let q = supabase.from('projects').select('*').order('name');
         if (currentUser.role !== 'manager') q = q.eq('responsible_worker_id', currentUser.id);
         const { data: projects } = await q;
-        if (!projects?.length) { container.innerHTML = '<div class="card"><p style="text-align:center;padding:40px;">Нет объектов</p></div>'; return; }
+        if (!projects?.length) { c.innerHTML = '<div class="card"><p style="text-align:center;padding:40px;">Нет объектов</p><button class="btn btn-primary btn-sm" onclick="openCreateProjectForm()">➕ Создать</button></div>'; return; }
 
-        const projectIds = projects.map(p => p.id);
-        const { data: blocks } = await supabase.from('blocks').select('id, project_id').in('project_id', projectIds);
-        const blockIds = (blocks || []).map(b => b.id);
-        let axesMap = {};
-        if (blockIds.length) {
-            const { data: axes } = await supabase.from('axes').select('progress, status, block_id').in('block_id', blockIds);
-            (axes || []).forEach(ax => {
-                const block = blocks.find(b => b.id === ax.block_id);
-                if (block) { if (!axesMap[block.project_id]) axesMap[block.project_id] = []; axesMap[block.project_id].push(ax); }
-            });
-        }
-        const { data: allIssues } = await supabase.from('project_issues').select('project_id').in('status', ['open','in_progress']);
-        const issuesMap = {};
-        (allIssues || []).forEach(i => { issuesMap[i.project_id] = (issuesMap[i.project_id] || 0) + 1; });
-
-        let inProgress = 0, completed = 0, overdue = 0;
-        projects.forEach(p => {
-            const axes = axesMap[p.id] || [];
-            const allDone = axes.length > 0 && axes.every(a => a.status === 'completed');
-            if (allDone) completed++;
-            else if (axes.some(a => a.status === 'in_progress' || a.progress > 0)) inProgress++;
-            if (p.end_date_contract && new Date(p.end_date_contract) < new Date() && !allDone) overdue++;
-        });
-
-        let html = '<div class="kpi-grid"><div class="kpi-card"><div style="font-size:24px;">🏗️</div><div class="kpi-value">' + projects.length + '</div><div class="kpi-label">Всего</div></div>';
-        html += '<div class="kpi-card"><div style="font-size:24px;">🔵</div><div class="kpi-value" style="color:var(--info);">' + inProgress + '</div><div class="kpi-label">В работе</div></div>';
-        html += '<div class="kpi-card"><div style="font-size:24px;">✅</div><div class="kpi-value" style="color:var(--success);">' + completed + '</div><div class="kpi-label">Завершено</div></div>';
-        html += '<div class="kpi-card"><div style="font-size:24px;">⚠️</div><div class="kpi-value" style="color:var(--danger);">' + overdue + '</div><div class="kpi-label">Просрочено</div></div></div>';
-        html += '<div style="display:flex;flex-wrap:wrap;gap:16px;">';
-
+        let html = '<button class="btn btn-primary btn-sm" onclick="openCreateProjectForm()" style="margin-bottom:16px;">➕ Создать объект</button><div style="display:flex;flex-direction:column;gap:12px;">';
         for (const p of projects) {
-            const axes = axesMap[p.id] || [];
-            const totalAxes = axes.length;
-            const completedAxes = axes.filter(a => a.status === 'completed').length;
-            const avgProgress = totalAxes > 0 ? Math.round(axes.reduce((s, a) => s + (a.progress || 0), 0) / totalAxes) : 0;
-            const issuesCount = issuesMap[p.id] || 0;
-            const isOverdue = p.end_date_contract && new Date(p.end_date_contract) < new Date() && completedAxes < totalAxes;
-            const barColor = completedAxes === totalAxes && totalAxes > 0 ? 'green' : isOverdue ? 'red' : avgProgress >= 50 ? 'blue' : 'yellow';
-
-            html += `<div class="card" style="flex:1;min-width:300px;cursor:pointer;" onclick="loadObjectDetail('${p.id}')">
-                <div style="display:flex;justify-content:space-between;align-items:start;">
-                    <h2 style="margin:0;">${escapeHtml(p.name)}</h2>
-                    ${isOverdue ? '<span class="tag tag-red">⚠️ Просрочен</span>' : completedAxes === totalAxes && totalAxes > 0 ? '<span class="tag tag-green">✅ Завершён</span>' : '<span class="tag tag-blue">🔵 В работе</span>'}
-                </div>
-                <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">📍 ${escapeHtml(p.address || '—')}</p>
-                <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
-                    <div><span style="color:var(--text-secondary);">Осей:</span> <b>${totalAxes}</b></div>
-                    <div><span style="color:var(--text-secondary);">Проблем:</span> <b style="color:${issuesCount > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">${issuesCount}</b></div>
-                    <div><span style="color:var(--text-secondary);">Начало:</span> <b>${formatDate(p.start_date)}</b></div>
-                    <div><span style="color:var(--text-secondary);">Конец:</span> <b>${formatDate(p.end_date_contract)}</b></div>
-                </div>
-                ${totalAxes > 0 ? `<div style="margin-top:12px;"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span>Прогресс</span><span>${avgProgress}%</span></div><div class="gantt-bar-wrap"><div class="gantt-bar ${barColor}" style="width:${avgProgress}%;">${avgProgress > 10 ? avgProgress + '%' : ''}</div></div></div>` : ''}
-            </div>`;
+            html += `<div class="card" style="cursor:pointer;" onclick="openObjectPage('${p.id}')"><div style="display:flex;justify-content:space-between;align-items:start;"><h2>🏗️ ${escapeHtml(p.name)}</h2><span class="tag tag-blue">🔵 Активный</span></div><p style="font-size:13px;color:var(--text-secondary);">📍 ${escapeHtml(p.address||'—')} | 📅 ${formatDate(p.start_date)} — ${formatDate(p.end_date_contract)}</p><button class="btn btn-outline btn-sm" style="margin-top:8px;">Открыть →</button></div>`;
         }
         html += '</div>';
-        container.innerHTML = html;
+        c.innerHTML = html;
     }
 
-    // ===== ОБЪЕКТ (ДЕТАЛЬНО) =====
-    window.loadObjectDetail = async function(projectId) {
-        const container = document.getElementById('page-body');
-        container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
+    window.openObjectPage = async function(projectId) {
+        currentProjectId = projectId;
+        const c = document.getElementById('page-body');
+        c.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
         document.getElementById('page-title').textContent = '🏗️ Загрузка...';
 
         const { data: project } = await supabase.from('projects').select('*').eq('id', projectId).single();
-        if (!project) { container.innerHTML = '<div class="card"><p>Объект не найден</p></div>'; return; }
-
-        const { data: blocks } = await supabase.from('blocks').select('id,name').eq('project_id', projectId);
-        const blockIds = (blocks || []).map(b => b.id);
-        let axes = [];
-        if (blockIds.length) {
-            const { data: axesData } = await supabase.from('axes').select('*, blocks(name)').in('block_id', blockIds).order('name');
-            axes = axesData || [];
-        }
-
-        const axisIds = axes.map(a => a.id);
-        let stagesMap = {}, brigadesMap = {};
-        if (axisIds.length) {
-            const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').in('axis_id', axisIds).order('sub_axis_name');
-            (stages || []).forEach(st => {
-                if (!stagesMap[st.axis_id]) stagesMap[st.axis_id] = [];
-                stagesMap[st.axis_id].push(st);
-                if (st.brigade_id && st.brigades?.name) brigadesMap[st.brigade_id] = st.brigades.name;
-            });
-        }
-
-        let historyMap = {};
-        if (axisIds.length) {
-            const { data: history } = await supabase.from('change_history').select('*').eq('entity_type', 'axis').in('entity_id', axisIds).order('changed_at', { ascending: true });
-            (history || []).forEach(h => {
-                if (!historyMap[h.entity_id]) historyMap[h.entity_id] = [];
-                historyMap[h.entity_id].push(h);
-            });
-        }
-
-        const { data: letters } = await supabase.from('letters').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(10);
-        const { data: materials } = await supabase.from('material_incomes').select('*, material_income_items(*)').eq('project_id', projectId).order('created_at', { ascending: false }).limit(10);
-        const { data: issues } = await supabase.from('project_issues').select('*').eq('project_id', projectId).in('status', ['open','in_progress']).order('created_at', { ascending: false });
-
+        if (!project) { c.innerHTML = '<p>Объект не найден</p>'; return; }
         document.getElementById('page-title').textContent = '🏗️ ' + project.name;
 
-        let ganttRows = '', totalShiftDays = 0;
-        axes.forEach((ax, axIndex) => {
-            const stages = stagesMap[ax.id] || [];
-            const history = historyMap[ax.id] || [];
-            const avgProgress = stages.length > 0 ? Math.round(stages.reduce((s, st) => s + (st.progress || 0), 0) / stages.length) : 0;
-            const allCompleted = stages.length > 0 && stages.every(s => s.status === 'completed');
-            let totalShift = 0;
-            history.forEach(h => { const m = (h.comment || '').match(/\+(\d+)\s*дн/); if (m) totalShift += parseInt(m[1]); });
-            totalShiftDays += totalShift;
-            let shiftBadge = '';
-            if (totalShift > 15) shiftBadge = '<span class="tag tag-red">🔴 +' + totalShift + 'дн</span>';
-            else if (totalShift > 5) shiftBadge = '<span class="tag tag-yellow">🟠 +' + totalShift + 'дн</span>';
-            else if (totalShift > 0) shiftBadge = '<span class="tag tag-blue">🟡 +' + totalShift + 'дн</span>';
-            const barClass = allCompleted ? 'green' : totalShift > 15 ? 'red' : totalShift > 5 ? 'yellow' : avgProgress >= 50 ? 'blue' : 'yellow';
-            const statusTag = allCompleted ? '<span class="tag tag-green">✅</span>' : totalShift > 15 ? '<span class="tag tag-red">🔴</span>' : totalShift > 5 ? '<span class="tag tag-yellow">🟠</span>' : '<span class="tag tag-blue">🔵</span>';
-            const axisId = 'axis-' + axIndex;
-
-            ganttRows += `<tr style="cursor:pointer;" onclick="toggleAxisDetail('${axisId}')">
-                <td>${statusTag} <b>${escapeHtml(ax.name)}</b></td><td>${formatDate(ax.plan_start)}</td><td>${formatDate(ax.plan_end)}</td>
-                <td><div class="gantt-bar-wrap"><div class="gantt-bar ${barClass}" style="width:${avgProgress}%;">${avgProgress}%</div></div></td>
-                <td>${stages.length} эт.</td><td>${shiftBadge || '—'}</td><td><span id="${axisId}-arrow">▸</span></td></tr>
-            <tr id="${axisId}" class="hidden"><td colspan="7" style="background:#F8FAFC;padding:16px;">
-                <div style="font-size:12px;line-height:1.8;">
-                                        <b>📅 Даты:</b><br>
-                    Начало: <b>${formatDate(ax.plan_start)}</b><br>
-                    План завершения: <b>${formatDate(ax.plan_end)}</b><br>
-                    Факт завершения: ${allCompleted ? '<b style="color:var(--success);">' + formatDate(ax.plan_end) + '</b>' : '<b style="color:var(--danger);">Не завершено</b>'}<br>
-                    ${totalShift > 0 ? '⏱ Общий сдвиг: <b style="color:var(--danger);">+' + totalShift + ' дн.</b><br>' : ''}
-                    ${history.length > 0 ? `<br><b>📅 История переносов:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Дата</th><th>Сдвиг</th><th>Причина</th><th>Новая дата</th><th>Кто</th></tr></thead><tbody>${history.map(h => { const m = (h.comment||'').match(/(\d+)\s*дн/); const days = m ? m[1] : '?'; const reason = (h.comment||'').replace(/\|.*/,'').replace('Сдвиг:','').trim(); return `<tr><td>${formatDate(h.changed_at)}</td><td>+${days} дн.</td><td>${escapeHtml(reason)}</td><td>${formatDate(h.new_end_date||'')}</td><td>${escapeHtml(h.changed_by_name||'—')}</td></tr>`; }).join('')}</tbody></table>` : ''}
-                    <br><b>📋 Этапы работ:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Этап</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Статус</th><th>Бригада</th></tr></thead><tbody>${stages.length > 0 ? stages.map(st => `<tr><td>${escapeHtml(st.sub_axis_name || st.stage_id || '—')}</td><td>${formatDate(st.plan_start)}</td><td>${formatDate(st.plan_end)}</td><td><div class="gantt-bar-wrap" style="width:80px;display:inline-block;"><div class="gantt-bar ${(st.progress||0) >= 100 ? 'green' : (st.progress||0) >= 50 ? 'blue' : 'yellow'}" style="width:${st.progress||0}%;">${st.progress||0}%</div></div></td><td><span class="tag ${st.status==='completed'?'tag-green':st.status==='in_progress'?'tag-blue':'tag-yellow'}">${st.status==='completed'?'✅':st.status==='in_progress'?'🔵':'⏳'}</span></td><td>${escapeHtml(st.brigades?.name||'—')}</td></tr>`).join('') : '<tr><td colspan="6">Нет этапов</td></tr>'}</tbody></table></div></td></tr>`;
-        });
-
-        let lettersHtml = '';
-        (letters || []).forEach(l => {
-            lettersHtml += `<tr style="cursor:pointer;" onclick="alert('Письмо: ${escapeHtml(l.letter_number_full||'')}\\n\\nПричина: ${escapeHtml(l.delay_description || l.delay_reason || '—')}\\n\\nСдвиг: +${l.delay_days||0} дн.')"><td>${escapeHtml(l.letter_number_full || '№'+l.letter_number+'/LGC-ERP')}</td><td>${formatDate(l.letter_date)}</td><td>${escapeHtml((l.delay_description || l.delay_reason || '').substring(0, 60))}</td><td>+${l.delay_days||0} дн.</td><td><span class="tag ${l.status==='sent_to_customer'?'tag-green':'tag-yellow'}">${l.status==='sent_to_customer'?'✅ Отправлено':'⏳ Черновик'}</span></td></tr>`;
-        });
-
-        let materialsHtml = '';
-        (materials || []).forEach(m => {
-            const items = m.material_income_items || [];
-            materialsHtml += `<tr><td>${formatDate(m.created_at)}</td><td>${items.map(i => escapeHtml(i.name||'')).join(', ')}</td><td>${items.reduce((s,i) => s + (i.quantity||0), 0)}</td><td>${formatMoney(m.total_amount||0)}</td></tr>`;
-        });
-
-        let issuesHtml = '';
-        (issues || []).forEach(issue => {
-            const sc = issue.status === 'overdue' ? 'tag-red' : issue.status === 'in_progress' ? 'tag-blue' : 'tag-yellow';
-            const sl = issue.status === 'overdue' ? '🔴 Просрочена' : issue.status === 'in_progress' ? '🔵 В работе' : '🟡 Открыта';
-            issuesHtml += `<tr><td><span class="tag ${sc}">${sl}</span></td><td><b>${escapeHtml(issue.title)}</b></td><td>${escapeHtml((issue.description||'').substring(0, 80))}</td><td>${formatDate(issue.created_at)}</td></tr>`;
-        });
-
-        container.innerHTML = `
-            <button onclick="loadPage('objects')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к объектам</button>
-            <div class="kpi-grid">
-                <div class="kpi-card"><div style="font-size:24px;">📋</div><div class="kpi-value">${formatMoney(project.contract_price)}</div><div class="kpi-label">Сумма договора</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">📅</div><div class="kpi-value" style="font-size:14px;">${formatDate(project.start_date)} — ${formatDate(project.end_date_contract)}</div><div class="kpi-label">Сроки</div></div>
-                            <div class="kpi-card"><div style="font-size:24px;">🏁</div><div class="kpi-value" style="font-size:14px;color:${axes.every(a => a.status === 'completed') && axes.length > 0 ? 'var(--success)' : 'var(--warning)'};">${axes.length > 0 ? formatDate(axes.reduce((max, a) => new Date(a.plan_end) > new Date(max) ? a.plan_end : max, axes[0].plan_end)) : '—'}</div><div class="kpi-label">Завершение по ГПР</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">⚠️</div><div class="kpi-value" style="color:${(issues||[]).length > 0 ? 'var(--danger)' : 'var(--text)'};">${(issues||[]).length}</div><div class="kpi-label">Проблем</div></div>
-            </div>
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h2 style="margin:0;">🏗️ ${escapeHtml(project.name)}</h2>${totalShiftDays > 0 ? '<span class="tag tag-red">⚠️ Общий сдвиг: +' + totalShiftDays + ' дн.</span>' : ''}</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
-                    <div><span style="color:var(--text-secondary);">Адрес:</span> <b>${escapeHtml(project.address||'—')}</b></div>
-                    <div><span style="color:var(--text-secondary);">Заказчик:</span> <b>${escapeHtml(project.customer_company_name||'—')}</b></div>
-                    <div><span style="color:var(--text-secondary);">Договор:</span> <b>${escapeHtml(project.contract_number_customer||'—')} ${project.contract_date_customer ? 'от '+formatDate(project.contract_date_customer) : ''}</b></div>
-                    <div><span style="color:var(--text-secondary);">Руководитель:</span> <b>${escapeHtml(project.manager_name||'—')}</b></div>
-                </div>
-                                ${Object.keys(brigadesMap).length > 0 ? '<div style="margin-top:12px;"><span style="color:var(--text-secondary);font-size:13px;">👷 Бригады: </span>' + Object.values(brigadesMap).map(n => '<span class="tag tag-blue" style="margin:2px;">'+escapeHtml(n)+'</span>').join('') + '</div>' : ''}
-            </div>
-            <div class="card"><h2>📊 ГПР</h2><div class="table-wrap"><table><thead><tr><th>Ось</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Этапы</th><th>Сдвиг</th><th></th></tr></thead><tbody>${ganttRows || '<tr><td colspan="7">Нет осей</td></tr>'}</tbody></table></div></div>
-            ${issuesHtml ? `<div class="card"><h2>⚠️ Проблемы (${(issues||[]).length})</h2><div class="table-wrap"><table><thead><tr><th>Статус</th><th>Название</th><th>Описание</th><th>Дата</th></tr></thead><tbody>${issuesHtml}</tbody></table></div></div>` : ''}
-            ${lettersHtml ? `<div class="card"><h2>✉️ Письма (${(letters||[]).length})</h2><div class="table-wrap"><table><thead><tr><th>Номер</th><th>Дата</th><th>Причина</th><th>Сдвиг</th><th>Статус</th></tr></thead><tbody>${lettersHtml}</tbody></table></div></div>` : ''}
-            ${materialsHtml ? `<div class="card"><h2>📦 Материалы</h2><div class="table-wrap"><table><thead><tr><th>Дата</th><th>Наименование</th><th>Кол-во</th><th>Сумма</th></tr></thead><tbody>${materialsHtml}</tbody></table></div></div>` : ''}`;
+        currentObjectTab = 'info';
+        renderObjectTabs(c, project);
     };
 
-    window.toggleAxisDetail = function(axisId) {
-        const row = document.getElementById(axisId);
-        const arrow = document.getElementById(axisId + '-arrow');
-        if (row && arrow) { row.classList.toggle('hidden'); arrow.textContent = row.classList.contains('hidden') ? '▸' : '▾'; }
-    };
-
-    // ===== ЗАДАЧИ (ПОЛНАЯ ЗАМЕНА) =====
-
-let tasksFilter = { status: 'all', priority: 'all', project: 'all' };
-
-async function loadTasksPage(container) {
-    let q = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false }).limit(100);
-    if (currentUser.role !== 'manager') q = q.or(`created_by.eq.${currentUser.id},responsible_ids.cs.{${currentUser.id}}`);
-
-    const { data: tasks } = await q;
-    const allTasks = tasks || [];
-
-    // KPI
-    const pendingCount = allTasks.filter(t => t.status === 'pending').length;
-    const inProgressCount = allTasks.filter(t => t.status === 'in_progress').length;
-    const completedCount = allTasks.filter(t => t.status === 'completed').length;
-    const overdueCount = allTasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
-
-    // Уникальные объекты для фильтра
-    const projectSet = new Set();
-    allTasks.forEach(t => { if (t.projects?.name) projectSet.add(t.projects.name); });
-    const projectOptions = ['<option value="all">Все объекты</option>'];
-    projectSet.forEach(name => { projectOptions.push(`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`); });
-
-    container.innerHTML = `
-        <!-- KPI КЛИКАБЕЛЬНЫЕ -->
-        <div class="kpi-grid" style="margin-bottom:16px;">
-            <div class="kpi-card" style="cursor:pointer;" onclick="setTaskFilter('status','pending')">
-                <div style="font-size:24px;">⏳</div>
-                <div class="kpi-value" style="color:var(--warning);">${pendingCount}</div>
-                <div class="kpi-label">Ожидают</div>
+    function renderObjectTabs(c, project) {
+        c.innerHTML = `
+            <button onclick="loadPage('objects')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:12px;color:var(--text-secondary);">← К объектам</button>
+            <div class="tabs-row">
+                <button class="tab-btn active" data-otab="info">📋 Инфо</button>
+                <button class="tab-btn" data-otab="gpr">📊 ГПР</button>
+                <button class="tab-btn" data-otab="expenses">📤 Расходы</button>
+                <button class="tab-btn" data-otab="materials">📦 Материалы</button>
+                <button class="tab-btn" data-otab="letters">✉️ Письма</button>
             </div>
-            <div class="kpi-card" style="cursor:pointer;" onclick="setTaskFilter('status','in_progress')">
-                <div style="font-size:24px;">🔵</div>
-                <div class="kpi-value" style="color:var(--info);">${inProgressCount}</div>
-                <div class="kpi-label">В работе</div>
-            </div>
-            <div class="kpi-card" style="cursor:pointer;" onclick="setTaskFilter('status','completed')">
-                <div style="font-size:24px;">✅</div>
-                <div class="kpi-value" style="color:var(--success);">${completedCount}</div>
-                <div class="kpi-label">Готово</div>
-            </div>
-            <div class="kpi-card" style="cursor:pointer;" onclick="setTaskFilter('status','overdue')">
-                <div style="font-size:24px;">⚠️</div>
-                <div class="kpi-value" style="color:var(--danger);">${overdueCount}</div>
-                <div class="kpi-label">Просрочено</div>
-            </div>
-        </div>
+            <div id="otab-info" class="tab-content active"></div>
+            <div id="otab-gpr" class="tab-content"></div>
+            <div id="otab-expenses" class="tab-content"></div>
+            <div id="otab-materials" class="tab-content"></div>
+            <div id="otab-letters" class="tab-content"></div>
+        `;
 
-        <!-- ФИЛЬТРЫ -->
-        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-            <select id="task-filter-status" class="form-input" style="flex:1;min-width:120px;padding:8px;" onchange="setTaskFilter('status', this.value)">
-                <option value="all">Все статусы</option>
-                <option value="pending">⏳ Ожидают</option>
-                <option value="in_progress">🔵 В работе</option>
-                <option value="completed">✅ Готово</option>
-                <option value="overdue">⚠️ Просрочено</option>
-            </select>
-            <select id="task-filter-project" class="form-input" style="flex:1;min-width:140px;padding:8px;" onchange="setTaskFilter('project', this.value)">
-                ${projectOptions.join('')}
-            </select>
-            <select id="task-filter-priority" class="form-input" style="flex:1;min-width:120px;padding:8px;" onchange="setTaskFilter('priority', this.value)">
-                <option value="all">Все приоритеты</option>
-                <option value="high">🔴 Высокий</option>
-                <option value="medium">🟡 Средний</option>
-                <option value="low">🟢 Низкий</option>
-            </select>
-        </div>
-
-        <!-- КНОПКА СОЗДАТЬ -->
-        <button class="btn btn-primary btn-sm-compact" onclick="openCreateTaskForm()" style="margin-bottom:16px;">➕ Создать задачу</button>
-
-        <!-- СПИСОК ЗАДАЧ -->
-        <div id="tasks-list-container"></div>
-    `;
-
-    renderFilteredTasks(allTasks);
-}
-
-function renderFilteredTasks(allTasks) {
-    let filtered = allTasks;
-
-    if (tasksFilter.status === 'pending') filtered = filtered.filter(t => t.status === 'pending');
-    else if (tasksFilter.status === 'in_progress') filtered = filtered.filter(t => t.status === 'in_progress');
-    else if (tasksFilter.status === 'completed') filtered = filtered.filter(t => t.status === 'completed');
-    else if (tasksFilter.status === 'overdue') filtered = filtered.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed');
-
-    if (tasksFilter.priority !== 'all') filtered = filtered.filter(t => t.priority === tasksFilter.priority);
-    if (tasksFilter.project !== 'all') filtered = filtered.filter(t => t.projects?.name === tasksFilter.project);
-
-    const container = document.getElementById('tasks-list-container');
-    if (!container) return;
-
-    if (!filtered.length) {
-        container.innerHTML = '<div class="card"><p style="text-align:center;color:var(--text-secondary);padding:20px;">Нет задач</p></div>';
-        return;
-    }
-
-    let html = '<div class="task-card-grid">';
-    filtered.forEach(t => {
-        const pc = t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢';
-        const sc = t.status === 'completed' ? 'tag-green' : t.status === 'in_progress' ? 'tag-blue' : 'tag-yellow';
-        const sl = t.status === 'completed' ? '✅' : t.status === 'in_progress' ? '🔵' : '⏳';
-        const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
-
-        html += `
-            <div class="task-card-item ${isOverdue ? 'overdue' : ''}" onclick="viewTaskDetail('${t.id}')">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span class="task-priority">${pc}</span>
-                    <span class="tag ${sc}">${sl} ${t.status==='completed'?'Сделано':t.status==='in_progress'?'В работе':'Ожидает'}</span>
-                </div>
-                <div class="task-name">${escapeHtml(t.title)}</div>
-                <div class="task-info">
-                    <span>🏗️ ${escapeHtml(t.projects?.name || '—')}</span>
-                    ${t.responsible_names?.length ? '<span>👤 ' + t.responsible_names.slice(0, 2).join(', ') + (t.responsible_names.length > 2 ? '...' : '') + '</span>' : ''}
-                </div>
-                <div class="task-info">
-                    <span>📅 ${formatDate(t.created_at)}</span>
-                    ${t.deadline ? '<span style="color:' + (isOverdue ? 'var(--danger)' : 'var(--text-secondary)') + ';">⏰ ' + formatDate(t.deadline) + '</span>' : ''}
-                </div>
-            </div>`;
-    });
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-window.setTaskFilter = function(type, value) {
-    tasksFilter[type] = value;
-    // Обновить выпадающие списки
-    if (type === 'status') {
-        const sel = document.getElementById('task-filter-status');
-        if (sel) sel.value = value;
-    }
-    if (type === 'project') {
-        const sel = document.getElementById('task-filter-project');
-        if (sel) sel.value = value;
-    }
-    if (type === 'priority') {
-        const sel = document.getElementById('task-filter-priority');
-        if (sel) sel.value = value;
-    }
-    // Перезагрузить список
-    loadTasksPage(document.getElementById('page-body'));
-};
-
-// ===== СОЗДАНИЕ ЗАДАЧИ =====
-window.openCreateTaskForm = async function() {
-    const container = document.getElementById('page-body');
-    
-    const { data: projects } = await supabase.from('projects').select('id,name').order('name');
-    const { data: users } = await supabase.from('users').select('id,full_name').order('full_name');
-
-    container.innerHTML = `
-        <button onclick="loadPage('tasks')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к задачам</button>
-        <div class="card">
-            <h2>➕ Новая задача</h2>
-            <div class="form-group"><label class="form-label">Название *</label><input type="text" id="ct-title" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Описание</label><textarea id="ct-desc" class="form-input" rows="3"></textarea></div>
-            <div class="form-group"><label class="form-label">🏗️ Объект</label><select id="ct-project" class="form-input"><option value="">—</option>${(projects||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">⚡ Приоритет</label><select id="ct-priority" class="form-input"><option value="low">🟢 Низкий</option><option value="medium" selected>🟡 Средний</option><option value="high">🔴 Высокий</option></select></div>
-            <div class="form-group"><label class="form-label">⏰ Дедлайн</label><input type="date" id="ct-deadline" class="form-input"></div>
-            <div class="form-group"><label class="form-label">👤 Ответственный</label><select id="ct-responsible" class="form-input">${(users||[]).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">📎 Файлы</label><input type="file" id="ct-files" class="form-input" multiple></div>
-            <div style="display:flex;gap:8px;">
-    <button class="btn btn-primary btn-sm-compact" id="save-ct-btn">📤 Создать</button>
-    <button class="btn btn-outline btn-sm-compact" onclick="loadPage('tasks')">Отмена</button>
-</div>
-        </div>
-    `;
-
-    document.getElementById('save-ct-btn').addEventListener('click', async () => {
-        const title = document.getElementById('ct-title').value.trim();
-        if (!title) { alert('Введите название'); return; }
-        const respId = document.getElementById('ct-responsible').value;
-        const respName = document.getElementById('ct-responsible').selectedOptions[0]?.text || '';
-        const files = document.getElementById('ct-files').files || [];
-        const fileUrls = [];
-        
-        for (const file of files) {
-            const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-            const fileName = 'tasks/' + Date.now() + '_' + cleanName;
-            const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
-            if (!uploadError) {
-                const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-                fileUrls.push({ name: file.name, url: urlData.publicUrl });
-            }
-        }
-
-        const { error } = await supabase.from('custom_tasks').insert({
-            project_id: document.getElementById('ct-project').value || null,
-            title,
-            description: document.getElementById('ct-desc').value,
-            priority: document.getElementById('ct-priority').value,
-            deadline: document.getElementById('ct-deadline').value || null,
-            responsible_ids: [respId],
-            responsible_names: [respName],
-            status: 'pending',
-            type: 'task',
-            created_by: currentUser.id,
-            created_by_name: currentUser.full_name,
-            created_at: new Date().toISOString(),
-            files: fileUrls
-        });
-
-        if (error) { alert('Ошибка: ' + error.message); return; }
-        loadPage('tasks');
-    });
-};
-
-// ===== ДЕТАЛИ ЗАДАЧИ =====
-window.viewTaskDetail = async function(taskId) {
-    const container = document.getElementById('page-body');
-    container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
-    document.getElementById('page-title').textContent = '📋 Задача';
-
-    const { data: t } = await supabase.from('custom_tasks').select('*, projects(name)').eq('id', taskId).single();
-    if (!t) { container.innerHTML = '<div class="card"><p>Задача не найдена</p></div>'; return; }
-
-    const { data: comments } = await supabase.from('task_comments').select('*').eq('task_id', taskId).order('created_at', { ascending: true });
-    const { data: users } = await supabase.from('users').select('id,full_name').order('full_name');
-
-    const priorityEmoji = t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢';
-    const priorityText = t.priority === 'high' ? 'Высокий' : t.priority === 'medium' ? 'Средний' : 'Низкий';
-    const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
-
-    container.innerHTML = `
-        <button onclick="loadPage('tasks')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к задачам</button>
-        
-        <div style="display:flex;flex-direction:column;gap:12px;">
-            <div class="card" style="${isOverdue ? 'border-left:4px solid var(--danger);' : ''}">
-                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
-                    <span class="tag ${t.status==='completed'?'tag-green':t.status==='in_progress'?'tag-blue':'tag-yellow'}">${t.status==='completed'?'✅ Сделано':t.status==='in_progress'?'🔵 В работе':'⏳ Ожидает'}</span>
-                    <span style="font-size:12px;">${priorityEmoji} ${priorityText}</span>
-                </div>
-                <h2 style="margin:0 0 8px 0;">${escapeHtml(t.title)}</h2>
-                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">${escapeHtml(t.description || 'Нет описания')}</p>
-                ${t.projects?.name ? `<div style="font-size:12px;">🏗️ ${escapeHtml(t.projects.name)}</div>` : ''}
-                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">
-                    👤 ${t.created_by_name || '—'} | 📅 ${formatDate(t.created_at)}
-                    ${t.deadline ? ` | ⏰ Дедлайн: <b style="color:${isOverdue ? 'var(--danger)' : 'var(--text)'};">${formatDate(t.deadline)}</b>` : ''}
-                </div>
-            </div>
-
-            <div class="card">
-                <div style="font-weight:600;margin-bottom:8px;">👥 Ответственные</div>
-                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-                    ${(t.responsible_names || []).map((name, idx) => `
-                        <span style="background:#F1F5F9;padding:4px 10px;border-radius:20px;font-size:12px;display:flex;align-items:center;gap:6px;">
-                            👤 ${escapeHtml(name)}
-                            <span onclick="removeTaskResponsible('${t.id}', ${idx})" style="cursor:pointer;color:var(--danger);font-weight:bold;">✕</span>
-                        </span>
-                    `).join('')}
-                </div>
-                <select class="form-input" style="font-size:12px;padding:8px;" onchange="addTaskResponsible('${t.id}', this.value)">
-                    <option value="">+ Добавить</option>
-                    ${(users || []).filter(u => !(t.responsible_ids || []).includes(u.id)).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}
-                </select>
-            </div>
-
-            <div class="card">
-                <div style="font-weight:600;margin-bottom:8px;">📊 Статус</div>
-               <div style="display:flex;gap:6px;">
-    <button class="btn btn-sm-compact ${t.status==='pending'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','pending')">⏳ Ожидает</button>
-    <button class="btn btn-sm-compact ${t.status==='in_progress'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','in_progress')">🔵 В работе</button>
-    <button class="btn btn-sm-compact ${t.status==='completed'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','completed')">✅ Сделано</button>
-</div>
-            </div>
-
-            <div class="card">
-                <div style="display:flex;gap:8px;">
-    <input type="date" id="task-deadline-input" class="form-input" value="${t.deadline || ''}" style="flex:1;max-width:200px;">
-    <button class="btn btn-primary btn-sm-compact" onclick="updateTaskDeadline('${t.id}')">💾</button>
-</div>
-            </div>
-
-            <div class="card">
-                <div style="font-weight:600;margin-bottom:12px;">💬 Комментарии (${(comments||[]).length})</div>
-                <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:300px;overflow-y:auto;">
-                    ${(comments||[]).length === 0 ? '<p style="text-align:center;color:var(--text-secondary);font-size:12px;">Нет комментариев</p>' : ''}
-                    ${(comments||[]).map(c => `
-                        <div style="background:#F8FAFC;padding:10px;border-radius:10px;">
-                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                                <span style="font-weight:600;font-size:12px;">👤 ${escapeHtml(c.author_name||'—')}</span>
-                                <span style="font-size:10px;color:var(--text-secondary);">${formatDate(c.created_at)}</span>
-                            </div>
-                            <div style="font-size:13px;">${escapeHtml(c.text)}</div>
-                            ${(c.files||[]).length > 0 ? `<div style="margin-top:6px;">${c.files.map(f => `<a href="${f.url}" target="_blank" class="tag tag-blue" style="text-decoration:none;font-size:10px;">📎 ${escapeHtml(f.name)}</a>`).join(' ')}</div>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-                <div style="border-top:1px solid var(--border);padding-top:10px;">
-                    <textarea id="new-comment-text" class="form-input" rows="2" placeholder="Написать комментарий..." style="font-size:13px;margin-bottom:8px;"></textarea>
-                    <div style="margin-bottom:8px;">
-                        <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">📎 Прикрепить файл</label>
-                        <input type="file" id="new-comment-file" class="form-input" style="font-size:12px;">
-                    </div>
-                   <button class="btn btn-primary btn-sm-compact" onclick="addTaskComment('${t.id}')">📤 Отправить</button>
-                </div>
-            </div>
-
-            <button class="btn btn-danger btn-sm-compact" onclick="deleteTaskAndGoBack('${t.id}')">🗑️ Удалить</button>
-        </div>
-    `;
-};
-
-// ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
-
-window.updateTaskField = async function(taskId, field, value) {
-    await supabase.from('custom_tasks').update({ [field]: value, updated_at: new Date().toISOString() }).eq('id', taskId);
-    viewTaskDetail(taskId);
-};
-
-window.updateTaskDeadline = async function(taskId) {
-    const deadline = document.getElementById('task-deadline-input')?.value;
- await supabase.from('custom_tasks').update({ deadline: deadline || null, updated_at: new Date().toISOString() }).eq('id', taskId);
-viewTaskDetail(taskId);
-};
-
-window.addTaskResponsible = async function(taskId, userId) {
-    if (!userId) return;
-    const { data: task } = await supabase.from('custom_tasks').select('responsible_ids, responsible_names').eq('id', taskId).single();
-    if (!task) return;
-    const { data: user } = await supabase.from('users').select('full_name').eq('id', userId).single();
-    if (!user) return;
-    const ids = [...(task.responsible_ids || []), userId];
-    const names = [...(task.responsible_names || []), user.full_name];
-    await supabase.from('custom_tasks').update({ responsible_ids: ids, responsible_names: names, updated_at: new Date().toISOString() }).eq('id', taskId);
-    viewTaskDetail(taskId);
-};
-
-window.removeTaskResponsible = async function(taskId, idx) {
-    const { data: task } = await supabase.from('custom_tasks').select('responsible_ids, responsible_names').eq('id', taskId).single();
-    if (!task) return;
-    const ids = (task.responsible_ids || []).filter((_, i) => i !== idx);
-    const names = (task.responsible_names || []).filter((_, i) => i !== idx);
-    await supabase.from('custom_tasks').update({ responsible_ids: ids, responsible_names: names, updated_at: new Date().toISOString() }).eq('id', taskId);
-    viewTaskDetail(taskId);
-};
-
-window.addTaskComment = async function(taskId) {
-    const textEl = document.getElementById('new-comment-text');
-    const fileEl = document.getElementById('new-comment-file');
-    const text = textEl?.value?.trim();
-    if (!text) { alert('Введите текст комментария'); return; }
-
-    const files = [];
-    if (fileEl?.files[0]) {
-        const file = fileEl.files[0];
-        const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const fileName = 'comments/' + Date.now() + '_' + cleanName;
-        const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
-        if (!uploadError) {
-            const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-            files.push({ name: file.name, url: urlData.publicUrl });
-        }
-    }
-
-    await supabase.from('task_comments').insert({
-        task_id: taskId,
-        author_id: currentUser?.id,
-        author_name: currentUser?.full_name || 'Пользователь',
-        text: text,
-        files: files,
-        created_at: new Date().toISOString()
-    });
-
-    textEl.value = '';
-    if (fileEl) fileEl.value = '';
-    viewTaskDetail(taskId);
-};
-
-window.deleteTaskAndGoBack = async function(taskId) {
-    if (!confirm('⚠️ Удалить задачу? Это нельзя отменить.')) return;
-    await supabase.from('custom_tasks').delete().eq('id', taskId);
-    loadPage('tasks');
-};
-// ===== ФИНАНСЫ (ПОЛНАЯ ЗАМЕНА) =====
-
-// ===== ФИНАНСЫ =====
-let financeFilter = { project: 'all', period: 'month', dateFrom: '', dateTo: '' };
-
-async function loadFinancesPage(container) {
-    const now = new Date();
-    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-    const monthLabel = months[now.getMonth()] + ' ' + now.getFullYear();
-
-    // Загружаем проекты
-    let pq = supabase.from('projects').select('id,name').order('name');
-    if (currentUser.role !== 'manager') pq = pq.eq('responsible_worker_id', currentUser.id);
-    const { data: projects } = await pq;
-    const allProjects = projects || [];
-
-    // Загружаем данные
-    let incQ = supabase.from('incomes').select('*, projects(name)').order('date', { ascending: false });
-    let expQ = supabase.from('expenses').select('*, projects(name)').order('date', { ascending: false });
-    let ordQ = supabase.from('work_orders').select('*, projects(name), brigades(name)').order('created_at', { ascending: false });
-    let advQ = supabase.from('advances').select('*, projects(name), brigades(name)').order('created_at', { ascending: false });
-
-    if (currentUser.role !== 'manager') {
-        const pids = allProjects.map(p => p.id);
-        if (pids.length) { incQ = incQ.in('project_id', pids); expQ = expQ.in('project_id', pids); ordQ = ordQ.in('project_id', pids); advQ = advQ.in('project_id', pids); }
-    }
-    if (financeFilter.project !== 'all') {
-        incQ = incQ.eq('project_id', financeFilter.project);
-        expQ = expQ.eq('project_id', financeFilter.project);
-        ordQ = ordQ.eq('project_id', financeFilter.project);
-        advQ = advQ.eq('project_id', financeFilter.project);
-    }
-
-    const [incR, expR, ordR, advR] = await Promise.all([incQ, expQ, ordQ, advQ]);
-    const incomes = incR.data || [];
-    const expenses = expR.data || [];
-    const workOrders = ordR.data || [];
-    const advances = advR.data || [];
-
-    // Период
-    let dateFrom, dateTo;
-    if (financeFilter.period === 'ytd') {
-        dateFrom = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
-        dateTo = now.toISOString().split('T')[0];
-    } else if (financeFilter.period === 'custom' && financeFilter.dateFrom && financeFilter.dateTo) {
-        dateFrom = financeFilter.dateFrom;
-        dateTo = financeFilter.dateTo;
-    } else {
-        dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        dateTo = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-    }
-
-    const inRange = (d) => d >= dateFrom && d <= dateTo;
-    const filterData = (arr, field = 'date') => arr.filter(x => inRange(x[field] || x.created_at?.split('T')[0]));
-
-    const fIncomes = filterData(incomes);
-    const fExpenses = filterData(expenses);
-    const fOrders = filterData(workOrders, 'created_at');
-    const fAdvances = filterData(advances, 'created_at');
-
-    // KPI
-    const totalIncome = fIncomes.filter(i => i.status === 'paid').reduce((s, i) => s + (i.amount || 0), 0);
-    const totalPlanIncome = fIncomes.filter(i => i.status === 'pending').reduce((s, i) => s + (i.amount || 0), 0);
-    const totalExpenseAndPayouts = fExpenses.filter(e => e.payment_status === 'paid').reduce((s, e) => s + (e.amount || 0), 0) +
-        [...fOrders.filter(o => o.payment_status === 'paid'), ...fAdvances.filter(a => a.status === 'paid')].reduce((s, x) => s + (x.amount || x.total_amount || 0), 0);
-
-    // План на неделю
-    const weekEnd = new Date(now);
-    weekEnd.setDate(now.getDate() + 7);
-    const weekEndStr = weekEnd.toISOString().split('T')[0];
-    const todayStr = now.toISOString().split('T')[0];
-
-    // Берём ВСЕ неоплаченные (включая просроченные) + на неделю вперёд
-const weekIncomes = incomes.filter(i => i.status === 'pending');
-const weekExpenses = expenses.filter(e => e.payment_status !== 'paid');
-const weekOrders = workOrders.filter(o => o.payment_status !== 'paid');
-const weekAdvances = advances.filter(a => a.status !== 'paid');
-
-    const weekIncomeTotal = weekIncomes.reduce((s, i) => s + (i.amount || 0), 0);
-    const weekExpenseTotal = weekExpenses.reduce((s, e) => s + (e.amount || 0), 0);
-    const weekPayoutTotal = [...weekOrders, ...weekAdvances].reduce((s, x) => s + (x.amount || x.total_amount || 0), 0);
-
-    // Планирование по датам
-    const dateMap = {};
-    const addToDate = (date, type, amount) => {
-        if (!date) return;
-        if (!dateMap[date]) dateMap[date] = { income: 0, expense: 0, payout: 0 };
-        dateMap[date][type] += amount;
-    };
-    fIncomes.forEach(i => addToDate(i.date, 'income', i.amount || 0));
-    fExpenses.forEach(e => addToDate(e.date, 'expense', e.amount || 0));
-    fOrders.forEach(o => addToDate(o.payment_date || o.created_at?.split('T')[0], 'payout', o.total_amount || 0));
-    fAdvances.forEach(a => addToDate(a.payment_date || a.created_at?.split('T')[0], 'payout', a.amount || 0));
-
-    let dateSumIncome = 0, dateSumExpense = 0, dateSumPayout = 0;
-    const dateRows = Object.entries(dateMap).sort((a, b) => a[0].localeCompare(b[0])).map(([date, vals]) => {
-        dateSumIncome += vals.income;
-        dateSumExpense += vals.expense;
-        dateSumPayout += vals.payout;
-       
-  return `<tr>
-    <td>${formatDate(date)}</td>
-    <td class="text-success">${vals.income > 0 ? '+' + vals.income.toLocaleString() + ' ₸' : '—'}</td>
-    <td class="text-danger">${vals.expense > 0 ? '-' + vals.expense.toLocaleString() + ' ₸' : '—'}</td>
-    <td class="text-warning">${vals.payout > 0 ? '-' + vals.payout.toLocaleString() + ' ₸' : '—'}</td>
-</tr>`;
-    }).join('');
-
-    // Объекты
-    const projectFinances = {};
-    allProjects.forEach(p => {
-        const pInc = incomes.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s, i) => s + (i.amount || 0), 0);
-        const pExp = expenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s, e) => s + (e.amount || 0), 0);
-        const pPay = [...workOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...advances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s, x) => s + (x.amount || x.total_amount || 0), 0);
-        projectFinances[p.id] = { name: p.name, income: pInc, expense: pExp, payout: pPay, balance: pInc - pExp - pPay };
-    });
-
-    const projectRows = Object.values(projectFinances).map(p => `
-        <tr style="cursor:pointer;" onclick="alert('${escapeHtml(p.name)}\\nПриход: ${p.income.toLocaleString()} ₸\\nРасходы: ${p.expense.toLocaleString()} ₸\\nВыплаты: ${p.payout.toLocaleString()} ₸\\nСальдо: ${p.balance.toLocaleString()} ₸')">
-            <td><b>${escapeHtml(p.name)}</b></td>
-            <td class="text-success">${p.income.toLocaleString()} ₸</td>
-            <td class="text-danger">${p.expense.toLocaleString()} ₸</td>
-            <td class="text-warning">${p.payout.toLocaleString()} ₸</td>
-            <td style="font-weight:700;color:${p.balance >= 0 ? 'var(--success)' : 'var(--danger)'};">${p.balance.toLocaleString()} ₸</td>
-        </tr>
-    `).join('');
-
-    const projectOpts = '<option value="all">Все объекты</option>' + allProjects.map(p => `<option value="${p.id}" ${financeFilter.project === p.id ? 'selected' : ''}>${p.name}</option>`).join('');
-
-    container.innerHTML = `
-        <!-- ФИЛЬТР -->
-        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-            <select id="finance-filter-project" class="form-input" style="flex:1;min-width:140px;padding:8px;" onchange="setFinanceFilter('project', this.value)">${projectOpts}</select>
-            <select id="finance-filter-period" class="form-input" style="flex:1;min-width:120px;padding:8px;" onchange="setFinanceFilter('period', this.value)">
-                <option value="month" selected>${monthLabel}</option>
-                <option value="ytd">С начала года</option>
-                <option value="custom">Свой период</option>
-            </select>
-            <div id="custom-period" class="${financeFilter.period === 'custom' ? '' : 'hidden'}" style="display:flex;gap:4px;align-items:center;">
-                <input type="date" id="date-from" class="form-input" style="width:130px;padding:6px;font-size:11px;" value="${financeFilter.dateFrom || dateFrom}" onchange="setFinanceFilter('dateFrom', this.value)">
-                <span>—</span>
-                <input type="date" id="date-to" class="form-input" style="width:130px;padding:6px;font-size:11px;" value="${financeFilter.dateTo || dateTo}" onchange="setFinanceFilter('dateTo', this.value)">
-            </div>
-        </div>
-
-        <!-- KPI -->
-        <div class="kpi-grid">
-            <div class="kpi-card" style="border-left:4px solid var(--success);">
-                <div style="font-size:20px;">💰</div>
-                <div class="kpi-value text-success">${totalIncome.toLocaleString()} ₸</div>
-                <div class="kpi-label">Приход (зашло)</div>
-            </div>
-            <div class="kpi-card" style="border-left:4px solid var(--info);">
-                <div style="font-size:20px;">📥</div>
-                <div class="kpi-value" style="color:var(--info);">${totalPlanIncome.toLocaleString()} ₸</div>
-                <div class="kpi-label">План поступлений</div>
-            </div>
-            <div class="kpi-card" style="border-left:4px solid var(--danger);">
-                <div style="font-size:20px;">💳</div>
-                <div class="kpi-value text-danger">${totalExpenseAndPayouts.toLocaleString()} ₸</div>
-                <div class="kpi-label">Расходы + Выплаты</div>
-            </div>
-            <div class="kpi-card" style="border-left:4px solid var(--gold);">
-                <div style="font-size:20px;">📊</div>
-                <div class="kpi-value" style="color:${totalIncome - totalExpenseAndPayouts >= 0 ? 'var(--success)' : 'var(--danger)'};">${(totalIncome - totalExpenseAndPayouts).toLocaleString()} ₸</div>
-                <div class="kpi-label">Чистый поток</div>
-            </div>
-        </div>
-
-                <!-- ПЛАН НА НЕДЕЛЮ -->
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('week-plan-content')">
-                <h2 style="margin:0;">📅 План на неделю (${formatDate(todayStr)} — ${formatDate(weekEndStr)})</h2>
-                <span id="week-plan-arrow">▾</span>
-            </div>
-            <div id="week-plan-content" style="margin-top:12px;">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                    
-                    <!-- ВЫПЛАТЫ И РАСХОДЫ -->
-                    <div>
-                        <h3 style="font-size:13px;margin-bottom:8px;">📤 Выплаты и расходы</h3>
-                        <div class="table-wrap">
-                            <table style="font-size:11px;">
-                                <thead><tr><th>№</th><th>Тип</th><th>Наименование</th><th>Оплатить до</th><th>Сумма</th></tr></thead>
-                                <tbody>
-                                    ${(() => {
-                                        let rows = '';
-                                        let num = 0;
-                                        let total = 0;
-                                        
-                                        // Расходы
-                                        weekExpenses.forEach(e => {
-                                            num++;
-                                            total += (e.amount || 0);
-                                            const isOverdue = e.planned_payment_date && new Date(e.planned_payment_date) < new Date();
-                                            rows += `<tr style="${isOverdue ? 'background:#FEF2F2;' : ''}">
-                                                <td>${num}</td>
-                                                <td><span class="tag tag-red">📤 Расход</span></td>
-                                                <td>${escapeHtml(e.name)}</td>
-                                                <td style="color:${isOverdue ? 'var(--danger)' : 'var(--text-secondary)'};">
-                                                    ${formatDate(e.planned_payment_date || e.date)}
-                                                    ${isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : ''}
-                                                </td>
-                                                <td class="text-danger">-${(e.amount||0).toLocaleString()} ₸</td>
-                                            </tr>`;
-                                        });
-                                        
-                                        // Наряды
-                                        weekOrders.forEach(o => {
-                                            num++;
-                                            total += (o.total_amount || 0);
-                                            const payDate = o.payment_date || o.created_at?.split('T')[0];
-                                            const isOverdue = payDate && new Date(payDate) < new Date();
-                                            rows += `<tr style="${isOverdue ? 'background:#FEF2F2;' : ''}">
-                                                <td>${num}</td>
-                                                <td><span class="tag tag-yellow">👷 Наряд</span></td>
-                                                <td>${escapeHtml(o.work_type || 'Наряд')} — ${escapeHtml(o.brigades?.name || '')}</td>
-                                                <td style="color:${isOverdue ? 'var(--danger)' : 'var(--text-secondary)'};">
-                                                    ${formatDate(payDate)}
-                                                    ${isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : ''}
-                                                </td>
-                                                <td class="text-danger">-${(o.total_amount||0).toLocaleString()} ₸</td>
-                                            </tr>`;
-                                        });
-                                        
-                                        // Авансы
-                                        weekAdvances.forEach(a => {
-                                            num++;
-                                            total += (a.amount || 0);
-                                            const payDate = a.payment_date || a.created_at?.split('T')[0];
-                                            const isOverdue = payDate && new Date(payDate) < new Date();
-                                            rows += `<tr style="${isOverdue ? 'background:#FEF2F2;' : ''}">
-                                                <td>${num}</td>
-                                                <td><span class="tag tag-blue">💳 Аванс</span></td>
-                                                <td>Аванс — ${escapeHtml(a.brigades?.name || '')}</td>
-                                                <td style="color:${isOverdue ? 'var(--danger)' : 'var(--text-secondary)'};">
-                                                    ${formatDate(payDate)}
-                                                    ${isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : ''}
-                                                </td>
-                                                <td class="text-danger">-${(a.amount||0).toLocaleString()} ₸</td>
-                                            </tr>`;
-                                        });
-                                        
-                                        if (!rows) rows = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Нет данных</td></tr>';
-                                        
-                                        return rows + `<tr style="font-weight:700;background:#F8FAFC;"><td colspan="3">ИТОГО: ${num} операций</td><td></td><td class="text-danger">-${total.toLocaleString()} ₸</td></tr>`;
-                                    })()}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <!-- ПОСТУПЛЕНИЯ -->
-                    <div>
-                        <h3 style="font-size:13px;margin-bottom:8px;">📥 Поступления</h3>
-                        <div class="table-wrap">
-                            <table style="font-size:11px;">
-                                <thead><tr><th>№</th><th>Вид</th><th>От кого</th><th>Ожидаем</th><th>Сумма</th></tr></thead>
-                                <tbody>
-                                    ${(() => {
-                                        let rows = '';
-                                        let num = 0;
-                                        let total = 0;
-                                        
-                                        weekIncomes.forEach(i => {
-                                            num++;
-                                            total += (i.amount || 0);
-                                            const isOverdue = i.date && new Date(i.date) < new Date() && i.status === 'pending';
-                                            rows += `<tr style="${isOverdue ? 'background:#FEF2F2;' : ''}">
-                                                <td>${num}</td>
-                                                <td>${escapeHtml(i.income_type || i.description || 'Поступление')}</td>
-                                                <td>${escapeHtml(i.projects?.customer_company_name || i.projects?.name || '—')}</td>
-                                                <td style="color:${isOverdue ? 'var(--danger)' : 'var(--text-secondary)'};">
-                                                    ${formatDate(i.date)}
-                                                    ${isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : ''}
-                                                </td>
-                                                <td class="text-success">+${(i.amount||0).toLocaleString()} ₸</td>
-                                            </tr>`;
-                                        });
-                                        
-                                        if (!rows) rows = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Нет данных</td></tr>';
-                                        
-                                        return rows + `<tr style="font-weight:700;background:#F8FAFC;"><td colspan="3">ИТОГО: ${num} поступлений</td><td></td><td class="text-success">+${total.toLocaleString()} ₸</td></tr>`;
-                                    })()}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                </div>
-            </div>
-        </div>
-
-        <!-- ГРАФИК -->
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('chart-content')">
-                <h2 style="margin:0;">📊 Приходы и расходы</h2>
-                <span id="chart-arrow">▾</span>
-            </div>
-            <div id="chart-content">
-                <canvas id="finance-chart" height="60" style="margin-top:12px;"></canvas>
-            </div>
-        </div>
-
-        <!-- ПЛАНИРОВАНИЕ ПО ДАТАМ -->
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('date-plan-content')">
-                <h2 style="margin:0;">📅 Планирование по датам</h2>
-                <span id="date-plan-arrow">▾</span>
-            </div>
-            <div id="date-plan-content">
-                <div class="table-wrap" style="margin-top:12px;">
-                    <table>
-                        <thead><tr><th>Дата</th><th>💰 Приход</th><th>📤 Расход</th><th>👷 Выплаты</th></tr></thead>
-                        <tbody>${dateRows || '<tr><td colspan="5">Нет данных</td></tr>'}</tbody>
-                        <tfoot style="font-weight:700;background:#F8FAFC;">
-                            <tr>
-                                <td>ИТОГО</td>
-                                <td class="text-success">+${dateSumIncome.toLocaleString()} ₸</td>
-                                <td class="text-danger">-${dateSumExpense.toLocaleString()} ₸</td>
-                                <td class="text-warning">-${dateSumPayout.toLocaleString()} ₸</td>
-                               
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-    
-
-        <!-- ОБЪЕКТЫ -->
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('objects-content')">
-                <h2 style="margin:0;">🏗️ Объекты</h2>
-                <span id="objects-arrow">▾</span>
-            </div>
-            <div id="objects-content">
-                <div class="table-wrap" style="margin-top:12px;">
-                    <table>
-                        <thead><tr><th>Объект</th><th>💰 Приход</th><th>📤 Расходы</th><th>👷 Выплаты</th><th>Сальдо</th></tr></thead>
-                        <tbody>${projectRows || '<tr><td colspan="5">Нет объектов</td></tr>'}</tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- ОТЧЁТЫ -->
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('reports-content')">
-                <h2 style="margin:0;">📊 Отчёты</h2>
-                <span id="reports-arrow">▾</span>
-            </div>
-            <div id="reports-content" style="margin-top:12px;">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    <button class="btn btn-outline btn-sm-compact" onclick="generateFinanceReport('full')">📊 Полный отчёт</button>
-                    <button class="btn btn-outline btn-sm-compact" onclick="generateFinanceReport('income')">📥 По приходу</button>
-                    <button class="btn btn-outline btn-sm-compact" onclick="generateFinanceReport('expense')">📤 По расходам</button>
-                    <button class="btn btn-outline btn-sm-compact" onclick="generateFinanceReport('payout')">👷 По выплатам</button>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // График
-    setTimeout(() => {
-        const ctx = document.getElementById('finance-chart');
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Приход', 'План поступлений', 'Расходы + Выплаты', 'Чистый поток'],
-                    datasets: [{
-                        label: 'Сумма (₸)',
-                        data: [totalIncome, totalPlanIncome, totalExpenseAndPayouts, totalIncome - totalExpenseAndPayouts],
-                        backgroundColor: ['#10B981', '#3B82F6', '#EF4444', '#F59E0B'],
-                        borderRadius: 8
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { callback: v => (v/1000000).toFixed(1) + 'M ₸' } } }
-                }
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+                document.getElementById('otab-' + this.dataset.otab).classList.add('active');
+                loadObjectTab(this.dataset.otab, project);
             });
-        }
-    }, 300);
-}
+        });
 
-// Сворачивание блоков
-window.toggleBlock = function(id) {
-    const el = document.getElementById(id);
-    const arrow = document.getElementById(id.replace('content', 'arrow'));
-    if (el && arrow) {
-        el.classList.toggle('hidden');
-        arrow.textContent = el.classList.contains('hidden') ? '▸' : '▾';
+        loadObjectTab('info', project);
     }
-};
 
-window.setFinanceFilter = function(type, value) {
-    financeFilter[type] = value;
-    if (type === 'period') {
-        const customEl = document.getElementById('custom-period');
-        if (customEl) {
-            customEl.classList.toggle('hidden', value !== 'custom');
-            customEl.style.display = value === 'custom' ? 'flex' : 'none';
+    async function loadObjectTab(tab, project) {
+        const el = document.getElementById('otab-' + tab);
+        if (!el) return;
+
+        switch(tab) {
+            case 'info':
+                el.innerHTML = `<div class="card"><h2>📋 ${escapeHtml(project.name)}</h2><div class="grid-2"><div><b>Адрес:</b> ${escapeHtml(project.address||'—')}</div><div><b>Заказчик:</b> ${escapeHtml(project.customer_company_name||'—')}</div><div><b>Договор:</b> ${escapeHtml(project.contract_number_customer||'—')} ${project.contract_date_customer?'от '+formatDate(project.contract_date_customer):''}</div><div><b>Сумма:</b> ${formatMoney(project.contract_price)}</div><div><b>Начало:</b> ${formatDate(project.start_date)}</div><div><b>Конец:</b> ${formatDate(project.end_date_contract)}</div></div></div>`;
+                break;
+
+            case 'gpr':
+                await loadGPRTab(el, project);
+                break;
+
+            case 'expenses':
+                await loadExpensesTab(el, project);
+                break;
+
+            case 'materials':
+                await loadMaterialsTab(el, project);
+                break;
+
+            case 'letters':
+                await loadLettersTab(el, project);
+                break;
         }
     }
-    loadFinancesPage(document.getElementById('page-body'));
-};
 
-window.generateFinanceReport = function(type) {
-    const titles = { full: '📊 Полный финансовый отчёт', income: '📥 Отчёт по приходу', expense: '📤 Отчёт по расходам', payout: '👷 Отчёт по выплатам' };
-    alert(titles[type] + '\n\nФункция формирования отчёта будет добавлена.\nДанные уже загружены в таблицы выше.');
-};
+    async function loadGPRTab(el, project) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;">Загрузка...</div>';
+        const { data: blocks } = await supabase.from('blocks').select('id').eq('project_id', project.id);
+        const blockIds = (blocks||[]).map(b=>b.id);
+        if (!blockIds.length) { el.innerHTML = '<div class="card"><p>Нет блоков/осей</p></div>'; return; }
 
+        const { data: axes } = await supabase.from('axes').select('*, axis_work_stages(*, brigades(name))').in('block_id', blockIds).order('name');
+        if (!axes?.length) { el.innerHTML = '<div class="card"><p>Нет осей</p></div>'; return; }
+
+        let rows = '';
+        axes.forEach((ax, i) => {
+            const stages = ax.axis_work_stages || [];
+            const avg = stages.length ? Math.round(stages.reduce((s,st)=>s+(st.progress||0),0)/stages.length) : 0;
+            const allDone = stages.length && stages.every(s=>s.status==='completed');
+            const barClass = allDone ? 'green' : avg>=50 ? 'blue' : 'yellow';
+            const aid = 'gpr-' + i;
+            rows += `<tr style="cursor:pointer;" onclick="toggleBlock('${aid}')"><td>${allDone?'✅':'🔵'} <b>${escapeHtml(ax.name)}</b></td><td>${formatDate(ax.plan_start)}</td><td>${formatDate(ax.plan_end)}</td><td><div class="gantt-bar-wrap"><div class="gantt-bar ${barClass}" style="width:${avg}%;">${avg}%</div></div></td><td>${stages.length} эт.</td><td>▸</td></tr>`;
+            rows += `<tr id="${aid}" class="hidden"><td colspan="6" style="background:#F8FAFC;padding:12px;"><b>Этапы:</b><table style="margin-top:4px;">${stages.map(s=>`<tr><td>${escapeHtml(s.sub_axis_name||s.stage_id||'—')}</td><td>${formatDate(s.plan_start)}</td><td>${formatDate(s.plan_end)}</td><td>${s.progress||0}%</td><td><span class="tag ${s.status==='completed'?'tag-green':'tag-yellow'}">${s.status==='completed'?'✅':'⏳'}</span></td><td>${escapeHtml(s.brigades?.name||'—')}</td></tr>`).join('')}</table></td></tr>`;
+        });
+
+        el.innerHTML = `<div class="card"><h2>📊 ГПР — ${escapeHtml(project.name)}</h2><div class="table-wrap"><table><thead><tr><th>Ось</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Этапы</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    }
+
+    async function loadExpensesTab(el, project) {
+        const { data: expenses } = await supabase.from('expenses').select('*').eq('project_id', project.id).order('date',{ascending:false});
+        let rows = '';
+        (expenses||[]).forEach(e => {
+            rows += `<tr><td>${e.expense_number||'—'}</td><td>${escapeHtml(e.name)}</td><td>${formatDate(e.date)}</td><td>${formatMoney(e.amount)}</td><td><span class="tag ${e.payment_status==='paid'?'tag-green':'tag-yellow'}">${e.payment_status==='paid'?'Оплачен':'План'}</span></td></tr>`;
+        });
+        el.innerHTML = `<div class="card"><h2>📤 Расходы</h2><button class="btn btn-primary btn-sm" onclick="openCreateExpenseForm()" style="margin-bottom:12px;">➕ Расход</button><div class="table-wrap"><table><thead><tr><th>Номер</th><th>Наименование</th><th>Дата</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Нет расходов</td></tr>'}</tbody></table></div></div>`;
+    }
+
+    async function loadMaterialsTab(el, project) {
+        const { data: materials } = await supabase.from('material_incomes').select('*, material_income_items(*)').eq('project_id', project.id).order('created_at',{ascending:false}).limit(20);
+        let rows = '';
+        (materials||[]).forEach(m => {
+            const items = m.material_income_items || [];
+            rows += `<tr><td>${formatDate(m.created_at)}</td><td>${items.map(i=>escapeHtml(i.name||'')).join(', ')}</td><td>${items.reduce((s,i)=>s+(i.quantity||0),0)}</td></tr>`;
+        });
+        el.innerHTML = `<div class="card"><h2>📦 Материалы</h2><div class="table-wrap"><table><thead><tr><th>Дата</th><th>Наименование</th><th>Кол-во</th></tr></thead><tbody>${rows||'<tr><td colspan="3">Нет данных</td></tr>'}</tbody></table></div></div>`;
+    }
+
+    async function loadLettersTab(el, project) {
+        const { data: letters } = await supabase.from('letters').select('*').eq('project_id', project.id).order('created_at',{ascending:false}).limit(20);
+        let rows = '';
+        (letters||[]).forEach(l => {
+            rows += `<tr style="cursor:pointer;" onclick="alert('${escapeHtml(l.delay_description||l.delay_reason||'—')}')"><td>${l.letter_number_full||'№'+l.letter_number+'/LGC-ERP'}</td><td>${formatDate(l.letter_date)}</td><td>${escapeHtml((l.delay_description||l.delay_reason||'').substring(0,60))}</td><td><span class="tag ${l.status==='sent_to_customer'?'tag-green':'tag-yellow'}">${l.status==='sent_to_customer'?'Отправлено':'Черновик'}</span></td></tr>`;
+        });
+        el.innerHTML = `<div class="card"><h2>✉️ Письма заказчику</h2><div class="table-wrap"><table><thead><tr><th>Номер</th><th>Дата</th><th>Причина</th><th>Статус</th></tr></thead><tbody>${rows||'<tr><td colspan="4">Нет писем</td></tr>'}</tbody></table></div></div>`;
+    }
+
+    window.toggleBlock = function(id) { document.getElementById(id)?.classList.toggle('hidden'); };
+
+    window.openCreateProjectForm = function() {
+        const c = document.getElementById('page-body');
+        c.innerHTML = `<button onclick="loadPage('objects')" style="background:none;border:none;font-size:14px;margin-bottom:12px;color:var(--text-secondary);">← Назад</button>
+        <div class="card"><h2>➕ Создать объект</h2>
+        <div class="form-group"><label>Название *</label><input id="np-name" class="form-input"></div>
+        <div class="form-group"><label>Адрес</label><input id="np-addr" class="form-input"></div>
+        <div class="grid-2"><div class="form-group"><label>Начало</label><input type="date" id="np-start" class="form-input"></div><div class="form-group"><label>Конец</label><input type="date" id="np-end" class="form-input"></div></div>
+        <div class="form-group"><label>Сумма</label><input type="number" id="np-price" class="form-input" step="0.01"></div>
+        <div class="form-group"><label>Заказчик</label><input id="np-customer" class="form-input"></div>
+        <button class="btn btn-primary" id="save-project">💾 Создать</button></div>`;
+        document.getElementById('save-project').onclick = async () => {
+            const name = document.getElementById('np-name').value.trim();
+            if (!name) { alert('Введите название'); return; }
+            await supabase.from('projects').insert({ name, address: document.getElementById('np-addr').value, start_date: document.getElementById('np-start').value||null, end_date_contract: document.getElementById('np-end').value||null, contract_price: parseFloat(document.getElementById('np-price').value)||0, customer_company_name: document.getElementById('np-customer').value, responsible_worker_id: currentUser.id, manager_name: currentUser.full_name, status:'active' });
+            loadPage('objects');
+        };
+    };
+
+    window.openCreateExpenseForm = async function() {
+        const c = document.getElementById('page-body');
+        const { data: projects } = await supabase.from('projects').select('id,name').order('name');
+        const { data: num } = await supabase.from('document_numbers').select('number').eq('doc_type','expense').order('number',{ascending:false}).limit(1);
+        const next = num?.length ? num[0].number+1 : 1;
+        const en = '№-RAS-'+next;
+        c.innerHTML = `<button onclick="loadPage('objects')" style="background:none;border:none;font-size:14px;margin-bottom:12px;color:var(--text-secondary);">← Назад</button>
+        <div class="card"><h2>📤 Расход</h2>
+        <div class="form-group"><label>Номер</label><input class="form-input" value="${en}" disabled></div>
+        <div class="form-group"><label>Объект</label><select id="exp-proj" class="form-input">${(projects||[]).map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
+        <div class="form-group"><label>Наименование *</label><input id="exp-name" class="form-input"></div>
+        <div class="grid-2"><div class="form-group"><label>Сумма *</label><input type="number" id="exp-amount" class="form-input" step="0.01"></div><div class="form-group"><label>Дата</label><input type="date" id="exp-date" class="form-input" value="${new Date().toISOString().split('T')[0]}"></div></div>
+        <div class="form-group"><label>Статус</label><select id="exp-status" class="form-input"><option value="pending">📅 План</option><option value="paid">💳 Оплачен</option></select></div>
+        <button class="btn btn-primary" id="save-expense">💾 Сохранить</button></div>`;
+        document.getElementById('save-expense').onclick = async () => {
+            const name = document.getElementById('exp-name').value.trim();
+            const amount = parseFloat(document.getElementById('exp-amount').value);
+            if (!name || !amount) { alert('Заполните'); return; }
+            await supabase.from('expenses').insert({ project_id: document.getElementById('exp-proj').value||null, name, amount, category:'other', date: document.getElementById('exp-date').value, payment_status: document.getElementById('exp-status').value, expense_number: en, created_by: currentUser.id });
+            await supabase.from('document_numbers').upsert({ doc_type:'expense', number:next }, { onConflict:'doc_type' });
+            loadPage('objects');
+        };
+    };
+
+    // ===== ЗАДАЧИ =====
+    async function loadTasksPage(c) {
+        let q = supabase.from('custom_tasks').select('*, projects(name)').order('created_at',{ascending:false}).limit(100);
+        if (currentUser.role !== 'manager') q = q.or(`created_by.eq.${currentUser.id},responsible_ids.cs.{${currentUser.id}}`);
+        const { data: tasks } = await q;
+        if (!tasks?.length) { c.innerHTML = '<div class="card"><p style="text-align:center;padding:40px;">Нет задач</p></div>'; return; }
+        let rows = '';
+        tasks.forEach(t => {
+            const sc = t.status==='completed'?'tag-green':t.status==='in_progress'?'tag-blue':'tag-yellow';
+            const sl = t.status==='completed'?'✅':t.status==='in_progress'?'🔵':'⏳';
+            rows += `<tr style="cursor:pointer;" onclick="viewTaskDetail('${t.id}')"><td>${sl} ${escapeHtml(t.title)}</td><td>${escapeHtml(t.projects?.name||'—')}</td><td><span class="tag ${sc}">${sl}</span></td><td>${escapeHtml(t.responsible_names?.join(',')||'—')}</td><td>${formatDate(t.deadline)}</td></tr>`;
+        });
+        c.innerHTML = `<div class="card"><h2>📋 Задачи</h2><div class="table-wrap"><table><thead><tr><th>Название</th><th>Объект</th><th>Статус</th><th>Ответственные</th><th>Дедлайн</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    }
+
+    window.viewTaskDetail = async function(taskId) {
+        const c = document.getElementById('page-body');
+        const { data: t } = await supabase.from('custom_tasks').select('*, projects(name)').eq('id',taskId).single();
+        if (!t) return;
+        c.innerHTML = `<button onclick="loadPage('tasks')" style="background:none;border:none;font-size:14px;margin-bottom:12px;color:var(--text-secondary);">← К задачам</button>
+        <div class="card"><h2>📋 ${escapeHtml(t.title)}</h2><p>${escapeHtml(t.description||'')}</p><p>🏗️ ${escapeHtml(t.projects?.name||'—')} | 👤 ${t.created_by_name||'—'} | ⏰ ${formatDate(t.deadline)}</p>
+        <span class="tag ${t.status==='completed'?'tag-green':t.status==='in_progress'?'tag-blue':'tag-yellow'}">${t.status==='completed'?'✅ Сделано':t.status==='in_progress'?'🔵 В работе':'⏳ Ожидает'}</span></div>`;
+    };
+
+    // ===== ФИНАНСЫ =====
+    async function loadFinancesPage(c) {
+        const { data: incomes } = await supabase.from('incomes').select('*, projects(name)').order('date',{ascending:false}).limit(50);
+        const totalIn = (incomes||[]).filter(i=>i.status==='paid').reduce((s,i)=>s+(i.amount||0),0);
+        const totalPl = (incomes||[]).filter(i=>i.status==='pending').reduce((s,i)=>s+(i.amount||0),0);
+        let rows = '';
+        (incomes||[]).forEach(i => { rows += `<tr><td>${formatDate(i.date)}</td><td>${escapeHtml(i.description||'')}</td><td class="${i.status==='paid'?'text-success':'text-warning'}">${formatMoney(i.amount)}</td><td><span class="tag ${i.status==='paid'?'tag-green':'tag-yellow'}">${i.status==='paid'?'Оплачен':'Ожидается'}</span></td></tr>`; });
+        c.innerHTML = `<div class="kpi-grid"><div class="kpi-card"><div class="kpi-value text-success">${formatMoney(totalIn)}</div><div class="kpi-label">Поступило</div></div><div class="kpi-card"><div class="kpi-value" style="color:var(--info);">${formatMoney(totalPl)}</div><div class="kpi-label">План</div></div></div>
+        <div class="card"><h2>💰 Поступления</h2><div class="table-wrap"><table><thead><tr><th>Дата</th><th>Описание</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>${rows||'<tr><td colspan="4">Нет</td></tr>'}</tbody></table></div></div>`;
+    }
 
     checkAuth();
 })();
