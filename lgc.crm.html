@@ -1137,36 +1137,129 @@ async function loadFinancesPage(container) {
             </div>
         </div>
 
-        <!-- ПЛАН НА НЕДЕЛЮ -->
+                <!-- ПЛАН НА НЕДЕЛЮ -->
         <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('week-plan-content')">
                 <h2 style="margin:0;">📅 План на неделю (${formatDate(todayStr)} — ${formatDate(weekEndStr)})</h2>
                 <span id="week-plan-arrow">▾</span>
             </div>
-            <div id="week-plan-content">
-                <div class="table-wrap" style="margin-top:12px;">
-                    <table>
-                        <thead><tr><th>Тип</th><th>Кол-во</th><th>Сумма</th></tr></thead>
-                        <tbody>
-                            <tr style="cursor:pointer;" onclick="alert('Поступления на неделю:\\n' + weekIncomes.map(i => '📥 ' + i.description + ': ' + (i.amount||0).toLocaleString() + ' ₸ (' + formatDate(i.date) + ')').join('\\n') || 'Нет данных')">
-                                <td>📥 План поступлений</td>
-                                <td>${weekIncomes.length}</td>
-                                <td class="text-success">+${weekIncomeTotal.toLocaleString()} ₸</td>
-                            </tr>
-                            <tr style="cursor:pointer;" onclick="alert('Расходы на неделю:\\n' + weekExpenses.map(e => '📤 ' + e.name + ': ' + (e.amount||0).toLocaleString() + ' ₸ (' + formatDate(e.date) + ')').join('\\n') || 'Нет данных')">
-                                <td>📤 План расходов</td>
-                                <td>${weekExpenses.length}</td>
-                                <td class="text-danger">-${weekExpenseTotal.toLocaleString()} ₸</td>
-                            </tr>
-                            <tr style="cursor:pointer;" onclick="alert('Выплаты на неделю:\\n' + [...weekOrders.map(o => '👷 Наряд: ' + (o.total_amount||0).toLocaleString() + ' ₸'), ...weekAdvances.map(a => '💳 Аванс: ' + (a.amount||0).toLocaleString() + ' ₸')].join('\\n') || 'Нет данных')">
-                                <td>👷 План выплат</td>
-                                <td>${weekOrders.length + weekAdvances.length}</td>
-                                <td class="text-warning">-${weekPayoutTotal.toLocaleString()} ₸</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div id="week-plan-content" style="margin-top:12px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    
+                    <!-- ВЫПЛАТЫ И РАСХОДЫ -->
+                    <div>
+                        <h3 style="font-size:13px;margin-bottom:8px;">📤 Выплаты и расходы</h3>
+                        <div class="table-wrap">
+                            <table style="font-size:11px;">
+                                <thead><tr><th>№</th><th>Тип</th><th>Наименование</th><th>Оплатить до</th><th>Сумма</th></tr></thead>
+                                <tbody>
+                                    ${(() => {
+                                        let rows = '';
+                                        let num = 0;
+                                        let total = 0;
+                                        
+                                        // Расходы
+                                        weekExpenses.forEach(e => {
+                                            num++;
+                                            total += (e.amount || 0);
+                                            const isOverdue = e.planned_payment_date && new Date(e.planned_payment_date) < new Date();
+                                            rows += `<tr style="${isOverdue ? 'background:#FEF2F2;' : ''}">
+                                                <td>${num}</td>
+                                                <td><span class="tag tag-red">📤 Расход</span></td>
+                                                <td>${escapeHtml(e.name)}</td>
+                                                <td style="color:${isOverdue ? 'var(--danger)' : 'var(--text-secondary)'};">
+                                                    ${formatDate(e.planned_payment_date || e.date)}
+                                                    ${isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : ''}
+                                                </td>
+                                                <td class="text-danger">-${(e.amount||0).toLocaleString()} ₸</td>
+                                            </tr>`;
+                                        });
+                                        
+                                        // Наряды
+                                        weekOrders.forEach(o => {
+                                            num++;
+                                            total += (o.total_amount || 0);
+                                            const payDate = o.payment_date || o.created_at?.split('T')[0];
+                                            const isOverdue = payDate && new Date(payDate) < new Date();
+                                            rows += `<tr style="${isOverdue ? 'background:#FEF2F2;' : ''}">
+                                                <td>${num}</td>
+                                                <td><span class="tag tag-yellow">👷 Наряд</span></td>
+                                                <td>${escapeHtml(o.work_type || 'Наряд')} — ${escapeHtml(o.brigades?.name || '')}</td>
+                                                <td style="color:${isOverdue ? 'var(--danger)' : 'var(--text-secondary)'};">
+                                                    ${formatDate(payDate)}
+                                                    ${isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : ''}
+                                                </td>
+                                                <td class="text-danger">-${(o.total_amount||0).toLocaleString()} ₸</td>
+                                            </tr>`;
+                                        });
+                                        
+                                        // Авансы
+                                        weekAdvances.forEach(a => {
+                                            num++;
+                                            total += (a.amount || 0);
+                                            const payDate = a.payment_date || a.created_at?.split('T')[0];
+                                            const isOverdue = payDate && new Date(payDate) < new Date();
+                                            rows += `<tr style="${isOverdue ? 'background:#FEF2F2;' : ''}">
+                                                <td>${num}</td>
+                                                <td><span class="tag tag-blue">💳 Аванс</span></td>
+                                                <td>Аванс — ${escapeHtml(a.brigades?.name || '')}</td>
+                                                <td style="color:${isOverdue ? 'var(--danger)' : 'var(--text-secondary)'};">
+                                                    ${formatDate(payDate)}
+                                                    ${isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : ''}
+                                                </td>
+                                                <td class="text-danger">-${(a.amount||0).toLocaleString()} ₸</td>
+                                            </tr>`;
+                                        });
+                                        
+                                        if (!rows) rows = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Нет данных</td></tr>';
+                                        
+                                        return rows + `<tr style="font-weight:700;background:#F8FAFC;"><td colspan="3">ИТОГО: ${num} операций</td><td></td><td class="text-danger">-${total.toLocaleString()} ₸</td></tr>`;
+                                    })()}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- ПОСТУПЛЕНИЯ -->
+                    <div>
+                        <h3 style="font-size:13px;margin-bottom:8px;">📥 Поступления</h3>
+                        <div class="table-wrap">
+                            <table style="font-size:11px;">
+                                <thead><tr><th>№</th><th>Вид</th><th>От кого</th><th>Ожидаем</th><th>Сумма</th></tr></thead>
+                                <tbody>
+                                    ${(() => {
+                                        let rows = '';
+                                        let num = 0;
+                                        let total = 0;
+                                        
+                                        weekIncomes.forEach(i => {
+                                            num++;
+                                            total += (i.amount || 0);
+                                            const isOverdue = i.date && new Date(i.date) < new Date() && i.status === 'pending';
+                                            rows += `<tr style="${isOverdue ? 'background:#FEF2F2;' : ''}">
+                                                <td>${num}</td>
+                                                <td>${escapeHtml(i.income_type || i.description || 'Поступление')}</td>
+                                                <td>${escapeHtml(i.projects?.customer_company_name || i.projects?.name || '—')}</td>
+                                                <td style="color:${isOverdue ? 'var(--danger)' : 'var(--text-secondary)'};">
+                                                    ${formatDate(i.date)}
+                                                    ${isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : ''}
+                                                </td>
+                                                <td class="text-success">+${(i.amount||0).toLocaleString()} ₸</td>
+                                            </tr>`;
+                                        });
+                                        
+                                        if (!rows) rows = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Нет данных</td></tr>';
+                                        
+                                        return rows + `<tr style="font-weight:700;background:#F8FAFC;"><td colspan="3">ИТОГО: ${num} поступлений</td><td></td><td class="text-success">+${total.toLocaleString()} ₸</td></tr>`;
+                                    })()}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
+        </div>
         </div>
 
         <!-- ГРАФИК -->
@@ -1189,7 +1282,7 @@ async function loadFinancesPage(container) {
             <div id="date-plan-content">
                 <div class="table-wrap" style="margin-top:12px;">
                     <table>
-                        <thead><tr><th>Дата</th><th>💰 Приход</th><th>📤 Расход</th><th>👷 Выплаты</th><th>Итого за дату</th></tr></thead>
+                        <thead><tr><th>Дата</th><th>💰 Приход</th><th>📤 Расход</th><th>👷 Выплаты</th></tr></thead>
                         <tbody>${dateRows || '<tr><td colspan="5">Нет данных</td></tr>'}</tbody>
                         <tfoot style="font-weight:700;background:#F8FAFC;">
                             <tr>
@@ -1197,13 +1290,13 @@ async function loadFinancesPage(container) {
                                 <td class="text-success">+${dateSumIncome.toLocaleString()} ₸</td>
                                 <td class="text-danger">-${dateSumExpense.toLocaleString()} ₸</td>
                                 <td class="text-warning">-${dateSumPayout.toLocaleString()} ₸</td>
-                                <td style="color:${dateSumIncome - dateSumExpense - dateSumPayout >= 0 ? 'var(--success)' : 'var(--danger)'};">${(dateSumIncome - dateSumExpense - dateSumPayout).toLocaleString()} ₸</td>
+                               
                             </tr>
                         </tfoot>
                     </table>
                 </div>
             </div>
-        </div>
+    
 
         <!-- ОБЪЕКТЫ -->
         <div class="card">
