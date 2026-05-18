@@ -373,37 +373,283 @@
         }
     };
 
-    // ===== ДАШБОРД =====
-    async function loadDashboard(container) {
-        const [projRes, tasksRes] = await Promise.all([
-            supabase.from('projects').select('*', { count: 'exact' }),
-            supabase.from('custom_tasks').select('*', { count: 'exact' }).in('status', ['pending','in_progress'])
-        ]);
-        const { data: axes } = await supabase.from('axes').select('*, blocks!inner(projects(name))');
-        const projectProgress = {};
-        (axes || []).forEach(ax => {
-            const name = ax.blocks?.projects?.name || 'Без объекта';
-            if (!projectProgress[name]) projectProgress[name] = { total: 0, count: 0 };
-            projectProgress[name].total += (ax.progress || 0);
-            projectProgress[name].count++;
-        });
-        const labels = Object.keys(projectProgress);
-        const data = labels.map(k => Math.round(projectProgress[k].total / projectProgress[k].count));
+    // ===== ОСНОВНАЯ (РАБОЧИЙ СТОЛ) — ПОЛНАЯ ЗАМЕНА loadDashboard =====
 
+async function loadMainPage(container) {
+    // Загружаем проекты
+    let pq = supabase.from('projects').select('*').order('name');
+    if (currentUser.role !== 'manager') pq = pq.eq('responsible_worker_id', currentUser.id);
+    const { data: projects } = await pq;
+    const allProjects = projects || [];
+
+    if (!allProjects.length) {
         container.innerHTML = `
-            <div class="kpi-grid">
-                <div class="kpi-card"><div style="font-size:24px;">🏗️</div><div class="kpi-value">${projRes.count||0}</div><div class="kpi-label">Объектов</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">📋</div><div class="kpi-value">${tasksRes.count||0}</div><div class="kpi-label">Активных задач</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">💰</div><div class="kpi-value" style="color:var(--success);">—</div><div class="kpi-label">Поступило</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">👷</div><div class="kpi-value">—</div><div class="kpi-label">Бригад</div></div>
-            </div>
-            <div class="card"><h2>📊 Прогресс по объектам</h2><canvas id="progress-chart" height="80"></canvas></div>`;
-
-        setTimeout(() => {
-            const ctx = document.getElementById('progress-chart');
-            if (ctx) new Chart(ctx, { type:'bar', data:{ labels, datasets:[{ label:'Прогресс %', data, backgroundColor: data.map(v => v>=80?'#10B981':v>=50?'#F59E0B':'#EF4444'), borderRadius:8 }] }, options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } } } } });
-        }, 300);
+            <div class="card" style="text-align:center;padding:40px;">
+                <div style="font-size:48px;margin-bottom:16px;">🏗️</div>
+                <h2>Нет объектов</h2>
+                <p style="color:var(--text-secondary);margin-bottom:20px;">Создайте первый объект</p>
+                <button class="btn btn-primary btn-sm-compact" onclick="openCreateProjectForm()">➕ Создать объект</button>
+            </div>`;
+        return;
     }
+
+    // Получаем блоки и оси
+    const projectIds = allProjects.map(p => p.id);
+    const { data: blocks } = await supabase.from('blocks').select('id, project_id').in('project_id', projectIds);
+    const blockIds = (blocks || []).map(b => b.id);
+    
+    let axesMap = {};
+    if (blockIds.length) {
+        const { data: axes } = await supabase.from('axes').select('progress, status, block_id, plan_end').in('block_id', blockIds);
+        (axes || []).forEach(ax => {
+            const block = blocks.find(b => b.id === ax.block_id);
+            if (block) {
+                if (!axesMap[block.project_id]) axesMap[block.project_id] = [];
+                axesMap[block.project_id].push(ax);
+            }
+        });
+    }
+
+    // Проблемы
+    const { data: allIssues } = await supabase.from('project_issues').select('project_id').in('status', ['open', 'in_progress']);
+    const issuesMap = {};
+    (allIssues || []).forEach(i => { issuesMap[i.project_id] = (issuesMap[i.project_id] || 0) + 1; });
+
+    // Задачи
+    const { data: allTasks } = await supabase.from('custom_tasks').select('project_id').in('status', ['pending', 'in_progress']);
+    const tasksMap = {};
+    (allTasks || []).forEach(t => { tasksMap[t.project_id] = (tasksMap[t.project_id] || 0) + 1; });
+
+    // Расходы
+    const { data: allExpenses } = await supabase.from('expenses').select('project_id, amount');
+    const expensesMap = {};
+    (allExpenses || []).forEach(e => { expensesMap[e.project_id] = (expensesMap[e.project_id] || 0) + (e.amount || 0); });
+
+    // KPI
+    let inProgressCount = 0, completedCount = 0, overdueCount = 0;
+    allProjects.forEach(p => {
+        const axes = axesMap[p.id] || [];
+        const allDone = axes.length > 0 && axes.every(a => a.status === 'completed');
+        if (allDone) completedCount++;
+        else if (axes.some(a => a.status === 'in_progress' || a.progress > 0)) inProgressCount++;
+        if (p.end_date_contract && new Date(p.end_date_contract) < new Date() && !allDone) overdueCount++;
+    });
+
+    // Таблица объектов
+    let objectRows = '';
+    allProjects.forEach(p => {
+        const axes = axesMap[p.id] || [];
+        const avgProgress = axes.length > 0 ? Math.round(axes.reduce((s, a) => s + (a.progress || 0), 0) / axes.length) : 0;
+        const issues = issuesMap[p.id] || 0;
+        const tasks = tasksMap[p.id] || 0;
+        const expenses = expensesMap[p.id] || 0;
+        
+        const barColor = avgProgress >= 80 ? 'green' : avgProgress >= 50 ? 'blue' : avgProgress >= 20 ? 'yellow' : 'red';
+
+        objectRows += `
+            <tr>
+                <td><b>${escapeHtml(p.name)}</b></td>
+                <td>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <div class="gantt-bar-wrap" style="flex:1;min-width:80px;">
+                            <div class="gantt-bar ${barColor}" style="width:${avgProgress}%;">${avgProgress}%</div>
+                        </div>
+                        <span style="font-size:11px;font-weight:600;">${avgProgress}%</span>
+                    </div>
+                </td>
+                <td>${formatDate(p.start_date)} — ${formatDate(p.end_date_contract)}</td>
+                <td>${expenses > 0 ? expenses.toLocaleString() + ' ₸' : '—'}</td>
+                <td style="color:${issues > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">${issues > 0 ? '⚠️ ' + issues : '—'}</td>
+                <td>${tasks > 0 ? tasks : '—'}</td>
+                <td>
+                    <div class="btn-group">
+                        <button class="btn btn-sm-compact btn-outline" onclick="event.stopPropagation();loadObjectDetail('${p.id}')">📋</button>
+                    </div>
+                </td>
+            </tr>`;
+    });
+
+    // Последние задачи
+    const { data: recentTasks } = await supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false }).limit(5);
+    let tasksHtml = '';
+    (recentTasks || []).forEach(t => {
+        const sc = t.status === 'completed' ? 'tag-green' : t.status === 'in_progress' ? 'tag-blue' : 'tag-yellow';
+        tasksHtml += `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;">
+            <span class="tag ${sc}" style="margin-right:6px;">${t.status==='completed'?'✅':t.status==='in_progress'?'🔵':'⏳'}</span>
+            ${escapeHtml(t.title)} — <span style="color:var(--text-secondary);">${escapeHtml(t.projects?.name||'')}</span>
+        </div>`;
+    });
+
+    // Последние платежи
+    const { data: recentIncomes } = await supabase.from('incomes').select('*, projects(name)').order('date', { ascending: false }).limit(5);
+    let paymentsHtml = '';
+    (recentIncomes || []).forEach(i => {
+        paymentsHtml += `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;">
+            <span style="color:var(--success);">📥 +${(i.amount||0).toLocaleString()} ₸</span>
+            — ${escapeHtml(i.description||'')} — <span style="color:var(--text-secondary);">${formatDate(i.date)}</span>
+        </div>`;
+    });
+
+    // План на сегодня
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayIncomes = (await supabase.from('incomes').select('*').eq('date', todayStr).eq('status', 'pending')).data || [];
+    const todayExpenses = (await supabase.from('expenses').select('*').eq('date', todayStr).neq('payment_status', 'paid')).data || [];
+
+    container.innerHTML = `
+        <!-- KPI -->
+        <div class="kpi-grid">
+            <div class="kpi-card" style="cursor:pointer;" onclick="loadPage('objects')">
+                <div style="font-size:24px;">🏗️</div>
+                <div class="kpi-value">${allProjects.length}</div>
+                <div class="kpi-label">Объектов</div>
+            </div>
+            <div class="kpi-card" style="cursor:pointer;border-left:4px solid var(--info);">
+                <div style="font-size:24px;">🔵</div>
+                <div class="kpi-value" style="color:var(--info);">${inProgressCount}</div>
+                <div class="kpi-label">В работе</div>
+            </div>
+            <div class="kpi-card" style="cursor:pointer;border-left:4px solid var(--danger);">
+                <div style="font-size:24px;">⚠️</div>
+                <div class="kpi-value" style="color:var(--danger);">${overdueCount}</div>
+                <div class="kpi-label">Просрочено</div>
+            </div>
+            <div class="kpi-card" style="cursor:pointer;border-left:4px solid var(--success);">
+                <div style="font-size:24px;">✅</div>
+                <div class="kpi-value" style="color:var(--success);">${completedCount}</div>
+                <div class="kpi-label">Завершено</div>
+            </div>
+        </div>
+
+        <!-- БЫСТРЫЕ ДЕЙСТВИЯ -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm-compact" onclick="openCreateProjectForm()">➕ Объект</button>
+            <button class="btn btn-outline btn-sm-compact" onclick="openCreateExpenseForm()">📤 Расход</button>
+            <button class="btn btn-outline btn-sm-compact" onclick="loadPage('tasks');setTimeout(()=>openCreateTaskForm(),300)">📋 Задача</button>
+            <button class="btn btn-outline btn-sm-compact" onclick="loadPage('finances')">📥 Поступление</button>
+        </div>
+
+        <!-- ТАБЛИЦА ОБЪЕКТОВ -->
+        <div class="card">
+            <h2>🏗️ Мои объекты</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Объект</th><th>Прогресс</th><th>Сроки</th><th>Расходы</th><th>⚠️</th><th>📋</th><th></th></tr></thead>
+                    <tbody>${objectRows}</tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ПОСЛЕДНИЕ ЗАДАЧИ + ПЛАТЕЖИ -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="card">
+                <h2>📋 Последние задачи</h2>
+                ${tasksHtml || '<p style="color:var(--text-secondary);font-size:12px;">Нет задач</p>'}
+            </div>
+            <div class="card">
+                <h2>💰 Последние поступления</h2>
+                ${paymentsHtml || '<p style="color:var(--text-secondary);font-size:12px;">Нет поступлений</p>'}
+            </div>
+        </div>
+
+        <!-- ПЛАН НА СЕГОДНЯ -->
+        <div class="card">
+            <h2>📅 План на сегодня (${formatDate(todayStr)})</h2>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:12px;">
+                <div>
+                    <b>📤 Расходы:</b> ${todayExpenses.length > 0 ? todayExpenses.map(e => `<div>• ${escapeHtml(e.name)} — <span style="color:var(--danger);">${(e.amount||0).toLocaleString()} ₸</span></div>`).join('') : 'Нет'}
+                </div>
+                <div>
+                    <b>📥 Поступления:</b> ${todayIncomes.length > 0 ? todayIncomes.map(i => `<div>• ${escapeHtml(i.description)} — <span style="color:var(--success);">${(i.amount||0).toLocaleString()} ₸</span></div>`).join('') : 'Нет'}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ===== ФОРМА СОЗДАНИЯ ОБЪЕКТА =====
+window.openCreateProjectForm = function() {
+    const container = document.getElementById('page-body');
+    container.innerHTML = `
+        <button onclick="loadPage('dashboard')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад</button>
+        <div class="card">
+            <h2>➕ Создать объект</h2>
+            <div class="form-group"><label class="form-label">Название объекта *</label><input type="text" id="new-project-name" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Адрес</label><input type="text" id="new-project-address" class="form-input"></div>
+            <div class="grid-2">
+                <div class="form-group"><label class="form-label">Дата начала</label><input type="date" id="new-project-start" class="form-input"></div>
+                <div class="form-group"><label class="form-label">Дата окончания</label><input type="date" id="new-project-end" class="form-input"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Сумма договора</label><input type="number" id="new-project-price" class="form-input" step="0.01"></div>
+            <div class="form-group"><label class="form-label">Заказчик (компания)</label><input type="text" id="new-project-customer" class="form-input"></div>
+            <button class="btn btn-primary" id="save-new-project">💾 Создать объект</button>
+        </div>
+    `;
+
+    document.getElementById('save-new-project').addEventListener('click', async () => {
+        const name = document.getElementById('new-project-name').value.trim();
+        if (!name) { alert('Введите название объекта'); return; }
+
+        const { error } = await supabase.from('projects').insert({
+            name: name,
+            address: document.getElementById('new-project-address').value,
+            start_date: document.getElementById('new-project-start').value || null,
+            end_date_contract: document.getElementById('new-project-end').value || null,
+            contract_price: parseFloat(document.getElementById('new-project-price').value) || 0,
+            customer_company_name: document.getElementById('new-project-customer').value,
+            responsible_worker_id: currentUser.id,
+            manager_name: currentUser.full_name,
+            status: 'active'
+        });
+
+        if (error) { alert('Ошибка: ' + error.message); return; }
+        loadPage('dashboard');
+    });
+};
+
+// ===== ФОРМА СОЗДАНИЯ РАСХОДА (БЫСТРАЯ) =====
+window.openCreateExpenseForm = async function() {
+    const container = document.getElementById('page-body');
+    const { data: projects } = await supabase.from('projects').select('id,name').order('name');
+    const { data: num } = await supabase.from('document_numbers').select('number').eq('doc_type', 'expense').order('number', { ascending: false }).limit(1);
+    const nextNum = num?.length ? num[0].number + 1 : 1;
+    const expNum = '№-RAS-' + nextNum;
+
+    container.innerHTML = `
+        <button onclick="loadPage('dashboard')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад</button>
+        <div class="card">
+            <h2>📤 Создать расход</h2>
+            <div class="form-group"><label class="form-label">Номер</label><input class="form-input" value="${expNum}" disabled></div>
+            <div class="form-group"><label class="form-label">Объект</label><select id="exp-project" class="form-input">${(projects||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
+            <div class="form-group"><label class="form-label">Наименование *</label><input type="text" id="exp-name" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Категория</label><select id="exp-category" class="form-input"><option value="delivery">🚛 Доставка</option><option value="consumables">🔧 Расходники</option><option value="cradles">🏗️ Люльки</option><option value="scaffolding">🪜 Леса</option><option value="rent">🏢 Аренда</option><option value="other">📄 Прочее</option></select></div>
+            <div class="grid-2">
+                <div class="form-group"><label class="form-label">Сумма *</label><input type="number" id="exp-amount" class="form-input" step="0.01"></div>
+                <div class="form-group"><label class="form-label">Дата</label><input type="date" id="exp-date" class="form-input" value="${new Date().toISOString().split('T')[0]}"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Статус</label><select id="exp-status" class="form-input"><option value="pending">📅 План оплат</option><option value="paid">💳 Оплачен</option></select></div>
+            <button class="btn btn-primary" id="save-expense">💾 Сохранить</button>
+        </div>
+    `;
+
+    document.getElementById('save-expense').addEventListener('click', async () => {
+        const name = document.getElementById('exp-name').value.trim();
+        const amount = parseFloat(document.getElementById('exp-amount').value);
+        if (!name || !amount) { alert('Заполните наименование и сумму'); return; }
+
+        await supabase.from('expenses').insert({
+            project_id: document.getElementById('exp-project').value || null,
+            name, amount,
+            category: document.getElementById('exp-category').value,
+            date: document.getElementById('exp-date').value,
+            payment_status: document.getElementById('exp-status').value,
+            expense_number: expNum,
+            created_by: currentUser.id
+        });
+        await supabase.from('document_numbers').upsert({ doc_type: 'expense', number: nextNum }, { onConflict: 'doc_type' });
+
+        loadPage('dashboard');
+    });
+};
 
     // ===== ОБЪЕКТЫ (СПИСОК) =====
     async function loadObjectsPage(container) {
