@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         
-        :root {
+                :root {
             --bg: #F8FAFC; --card: #FFFFFF; --text: #0F172A; --text-secondary: #64748B;
             --border: #E2E8F0; --gold: #F59E0B; --primary: #0F172A; --success: #10B981;
             --danger: #EF4444; --warning: #F59E0B; --info: #3B82F6;
@@ -31,12 +31,13 @@
         .auth-card .subtitle { font-size: 12px; color: var(--text-secondary); margin-bottom: 24px; }
         .form-group { margin-bottom: 14px; text-align: left; }
         .form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 14px; font-family: inherit; text-align: center; }
+        .form-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 14px; font-family: inherit; }
         .form-input:focus { outline: none; border-color: var(--gold); }
         .btn { padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 600; border: none; cursor: pointer; width: 100%; transition: all 0.2s; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-telegram { background: linear-gradient(135deg, #2AABEE, #229ED9); color: white; }
         .btn-qr { background: #F1F5F9; color: var(--text); }
+        .btn-outline { background: white; border: 1.5px solid var(--border); color: var(--text); }
         .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--text-secondary); font-size: 12px; }
         .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
         .auth-error { color: var(--danger); font-size: 12px; margin-top: 8px; display: none; }
@@ -75,6 +76,31 @@
         .text-success { color: var(--success); } .text-danger { color: var(--danger); } .text-warning { color: var(--warning); }
         .table-wrap { overflow-x: auto; }
 
+        /* МОДАЛЬНОЕ ОКНО */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15,23,42,0.7); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10001; padding: 20px;
+        }
+        .modal-overlay.hidden { display: none; }
+        .modal-card {
+            background: white; border-radius: 20px; padding: 28px 24px;
+            max-width: 580px; width: 100%; max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+            position: relative;
+        }
+        .modal-field { margin-bottom: 12px; }
+        .modal-field-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .modal-field-value { font-size: 14px; font-weight: 500; }
+        .modal-actions { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+        .modal-actions .btn { width: auto; }
+        .calc-table-compact { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+        .calc-table-compact td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+        .calc-table-compact td:last-child { text-align: right; font-weight: 600; }
+        .calc-table-compact .total-row { background: #F8FAFC; font-weight: 700; font-size: 15px; }
+        .calc-table-compact .negative { color: var(--danger); }
+
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); }
             .sidebar.open { transform: translateX(0); }
@@ -96,10 +122,6 @@
         .task-card-item .task-priority { font-size: 16px; }
         .task-card-item .task-name { font-weight: 600; font-size: 14px; margin: 6px 0; }
         .task-card-item .task-info { font-size: 11px; color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-        .task-card-item .task-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
-        .compact-form { max-width: 600px; }
-        .compact-form .form-input { padding: 8px 12px; font-size: 13px; }
-        .compact-form .btn { width: auto; padding: 8px 16px; font-size: 13px; }
         .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         @media (max-width: 768px) {
             .detail-grid { grid-template-columns: 1fr; }
