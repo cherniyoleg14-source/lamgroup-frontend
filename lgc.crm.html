@@ -1097,12 +1097,7 @@ async function loadFinancesPage(c) {
         if (ctx) new Chart(ctx, { type:'bar', data:{ labels:['Приход','План','Расходы+Выплаты','Чистый поток'], datasets:[{ data:[totalIncome,totalPlanIncome,totalExpenseAndPayouts,totalIncome-totalExpenseAndPayouts], backgroundColor:['#10B981','#3B82F6','#EF4444','#F59E0B'], borderRadius:8 }] }, options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>(v/1000000).toFixed(1)+'M ₸' } } } } });
     }, 300);
 }
-    if (financeFilter.project !== 'all') {
-        incQ = incQ.eq('project_id', financeFilter.project);
-        expQ = expQ.eq('project_id', financeFilter.project);
-        ordQ = ordQ.eq('project_id', financeFilter.project);
-        advQ = advQ.eq('project_id', financeFilter.project);
-    }
+   
 
     const [incR, expR, ordR, advR] = await Promise.all([incQ, expQ, ordQ, advQ]);
     const incomes = incR.data || [];
