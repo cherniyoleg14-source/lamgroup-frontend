@@ -1129,8 +1129,8 @@
                 '</div>' +
                 '<div class="modal-actions" style="margin-top:16px;">' +
                 '<button class="btn btn-outline btn-sm-compact" onclick="window.saveFinanceRecord(\'order\',\'' + id + '\')">💾 Сохранить</button>' +
-                (o.payment_status === 'pending' ? '<button class="btn btn-success btn-sm-compact" onclick="window.approveRecord(\'order\',\'' + id + '\')">✅ Утвердить</button>' : '') +
-                (o.payment_status === 'approved' && currentUser && currentUser.role === 'accountant' ? '<button class="btn btn-primary btn-sm-compact" onclick="window.markAsPaid(\'order\',\'' + id + '\')">💰 Оплатить</button>' : '') +
+               ((o.status === 'pending' || o.status === 'pending_foreman') ? '<button class="btn btn-success btn-sm-compact" onclick="window.approveRecord(\'order\',\'' + id + '\')">✅ Утвердить</button>' : '') +
+                (o.status === 'approved' && o.payment_status !== 'paid' && currentUser && currentUser.role === 'accountant' ? '<button class="btn btn-primary btn-sm-compact" onclick="window.markAsPaid(\'order\',\'' + id + '\')">💰 Оплатить</button>' : '') +
                 ' <button class="btn btn-outline btn-sm-compact" onclick="window.closeFinanceModal()">✕ Закрыть</button></div>';
         } else if (type === 'advance') {
             var advanceResult = await supabase.from('advances').select('*, projects(name), brigades(name)').eq('id', id).single();
@@ -1176,7 +1176,7 @@
         if (modal) modal.classList.add('hidden');
     };
 
-            window.approveRecord = async function(type, id) {
+                   window.approveRecord = async function(type, id) {
         if (!confirm('✅ Утвердить? Запись уйдёт в "Утверждённые" и будет ждать оплаты бухгалтером.')) return;
         var now = new Date().toISOString();
         var userId = currentUser ? currentUser.id : null;
@@ -1189,16 +1189,12 @@
                 approved_at: now 
             }).eq('id', id);
         } else if (type === 'order') {
-            // Пробуем обновить ТОЛЬКО payment_status
-            var result = await supabase.from('work_orders').update({ 
-                payment_status: 'approved'
+            // Для нарядов: status = 'approved'
+            await supabase.from('work_orders').update({ 
+                status: 'approved',
+                approved_by: userId, 
+                approved_at: now 
             }).eq('id', id);
-            
-            if (result.error) {
-                console.error('Order approve error:', result.error);
-                alert('Ошибка утверждения: ' + result.error.message);
-                return;
-            }
         } else if (type === 'advance') {
             await supabase.from('advances').update({ 
                 status: 'approved',
@@ -1266,13 +1262,35 @@
         window.closeFinanceModal();
         window.loadPage('finances');
     };
-    window.markAsPaid = async function(type, id) {
+            window.markAsPaid = async function(type, id) {
         if (!confirm('💰 Отметить как оплаченный?')) return;
-        var updateData = { paid_by_name: currentUser ? currentUser.full_name : '', payment_date: new Date().toISOString().split('T')[0] };
-        if (type === 'expense') { updateData.payment_status = 'paid'; await supabase.from('expenses').update(updateData).eq('id', id); }
-        else if (type === 'order') { updateData.payment_status = 'paid'; await supabase.from('work_orders').update(updateData).eq('id', id); }
-        else if (type === 'advance') { updateData.status = 'paid'; await supabase.from('advances').update(updateData).eq('id', id); }
-        else if (type === 'income') { updateData.status = 'paid'; await supabase.from('incomes').update(updateData).eq('id', id); }
+        var now = new Date().toISOString().split('T')[0];
+        var userName = currentUser ? currentUser.full_name : '';
+        
+        if (type === 'expense') {
+            await supabase.from('expenses').update({ 
+                payment_status: 'paid', 
+                paid_by_name: userName,
+                planned_payment_date: now
+            }).eq('id', id);
+        } else if (type === 'order') {
+            // Для нарядов: payment_status = 'paid'
+            await supabase.from('work_orders').update({ 
+                payment_status: 'paid',
+                payment_date: now
+            }).eq('id', id);
+        } else if (type === 'advance') {
+            await supabase.from('advances').update({ 
+                status: 'paid',
+                payment_date: now
+            }).eq('id', id);
+        } else if (type === 'income') {
+            await supabase.from('incomes').update({ 
+                status: 'paid',
+                payment_date: now
+            }).eq('id', id);
+        }
+        
         window.closeFinanceModal();
         window.loadPage('finances');
     };
