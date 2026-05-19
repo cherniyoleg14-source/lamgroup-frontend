@@ -194,20 +194,20 @@
     const SUPABASE_URL = 'https://owagntywpiymqhbfoxye.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im93YWdudHl3cGl5bXFoYmZveHllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTg5MDUsImV4cCI6MjA5MTg5NDkwNX0.p-3xAhbFgH5lcGnbBfkcQQFVza_Yc2qoY6VBlhmmFGg';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const tg = window.Telegram?.WebApp;
+    const tg = window.Telegram && window.Telegram.WebApp;
     if (tg) { tg.ready(); tg.expand(); }
 
     let currentUser = null;
 
-    function formatMoney(a) { return (a||0).toLocaleString() + ' ₸'; }
-    function escapeHtml(t) { if(!t) return ''; return String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]||c)); }
-    function formatDate(d) { if(!d) return '—'; return new Date(d).toLocaleDateString('ru-RU'); }
+    function formatMoney(a) { return (a || 0).toLocaleString() + ' ₸'; }
+    function escapeHtml(t) { if (!t) return ''; return String(t).replace(/[&<>]/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c] || c; }); }
+    function formatDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('ru-RU'); }
 
     async function hashPassword(password) {
         const msgBuffer = new TextEncoder().encode(password);
         const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
     }
 
     function saveSession(user) {
@@ -225,23 +225,23 @@
 
     async function checkAuth() {
         const savedUser = loadSession();
-        if (savedUser?.id) {
-            const { data: users } = await supabase.from('users').select('*').eq('id', savedUser.id).single();
-            if (users) { currentUser = users; enterApp(); return; }
+        if (savedUser && savedUser.id) {
+            const result = await supabase.from('users').select('*').eq('id', savedUser.id).single();
+            if (result.data) { currentUser = result.data; enterApp(); return; }
             clearSession();
         }
         document.getElementById('auth-overlay').classList.remove('hidden');
         document.getElementById('app-layout').classList.add('hidden');
-        if (tg?.initDataUnsafe?.user) loginWithTelegram();
+        if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) loginWithTelegram();
     }
 
     window.loginWithPassword = async function() {
         const tgId = document.getElementById('auth-tg-id').value.trim();
         const password = document.getElementById('auth-password').value.trim();
         if (!tgId || !password) return;
-        const { data: users } = await supabase.from('users').select('*').eq('telegram_id', parseInt(tgId));
-        if (!users?.length) { document.getElementById('auth-error').style.display = 'block'; return; }
-        const user = users[0];
+        const result = await supabase.from('users').select('*').eq('telegram_id', parseInt(tgId));
+        if (!result.data || !result.data.length) { document.getElementById('auth-error').style.display = 'block'; return; }
+        const user = result.data[0];
         const hashed = await hashPassword(password);
         if (user.password_hash !== hashed) { document.getElementById('auth-error').style.display = 'block'; return; }
         currentUser = user;
@@ -250,11 +250,11 @@
 
     window.loginWithTelegram = async function() {
         if (!tg) return;
-        const tgUser = tg.initDataUnsafe?.user;
+        const tgUser = tg.initDataUnsafe && tg.initDataUnsafe.user;
         if (!tgUser) return;
-        const { data: users } = await supabase.from('users').select('*').eq('telegram_id', tgUser.id);
-        if (!users?.length) { document.getElementById('auth-error').style.display = 'block'; return; }
-        currentUser = users[0];
+        const result = await supabase.from('users').select('*').eq('telegram_id', tgUser.id);
+        if (!result.data || !result.data.length) { document.getElementById('auth-error').style.display = 'block'; return; }
+        currentUser = result.data[0];
         const fullName = tgUser.first_name + ' ' + (tgUser.last_name || '');
         if (fullName !== currentUser.full_name) {
             await supabase.from('users').update({ full_name: fullName }).eq('id', currentUser.id);
@@ -286,35 +286,45 @@
     }
 
     function setupNavigation() {
-        document.querySelectorAll('.sidebar-nav a').forEach(link => {
+        document.querySelectorAll('.sidebar-nav a').forEach(function(link) {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('active'));
+                document.querySelectorAll('.sidebar-nav a').forEach(function(l) { l.classList.remove('active'); });
                 this.classList.add('active');
                 loadPage(this.dataset.page);
                 document.getElementById('sidebar').classList.remove('open');
                 document.getElementById('sidebar-overlay').classList.remove('open');
             });
         });
-        document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('sidebar-overlay').classList.toggle('open');
-        });
-        document.getElementById('sidebar-overlay')?.addEventListener('click', () => {
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('sidebar-overlay').classList.remove('open');
-        });
-        document.getElementById('logout-btn')?.addEventListener('click', () => {
-            clearSession(); currentUser = null;
-            document.getElementById('auth-overlay').classList.remove('hidden');
-            document.getElementById('app-layout').classList.add('hidden');
-        });
+        var mobileBtn = document.getElementById('mobile-menu-btn');
+        if (mobileBtn) {
+            mobileBtn.addEventListener('click', function() {
+                document.getElementById('sidebar').classList.toggle('open');
+                document.getElementById('sidebar-overlay').classList.toggle('open');
+            });
+        }
+        var overlay = document.getElementById('sidebar-overlay');
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebar-overlay').classList.remove('open');
+            });
+        }
+        var logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', function() {
+                clearSession(); currentUser = null;
+                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-layout').classList.add('hidden');
+            });
+        }
     }
 
     window.loadPage = async function(page) {
         const container = document.getElementById('page-body');
         container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
-        document.getElementById('page-title').textContent = { dashboard:'🏠 Дашборд', objects:'🏗️ Объекты', tasks:'📋 Задачи', finances:'💰 Финансы' }[page] || '';
+        var titles = { dashboard:'🏠 Дашборд', objects:'🏗️ Объекты', tasks:'📋 Задачи', finances:'💰 Финансы' };
+        document.getElementById('page-title').textContent = titles[page] || '';
         switch(page) {
             case 'dashboard': await loadDashboard(container); break;
             case 'objects': await loadObjectsPage(container); break;
@@ -324,1197 +334,537 @@
     };
 
     async function loadDashboard(container) {
-        const [projRes, tasksRes] = await Promise.all([
-            supabase.from('projects').select('*', { count: 'exact' }),
-            supabase.from('custom_tasks').select('*', { count: 'exact' }).in('status', ['pending','in_progress'])
-        ]);
-        const { data: axes } = await supabase.from('axes').select('*, blocks!inner(projects(name))');
-        const projectProgress = {};
-        (axes || []).forEach(ax => {
-            const name = ax.blocks?.projects?.name || 'Без объекта';
+        var projResult = await supabase.from('projects').select('*', { count: 'exact' });
+        var tasksResult = await supabase.from('custom_tasks').select('*', { count: 'exact' }).in('status', ['pending','in_progress']);
+        var axesResult = await supabase.from('axes').select('*, blocks!inner(projects(name))');
+        var axes = axesResult.data || [];
+        
+        var projectProgress = {};
+        axes.forEach(function(ax) {
+            var name = (ax.blocks && ax.blocks.projects && ax.blocks.projects.name) ? ax.blocks.projects.name : 'Без объекта';
             if (!projectProgress[name]) projectProgress[name] = { total: 0, count: 0 };
             projectProgress[name].total += (ax.progress || 0);
             projectProgress[name].count++;
         });
-        const labels = Object.keys(projectProgress);
-        const data = labels.map(k => Math.round(projectProgress[k].total / projectProgress[k].count));
-
-        container.innerHTML = `
-            <div class="kpi-grid">
-                <div class="kpi-card"><div style="font-size:24px;">🏗️</div><div class="kpi-value">${projRes.count||0}</div><div class="kpi-label">Объектов</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">📋</div><div class="kpi-value">${tasksRes.count||0}</div><div class="kpi-label">Активных задач</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">💰</div><div class="kpi-value" style="color:var(--success);">—</div><div class="kpi-label">Поступило</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">👷</div><div class="kpi-value">—</div><div class="kpi-label">Бригад</div></div>
-            </div>
-            <div class="card"><h2>📊 Прогресс по объектам</h2><canvas id="progress-chart" height="80"></canvas></div>`;
-
-        setTimeout(() => {
-            const ctx = document.getElementById('progress-chart');
-            if (ctx) new Chart(ctx, { type:'bar', data:{ labels, datasets:[{ label:'Прогресс %', data, backgroundColor: data.map(v => v>=80?'#10B981':v>=50?'#F59E0B':'#EF4444'), borderRadius:8 }] }, options:{ responsive:true, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, max:100, ticks:{ callback:v=>v+'%' } } } });
-        }, 300);
-    }
-
-    async function loadObjectsPage(container) {
-        let q = supabase.from('projects').select('*').order('name');
-        if (currentUser.role !== 'manager') q = q.eq('responsible_worker_id', currentUser.id);
-        const { data: projects } = await q;
-        if (!projects?.length) { container.innerHTML = '<div class="card"><p style="text-align:center;padding:40px;">Нет объектов</p></div>'; return; }
-
-        const projectIds = projects.map(p => p.id);
-        const { data: blocks } = await supabase.from('blocks').select('id, project_id').in('project_id', projectIds);
-        const blockIds = (blocks || []).map(b => b.id);
-        let axesMap = {};
-        if (blockIds.length) {
-            const { data: axes } = await supabase.from('axes').select('progress, status, block_id').in('block_id', blockIds);
-            (axes || []).forEach(ax => {
-                const block = blocks.find(b => b.id === ax.block_id);
-                if (block) { if (!axesMap[block.project_id]) axesMap[block.project_id] = []; axesMap[block.project_id].push(ax); }
-            });
-        }
-        const { data: allIssues } = await supabase.from('project_issues').select('project_id').in('status', ['open','in_progress']);
-        const issuesMap = {};
-        (allIssues || []).forEach(i => { issuesMap[i.project_id] = (issuesMap[i.project_id] || 0) + 1; });
-
-        let inProgress = 0, completed = 0, overdue = 0;
-        projects.forEach(p => {
-            const axes = axesMap[p.id] || [];
-            const allDone = axes.length > 0 && axes.every(a => a.status === 'completed');
-            if (allDone) completed++;
-            else if (axes.some(a => a.status === 'in_progress' || a.progress > 0)) inProgress++;
-            if (p.end_date_contract && new Date(p.end_date_contract) < new Date() && !allDone) overdue++;
-        });
-
-        let html = '<div class="kpi-grid"><div class="kpi-card"><div style="font-size:24px;">🏗️</div><div class="kpi-value">' + projects.length + '</div><div class="kpi-label">Всего</div></div>';
-        html += '<div class="kpi-card"><div style="font-size:24px;">🔵</div><div class="kpi-value" style="color:var(--info);">' + inProgress + '</div><div class="kpi-label">В работе</div></div>';
-        html += '<div class="kpi-card"><div style="font-size:24px;">✅</div><div class="kpi-value" style="color:var(--success);">' + completed + '</div><div class="kpi-label">Завершено</div></div>';
-        html += '<div class="kpi-card"><div style="font-size:24px;">⚠️</div><div class="kpi-value" style="color:var(--danger);">' + overdue + '</div><div class="kpi-label">Просрочено</div></div></div>';
-        html += '<div style="display:flex;flex-wrap:wrap;gap:16px;">';
-
-        for (const p of projects) {
-            const axes = axesMap[p.id] || [];
-            const totalAxes = axes.length;
-            const completedAxes = axes.filter(a => a.status === 'completed').length;
-            const avgProgress = totalAxes > 0 ? Math.round(axes.reduce((s, a) => s + (a.progress || 0), 0) / totalAxes) : 0;
-            const issuesCount = issuesMap[p.id] || 0;
-            const isOverdue = p.end_date_contract && new Date(p.end_date_contract) < new Date() && completedAxes < totalAxes;
-            const barColor = completedAxes === totalAxes && totalAxes > 0 ? 'green' : isOverdue ? 'red' : avgProgress >= 50 ? 'blue' : 'yellow';
-
-            html += `<div class="card" style="flex:1;min-width:300px;cursor:pointer;" onclick="loadObjectDetail('${p.id}')">
-                <div style="display:flex;justify-content:space-between;align-items:start;">
-                    <h2 style="margin:0;">${escapeHtml(p.name)}</h2>
-                    ${isOverdue ? '<span class="tag tag-red">⚠️ Просрочен</span>' : completedAxes === totalAxes && totalAxes > 0 ? '<span class="tag tag-green">✅ Завершён</span>' : '<span class="tag tag-blue">🔵 В работе</span>'}
-                </div>
-                <p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">📍 ${escapeHtml(p.address || '—')}</p>
-                <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
-                    <div><span style="color:var(--text-secondary);">Осей:</span> <b>${totalAxes}</b></div>
-                    <div><span style="color:var(--text-secondary);">Проблем:</span> <b style="color:${issuesCount > 0 ? 'var(--danger)' : 'var(--text-secondary)'};">${issuesCount}</b></div>
-                    <div><span style="color:var(--text-secondary);">Начало:</span> <b>${formatDate(p.start_date)}</b></div>
-                    <div><span style="color:var(--text-secondary);">Конец:</span> <b>${formatDate(p.end_date_contract)}</b></div>
-                </div>
-                ${totalAxes > 0 ? `<div style="margin-top:12px;"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span>Прогресс</span><span>${avgProgress}%</span></div><div class="gantt-bar-wrap"><div class="gantt-bar ${barColor}" style="width:${avgProgress}%;">${avgProgress > 10 ? avgProgress + '%' : ''}</div></div></div>` : ''}
-            </div>`;
-        }
-        html += '</div>';
-        container.innerHTML = html;
-    }
-
-    window.loadObjectDetail = async function(projectId) {
-        const container = document.getElementById('page-body');
-        container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
-        document.getElementById('page-title').textContent = '🏗️ Загрузка...';
-
-        const { data: project } = await supabase.from('projects').select('*').eq('id', projectId).single();
-        if (!project) { container.innerHTML = '<div class="card"><p>Объект не найден</p></div>'; return; }
-
-        const { data: blocks } = await supabase.from('blocks').select('id,name').eq('project_id', projectId);
-        const blockIds = (blocks || []).map(b => b.id);
-        let axes = [];
-        if (blockIds.length) {
-            const { data: axesData } = await supabase.from('axes').select('*, blocks(name)').in('block_id', blockIds).order('name');
-            axes = axesData || [];
-        }
-
-        const axisIds = axes.map(a => a.id);
-        let stagesMap = {}, brigadesMap = {};
-        if (axisIds.length) {
-            const { data: stages } = await supabase.from('axis_work_stages').select('*, brigades(name)').in('axis_id', axisIds).order('sub_axis_name');
-            (stages || []).forEach(st => {
-                if (!stagesMap[st.axis_id]) stagesMap[st.axis_id] = [];
-                stagesMap[st.axis_id].push(st);
-                if (st.brigade_id && st.brigades?.name) brigadesMap[st.brigade_id] = st.brigades.name;
-            });
-        }
-
-        let historyMap = {};
-        if (axisIds.length) {
-            const { data: history } = await supabase.from('change_history').select('*').eq('entity_type', 'axis').in('entity_id', axisIds).order('changed_at', { ascending: true });
-            (history || []).forEach(h => {
-                if (!historyMap[h.entity_id]) historyMap[h.entity_id] = [];
-                historyMap[h.entity_id].push(h);
-            });
-        }
-
-        const { data: letters } = await supabase.from('letters').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(10);
-        const { data: materials } = await supabase.from('material_incomes').select('*, material_income_items(*)').eq('project_id', projectId).order('created_at', { ascending: false }).limit(10);
-        const { data: issues } = await supabase.from('project_issues').select('*').eq('project_id', projectId).in('status', ['open','in_progress']).order('created_at', { ascending: false });
-
-        document.getElementById('page-title').textContent = '🏗️ ' + project.name;
-
-        let ganttRows = '', totalShiftDays = 0;
-        axes.forEach((ax, axIndex) => {
-            const stages = stagesMap[ax.id] || [];
-            const history = historyMap[ax.id] || [];
-            const avgProgress = stages.length > 0 ? Math.round(stages.reduce((s, st) => s + (st.progress || 0), 0) / stages.length) : 0;
-            const allCompleted = stages.length > 0 && stages.every(s => s.status === 'completed');
-            let totalShift = 0;
-            history.forEach(h => { const m = (h.comment || '').match(/\+(\d+)\s*дн/); if (m) totalShift += parseInt(m[1]); });
-            totalShiftDays += totalShift;
-            let shiftBadge = '';
-            if (totalShift > 15) shiftBadge = '<span class="tag tag-red">🔴 +' + totalShift + 'дн</span>';
-            else if (totalShift > 5) shiftBadge = '<span class="tag tag-yellow">🟠 +' + totalShift + 'дн</span>';
-            else if (totalShift > 0) shiftBadge = '<span class="tag tag-blue">🟡 +' + totalShift + 'дн</span>';
-            const barClass = allCompleted ? 'green' : totalShift > 15 ? 'red' : totalShift > 5 ? 'yellow' : avgProgress >= 50 ? 'blue' : 'yellow';
-            const statusTag = allCompleted ? '<span class="tag tag-green">✅</span>' : totalShift > 15 ? '<span class="tag tag-red">🔴</span>' : totalShift > 5 ? '<span class="tag tag-yellow">🟠</span>' : '<span class="tag tag-blue">🔵</span>';
-            const axisId = 'axis-' + axIndex;
-
-            ganttRows += `<tr style="cursor:pointer;" onclick="toggleAxisDetail('${axisId}')">
-                <td>${statusTag} <b>${escapeHtml(ax.name)}</b></td><td>${formatDate(ax.plan_start)}</td><td>${formatDate(ax.plan_end)}</td>
-                <td><div class="gantt-bar-wrap"><div class="gantt-bar ${barClass}" style="width:${avgProgress}%;">${avgProgress}%</div></div></td>
-                <td>${stages.length} эт.</td><td>${shiftBadge || '—'}</td><td><span id="${axisId}-arrow">▸</span></td></tr>
-            <tr id="${axisId}" class="hidden"><td colspan="7" style="background:#F8FAFC;padding:16px;">
-                <div style="font-size:12px;line-height:1.8;">
-                    <b>📅 Даты:</b><br>
-                    Начало: <b>${formatDate(ax.plan_start)}</b><br>
-                    План завершения: <b>${formatDate(ax.plan_end)}</b><br>
-                    Факт завершения: ${allCompleted ? '<b style="color:var(--success);">' + formatDate(ax.plan_end) + '</b>' : '<b style="color:var(--danger);">Не завершено</b>'}<br>
-                    ${totalShift > 0 ? '⏱ Общий сдвиг: <b style="color:var(--danger);">+' + totalShift + ' дн.</b><br>' : ''}
-                    ${history.length > 0 ? `<br><b>📅 История переносов:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Дата</th><th>Сдвиг</th><th>Причина</th><th>Новая дата</th><th>Кто</th></tr></thead><tbody>${history.map(h => { const m = (h.comment||'').match(/(\d+)\s*дн/); const days = m ? m[1] : '?'; const reason = (h.comment||'').replace(/\|.*/,'').replace('Сдвиг:','').trim(); return `<tr><td>${formatDate(h.changed_at)}</td><td>+${days} дн.</td><td>${escapeHtml(reason)}</td><td>${formatDate(h.new_end_date||'')}</td><td>${escapeHtml(h.changed_by_name||'—')}</td></tr>`; }).join('')}</tbody></table>` : ''}
-                    <br><b>📋 Этапы работ:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Этап</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Статус</th><th>Бригада</th></tr></thead><tbody>${stages.length > 0 ? stages.map(st => `<tr><td>${escapeHtml(st.sub_axis_name || st.stage_id || '—')}</td><td>${formatDate(st.plan_start)}</td><td>${formatDate(st.plan_end)}</td><td><div class="gantt-bar-wrap" style="width:80px;display:inline-block;"><div class="gantt-bar ${(st.progress||0) >= 100 ? 'green' : (st.progress||0) >= 50 ? 'blue' : 'yellow'}" style="width:${st.progress||0}%;">${st.progress||0}%</div></div></td><td><span class="tag ${st.status==='completed'?'tag-green':st.status==='in_progress'?'tag-blue':'tag-yellow'}">${st.status==='completed'?'✅':st.status==='in_progress'?'🔵':'⏳'}</span></td><td>${escapeHtml(st.brigades?.name||'—')}</td></tr>`).join('') : '<tr><td colspan="6">Нет этапов</td></tr>'}</tbody></table></div></td></tr>`;
-        });
-
-        let lettersHtml = '';
-        (letters || []).forEach(l => {
-            lettersHtml += `<tr style="cursor:pointer;" onclick="alert('Письмо: ${escapeHtml(l.letter_number_full||'')}\\n\\nПричина: ${escapeHtml(l.delay_description || l.delay_reason || '—')}\\n\\nСдвиг: +${l.delay_days||0} дн.')"><td>${escapeHtml(l.letter_number_full || '№'+l.letter_number+'/LGC-ERP')}</td><td>${formatDate(l.letter_date)}</td><td>${escapeHtml((l.delay_description || l.delay_reason || '').substring(0, 60))}</td><td>+${l.delay_days||0} дн.</td><td><span class="tag ${l.status==='sent_to_customer'?'tag-green':'tag-yellow'}">${l.status==='sent_to_customer'?'✅ Отправлено':'⏳ Черновик'}</span></td></tr>`;
-        });
-
-        let materialsHtml = '';
-        (materials || []).forEach(m => {
-            const items = m.material_income_items || [];
-            materialsHtml += `<tr><td>${formatDate(m.created_at)}</td><td>${items.map(i => escapeHtml(i.name||'')).join(', ')}</td><td>${items.reduce((s,i) => s + (i.quantity||0), 0)}</td><td>${formatMoney(m.total_amount||0)}</td></tr>`;
-        });
-
-        let issuesHtml = '';
-        (issues || []).forEach(issue => {
-            const sc = issue.status === 'overdue' ? 'tag-red' : issue.status === 'in_progress' ? 'tag-blue' : 'tag-yellow';
-            const sl = issue.status === 'overdue' ? '🔴 Просрочена' : issue.status === 'in_progress' ? '🔵 В работе' : '🟡 Открыта';
-            issuesHtml += `<tr><td><span class="tag ${sc}">${sl}</span></td><td><b>${escapeHtml(issue.title)}</b></td><td>${escapeHtml((issue.description||'').substring(0, 80))}</td><td>${formatDate(issue.created_at)}</td></tr>`;
-        });
-
-        container.innerHTML = `
-            <button onclick="loadPage('objects')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к объектам</button>
-            <div class="kpi-grid">
-                <div class="kpi-card"><div style="font-size:24px;">📋</div><div class="kpi-value">${formatMoney(project.contract_price)}</div><div class="kpi-label">Сумма договора</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">📅</div><div class="kpi-value" style="font-size:14px;">${formatDate(project.start_date)} — ${formatDate(project.end_date_contract)}</div><div class="kpi-label">Сроки</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">🏁</div><div class="kpi-value" style="font-size:14px;color:${axes.every(a => a.status === 'completed') && axes.length > 0 ? 'var(--success)' : 'var(--warning)'};">${axes.length > 0 ? formatDate(axes.reduce((max, a) => new Date(a.plan_end) > new Date(max) ? a.plan_end : max, axes[0].plan_end)) : '—'}</div><div class="kpi-label">Завершение по ГПР</div></div>
-                <div class="kpi-card"><div style="font-size:24px;">⚠️</div><div class="kpi-value" style="color:${(issues||[]).length > 0 ? 'var(--danger)' : 'var(--text)'};">${(issues||[]).length}</div><div class="kpi-label">Проблем</div></div>
-            </div>
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h2 style="margin:0;">🏗️ ${escapeHtml(project.name)}</h2>${totalShiftDays > 0 ? '<span class="tag tag-red">⚠️ Общий сдвиг: +' + totalShiftDays + ' дн.</span>' : ''}</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">
-                    <div><span style="color:var(--text-secondary);">Адрес:</span> <b>${escapeHtml(project.address||'—')}</b></div>
-                    <div><span style="color:var(--text-secondary);">Заказчик:</span> <b>${escapeHtml(project.customer_company_name||'—')}</b></div>
-                    <div><span style="color:var(--text-secondary);">Договор:</span> <b>${escapeHtml(project.contract_number_customer||'—')} ${project.contract_date_customer ? 'от '+formatDate(project.contract_date_customer) : ''}</b></div>
-                    <div><span style="color:var(--text-secondary);">Руководитель:</span> <b>${escapeHtml(project.manager_name||'—')}</b></div>
-                </div>
-                ${Object.keys(brigadesMap).length > 0 ? '<div style="margin-top:12px;"><span style="color:var(--text-secondary);font-size:13px;">👷 Бригады: </span>' + Object.values(brigadesMap).map(n => '<span class="tag tag-blue" style="margin:2px;">'+escapeHtml(n)+'</span>').join('') + '</div>' : ''}
-            </div>
-            <div class="card"><h2>📊 ГПР</h2><div class="table-wrap"><table><thead><tr><th>Ось</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Этапы</th><th>Сдвиг</th><th></th></tr></thead><tbody>${ganttRows || '<tr><td colspan="7">Нет осей</td></tr>'}</tbody></table></div></div>
-            ${issuesHtml ? `<div class="card"><h2>⚠️ Проблемы (${(issues||[]).length})</h2><div class="table-wrap"><table><thead><tr><th>Статус</th><th>Название</th><th>Описание</th><th>Дата</th></tr></thead><tbody>${issuesHtml}</tbody></table></div></div>` : ''}
-            ${lettersHtml ? `<div class="card"><h2>✉️ Письма (${(letters||[]).length})</h2><div class="table-wrap"><table><thead><tr><th>Номер</th><th>Дата</th><th>Причина</th><th>Сдвиг</th><th>Статус</th></tr></thead><tbody>${lettersHtml}</tbody></table></div></div>` : ''}
-            ${materialsHtml ? `<div class="card"><h2>📦 Материалы</h2><div class="table-wrap"><table><thead><tr><th>Дата</th><th>Наименование</th><th>Кол-во</th><th>Сумма</th></tr></thead><tbody>${materialsHtml}</tbody></table></div></div>` : ''}`;
-    };
-
-    window.toggleAxisDetail = function(axisId) {
-        const row = document.getElementById(axisId);
-        const arrow = document.getElementById(axisId + '-arrow');
-        if (row && arrow) { row.classList.toggle('hidden'); arrow.textContent = row.classList.contains('hidden') ? '▸' : '▾'; }
-    };
-
-let tasksFilter = { status: 'all', priority: 'all', project: 'all' };
-
-async function loadTasksPage(container) {
-    let q = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false }).limit(100);
-    if (currentUser.role !== 'manager') q = q.or(`created_by.eq.${currentUser.id},responsible_ids.cs.{${currentUser.id}}`);
-
-    const { data: tasks } = await q;
-    const allTasks = tasks || [];
-
-    const pendingCount = allTasks.filter(t => t.status === 'pending').length;
-    const inProgressCount = allTasks.filter(t => t.status === 'in_progress').length;
-    const completedCount = allTasks.filter(t => t.status === 'completed').length;
-    const overdueCount = allTasks.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed').length;
-
-    const projectSet = new Set();
-    allTasks.forEach(t => { if (t.projects?.name) projectSet.add(t.projects.name); });
-    const projectOptions = ['<option value="all">Все объекты</option>'];
-    projectSet.forEach(name => { projectOptions.push(`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`); });
-
-    container.innerHTML = `
-        <div class="kpi-grid" style="margin-bottom:16px;">
-            <div class="kpi-card" style="cursor:pointer;" onclick="setTaskFilter('status','pending')">
-                <div style="font-size:24px;">⏳</div>
-                <div class="kpi-value" style="color:var(--warning);">${pendingCount}</div>
-                <div class="kpi-label">Ожидают</div>
-            </div>
-            <div class="kpi-card" style="cursor:pointer;" onclick="setTaskFilter('status','in_progress')">
-                <div style="font-size:24px;">🔵</div>
-                <div class="kpi-value" style="color:var(--info);">${inProgressCount}</div>
-                <div class="kpi-label">В работе</div>
-            </div>
-            <div class="kpi-card" style="cursor:pointer;" onclick="setTaskFilter('status','completed')">
-                <div style="font-size:24px;">✅</div>
-                <div class="kpi-value" style="color:var(--success);">${completedCount}</div>
-                <div class="kpi-label">Готово</div>
-            </div>
-            <div class="kpi-card" style="cursor:pointer;" onclick="setTaskFilter('status','overdue')">
-                <div style="font-size:24px;">⚠️</div>
-                <div class="kpi-value" style="color:var(--danger);">${overdueCount}</div>
-                <div class="kpi-label">Просрочено</div>
-            </div>
-        </div>
-
-        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
-            <select id="task-filter-status" class="form-input" style="flex:1;min-width:120px;padding:8px;" onchange="setTaskFilter('status', this.value)">
-                <option value="all">Все статусы</option>
-                <option value="pending">⏳ Ожидают</option>
-                <option value="in_progress">🔵 В работе</option>
-                <option value="completed">✅ Готово</option>
-                <option value="overdue">⚠️ Просрочено</option>
-            </select>
-            <select id="task-filter-project" class="form-input" style="flex:1;min-width:140px;padding:8px;" onchange="setTaskFilter('project', this.value)">
-                ${projectOptions.join('')}
-            </select>
-            <select id="task-filter-priority" class="form-input" style="flex:1;min-width:120px;padding:8px;" onchange="setTaskFilter('priority', this.value)">
-                <option value="all">Все приоритеты</option>
-                <option value="high">🔴 Высокий</option>
-                <option value="medium">🟡 Средний</option>
-                <option value="low">🟢 Низкий</option>
-            </select>
-        </div>
-
-        <button class="btn btn-primary btn-sm-compact" onclick="openCreateTaskForm()" style="margin-bottom:16px;">➕ Создать задачу</button>
-
-        <div id="tasks-list-container"></div>
-    `;
-
-    renderFilteredTasks(allTasks);
-}
-
-function renderFilteredTasks(allTasks) {
-    let filtered = allTasks;
-
-    if (tasksFilter.status === 'pending') filtered = filtered.filter(t => t.status === 'pending');
-    else if (tasksFilter.status === 'in_progress') filtered = filtered.filter(t => t.status === 'in_progress');
-    else if (tasksFilter.status === 'completed') filtered = filtered.filter(t => t.status === 'completed');
-    else if (tasksFilter.status === 'overdue') filtered = filtered.filter(t => t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed');
-
-    if (tasksFilter.priority !== 'all') filtered = filtered.filter(t => t.priority === tasksFilter.priority);
-    if (tasksFilter.project !== 'all') filtered = filtered.filter(t => t.projects?.name === tasksFilter.project);
-
-    const container = document.getElementById('tasks-list-container');
-    if (!container) return;
-
-    if (!filtered.length) {
-        container.innerHTML = '<div class="card"><p style="text-align:center;color:var(--text-secondary);padding:20px;">Нет задач</p></div>';
-        return;
-    }
-
-    let html = '<div class="task-card-grid">';
-    filtered.forEach(t => {
-        const pc = t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢';
-        const sc = t.status === 'completed' ? 'tag-green' : t.status === 'in_progress' ? 'tag-blue' : 'tag-yellow';
-        const sl = t.status === 'completed' ? '✅' : t.status === 'in_progress' ? '🔵' : '⏳';
-        const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
-
-        html += `
-            <div class="task-card-item ${isOverdue ? 'overdue' : ''}" onclick="viewTaskDetail('${t.id}')">
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span class="task-priority">${pc}</span>
-                    <span class="tag ${sc}">${sl} ${t.status==='completed'?'Сделано':t.status==='in_progress'?'В работе':'Ожидает'}</span>
-                </div>
-                <div class="task-name">${escapeHtml(t.title)}</div>
-                <div class="task-info">
-                    <span>🏗️ ${escapeHtml(t.projects?.name || '—')}</span>
-                    ${t.responsible_names?.length ? '<span>👤 ' + t.responsible_names.slice(0, 2).join(', ') + (t.responsible_names.length > 2 ? '...' : '') + '</span>' : ''}
-                </div>
-                <div class="task-info">
-                    <span>📅 ${formatDate(t.created_at)}</span>
-                    ${t.deadline ? '<span style="color:' + (isOverdue ? 'var(--danger)' : 'var(--text-secondary)') + ';">⏰ ' + formatDate(t.deadline) + '</span>' : ''}
-                </div>
-            </div>`;
-    });
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-window.setTaskFilter = function(type, value) {
-    tasksFilter[type] = value;
-    if (type === 'status') {
-        const sel = document.getElementById('task-filter-status');
-        if (sel) sel.value = value;
-    }
-    if (type === 'project') {
-        const sel = document.getElementById('task-filter-project');
-        if (sel) sel.value = value;
-    }
-    if (type === 'priority') {
-        const sel = document.getElementById('task-filter-priority');
-        if (sel) sel.value = value;
-    }
-    loadTasksPage(document.getElementById('page-body'));
-};
-
-window.openCreateTaskForm = async function() {
-    const container = document.getElementById('page-body');
-    
-    const { data: projects } = await supabase.from('projects').select('id,name').order('name');
-    const { data: users } = await supabase.from('users').select('id,full_name').order('full_name');
-
-    container.innerHTML = `
-        <button onclick="loadPage('tasks')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к задачам</button>
-        <div class="card">
-            <h2>➕ Новая задача</h2>
-            <div class="form-group"><label class="form-label">Название *</label><input type="text" id="ct-title" class="form-input"></div>
-            <div class="form-group"><label class="form-label">Описание</label><textarea id="ct-desc" class="form-input" rows="3"></textarea></div>
-            <div class="form-group"><label class="form-label">🏗️ Объект</label><select id="ct-project" class="form-input"><option value="">—</option>${(projects||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">⚡ Приоритет</label><select id="ct-priority" class="form-input"><option value="low">🟢 Низкий</option><option value="medium" selected>🟡 Средний</option><option value="high">🔴 Высокий</option></select></div>
-            <div class="form-group"><label class="form-label">⏰ Дедлайн</label><input type="date" id="ct-deadline" class="form-input"></div>
-            <div class="form-group"><label class="form-label">👤 Ответственный</label><select id="ct-responsible" class="form-input">${(users||[]).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}</select></div>
-            <div class="form-group"><label class="form-label">📎 Файлы</label><input type="file" id="ct-files" class="form-input" multiple></div>
-            <div style="display:flex;gap:8px;">
-    <button class="btn btn-primary btn-sm-compact" id="save-ct-btn">📤 Создать</button>
-    <button class="btn btn-outline btn-sm-compact" onclick="loadPage('tasks')">Отмена</button>
-</div>
-        </div>
-    `;
-
-    document.getElementById('save-ct-btn').addEventListener('click', async () => {
-        const title = document.getElementById('ct-title').value.trim();
-        if (!title) { alert('Введите название'); return; }
-        const respId = document.getElementById('ct-responsible').value;
-        const respName = document.getElementById('ct-responsible').selectedOptions[0]?.text || '';
-        const files = document.getElementById('ct-files').files || [];
-        const fileUrls = [];
-        
-        for (const file of files) {
-            const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-            const fileName = 'tasks/' + Date.now() + '_' + cleanName;
-            const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
-            if (!uploadError) {
-                const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-                fileUrls.push({ name: file.name, url: urlData.publicUrl });
-            }
-        }
-
-        const { error } = await supabase.from('custom_tasks').insert({
-            project_id: document.getElementById('ct-project').value || null,
-            title,
-            description: document.getElementById('ct-desc').value,
-            priority: document.getElementById('ct-priority').value,
-            deadline: document.getElementById('ct-deadline').value || null,
-            responsible_ids: [respId],
-            responsible_names: [respName],
-            status: 'pending',
-            type: 'task',
-            created_by: currentUser.id,
-            created_by_name: currentUser.full_name,
-            created_at: new Date().toISOString(),
-            files: fileUrls
-        });
-
-        if (error) { alert('Ошибка: ' + error.message); return; }
-        loadPage('tasks');
-    });
-};
-
-window.viewTaskDetail = async function(taskId) {
-    const container = document.getElementById('page-body');
-    container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
-    document.getElementById('page-title').textContent = '📋 Задача';
-
-    const { data: t } = await supabase.from('custom_tasks').select('*, projects(name)').eq('id', taskId).single();
-    if (!t) { container.innerHTML = '<div class="card"><p>Задача не найдена</p></div>'; return; }
-
-    const { data: comments } = await supabase.from('task_comments').select('*').eq('task_id', taskId).order('created_at', { ascending: true });
-    const { data: users } = await supabase.from('users').select('id,full_name').order('full_name');
-
-    const priorityEmoji = t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢';
-    const priorityText = t.priority === 'high' ? 'Высокий' : t.priority === 'medium' ? 'Средний' : 'Низкий';
-    const isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
-
-    container.innerHTML = `
-        <button onclick="loadPage('tasks')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к задачам</button>
-        
-        <div style="display:flex;flex-direction:column;gap:12px;">
-            <div class="card" style="${isOverdue ? 'border-left:4px solid var(--danger);' : ''}">
-                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
-                    <span class="tag ${t.status==='completed'?'tag-green':t.status==='in_progress'?'tag-blue':'tag-yellow'}">${t.status==='completed'?'✅ Сделано':t.status==='in_progress'?'🔵 В работе':'⏳ Ожидает'}</span>
-                    <span style="font-size:12px;">${priorityEmoji} ${priorityText}</span>
-                </div>
-                <h2 style="margin:0 0 8px 0;">${escapeHtml(t.title)}</h2>
-                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">${escapeHtml(t.description || 'Нет описания')}</p>
-                ${t.projects?.name ? `<div style="font-size:12px;">🏗️ ${escapeHtml(t.projects.name)}</div>` : ''}
-                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">
-                    👤 ${t.created_by_name || '—'} | 📅 ${formatDate(t.created_at)}
-                    ${t.deadline ? ` | ⏰ Дедлайн: <b style="color:${isOverdue ? 'var(--danger)' : 'var(--text)'};">${formatDate(t.deadline)}</b>` : ''}
-                </div>
-            </div>
-
-            <div class="card">
-                <div style="font-weight:600;margin-bottom:8px;">👥 Ответственные</div>
-                <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-                    ${(t.responsible_names || []).map((name, idx) => `
-                        <span style="background:#F1F5F9;padding:4px 10px;border-radius:20px;font-size:12px;display:flex;align-items:center;gap:6px;">
-                            👤 ${escapeHtml(name)}
-                            <span onclick="removeTaskResponsible('${t.id}', ${idx})" style="cursor:pointer;color:var(--danger);font-weight:bold;">✕</span>
-                        </span>
-                    `).join('')}
-                </div>
-                <select class="form-input" style="font-size:12px;padding:8px;" onchange="addTaskResponsible('${t.id}', this.value)">
-                    <option value="">+ Добавить</option>
-                    ${(users || []).filter(u => !(t.responsible_ids || []).includes(u.id)).map(u => `<option value="${u.id}">${u.full_name}</option>`).join('')}
-                </select>
-            </div>
-
-            <div class="card">
-                <div style="font-weight:600;margin-bottom:8px;">📊 Статус</div>
-               <div style="display:flex;gap:6px;">
-    <button class="btn btn-sm-compact ${t.status==='pending'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','pending')">⏳ Ожидает</button>
-    <button class="btn btn-sm-compact ${t.status==='in_progress'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','in_progress')">🔵 В работе</button>
-    <button class="btn btn-sm-compact ${t.status==='completed'?'btn-primary':'btn-outline'}" onclick="updateTaskField('${t.id}','status','completed')">✅ Сделано</button>
-</div>
-            </div>
-
-            <div class="card">
-                <div style="display:flex;gap:8px;">
-    <input type="date" id="task-deadline-input" class="form-input" value="${t.deadline || ''}" style="flex:1;max-width:200px;">
-    <button class="btn btn-primary btn-sm-compact" onclick="updateTaskDeadline('${t.id}')">💾</button>
-</div>
-            </div>
-
-            <div class="card">
-                <div style="font-weight:600;margin-bottom:12px;">💬 Комментарии (${(comments||[]).length})</div>
-                <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:300px;overflow-y:auto;">
-                    ${(comments||[]).length === 0 ? '<p style="text-align:center;color:var(--text-secondary);font-size:12px;">Нет комментариев</p>' : ''}
-                    ${(comments||[]).map(c => `
-                        <div style="background:#F8FAFC;padding:10px;border-radius:10px;">
-                            <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                                <span style="font-weight:600;font-size:12px;">👤 ${escapeHtml(c.author_name||'—')}</span>
-                                <span style="font-size:10px;color:var(--text-secondary);">${formatDate(c.created_at)}</span>
-                            </div>
-                            <div style="font-size:13px;">${escapeHtml(c.text)}</div>
-                            ${(c.files||[]).length > 0 ? `<div style="margin-top:6px;">${c.files.map(f => `<a href="${f.url}" target="_blank" class="tag tag-blue" style="text-decoration:none;font-size:10px;">📎 ${escapeHtml(f.name)}</a>`).join(' ')}</div>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-                <div style="border-top:1px solid var(--border);padding-top:10px;">
-                    <textarea id="new-comment-text" class="form-input" rows="2" placeholder="Написать комментарий..." style="font-size:13px;margin-bottom:8px;"></textarea>
-                    <div style="margin-bottom:8px;">
-                        <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">📎 Прикрепить файл</label>
-                        <input type="file" id="new-comment-file" class="form-input" style="font-size:12px;">
-                    </div>
-                   <button class="btn btn-primary btn-sm-compact" onclick="addTaskComment('${t.id}')">📤 Отправить</button>
-                </div>
-            </div>
-
-            <button class="btn btn-danger btn-sm-compact" onclick="deleteTaskAndGoBack('${t.id}')">🗑️ Удалить</button>
-        </div>
-    `;
-};
-
-window.updateTaskField = async function(taskId, field, value) {
-    await supabase.from('custom_tasks').update({ [field]: value, updated_at: new Date().toISOString() }).eq('id', taskId);
-    viewTaskDetail(taskId);
-};
-
-window.updateTaskDeadline = async function(taskId) {
-    const deadline = document.getElementById('task-deadline-input')?.value;
-    await supabase.from('custom_tasks').update({ deadline: deadline || null, updated_at: new Date().toISOString() }).eq('id', taskId);
-    viewTaskDetail(taskId);
-};
-
-window.addTaskResponsible = async function(taskId, userId) {
-    if (!userId) return;
-    const { data: task } = await supabase.from('custom_tasks').select('responsible_ids, responsible_names').eq('id', taskId).single();
-    if (!task) return;
-    const { data: user } = await supabase.from('users').select('full_name').eq('id', userId).single();
-    if (!user) return;
-    const ids = [...(task.responsible_ids || []), userId];
-    const names = [...(task.responsible_names || []), user.full_name];
-    await supabase.from('custom_tasks').update({ responsible_ids: ids, responsible_names: names, updated_at: new Date().toISOString() }).eq('id', taskId);
-    viewTaskDetail(taskId);
-};
-
-window.removeTaskResponsible = async function(taskId, idx) {
-    const { data: task } = await supabase.from('custom_tasks').select('responsible_ids, responsible_names').eq('id', taskId).single();
-    if (!task) return;
-    const ids = (task.responsible_ids || []).filter((_, i) => i !== idx);
-    const names = (task.responsible_names || []).filter((_, i) => i !== idx);
-    await supabase.from('custom_tasks').update({ responsible_ids: ids, responsible_names: names, updated_at: new Date().toISOString() }).eq('id', taskId);
-    viewTaskDetail(taskId);
-};
-
-window.addTaskComment = async function(taskId) {
-    const textEl = document.getElementById('new-comment-text');
-    const fileEl = document.getElementById('new-comment-file');
-    const text = textEl?.value?.trim();
-    if (!text) { alert('Введите текст комментария'); return; }
-
-    const files = [];
-    if (fileEl?.files[0]) {
-        const file = fileEl.files[0];
-        const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const fileName = 'comments/' + Date.now() + '_' + cleanName;
-        const { error: uploadError } = await supabase.storage.from('reports').upload(fileName, file);
-        if (!uploadError) {
-            const { data: urlData } = supabase.storage.from('reports').getPublicUrl(fileName);
-            files.push({ name: file.name, url: urlData.publicUrl });
-        }
-    }
-
-    await supabase.from('task_comments').insert({
-        task_id: taskId,
-        author_id: currentUser?.id,
-        author_name: currentUser?.full_name || 'Пользователь',
-        text: text,
-        files: files,
-        created_at: new Date().toISOString()
-    });
-
-    textEl.value = '';
-    if (fileEl) fileEl.value = '';
-    viewTaskDetail(taskId);
-};
-
-window.deleteTaskAndGoBack = async function(taskId) {
-    if (!confirm('⚠️ Удалить задачу? Это нельзя отменить.')) return;
-    await supabase.from('custom_tasks').delete().eq('id', taskId);
-    loadPage('tasks');
-};
-
-let financeFilter = { project: 'all', period: 'month', dateFrom: '', dateTo: '' };
-
-async function loadFinancesPage(container) {
-    const now = new Date();
-    const months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-    const monthLabel = months[now.getMonth()] + ' ' + now.getFullYear();
-
-    let pq = supabase.from('projects').select('id,name').order('name');
-    if (currentUser.role !== 'manager') pq = pq.eq('responsible_worker_id', currentUser.id);
-    const { data: projects } = await pq;
-    const allProjects = projects || [];
-
-    let incQ = supabase.from('incomes').select('*, projects(name)').order('date', { ascending: false });
-    let expQ = supabase.from('expenses').select('*, projects(name)').order('date', { ascending: false });
-    let ordQ = supabase.from('work_orders').select('*, projects(name), brigades(name)').order('created_at', { ascending: false });
-    let advQ = supabase.from('advances').select('*, projects(name), brigades(name)').order('created_at', { ascending: false });
-
-    if (currentUser.role !== 'manager') {
-        const pids = allProjects.map(p => p.id);
-        if (pids.length) { incQ = incQ.in('project_id', pids); expQ = expQ.in('project_id', pids); ordQ = ordQ.in('project_id', pids); advQ = advQ.in('project_id', pids); }
-    }
-    if (financeFilter.project !== 'all') {
-        incQ = incQ.eq('project_id', financeFilter.project);
-        expQ = expQ.eq('project_id', financeFilter.project);
-        ordQ = ordQ.eq('project_id', financeFilter.project);
-        advQ = advQ.eq('project_id', financeFilter.project);
-    }
-
-    const [incR, expR, ordR, advR] = await Promise.all([incQ, expQ, ordQ, advQ]);
-    const incomes = incR.data || [];
-    const expenses = expR.data || [];
-    const workOrders = ordR.data || [];
-    const advances = advR.data || [];
-
-    let dateFrom, dateTo;
-    if (financeFilter.period === 'ytd') {
-        dateFrom = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
-        dateTo = now.toISOString().split('T')[0];
-    } else if (financeFilter.period === 'custom' && financeFilter.dateFrom && financeFilter.dateTo) {
-        dateFrom = financeFilter.dateFrom;
-        dateTo = financeFilter.dateTo;
-    } else {
-        dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-        dateTo = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-    }
-
-    const inRange = (d) => d >= dateFrom && d <= dateTo;
-    const filterData = (arr, field = 'date') => arr.filter(x => inRange(x[field] || x.created_at?.split('T')[0]));
-
-    const fIncomes = filterData(incomes);
-    const fExpenses = filterData(expenses);
-    const fOrders = filterData(workOrders, 'created_at');
-    const fAdvances = filterData(advances, 'created_at');
-
-    const totalIncome = fIncomes.filter(i => i.status === 'paid').reduce((s, i) => s + (i.amount || 0), 0);
-    const totalPlanIncome = fIncomes.filter(i => i.status === 'pending').reduce((s, i) => s + (i.amount || 0), 0);
-    const totalExpenseAndPayouts = fExpenses.filter(e => e.payment_status === 'paid').reduce((s, e) => s + (e.amount || 0), 0) +
-        [...fOrders.filter(o => o.payment_status === 'paid'), ...fAdvances.filter(a => a.status === 'paid')].reduce((s, x) => s + (x.amount || x.total_amount || 0), 0);
-
-    const weekEnd = new Date(now);
-    weekEnd.setDate(now.getDate() + 7);
-    const weekEndStr = weekEnd.toISOString().split('T')[0];
-    const todayStr = now.toISOString().split('T')[0];
-
-    const weekIncomes = incomes.filter(i => i.status === 'pending');
-    const weekExpenses = expenses.filter(e => e.payment_status === 'pending');
-    const weekOrders = workOrders.filter(o => o.payment_status === 'pending');
-    const weekAdvances = advances.filter(a => a.status === 'pending');
-
-    const weekIncomeTotal = weekIncomes.reduce((s, i) => s + (i.amount || 0), 0);
-    const weekExpenseTotal = weekExpenses.reduce((s, e) => s + (e.amount || 0), 0);
-    const weekPayoutTotal = [...weekOrders, ...weekAdvances].reduce((s, x) => s + (x.amount || x.total_amount || 0), 0);
-
-    const dateMap = {};
-    const addToDate = (date, type, amount) => {
-        if (!date) return;
-        if (!dateMap[date]) dateMap[date] = { income: 0, expense: 0, payout: 0 };
-        dateMap[date][type] += amount;
-    };
-    fIncomes.forEach(i => addToDate(i.date, 'income', i.amount || 0));
-    fExpenses.forEach(e => addToDate(e.date, 'expense', e.amount || 0));
-    fOrders.forEach(o => addToDate(o.payment_date || o.created_at?.split('T')[0], 'payout', o.total_amount || 0));
-    fAdvances.forEach(a => addToDate(a.payment_date || a.created_at?.split('T')[0], 'payout', a.amount || 0));
-
-    let dateSumIncome = 0, dateSumExpense = 0, dateSumPayout = 0;
-    const dateRows = Object.entries(dateMap).sort((a, b) => a[0].localeCompare(b[0])).map(([date, vals]) => {
-        dateSumIncome += vals.income;
-        dateSumExpense += vals.expense;
-        dateSumPayout += vals.payout;
-        const dayTotal = vals.income - vals.expense - vals.payout;
-        return `<tr>
-            <td>${formatDate(date)}</td>
-            <td class="text-success">${vals.income > 0 ? '+' + vals.income.toLocaleString() + ' ₸' : '—'}</td>
-            <td class="text-danger">${vals.expense > 0 ? '-' + vals.expense.toLocaleString() + ' ₸' : '—'}</td>
-            <td class="text-warning">${vals.payout > 0 ? '-' + vals.payout.toLocaleString() + ' ₸' : '—'}</td>
-            <td style="font-weight:700;color:${dayTotal >= 0 ? 'var(--success)' : 'var(--danger)'};">${dayTotal >= 0 ? '+' : ''}${dayTotal.toLocaleString()} ₸</td>
-        </tr>`;
-    }).join('');
-
-    const projectFinances = {};
-    allProjects.forEach(p => {
-        const pInc = incomes.filter(i => i.project_id === p.id && i.status === 'paid').reduce((s, i) => s + (i.amount || 0), 0);
-        const pExp = expenses.filter(e => e.project_id === p.id && e.payment_status === 'paid').reduce((s, e) => s + (e.amount || 0), 0);
-        const pPay = [...workOrders.filter(o => o.project_id === p.id && o.payment_status === 'paid'), ...advances.filter(a => a.project_id === p.id && a.status === 'paid')].reduce((s, x) => s + (x.amount || x.total_amount || 0), 0);
-        projectFinances[p.id] = { name: p.name, income: pInc, expense: pExp, payout: pPay, balance: pInc - pExp - pPay };
-    });
-
-    const projectRows = Object.values(projectFinances).map(p => `
-        <tr style="cursor:pointer;" onclick="alert('${escapeHtml(p.name)}\\nПриход: ${p.income.toLocaleString()} ₸\\nРасходы: ${p.expense.toLocaleString()} ₸\\nВыплаты: ${p.payout.toLocaleString()} ₸\\nСальдо: ${p.balance.toLocaleString()} ₸')">
-            <td><b>${escapeHtml(p.name)}</b></td>
-            <td class="text-success">${p.income.toLocaleString()} ₸</td>
-            <td class="text-danger">${p.expense.toLocaleString()} ₸</td>
-            <td class="text-warning">${p.payout.toLocaleString()} ₸</td>
-            <td style="font-weight:700;color:${p.balance >= 0 ? 'var(--success)' : 'var(--danger)'};">${p.balance.toLocaleString()} ₸</td>
-        </tr>
-    `).join('');
-
-    const projectOpts = '<option value="all">Все объекты</option>' + allProjects.map(p => `<option value="${p.id}" ${financeFilter.project === p.id ? 'selected' : ''}>${p.name}</option>`).join('');
-
-    container.innerHTML = `
-        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-            <select id="finance-filter-project" class="form-input" style="flex:1;min-width:140px;padding:8px;" onchange="setFinanceFilter('project', this.value)">${projectOpts}</select>
-            <select id="finance-filter-period" class="form-input" style="flex:1;min-width:120px;padding:8px;" onchange="setFinanceFilter('period', this.value)">
-                <option value="month" selected>${monthLabel}</option>
-                <option value="ytd">С начала года</option>
-                <option value="custom">Свой период</option>
-            </select>
-            <div id="custom-period" class="${financeFilter.period === 'custom' ? '' : 'hidden'}" style="display:flex;gap:4px;align-items:center;">
-                <input type="date" id="date-from" class="form-input" style="width:130px;padding:6px;font-size:11px;" value="${financeFilter.dateFrom || dateFrom}" onchange="setFinanceFilter('dateFrom', this.value)">
-                <span>—</span>
-                <input type="date" id="date-to" class="form-input" style="width:130px;padding:6px;font-size:11px;" value="${financeFilter.dateTo || dateTo}" onchange="setFinanceFilter('dateTo', this.value)">
-            </div>
-        </div>
-
-        <div class="kpi-grid">
-            <div class="kpi-card" style="border-left:4px solid var(--success);">
-                <div style="font-size:20px;">💰</div>
-                <div class="kpi-value text-success">${totalIncome.toLocaleString()} ₸</div>
-                <div class="kpi-label">Приход (зашло)</div>
-            </div>
-            <div class="kpi-card" style="border-left:4px solid var(--info);">
-                <div style="font-size:20px;">📥</div>
-                <div class="kpi-value" style="color:var(--info);">${totalPlanIncome.toLocaleString()} ₸</div>
-                <div class="kpi-label">План поступлений</div>
-            </div>
-            <div class="kpi-card" style="border-left:4px solid var(--danger);">
-                <div style="font-size:20px;">💳</div>
-                <div class="kpi-value text-danger">${totalExpenseAndPayouts.toLocaleString()} ₸</div>
-                <div class="kpi-label">Расходы + Выплаты</div>
-            </div>
-            <div class="kpi-card" style="border-left:4px solid var(--gold);">
-                <div style="font-size:20px;">📊</div>
-                <div class="kpi-value" style="color:${totalIncome - totalExpenseAndPayouts >= 0 ? 'var(--success)' : 'var(--danger)'};">${(totalIncome - totalExpenseAndPayouts).toLocaleString()} ₸</div>
-                <div class="kpi-label">Чистый поток</div>
-            </div>
-        </div>
-
-        <!-- 📅 ПЛАН НА НЕДЕЛЮ -->
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('week-plan-content')">
-                <h2 style="margin:0;">📅 План на неделю (${formatDate(todayStr)} — ${formatDate(weekEndStr)})</h2>
-                <span id="week-plan-arrow">▾</span>
-            </div>
-            <div id="week-plan-content" style="margin-top:12px;">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-                    <div>
-                        <h3 style="font-size:13px;margin-bottom:8px;">📤 Выплаты и расходы</h3>
-                        <div class="table-wrap">
-                            <table style="font-size:11px;">
-                                <thead><tr><th>№</th><th>Тип</th><th>Наименование</th><th>Оплатить до</th><th>Сумма</th></tr></thead>
-                                <tbody>
-                                    ${(() => {
-                                        let rows = '';
-                                        let num = 0;
-                                        let total = 0;
-                                        
-                                        weekExpenses.forEach(e => {
-                                            num++;
-                                            total += (e.amount || 0);
-                                            const isOverdue = e.planned_payment_date && new Date(e.planned_payment_date) < new Date();
-                                            rows += `<tr style="cursor:pointer;${isOverdue ? 'background:#FEF2F2;' : ''}" onclick="openFinanceCard('expense','${e.id}')">
-                                                <td>${num}</td>
-                                                <td><span class="tag tag-red">📤 Расход</span></td>
-                                                <td>${escapeHtml(e.name)}</td>
-                                                <td style="color:${isOverdue ? 'var(--danger)' : 'var(--text-secondary)'};">
-                                                    ${formatDate(e.planned_payment_date || e.date)}
-                                                    ${isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : ''}
-                                                </td>
-                                                <td class="text-danger">-${(e.amount||0).toLocaleString()} ₸</td>
-                                            </tr>`;
-                                        });
-                                        
-                                        weekOrders.forEach(o => {
-                                            num++;
-                                            total += (o.total_amount || 0);
-                                            const payDate = o.payment_date || o.created_at?.split('T')[0];
-                                            const isOverdue = payDate && new Date(payDate) < new Date();
-                                            rows += `<tr style="cursor:pointer;${isOverdue ? 'background:#FEF2F2;' : ''}" onclick="openFinanceCard('order','${o.id}')">
-                                                <td>${num}</td>
-                                                <td><span class="tag tag-yellow">👷 Наряд</span></td>
-                                                <td>${escapeHtml(o.work_type || 'Наряд')} — ${escapeHtml(o.brigades?.name || '')}</td>
-                                                <td style="color:${isOverdue ? 'var(--danger)' : 'var(--text-secondary)'};">
-                                                    ${formatDate(payDate)}
-                                                    ${isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : ''}
-                                                </td>
-                                                <td class="text-danger">-${(o.total_amount||0).toLocaleString()} ₸</td>
-                                            </tr>`;
-                                        });
-                                        
-                                        weekAdvances.forEach(a => {
-                                            num++;
-                                            total += (a.amount || 0);
-                                            const payDate = a.payment_date || a.created_at?.split('T')[0];
-                                            const isOverdue = payDate && new Date(payDate) < new Date();
-                                            rows += `<tr style="cursor:pointer;${isOverdue ? 'background:#FEF2F2;' : ''}" onclick="openFinanceCard('advance','${a.id}')">
-                                                <td>${num}</td>
-                                                <td><span class="tag tag-blue">💳 Аванс</span></td>
-                                                <td>Аванс — ${escapeHtml(a.brigades?.name || '')}</td>
-                                                <td style="color:${isOverdue ? 'var(--danger)' : 'var(--text-secondary)'};">
-                                                    ${formatDate(payDate)}
-                                                    ${isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : ''}
-                                                </td>
-                                                <td class="text-danger">-${(a.amount||0).toLocaleString()} ₸</td>
-                                            </tr>`;
-                                        });
-                                        
-                                        if (!rows) rows = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Нет данных</td></tr>';
-                                        
-                                        return rows + `<tr style="font-weight:700;background:#F8FAFC;"><td colspan="3">ИТОГО: ${num} операций</td><td></td><td class="text-danger">-${total.toLocaleString()} ₸</td></tr>`;
-                                    })()}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <h3 style="font-size:13px;margin-bottom:8px;">📥 Поступления</h3>
-                        <div class="table-wrap">
-                            <table style="font-size:11px;">
-                                <thead><tr><th>№</th><th>Вид</th><th>От кого</th><th>Ожидаем</th><th>Сумма</th></tr></thead>
-                                <tbody>
-                                    ${(() => {
-                                        let rows = '';
-                                        let num = 0;
-                                        let total = 0;
-                                        
-                                        weekIncomes.forEach(i => {
-                                            num++;
-                                            total += (i.amount || 0);
-                                            const isOverdue = i.date && new Date(i.date) < new Date() && i.status === 'pending';
-                                            rows += `<tr style="cursor:pointer;${isOverdue ? 'background:#FEF2F2;' : ''}" onclick="openFinanceCard('income','${i.id}')">
-                                                <td>${num}</td>
-                                                <td>${escapeHtml(i.income_type || i.description || 'Поступление')}</td>
-                                                <td>${escapeHtml(i.projects?.customer_company_name || i.projects?.name || '—')}</td>
-                                                <td style="color:${isOverdue ? 'var(--danger)' : 'var(--text-secondary)'};">
-                                                    ${formatDate(i.date)}
-                                                    ${isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : ''}
-                                                </td>
-                                                <td class="text-success">+${(i.amount||0).toLocaleString()} ₸</td>
-                                            </tr>`;
-                                        });
-                                        
-                                        if (!rows) rows = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Нет данных</td></tr>';
-                                        
-                                        return rows + `<tr style="font-weight:700;background:#F8FAFC;"><td colspan="3">ИТОГО: ${num} поступлений</td><td></td><td class="text-success">+${total.toLocaleString()} ₸</td></tr>`;
-                                    })()}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ✅ УТВЕРЖДЁННЫЕ -->
-        ${(() => {
-            const approvedOrders = workOrders.filter(o => o.status === 'approved' && o.payment_status !== 'paid');
-            const approvedExpenses = expenses.filter(e => e.payment_status === 'approved');
-            const approvedAdvances = advances.filter(a => a.status === 'approved');
-            const allApproved = [...approvedOrders.map(o => ({...o, cardType: 'order', displayName: o.work_type || 'Наряд', displayAmount: o.total_amount})), ...approvedExpenses.map(e => ({...e, cardType: 'expense', displayName: e.name, displayAmount: e.amount})), ...approvedAdvances.map(a => ({...a, cardType: 'advance', displayName: 'Аванс', displayAmount: a.amount}))];
-            
-            if (!allApproved.length) return '';
-            
-            return `
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('approved-content')">
-                    <h2 style="margin:0;">✅ Утверждённые (ожидают оплаты)</h2>
-                    <span id="approved-arrow">▾</span>
-                </div>
-                <div id="approved-content" style="margin-top:12px;">
-                    <div class="table-wrap">
-                        <table style="font-size:11px;">
-                            <thead><tr><th>№</th><th>Тип</th><th>Наименование</th><th>Сумма</th><th>Объект</th><th>Утверждён</th></tr></thead>
-                            <tbody>
-                                ${allApproved.map((item, idx) => `
-                                    <tr style="cursor:pointer;" onclick="openFinanceCard('${item.cardType}','${item.id}')">
-                                        <td>${idx + 1}</td>
-                                        <td><span class="tag ${item.cardType==='expense'?'tag-red':item.cardType==='order'?'tag-yellow':'tag-blue'}">${item.cardType==='expense'?'📤 Расход':item.cardType==='order'?'👷 Наряд':'💳 Аванс'}</span></td>
-                                        <td>${escapeHtml(item.displayName)} ${item.brigades?.name ? '— '+escapeHtml(item.brigades.name) : ''}</td>
-                                        <td class="text-danger">-${(item.displayAmount||0).toLocaleString()} ₸</td>
-                                        <td>${escapeHtml(item.projects?.name||'—')}</td>
-                                        <td>${formatDate(item.approved_at)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>`;
-        })()}
-
-        <!-- 💰 ОПЛАЧЕННЫЕ -->
-        ${(() => {
-            const paidOrders = workOrders.filter(o => o.payment_status === 'paid');
-            const paidExpenses = expenses.filter(e => e.payment_status === 'paid');
-            const paidAdvances = advances.filter(a => a.status === 'paid');
-            const paidIncomes = fIncomes.filter(i => i.status === 'paid');
-            const allPaid = [...paidOrders.map(o => ({...o, cardType: 'order', displayName: o.work_type || 'Наряд', displayAmount: o.total_amount, paidDate: o.payment_date})), ...paidExpenses.map(e => ({...e, cardType: 'expense', displayName: e.name, displayAmount: e.amount, paidDate: e.planned_payment_date})), ...paidAdvances.map(a => ({...a, cardType: 'advance', displayName: 'Аванс', displayAmount: a.amount, paidDate: a.payment_date})), ...paidIncomes.map(i => ({...i, cardType: 'income', displayName: i.income_type || 'Поступление', displayAmount: i.amount, paidDate: i.date}))];
-            
-            if (!allPaid.length) return '';
-            
-            return `
-            <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('paid-content')">
-                    <h2 style="margin:0;">💰 Оплаченные</h2>
-                    <span id="paid-arrow">▾</span>
-                </div>
-                <div id="paid-content" style="margin-top:12px;">
-                    <div class="table-wrap">
-                        <table style="font-size:11px;">
-                            <thead><tr><th>№</th><th>Тип</th><th>Наименование</th><th>Сумма</th><th>Объект</th><th>Дата оплаты</th></tr></thead>
-                            <tbody>
-                                ${allPaid.map((item, idx) => `
-                                    <tr style="cursor:pointer;" onclick="openFinanceCard('${item.cardType}','${item.id}')">
-                                        <td>${idx + 1}</td>
-                                        <td><span class="tag tag-green">${item.cardType==='expense'?'📤 Расход':item.cardType==='order'?'👷 Наряд':item.cardType==='advance'?'💳 Аванс':'📥 Поступление'}</span></td>
-                                        <td>${escapeHtml(item.displayName)} ${item.brigades?.name ? '— '+escapeHtml(item.brigades.name) : ''}</td>
-                                        <td style="color:${item.cardType==='income'?'var(--success)':'var(--danger)'};">${item.cardType==='income'?'+':'-'}${(item.displayAmount||0).toLocaleString()} ₸</td>
-                                        <td>${escapeHtml(item.projects?.name||'—')}</td>
-                                        <td>${formatDate(item.paidDate)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>`;
-        })()}
-
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('chart-content')">
-                <h2 style="margin:0;">📊 Приходы и расходы</h2>
-                <span id="chart-arrow">▾</span>
-            </div>
-            <div id="chart-content">
-                <canvas id="finance-chart" height="60" style="margin-top:12px;"></canvas>
-            </div>
-        </div>
-
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('date-plan-content')">
-                <h2 style="margin:0;">📅 Планирование по датам</h2>
-                <span id="date-plan-arrow">▾</span>
-            </div>
-            <div id="date-plan-content">
-                <div class="table-wrap" style="margin-top:12px;">
-                    <table>
-                        <thead><tr><th>Дата</th><th>💰 Приход</th><th>📤 Расход</th><th>👷 Выплаты</th><th>Сальдо</th></tr></thead>
-                        <tbody>${dateRows || '<tr><td colspan="5">Нет данных</td></tr>'}</tbody>
-                        <tfoot style="font-weight:700;background:#F8FAFC;">
-                            <tr>
-                                <td>ИТОГО</td>
-                                <td class="text-success">+${dateSumIncome.toLocaleString()} ₸</td>
-                                <td class="text-danger">-${dateSumExpense.toLocaleString()} ₸</td>
-                                <td class="text-warning">-${dateSumPayout.toLocaleString()} ₸</td>
-                                <td style="color:${dateSumIncome - dateSumExpense - dateSumPayout >= 0 ? 'var(--success)' : 'var(--danger)'};">${(dateSumIncome - dateSumExpense - dateSumPayout).toLocaleString()} ₸</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('objects-content')">
-                <h2 style="margin:0;">🏗️ Объекты</h2>
-                <span id="objects-arrow">▾</span>
-            </div>
-            <div id="objects-content">
-                <div class="table-wrap" style="margin-top:12px;">
-                    <table>
-                        <thead><tr><th>Объект</th><th>💰 Приход</th><th>📤 Расходы</th><th>👷 Выплаты</th><th>Сальдо</th></tr></thead>
-                        <tbody>${projectRows || '<tr><td colspan="5">Нет объектов</td></tr>'}</tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="toggleBlock('reports-content')">
-                <h2 style="margin:0;">📊 Отчёты</h2>
-                <span id="reports-arrow">▾</span>
-            </div>
-            <div id="reports-content" style="margin-top:12px;">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    <button class="btn btn-outline btn-sm-compact" onclick="generateFinanceReport('full')">📊 Полный отчёт</button>
-                    <button class="btn btn-outline btn-sm-compact" onclick="generateFinanceReport('income')">📥 По приходу</button>
-                    <button class="btn btn-outline btn-sm-compact" onclick="generateFinanceReport('expense')">📤 По расходам</button>
-                    <button class="btn btn-outline btn-sm-compact" onclick="generateFinanceReport('payout')">👷 По выплатам</button>
-                </div>
-            </div>
-        </div>
-    `;
-
-    setTimeout(() => {
-        const ctx = document.getElementById('finance-chart');
-        if (ctx) {
-            new Chart(ctx, {
+        var labels = Object.keys(projectProgress);
+        var data = labels.map(function(k) { return Math.round(projectProgress[k].total / projectProgress[k].count); });
+
+        container.innerHTML = '<div class="kpi-grid">' +
+            '<div class="kpi-card"><div style="font-size:24px;">🏗️</div><div class="kpi-value">' + (projResult.count || 0) + '</div><div class="kpi-label">Объектов</div></div>' +
+            '<div class="kpi-card"><div style="font-size:24px;">📋</div><div class="kpi-value">' + (tasksResult.count || 0) + '</div><div class="kpi-label">Активных задач</div></div>' +
+            '<div class="kpi-card"><div style="font-size:24px;">💰</div><div class="kpi-value" style="color:var(--success);">—</div><div class="kpi-label">Поступило</div></div>' +
+            '<div class="kpi-card"><div style="font-size:24px;">👷</div><div class="kpi-value">—</div><div class="kpi-label">Бригад</div></div>' +
+            '</div>' +
+            '<div class="card"><h2>📊 Прогресс по объектам</h2><canvas id="progress-chart" height="80"></canvas></div>';
+
+        setTimeout(function() {
+            var ctx = document.getElementById('progress-chart');
+            if (ctx) new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: ['Приход', 'План поступлений', 'Расходы + Выплаты', 'Чистый поток'],
+                    labels: labels,
                     datasets: [{
-                        label: 'Сумма (₸)',
-                        data: [totalIncome, totalPlanIncome, totalExpenseAndPayouts, totalIncome - totalExpenseAndPayouts],
-                        backgroundColor: ['#10B981', '#3B82F6', '#EF4444', '#F59E0B'],
+                        label: 'Прогресс %',
+                        data: data,
+                        backgroundColor: data.map(function(v) { return v >= 80 ? '#10B981' : v >= 50 ? '#F59E0B' : '#EF4444'; }),
                         borderRadius: 8
                     }]
                 },
                 options: {
                     responsive: true,
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { callback: v => (v/1000000).toFixed(1) + 'M ₸' } } }
+                    scales: { y: { beginAtZero: true, max: 100, ticks: { callback: function(v) { return v + '%'; } } } }
+                }
+            });
+        }, 300);
+    }
+
+    async function loadObjectsPage(container) {
+        var q = supabase.from('projects').select('*').order('name');
+        if (currentUser.role !== 'manager') q = q.eq('responsible_worker_id', currentUser.id);
+        var result = await q;
+        var projects = result.data || [];
+        if (!projects.length) { container.innerHTML = '<div class="card"><p style="text-align:center;padding:40px;">Нет объектов</p></div>'; return; }
+
+        var projectIds = projects.map(function(p) { return p.id; });
+        var blocksResult = await supabase.from('blocks').select('id, project_id').in('project_id', projectIds);
+        var blocks = blocksResult.data || [];
+        var blockIds = blocks.map(function(b) { return b.id; });
+        var axesMap = {};
+        if (blockIds.length) {
+            var axesResult = await supabase.from('axes').select('progress, status, block_id').in('block_id', blockIds);
+            (axesResult.data || []).forEach(function(ax) {
+                var block = blocks.find(function(b) { return b.id === ax.block_id; });
+                if (block) {
+                    if (!axesMap[block.project_id]) axesMap[block.project_id] = [];
+                    axesMap[block.project_id].push(ax);
                 }
             });
         }
-    }, 300);
-}
+        var issuesResult = await supabase.from('project_issues').select('project_id').in('status', ['open','in_progress']);
+        var issuesMap = {};
+        (issuesResult.data || []).forEach(function(i) { issuesMap[i.project_id] = (issuesMap[i.project_id] || 0) + 1; });
 
-// ===== МОДАЛЬНОЕ ОКНО ФИНАНСОВ =====
-window.openFinanceCard = async function(type, id) {
-    const overlay = document.getElementById('finance-modal-overlay');
-    const card = document.getElementById('finance-modal-card');
-    
-    let html = '';
-    
-    if (type === 'expense') {
-        const { data: e } = await supabase.from('expenses').select('*, projects(name)').eq('id', id).single();
-        if (!e) return;
-        html = `
-            <h3>📤 Расход: ${escapeHtml(e.name)}</h3>
-            <div class="modal-field"><div class="modal-field-label">🏗️ Объект</div><div class="modal-field-value">${escapeHtml(e.projects?.name || '—')}</div></div>
-            <div class="modal-field"><div class="modal-field-label">💰 Сумма</div><div class="modal-field-value" style="color:var(--danger);font-size:18px;font-weight:700;">${formatMoney(e.amount)}</div></div>
-            <div class="modal-field"><div class="modal-field-label">🏷️ Категория</div><div class="modal-field-value">${escapeHtml(e.category || '—')}</div></div>
-            <div class="modal-field"><div class="modal-field-label">🏢 Поставщик</div><div class="modal-field-value">${escapeHtml(e.supplier || '—')}</div></div>
-            <div class="modal-field"><div class="modal-field-label">📅 Дата</div><div class="modal-field-value">${formatDate(e.date)}</div></div>
-            <div class="modal-field"><div class="modal-field-label">📅 Плановая оплата</div><div class="modal-field-value">${formatDate(e.planned_payment_date)}</div></div>
-            <div class="modal-field"><div class="modal-field-label">💳 Статус</div><div class="modal-field-value"><span class="tag ${e.payment_status==='paid'?'tag-green':e.payment_status==='approved'?'tag-blue':'tag-yellow'}">${e.payment_status==='paid'?'💳 Оплачен':e.payment_status==='approved'?'✅ Утверждён':'⏳ Ожидает'}</span></div></div>
-            ${e.comment ? `<div class="modal-field"><div class="modal-field-label">📝 Комментарий</div><div class="modal-field-value">${escapeHtml(e.comment)}</div></div>` : ''}
-            ${e.invoice_file_url ? `<div class="modal-field"><div class="modal-field-label">📎 Счёт</div><div class="modal-field-value"><a href="${e.invoice_file_url}" target="_blank" class="tag tag-blue" style="text-decoration:none;">📎 ${escapeHtml(e.invoice_file_name||'Счёт')}</a></div></div>` : ''}
-            <div class="modal-actions">
-                ${e.payment_status === 'pending' ? `<button class="btn btn-success btn-sm-compact" onclick="approveRecord('expense','${id}')">✅ Утвердить</button>` : ''}
-                ${e.payment_status === 'approved' && currentUser?.role === 'accountant' ? `<button class="btn btn-primary btn-sm-compact" onclick="markAsPaid('expense','${id}')">💰 Оплатить</button>` : ''}
-                <button class="btn btn-outline btn-sm-compact" onclick="closeFinanceModal()">✕ Закрыть</button>
-            </div>`;
-    } else if (type === 'order') {
-        const { data: o } = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('id', id).single();
-        if (!o) return;
-        const { data: advances } = await supabase.from('advances').select('*').eq('brigade_id', o.brigade_id);
-        const sumAdvance = advances?.filter(a => a.status === 'approved' || a.status === 'paid').reduce((s,a) => s + (a.amount||0), 0) || 0;
-        const { data: orders } = await supabase.from('work_orders').select('*').eq('brigade_id', o.brigade_id);
-        const sumOrders = orders?.filter(x => x.status === 'approved' || x.payment_status === 'paid').reduce((s,x) => s + (x.total_amount||0), 0) || 0;
-        const guarantee = o.guarantee_amount || 0;
-        
-        html = `
-            <h3>👷 Наряд: ${escapeHtml(o.work_type || '—')}</h3>
-            <div class="modal-field"><div class="modal-field-label">👷 Бригада</div><div class="modal-field-value">${escapeHtml(o.brigades?.name || '—')}</div></div>
-            <div class="modal-field"><div class="modal-field-label">🏗️ Объект</div><div class="modal-field-value">${escapeHtml(o.projects?.name || '—')}</div></div>
-            <div class="modal-field"><div class="modal-field-label">📍 Ось</div><div class="modal-field-value">${escapeHtml(o.axis_name || '—')}</div></div>
-            <table class="calc-table-compact">
-                <tr><td>💰 Сумма закрываемых работ</td><td>${formatMoney(o.original_amount || o.total_amount)}</td></tr>
-                <tr><td>💸 Выплачено авансов</td><td>${formatMoney(sumAdvance)}</td></tr>
-                <tr><td>💸 Выплачено по нарядам</td><td>${formatMoney(sumOrders)}</td></tr>
-                <tr><td>🔒 Удержание 10%</td><td class="negative">-${formatMoney(guarantee)}</td></tr>
-                <tr class="total-row"><td>💳 СУММА К ОПЛАТЕ</td><td style="font-size:18px;color:var(--success);">${formatMoney(o.total_amount)}</td></tr>
-            </table>
-            ${o.avr_url ? `<div class="modal-field"><div class="modal-field-label">📎 АВР</div><div class="modal-field-value"><a href="${o.avr_url}" target="_blank" class="tag tag-green">Просмотреть</a></div></div>` : ''}
-            ${o.invoice_file_url ? `<div class="modal-field"><div class="modal-field-label">📎 Счёт-фактура</div><div class="modal-field-value"><a href="${o.invoice_file_url}" target="_blank" class="tag tag-green">${escapeHtml(o.invoice_file_name||'Просмотреть')}</a></div></div>` : ''}
-            <div class="modal-actions">
-                ${o.status === 'pending' || o.payment_status === 'pending' ? `<button class="btn btn-success btn-sm-compact" onclick="approveRecord('order','${id}')">✅ Утвердить</button>` : ''}
-                ${o.payment_status === 'approved' && currentUser?.role === 'accountant' ? `<button class="btn btn-primary btn-sm-compact" onclick="markAsPaid('order','${id}')">💰 Оплатить</button>` : ''}
-                <button class="btn btn-outline btn-sm-compact" onclick="closeFinanceModal()">✕ Закрыть</button>
-            </div>`;
-    } else if (type === 'advance') {
-        const { data: a } = await supabase.from('advances').select('*, projects(name), brigades(name)').eq('id', id).single();
-        if (!a) return;
-        html = `
-            <h3>💳 Аванс</h3>
-            <div class="modal-field"><div class="modal-field-label">👷 Бригада</div><div class="modal-field-value">${escapeHtml(a.brigades?.name || '—')}</div></div>
-            <div class="modal-field"><div class="modal-field-label">🏗️ Объект</div><div class="modal-field-value">${escapeHtml(a.projects?.name || '—')}</div></div>
-            <div class="modal-field"><div class="modal-field-label">💰 Сумма</div><div class="modal-field-value" style="color:var(--danger);font-size:18px;font-weight:700;">${formatMoney(a.amount)}</div></div>
-            <div class="modal-field"><div class="modal-field-label">📅 Дата</div><div class="modal-field-value">${formatDate(a.created_at?.split('T')[0])}</div></div>
-            <div class="modal-field"><div class="modal-field-label">💳 Статус</div><div class="modal-field-value"><span class="tag ${a.status==='paid'?'tag-green':a.status==='approved'?'tag-blue':'tag-yellow'}">${a.status==='paid'?'💳 Выплачен':a.status==='approved'?'✅ Утверждён':'⏳ Ожидает'}</span></div></div>
-            ${a.invoice_file_url ? `<div class="modal-field"><div class="modal-field-label">📎 Счёт</div><div class="modal-field-value"><a href="${a.invoice_file_url}" target="_blank" class="tag tag-blue">${escapeHtml(a.invoice_file_name||'Счёт')}</a></div></div>` : ''}
-            <div class="modal-actions">
-                ${a.status === 'pending' ? `<button class="btn btn-success btn-sm-compact" onclick="approveRecord('advance','${id}')">✅ Утвердить</button>` : ''}
-                ${a.status === 'approved' && currentUser?.role === 'accountant' ? `<button class="btn btn-primary btn-sm-compact" onclick="markAsPaid('advance','${id}')">💰 Выплатить</button>` : ''}
-                <button class="btn btn-outline btn-sm-compact" onclick="closeFinanceModal()">✕ Закрыть</button>
-            </div>`;
-    } else if (type === 'income') {
-        const { data: i } = await supabase.from('incomes').select('*, projects(name)').eq('id', id).single();
-        if (!i) return;
-        html = `
-            <h3>📥 Поступление</h3>
-            <div class="modal-field"><div class="modal-field-label">🏗️ Объект</div><div class="modal-field-value">${escapeHtml(i.projects?.name || '—')}</div></div>
-            <div class="modal-field"><div class="modal-field-label">💰 Сумма</div><div class="modal-field-value" style="color:var(--success);font-size:18px;font-weight:700;">${formatMoney(i.amount)}</div></div>
-            <div class="modal-field"><div class="modal-field-label">📅 Дата</div><div class="modal-field-value">${formatDate(i.date)}</div></div>
-            <div class="modal-field"><div class="modal-field-label">💳 Статус</div><div class="modal-field-value"><span class="tag ${i.status==='paid'?'tag-green':'tag-yellow'}">${i.status==='paid'?'💳 Оплачен':'⏳ Ожидает'}</span></div></div>
-            <div class="modal-actions">
-                ${i.status === 'pending' && currentUser?.role === 'accountant' ? `<button class="btn btn-primary btn-sm-compact" onclick="markAsPaid('income','${id}')">💰 Оплатить</button>` : ''}
-                <button class="btn btn-outline btn-sm-compact" onclick="closeFinanceModal()">✕ Закрыть</button>
-            </div>`;
-    }
-    
-    card.innerHTML = html;
-    overlay.classList.remove('hidden');
-};
+        var inProgress = 0, completed = 0, overdue = 0;
+        projects.forEach(function(p) {
+            var axes = axesMap[p.id] || [];
+            var allDone = axes.length > 0 && axes.every(function(a) { return a.status === 'completed'; });
+            if (allDone) completed++;
+            else if (axes.some(function(a) { return a.status === 'in_progress' || a.progress > 0; })) inProgress++;
+            if (p.end_date_contract && new Date(p.end_date_contract) < new Date() && !allDone) overdue++;
+        });
 
-window.closeFinanceModal = function() {
-    document.getElementById('finance-modal-overlay').classList.add('hidden');
-};
+        var html = '<div class="kpi-grid">' +
+            '<div class="kpi-card"><div style="font-size:24px;">🏗️</div><div class="kpi-value">' + projects.length + '</div><div class="kpi-label">Всего</div></div>' +
+            '<div class="kpi-card"><div style="font-size:24px;">🔵</div><div class="kpi-value" style="color:var(--info);">' + inProgress + '</div><div class="kpi-label">В работе</div></div>' +
+            '<div class="kpi-card"><div style="font-size:24px;">✅</div><div class="kpi-value" style="color:var(--success);">' + completed + '</div><div class="kpi-label">Завершено</div></div>' +
+            '<div class="kpi-card"><div style="font-size:24px;">⚠️</div><div class="kpi-value" style="color:var(--danger);">' + overdue + '</div><div class="kpi-label">Просрочено</div></div>' +
+            '</div><div style="display:flex;flex-wrap:wrap;gap:16px;">';
 
-window.approveRecord = async function(type, id) {
-    if (!confirm('✅ Утвердить? Запись уйдёт в "Утверждённые" и будет ждать оплаты бухгалтером.')) return;
-    
-    const updateData = {
-        approved_by: currentUser?.id,
-        approved_at: new Date().toISOString()
-    };
-    
-    if (type === 'expense') {
-        updateData.payment_status = 'approved';
-        await supabase.from('expenses').update(updateData).eq('id', id);
-    } else if (type === 'order') {
-        await supabase.from('work_orders').update({
-            status: 'approved',
-            payment_status: 'approved',
-            ...updateData
-        }).eq('id', id);
-    } else if (type === 'advance') {
-        updateData.status = 'approved';
-        await supabase.from('advances').update(updateData).eq('id', id);
-    }
-    
-    closeFinanceModal();
-    loadPage('finances');
-};
+        for (var i = 0; i < projects.length; i++) {
+            var p = projects[i];
+            var axes = axesMap[p.id] || [];
+            var totalAxes = axes.length;
+            var completedAxes = axes.filter(function(a) { return a.status === 'completed'; }).length;
+            var avgProgress = totalAxes > 0 ? Math.round(axes.reduce(function(s, a) { return s + (a.progress || 0); }, 0) / totalAxes) : 0;
+            var issuesCount = issuesMap[p.id] || 0;
+            var isOverdue = p.end_date_contract && new Date(p.end_date_contract) < new Date() && completedAxes < totalAxes;
+            var barColor = completedAxes === totalAxes && totalAxes > 0 ? 'green' : isOverdue ? 'red' : avgProgress >= 50 ? 'blue' : 'yellow';
 
-window.markAsPaid = async function(type, id) {
-    if (!confirm('💰 Отметить как оплаченный?')) return;
-    
-    const updateData = {
-        paid_by_name: currentUser?.full_name,
-        payment_date: new Date().toISOString().split('T')[0]
-    };
-    
-    if (type === 'expense') {
-        updateData.payment_status = 'paid';
-        await supabase.from('expenses').update(updateData).eq('id', id);
-    } else if (type === 'order') {
-        updateData.payment_status = 'paid';
-        await supabase.from('work_orders').update(updateData).eq('id', id);
-    } else if (type === 'advance') {
-        updateData.status = 'paid';
-        await supabase.from('advances').update(updateData).eq('id', id);
-    } else if (type === 'income') {
-        updateData.status = 'paid';
-        await supabase.from('incomes').update(updateData).eq('id', id);
-    }
-    
-    closeFinanceModal();
-    loadPage('finances');
-};
-
-window.toggleBlock = function(id) {
-    const el = document.getElementById(id);
-    const arrow = document.getElementById(id.replace('content', 'arrow'));
-    if (el && arrow) {
-        el.classList.toggle('hidden');
-        arrow.textContent = el.classList.contains('hidden') ? '▸' : '▾';
-    }
-};
-
-window.setFinanceFilter = function(type, value) {
-    financeFilter[type] = value;
-    if (type === 'period') {
-        const customEl = document.getElementById('custom-period');
-        if (customEl) {
-            customEl.classList.toggle('hidden', value !== 'custom');
-            customEl.style.display = value === 'custom' ? 'flex' : 'none';
+            html += '<div class="card" style="flex:1;min-width:300px;cursor:pointer;" onclick="window.loadObjectDetail(\'' + p.id + '\')">' +
+                '<div style="display:flex;justify-content:space-between;align-items:start;">' +
+                '<h2 style="margin:0;">' + escapeHtml(p.name) + '</h2>' +
+                (isOverdue ? '<span class="tag tag-red">⚠️ Просрочен</span>' : completedAxes === totalAxes && totalAxes > 0 ? '<span class="tag tag-green">✅ Завершён</span>' : '<span class="tag tag-blue">🔵 В работе</span>') +
+                '</div>' +
+                '<p style="font-size:13px;color:var(--text-secondary);margin-top:4px;">📍 ' + escapeHtml(p.address || '—') + '</p>' +
+                '<div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">' +
+                '<div><span style="color:var(--text-secondary);">Осей:</span> <b>' + totalAxes + '</b></div>' +
+                '<div><span style="color:var(--text-secondary);">Проблем:</span> <b style="color:' + (issuesCount > 0 ? 'var(--danger)' : 'var(--text-secondary)') + ';">' + issuesCount + '</b></div>' +
+                '<div><span style="color:var(--text-secondary);">Начало:</span> <b>' + formatDate(p.start_date) + '</b></div>' +
+                '<div><span style="color:var(--text-secondary);">Конец:</span> <b>' + formatDate(p.end_date_contract) + '</b></div>' +
+                '</div>' +
+                (totalAxes > 0 ? '<div style="margin-top:12px;"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;"><span>Прогресс</span><span>' + avgProgress + '%</span></div><div class="gantt-bar-wrap"><div class="gantt-bar ' + barColor + '" style="width:' + avgProgress + '%;">' + (avgProgress > 10 ? avgProgress + '%' : '') + '</div></div></div>' : '') +
+                '</div>';
         }
+        html += '</div>';
+        container.innerHTML = html;
     }
-    loadFinancesPage(document.getElementById('page-body'));
-};
 
-window.generateFinanceReport = function(type) {
-    const titles = {
-        full: '📊 Полный финансовый отчёт',
-        income: '📥 Отчёт по приходу',
-        expense: '📤 Отчёт по расходам',
-        payout: '👷 Отчёт по выплатам'
+    window.loadObjectDetail = async function(projectId) {
+        var container = document.getElementById('page-body');
+        container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
+        document.getElementById('page-title').textContent = '🏗️ Загрузка...';
+
+        var projectResult = await supabase.from('projects').select('*').eq('id', projectId).single();
+        var project = projectResult.data;
+        if (!project) { container.innerHTML = '<div class="card"><p>Объект не найден</p></div>'; return; }
+
+        var blocksResult = await supabase.from('blocks').select('id,name').eq('project_id', projectId);
+        var blocks = blocksResult.data || [];
+        var blockIds = blocks.map(function(b) { return b.id; });
+        var axes = [];
+        if (blockIds.length) {
+            var axesResult = await supabase.from('axes').select('*, blocks(name)').in('block_id', blockIds).order('name');
+            axes = axesResult.data || [];
+        }
+
+        var axisIds = axes.map(function(a) { return a.id; });
+        var stagesMap = {}, brigadesMap = {};
+        if (axisIds.length) {
+            var stagesResult = await supabase.from('axis_work_stages').select('*, brigades(name)').in('axis_id', axisIds).order('sub_axis_name');
+            (stagesResult.data || []).forEach(function(st) {
+                if (!stagesMap[st.axis_id]) stagesMap[st.axis_id] = [];
+                stagesMap[st.axis_id].push(st);
+                if (st.brigade_id && st.brigades && st.brigades.name) brigadesMap[st.brigade_id] = st.brigades.name;
+            });
+        }
+
+        var historyMap = {};
+        if (axisIds.length) {
+            var historyResult = await supabase.from('change_history').select('*').eq('entity_type', 'axis').in('entity_id', axisIds).order('changed_at', { ascending: true });
+            (historyResult.data || []).forEach(function(h) {
+                if (!historyMap[h.entity_id]) historyMap[h.entity_id] = [];
+                historyMap[h.entity_id].push(h);
+            });
+        }
+
+        var lettersResult = await supabase.from('letters').select('*').eq('project_id', projectId).order('created_at', { ascending: false }).limit(10);
+        var letters = lettersResult.data || [];
+        var materialsResult = await supabase.from('material_incomes').select('*, material_income_items(*)').eq('project_id', projectId).order('created_at', { ascending: false }).limit(10);
+        var materials = materialsResult.data || [];
+        var issuesResult = await supabase.from('project_issues').select('*').eq('project_id', projectId).in('status', ['open','in_progress']).order('created_at', { ascending: false });
+        var issues = issuesResult.data || [];
+
+        document.getElementById('page-title').textContent = '🏗️ ' + project.name;
+
+        var ganttRows = '', totalShiftDays = 0;
+        axes.forEach(function(ax, axIndex) {
+            var stages = stagesMap[ax.id] || [];
+            var history = historyMap[ax.id] || [];
+            var avgProgress = stages.length > 0 ? Math.round(stages.reduce(function(s, st) { return s + (st.progress || 0); }, 0) / stages.length) : 0;
+            var allCompleted = stages.length > 0 && stages.every(function(s) { return s.status === 'completed'; });
+            var totalShift = 0;
+            history.forEach(function(h) {
+                var m = (h.comment || '').match(/\+(\d+)\s*дн/);
+                if (m) totalShift += parseInt(m[1]);
+            });
+            totalShiftDays += totalShift;
+            var shiftBadge = '';
+            if (totalShift > 15) shiftBadge = '<span class="tag tag-red">🔴 +' + totalShift + 'дн</span>';
+            else if (totalShift > 5) shiftBadge = '<span class="tag tag-yellow">🟠 +' + totalShift + 'дн</span>';
+            else if (totalShift > 0) shiftBadge = '<span class="tag tag-blue">🟡 +' + totalShift + 'дн</span>';
+            var barClass = allCompleted ? 'green' : totalShift > 15 ? 'red' : totalShift > 5 ? 'yellow' : avgProgress >= 50 ? 'blue' : 'yellow';
+            var statusTag = allCompleted ? '<span class="tag tag-green">✅</span>' : totalShift > 15 ? '<span class="tag tag-red">🔴</span>' : totalShift > 5 ? '<span class="tag tag-yellow">🟠</span>' : '<span class="tag tag-blue">🔵</span>';
+            var axisId = 'axis-' + axIndex;
+
+            ganttRows += '<tr style="cursor:pointer;" onclick="window.toggleAxisDetail(\'' + axisId + '\')">' +
+                '<td>' + statusTag + ' <b>' + escapeHtml(ax.name) + '</b></td>' +
+                '<td>' + formatDate(ax.plan_start) + '</td>' +
+                '<td>' + formatDate(ax.plan_end) + '</td>' +
+                '<td><div class="gantt-bar-wrap"><div class="gantt-bar ' + barClass + '" style="width:' + avgProgress + '%;">' + avgProgress + '%</div></div></td>' +
+                '<td>' + stages.length + ' эт.</td>' +
+                '<td>' + (shiftBadge || '—') + '</td>' +
+                '<td><span id="' + axisId + '-arrow">▸</span></td></tr>' +
+                '<tr id="' + axisId + '" class="hidden"><td colspan="7" style="background:#F8FAFC;padding:16px;"><div style="font-size:12px;line-height:1.8;">' +
+                '<b>📅 Даты:</b><br>' +
+                'Начало: <b>' + formatDate(ax.plan_start) + '</b><br>' +
+                'План завершения: <b>' + formatDate(ax.plan_end) + '</b><br>' +
+                'Факт завершения: ' + (allCompleted ? '<b style="color:var(--success);">' + formatDate(ax.plan_end) + '</b>' : '<b style="color:var(--danger);">Не завершено</b>') + '<br>' +
+                (totalShift > 0 ? '⏱ Общий сдвиг: <b style="color:var(--danger);">+' + totalShift + ' дн.</b><br>' : '') +
+                (history.length > 0 ? '<br><b>📅 История переносов:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Дата</th><th>Сдвиг</th><th>Причина</th><th>Новая дата</th><th>Кто</th></tr></thead><tbody>' + history.map(function(h) { var m = (h.comment || '').match(/(\d+)\s*дн/); var days = m ? m[1] : '?'; var reason = (h.comment || '').replace(/\|.*/,'').replace('Сдвиг:','').trim(); return '<tr><td>' + formatDate(h.changed_at) + '</td><td>+' + days + ' дн.</td><td>' + escapeHtml(reason) + '</td><td>' + formatDate(h.new_end_date || '') + '</td><td>' + escapeHtml(h.changed_by_name || '—') + '</td></tr>'; }).join('') + '</tbody></table>' : '') +
+                '<br><b>📋 Этапы работ:</b><table style="margin-top:4px;font-size:11px;"><thead><tr><th>Этап</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Статус</th><th>Бригада</th></tr></thead><tbody>' + (stages.length > 0 ? stages.map(function(st) { return '<tr><td>' + escapeHtml(st.sub_axis_name || st.stage_id || '—') + '</td><td>' + formatDate(st.plan_start) + '</td><td>' + formatDate(st.plan_end) + '</td><td><div class="gantt-bar-wrap" style="width:80px;display:inline-block;"><div class="gantt-bar ' + ((st.progress || 0) >= 100 ? 'green' : (st.progress || 0) >= 50 ? 'blue' : 'yellow') + '" style="width:' + (st.progress || 0) + '%;">' + (st.progress || 0) + '%</div></div></td><td><span class="tag ' + (st.status === 'completed' ? 'tag-green' : st.status === 'in_progress' ? 'tag-blue' : 'tag-yellow') + '">' + (st.status === 'completed' ? '✅' : st.status === 'in_progress' ? '🔵' : '⏳') + '</span></td><td>' + escapeHtml(st.brigades && st.brigades.name ? st.brigades.name : '—') + '</td></tr>'; }).join('') : '<tr><td colspan="6">Нет этапов</td></tr>') + '</tbody></table></div></td></tr>';
+        });
+
+        var lettersHtml = '';
+        letters.forEach(function(l) {
+            lettersHtml += '<tr style="cursor:pointer;" onclick="alert(\'Письмо: ' + escapeHtml(l.letter_number_full || '') + '\\n\\nПричина: ' + escapeHtml(l.delay_description || l.delay_reason || '—') + '\\n\\nСдвиг: +' + (l.delay_days || 0) + ' дн.\')"><td>' + escapeHtml(l.letter_number_full || '№' + l.letter_number + '/LGC-ERP') + '</td><td>' + formatDate(l.letter_date) + '</td><td>' + escapeHtml((l.delay_description || l.delay_reason || '').substring(0, 60)) + '</td><td>+' + (l.delay_days || 0) + ' дн.</td><td><span class="tag ' + (l.status === 'sent_to_customer' ? 'tag-green' : 'tag-yellow') + '">' + (l.status === 'sent_to_customer' ? '✅ Отправлено' : '⏳ Черновик') + '</span></td></tr>';
+        });
+
+        var materialsHtml = '';
+        materials.forEach(function(m) {
+            var items = m.material_income_items || [];
+            materialsHtml += '<tr><td>' + formatDate(m.created_at) + '</td><td>' + items.map(function(i) { return escapeHtml(i.name || ''); }).join(', ') + '</td><td>' + items.reduce(function(s, i) { return s + (i.quantity || 0); }, 0) + '</td><td>' + formatMoney(m.total_amount || 0) + '</td></tr>';
+        });
+
+        var issuesHtml = '';
+        issues.forEach(function(issue) {
+            var sc = issue.status === 'overdue' ? 'tag-red' : issue.status === 'in_progress' ? 'tag-blue' : 'tag-yellow';
+            var sl = issue.status === 'overdue' ? '🔴 Просрочена' : issue.status === 'in_progress' ? '🔵 В работе' : '🟡 Открыта';
+            issuesHtml += '<tr><td><span class="tag ' + sc + '">' + sl + '</span></td><td><b>' + escapeHtml(issue.title) + '</b></td><td>' + escapeHtml((issue.description || '').substring(0, 80)) + '</td><td>' + formatDate(issue.created_at) + '</td></tr>';
+        });
+
+        container.innerHTML = '<button onclick="window.loadPage(\'objects\')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к объектам</button>' +
+            '<div class="kpi-grid">' +
+            '<div class="kpi-card"><div style="font-size:24px;">📋</div><div class="kpi-value">' + formatMoney(project.contract_price) + '</div><div class="kpi-label">Сумма договора</div></div>' +
+            '<div class="kpi-card"><div style="font-size:24px;">📅</div><div class="kpi-value" style="font-size:14px;">' + formatDate(project.start_date) + ' — ' + formatDate(project.end_date_contract) + '</div><div class="kpi-label">Сроки</div></div>' +
+            '<div class="kpi-card"><div style="font-size:24px;">🏁</div><div class="kpi-value" style="font-size:14px;color:' + (axes.every(function(a) { return a.status === 'completed'; }) && axes.length > 0 ? 'var(--success)' : 'var(--warning)') + ';">' + (axes.length > 0 ? formatDate(axes.reduce(function(max, a) { return new Date(a.plan_end) > new Date(max) ? a.plan_end : max; }, axes[0].plan_end)) : '—') + '</div><div class="kpi-label">Завершение по ГПР</div></div>' +
+            '<div class="kpi-card"><div style="font-size:24px;">⚠️</div><div class="kpi-value" style="color:' + (issues.length > 0 ? 'var(--danger)' : 'var(--text)') + ';">' + issues.length + '</div><div class="kpi-label">Проблем</div></div>' +
+            '</div>' +
+            '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h2 style="margin:0;">🏗️ ' + escapeHtml(project.name) + '</h2>' + (totalShiftDays > 0 ? '<span class="tag tag-red">⚠️ Общий сдвиг: +' + totalShiftDays + ' дн.</span>' : '') + '</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px;">' +
+            '<div><span style="color:var(--text-secondary);">Адрес:</span> <b>' + escapeHtml(project.address || '—') + '</b></div>' +
+            '<div><span style="color:var(--text-secondary);">Заказчик:</span> <b>' + escapeHtml(project.customer_company_name || '—') + '</b></div>' +
+            '<div><span style="color:var(--text-secondary);">Договор:</span> <b>' + escapeHtml(project.contract_number_customer || '—') + ' ' + (project.contract_date_customer ? 'от ' + formatDate(project.contract_date_customer) : '') + '</b></div>' +
+            '<div><span style="color:var(--text-secondary);">Руководитель:</span> <b>' + escapeHtml(project.manager_name || '—') + '</b></div>' +
+            '</div>' +
+            (Object.keys(brigadesMap).length > 0 ? '<div style="margin-top:12px;"><span style="color:var(--text-secondary);font-size:13px;">👷 Бригады: </span>' + Object.values(brigadesMap).map(function(n) { return '<span class="tag tag-blue" style="margin:2px;">' + escapeHtml(n) + '</span>'; }).join('') + '</div>' : '') +
+            '</div>' +
+            '<div class="card"><h2>📊 ГПР</h2><div class="table-wrap"><table><thead><tr><th>Ось</th><th>Начало</th><th>Конец</th><th>Прогресс</th><th>Этапы</th><th>Сдвиг</th><th></th></tr></thead><tbody>' + (ganttRows || '<tr><td colspan="7">Нет осей</td></tr>') + '</tbody></table></div></div>' +
+            (issuesHtml ? '<div class="card"><h2>⚠️ Проблемы (' + issues.length + ')</h2><div class="table-wrap"><table><thead><tr><th>Статус</th><th>Название</th><th>Описание</th><th>Дата</th></tr></thead><tbody>' + issuesHtml + '</tbody></table></div></div>' : '') +
+            (lettersHtml ? '<div class="card"><h2>✉️ Письма (' + letters.length + ')</h2><div class="table-wrap"><table><thead><tr><th>Номер</th><th>Дата</th><th>Причина</th><th>Сдвиг</th><th>Статус</th></tr></thead><tbody>' + lettersHtml + '</tbody></table></div></div>' : '') +
+            (materialsHtml ? '<div class="card"><h2>📦 Материалы</h2><div class="table-wrap"><table><thead><tr><th>Дата</th><th>Наименование</th><th>Кол-во</th><th>Сумма</th></tr></thead><tbody>' + materialsHtml + '</tbody></table></div></div>' : '');
     };
-    alert(titles[type] + '\n\nФункция формирования отчёта будет добавлена.\nДанные уже загружены в таблицы выше.');
-};
+
+    window.toggleAxisDetail = function(axisId) {
+        var row = document.getElementById(axisId);
+        var arrow = document.getElementById(axisId + '-arrow');
+        if (row && arrow) { row.classList.toggle('hidden'); arrow.textContent = row.classList.contains('hidden') ? '▸' : '▾'; }
+    };
+
+    var tasksFilter = { status: 'all', priority: 'all', project: 'all' };
+
+    async function loadTasksPage(container) {
+        var q = supabase.from('custom_tasks').select('*, projects(name)').order('created_at', { ascending: false }).limit(100);
+        if (currentUser.role !== 'manager') q = q.or('created_by.eq.' + currentUser.id + ',responsible_ids.cs.{' + currentUser.id + '}');
+
+        var result = await q;
+        var allTasks = result.data || [];
+
+        var pendingCount = allTasks.filter(function(t) { return t.status === 'pending'; }).length;
+        var inProgressCount = allTasks.filter(function(t) { return t.status === 'in_progress'; }).length;
+        var completedCount = allTasks.filter(function(t) { return t.status === 'completed'; }).length;
+        var overdueCount = allTasks.filter(function(t) { return t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed'; }).length;
+
+        var projectSet = new Set();
+        allTasks.forEach(function(t) { if (t.projects && t.projects.name) projectSet.add(t.projects.name); });
+        var projectOptions = ['<option value="all">Все объекты</option>'];
+        projectSet.forEach(function(name) { projectOptions.push('<option value="' + escapeHtml(name) + '">' + escapeHtml(name) + '</option>'); });
+
+        container.innerHTML = '<div class="kpi-grid" style="margin-bottom:16px;">' +
+            '<div class="kpi-card" style="cursor:pointer;" onclick="window.setTaskFilter(\'status\',\'pending\')"><div style="font-size:24px;">⏳</div><div class="kpi-value" style="color:var(--warning);">' + pendingCount + '</div><div class="kpi-label">Ожидают</div></div>' +
+            '<div class="kpi-card" style="cursor:pointer;" onclick="window.setTaskFilter(\'status\',\'in_progress\')"><div style="font-size:24px;">🔵</div><div class="kpi-value" style="color:var(--info);">' + inProgressCount + '</div><div class="kpi-label">В работе</div></div>' +
+            '<div class="kpi-card" style="cursor:pointer;" onclick="window.setTaskFilter(\'status\',\'completed\')"><div style="font-size:24px;">✅</div><div class="kpi-value" style="color:var(--success);">' + completedCount + '</div><div class="kpi-label">Готово</div></div>' +
+            '<div class="kpi-card" style="cursor:pointer;" onclick="window.setTaskFilter(\'status\',\'overdue\')"><div style="font-size:24px;">⚠️</div><div class="kpi-value" style="color:var(--danger);">' + overdueCount + '</div><div class="kpi-label">Просрочено</div></div>' +
+            '</div>' +
+            '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">' +
+            '<select id="task-filter-status" class="form-input" style="flex:1;min-width:120px;padding:8px;" onchange="window.setTaskFilter(\'status\', this.value)"><option value="all">Все статусы</option><option value="pending">⏳ Ожидают</option><option value="in_progress">🔵 В работе</option><option value="completed">✅ Готово</option><option value="overdue">⚠️ Просрочено</option></select>' +
+            '<select id="task-filter-project" class="form-input" style="flex:1;min-width:140px;padding:8px;" onchange="window.setTaskFilter(\'project\', this.value)">' + projectOptions.join('') + '</select>' +
+            '<select id="task-filter-priority" class="form-input" style="flex:1;min-width:120px;padding:8px;" onchange="window.setTaskFilter(\'priority\', this.value)"><option value="all">Все приоритеты</option><option value="high">🔴 Высокий</option><option value="medium">🟡 Средний</option><option value="low">🟢 Низкий</option></select>' +
+            '</div>' +
+            '<button class="btn btn-primary btn-sm-compact" onclick="window.openCreateTaskForm()" style="margin-bottom:16px;">➕ Создать задачу</button>' +
+            '<div id="tasks-list-container"></div>';
+
+        renderFilteredTasks(allTasks);
+    }
+
+    function renderFilteredTasks(allTasks) {
+        var filtered = allTasks;
+
+        if (tasksFilter.status === 'pending') filtered = filtered.filter(function(t) { return t.status === 'pending'; });
+        else if (tasksFilter.status === 'in_progress') filtered = filtered.filter(function(t) { return t.status === 'in_progress'; });
+        else if (tasksFilter.status === 'completed') filtered = filtered.filter(function(t) { return t.status === 'completed'; });
+        else if (tasksFilter.status === 'overdue') filtered = filtered.filter(function(t) { return t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed'; });
+
+        if (tasksFilter.priority !== 'all') filtered = filtered.filter(function(t) { return t.priority === tasksFilter.priority; });
+        if (tasksFilter.project !== 'all') filtered = filtered.filter(function(t) { return t.projects && t.projects.name === tasksFilter.project; });
+
+        var container = document.getElementById('tasks-list-container');
+        if (!container) return;
+
+        if (!filtered.length) {
+            container.innerHTML = '<div class="card"><p style="text-align:center;color:var(--text-secondary);padding:20px;">Нет задач</p></div>';
+            return;
+        }
+
+        var html = '<div class="task-card-grid">';
+        filtered.forEach(function(t) {
+            var pc = t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢';
+            var sc = t.status === 'completed' ? 'tag-green' : t.status === 'in_progress' ? 'tag-blue' : 'tag-yellow';
+            var sl = t.status === 'completed' ? '✅' : t.status === 'in_progress' ? '🔵' : '⏳';
+            var isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
+
+            html += '<div class="task-card-item ' + (isOverdue ? 'overdue' : '') + '" onclick="window.viewTaskDetail(\'' + t.id + '\')">' +
+                '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+                '<span class="task-priority">' + pc + '</span>' +
+                '<span class="tag ' + sc + '">' + sl + ' ' + (t.status === 'completed' ? 'Сделано' : t.status === 'in_progress' ? 'В работе' : 'Ожидает') + '</span>' +
+                '</div>' +
+                '<div class="task-name">' + escapeHtml(t.title) + '</div>' +
+                '<div class="task-info"><span>🏗️ ' + escapeHtml(t.projects && t.projects.name ? t.projects.name : '—') + '</span>' +
+                (t.responsible_names && t.responsible_names.length ? '<span>👤 ' + t.responsible_names.slice(0, 2).join(', ') + (t.responsible_names.length > 2 ? '...' : '') + '</span>' : '') +
+                '</div>' +
+                '<div class="task-info"><span>📅 ' + formatDate(t.created_at) + '</span>' +
+                (t.deadline ? '<span style="color:' + (isOverdue ? 'var(--danger)' : 'var(--text-secondary)') + ';">⏰ ' + formatDate(t.deadline) + '</span>' : '') +
+                '</div></div>';
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    window.setTaskFilter = function(type, value) {
+        tasksFilter[type] = value;
+        if (type === 'status') { var sel = document.getElementById('task-filter-status'); if (sel) sel.value = value; }
+        if (type === 'project') { var sel = document.getElementById('task-filter-project'); if (sel) sel.value = value; }
+        if (type === 'priority') { var sel = document.getElementById('task-filter-priority'); if (sel) sel.value = value; }
+        loadTasksPage(document.getElementById('page-body'));
+    };
+
+    window.openCreateTaskForm = async function() {
+        var container = document.getElementById('page-body');
+        var projectsResult = await supabase.from('projects').select('id,name').order('name');
+        var projects = projectsResult.data || [];
+        var usersResult = await supabase.from('users').select('id,full_name').order('full_name');
+        var users = usersResult.data || [];
+
+        container.innerHTML = '<button onclick="window.loadPage(\'tasks\')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к задачам</button>' +
+            '<div class="card"><h2>➕ Новая задача</h2>' +
+            '<div class="form-group"><label class="form-label">Название *</label><input type="text" id="ct-title" class="form-input"></div>' +
+            '<div class="form-group"><label class="form-label">Описание</label><textarea id="ct-desc" class="form-input" rows="3"></textarea></div>' +
+            '<div class="form-group"><label class="form-label">🏗️ Объект</label><select id="ct-project" class="form-input"><option value="">—</option>' + projects.map(function(p) { return '<option value="' + p.id + '">' + p.name + '</option>'; }).join('') + '</select></div>' +
+            '<div class="form-group"><label class="form-label">⚡ Приоритет</label><select id="ct-priority" class="form-input"><option value="low">🟢 Низкий</option><option value="medium" selected>🟡 Средний</option><option value="high">🔴 Высокий</option></select></div>' +
+            '<div class="form-group"><label class="form-label">⏰ Дедлайн</label><input type="date" id="ct-deadline" class="form-input"></div>' +
+            '<div class="form-group"><label class="form-label">👤 Ответственный</label><select id="ct-responsible" class="form-input">' + users.map(function(u) { return '<option value="' + u.id + '">' + u.full_name + '</option>'; }).join('') + '</select></div>' +
+            '<div class="form-group"><label class="form-label">📎 Файлы</label><input type="file" id="ct-files" class="form-input" multiple></div>' +
+            '<div style="display:flex;gap:8px;"><button class="btn btn-primary btn-sm-compact" id="save-ct-btn">📤 Создать</button><button class="btn btn-outline btn-sm-compact" onclick="window.loadPage(\'tasks\')">Отмена</button></div></div>';
+
+        document.getElementById('save-ct-btn').addEventListener('click', async function() {
+            var title = document.getElementById('ct-title').value.trim();
+            if (!title) { alert('Введите название'); return; }
+            var respId = document.getElementById('ct-responsible').value;
+            var respName = document.getElementById('ct-responsible').selectedOptions[0] ? document.getElementById('ct-responsible').selectedOptions[0].text : '';
+            var files = document.getElementById('ct-files').files || [];
+            var fileUrls = [];
+
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
+                var cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                var fileName = 'tasks/' + Date.now() + '_' + cleanName;
+                var uploadResult = await supabase.storage.from('reports').upload(fileName, file);
+                if (!uploadResult.error) {
+                    var urlResult = supabase.storage.from('reports').getPublicUrl(fileName);
+                    fileUrls.push({ name: file.name, url: urlResult.data.publicUrl });
+                }
+            }
+
+            var insertResult = await supabase.from('custom_tasks').insert({
+                project_id: document.getElementById('ct-project').value || null,
+                title: title,
+                description: document.getElementById('ct-desc').value,
+                priority: document.getElementById('ct-priority').value,
+                deadline: document.getElementById('ct-deadline').value || null,
+                responsible_ids: [respId],
+                responsible_names: [respName],
+                status: 'pending',
+                type: 'task',
+                created_by: currentUser.id,
+                created_by_name: currentUser.full_name,
+                created_at: new Date().toISOString(),
+                files: fileUrls
+            });
+
+            if (insertResult.error) { alert('Ошибка: ' + insertResult.error.message); return; }
+            window.loadPage('tasks');
+        });
+    };
+
+    window.viewTaskDetail = async function(taskId) {
+        var container = document.getElementById('page-body');
+        container.innerHTML = '<div style="text-align:center;padding:60px;">Загрузка...</div>';
+        document.getElementById('page-title').textContent = '📋 Задача';
+
+        var taskResult = await supabase.from('custom_tasks').select('*, projects(name)').eq('id', taskId).single();
+        var t = taskResult.data;
+        if (!t) { container.innerHTML = '<div class="card"><p>Задача не найдена</p></div>'; return; }
+
+        var commentsResult = await supabase.from('task_comments').select('*').eq('task_id', taskId).order('created_at', { ascending: true });
+        var comments = commentsResult.data || [];
+        var usersResult = await supabase.from('users').select('id,full_name').order('full_name');
+        var users = usersResult.data || [];
+
+        var priorityEmoji = t.priority === 'high' ? '🔴' : t.priority === 'medium' ? '🟡' : '🟢';
+        var priorityText = t.priority === 'high' ? 'Высокий' : t.priority === 'medium' ? 'Средний' : 'Низкий';
+        var isOverdue = t.deadline && new Date(t.deadline) < new Date() && t.status !== 'completed';
+
+        container.innerHTML = '<button onclick="window.loadPage(\'tasks\')" style="background:none;border:none;cursor:pointer;font-size:14px;margin-bottom:16px;color:var(--text-secondary);">← Назад к задачам</button>' +
+            '<div style="display:flex;flex-direction:column;gap:12px;">' +
+            '<div class="card" style="' + (isOverdue ? 'border-left:4px solid var(--danger);' : '') + '">' +
+            '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">' +
+            '<span class="tag ' + (t.status === 'completed' ? 'tag-green' : t.status === 'in_progress' ? 'tag-blue' : 'tag-yellow') + '">' + (t.status === 'completed' ? '✅ Сделано' : t.status === 'in_progress' ? '🔵 В работе' : '⏳ Ожидает') + '</span>' +
+            '<span style="font-size:12px;">' + priorityEmoji + ' ' + priorityText + '</span></div>' +
+            '<h2 style="margin:0 0 8px 0;">' + escapeHtml(t.title) + '</h2>' +
+            '<p style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">' + escapeHtml(t.description || 'Нет описания') + '</p>' +
+            (t.projects && t.projects.name ? '<div style="font-size:12px;">🏗️ ' + escapeHtml(t.projects.name) + '</div>' : '') +
+            '<div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">👤 ' + (t.created_by_name || '—') + ' | 📅 ' + formatDate(t.created_at) + (t.deadline ? ' | ⏰ Дедлайн: <b style="color:' + (isOverdue ? 'var(--danger)' : 'var(--text)') + ';">' + formatDate(t.deadline) + '</b>' : '') + '</div></div>' +
+            '<div class="card"><div style="font-weight:600;margin-bottom:8px;">👥 Ответственные</div>' +
+            '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">' + (t.responsible_names || []).map(function(name, idx) { return '<span style="background:#F1F5F9;padding:4px 10px;border-radius:20px;font-size:12px;display:flex;align-items:center;gap:6px;">👤 ' + escapeHtml(name) + '<span onclick="window.removeTaskResponsible(\'' + t.id + '\', ' + idx + ')" style="cursor:pointer;color:var(--danger);font-weight:bold;">✕</span></span>'; }).join('') + '</div>' +
+            '<select class="form-input" style="font-size:12px;padding:8px;" onchange="window.addTaskResponsible(\'' + t.id + '\', this.value)"><option value="">+ Добавить</option>' + users.filter(function(u) { return !(t.responsible_ids || []).includes(u.id); }).map(function(u) { return '<option value="' + u.id + '">' + u.full_name + '</option>'; }).join('') + '</select></div>' +
+            '<div class="card"><div style="font-weight:600;margin-bottom:8px;">📊 Статус</div><div style="display:flex;gap:6px;">' +
+            '<button class="btn btn-sm-compact ' + (t.status === 'pending' ? 'btn-primary' : 'btn-outline') + '" onclick="window.updateTaskField(\'' + t.id + '\',\'status\',\'pending\')">⏳ Ожидает</button>' +
+            '<button class="btn btn-sm-compact ' + (t.status === 'in_progress' ? 'btn-primary' : 'btn-outline') + '" onclick="window.updateTaskField(\'' + t.id + '\',\'status\',\'in_progress\')">🔵 В работе</button>' +
+            '<button class="btn btn-sm-compact ' + (t.status === 'completed' ? 'btn-primary' : 'btn-outline') + '" onclick="window.updateTaskField(\'' + t.id + '\',\'status\',\'completed\')">✅ Сделано</button></div></div>' +
+            '<div class="card"><div style="display:flex;gap:8px;"><input type="date" id="task-deadline-input" class="form-input" value="' + (t.deadline || '') + '" style="flex:1;max-width:200px;"><button class="btn btn-primary btn-sm-compact" onclick="window.updateTaskDeadline(\'' + t.id + '\')">💾</button></div></div>' +
+            '<div class="card"><div style="font-weight:600;margin-bottom:12px;">💬 Комментарии (' + comments.length + ')</div>' +
+            '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;max-height:300px;overflow-y:auto;">' + (comments.length === 0 ? '<p style="text-align:center;color:var(--text-secondary);font-size:12px;">Нет комментариев</p>' : '') +
+            comments.map(function(c) { return '<div style="background:#F8FAFC;padding:10px;border-radius:10px;"><div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-weight:600;font-size:12px;">👤 ' + escapeHtml(c.author_name || '—') + '</span><span style="font-size:10px;color:var(--text-secondary);">' + formatDate(c.created_at) + '</span></div><div style="font-size:13px;">' + escapeHtml(c.text) + '</div>' + ((c.files || []).length > 0 ? '<div style="margin-top:6px;">' + c.files.map(function(f) { return '<a href="' + f.url + '" target="_blank" class="tag tag-blue" style="text-decoration:none;font-size:10px;">📎 ' + escapeHtml(f.name) + '</a>'; }).join(' ') + '</div>' : '') + '</div>'; }).join('') + '</div>' +
+            '<div style="border-top:1px solid var(--border);padding-top:10px;"><textarea id="new-comment-text" class="form-input" rows="2" placeholder="Написать комментарий..." style="font-size:13px;margin-bottom:8px;"></textarea><div style="margin-bottom:8px;"><label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">📎 Прикрепить файл</label><input type="file" id="new-comment-file" class="form-input" style="font-size:12px;"></div><button class="btn btn-primary btn-sm-compact" onclick="window.addTaskComment(\'' + t.id + '\')">📤 Отправить</button></div></div>' +
+            '<button class="btn btn-danger btn-sm-compact" onclick="window.deleteTaskAndGoBack(\'' + t.id + '\')">🗑️ Удалить</button></div>';
+    };
+
+    window.updateTaskField = async function(taskId, field, value) {
+        await supabase.from('custom_tasks').update(JSON.parse('{"' + field + '":"' + value + '", "updated_at":"' + new Date().toISOString() + '"}')).eq('id', taskId);
+        window.viewTaskDetail(taskId);
+    };
+
+    window.updateTaskDeadline = async function(taskId) {
+        var deadline = document.getElementById('task-deadline-input');
+        var val = deadline ? deadline.value : null;
+        await supabase.from('custom_tasks').update({ deadline: val || null, updated_at: new Date().toISOString() }).eq('id', taskId);
+        window.viewTaskDetail(taskId);
+    };
+
+    window.addTaskResponsible = async function(taskId, userId) {
+        if (!userId) return;
+        var taskResult = await supabase.from('custom_tasks').select('responsible_ids, responsible_names').eq('id', taskId).single();
+        var task = taskResult.data;
+        if (!task) return;
+        var userResult = await supabase.from('users').select('full_name').eq('id', userId).single();
+        var user = userResult.data;
+        if (!user) return;
+        var ids = (task.responsible_ids || []).concat([userId]);
+        var names = (task.responsible_names || []).concat([user.full_name]);
+        await supabase.from('custom_tasks').update({ responsible_ids: ids, responsible_names: names, updated_at: new Date().toISOString() }).eq('id', taskId);
+        window.viewTaskDetail(taskId);
+    };
+
+    window.removeTaskResponsible = async function(taskId, idx) {
+        var taskResult = await supabase.from('custom_tasks').select('responsible_ids, responsible_names').eq('id', taskId).single();
+        var task = taskResult.data;
+        if (!task) return;
+        var ids = (task.responsible_ids || []).filter(function(_, i) { return i !== idx; });
+        var names = (task.responsible_names || []).filter(function(_, i) { return i !== idx; });
+        await supabase.from('custom_tasks').update({ responsible_ids: ids, responsible_names: names, updated_at: new Date().toISOString() }).eq('id', taskId);
+        window.viewTaskDetail(taskId);
+    };
+
+    window.addTaskComment = async function(taskId) {
+        var textEl = document.getElementById('new-comment-text');
+        var fileEl = document.getElementById('new-comment-file');
+        var text = textEl ? textEl.value.trim() : '';
+        if (!text) { alert('Введите текст комментария'); return; }
+
+        var files = [];
+        if (fileEl && fileEl.files[0]) {
+            var file = fileEl.files[0];
+            var cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            var fileName = 'comments/' + Date.now() + '_' + cleanName;
+            var uploadResult = await supabase.storage.from('reports').upload(fileName, file);
+            if (!uploadResult.error) {
+                var urlResult = supabase.storage.from('reports').getPublicUrl(fileName);
+                files.push({ name: file.name, url: urlResult.data.publicUrl });
+            }
+        }
+
+        await supabase.from('task_comments').insert({
+            task_id: taskId,
+            author_id: currentUser ? currentUser.id : null,
+            author_name: currentUser ? currentUser.full_name || 'Пользователь' : 'Пользователь',
+            text: text,
+            files: files,
+            created_at: new Date().toISOString()
+        });
+
+        if (textEl) textEl.value = '';
+        if (fileEl) fileEl.value = '';
+        window.viewTaskDetail(taskId);
+    };
+
+    window.deleteTaskAndGoBack = async function(taskId) {
+        if (!confirm('⚠️ Удалить задачу? Это нельзя отменить.')) return;
+        await supabase.from('custom_tasks').delete().eq('id', taskId);
+        window.loadPage('tasks');
+    };
+
+    // ========== ФИНАНСЫ (УПРОЩЁННАЯ ВЕРСИЯ) ==========
+    async function loadFinancesPage(container) {
+        container.innerHTML = '<div class="kpi-grid">' +
+            '<div class="kpi-card"><div class="kpi-value">—</div><div class="kpi-label">Приход</div></div>' +
+            '<div class="kpi-card"><div class="kpi-value">—</div><div class="kpi-label">Расходы</div></div>' +
+            '</div>' +
+            '<div class="card"><h2>💰 Финансы</h2><p>Загрузка данных...</p></div>';
+    }
+
+    window.closeFinanceModal = function() {
+        var modal = document.getElementById('finance-modal-overlay');
+        if (modal) modal.classList.add('hidden');
+    };
+
+    window.toggleBlock = function(id) {
+        var el = document.getElementById(id);
+        var arrow = document.getElementById(id.replace('content', 'arrow'));
+        if (el && arrow) {
+            el.classList.toggle('hidden');
+            arrow.textContent = el.classList.contains('hidden') ? '▸' : '▾';
+        }
+    };
 
     checkAuth();
 })();
