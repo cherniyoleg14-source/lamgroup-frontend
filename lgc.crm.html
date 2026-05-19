@@ -1103,7 +1103,7 @@
                 (e.payment_status === 'pending' ? '<button class="btn btn-success btn-sm-compact" onclick="window.approveRecord(\'expense\',\'' + id + '\')">✅ Утвердить</button>' : '') +
                 (e.payment_status === 'approved' && currentUser && currentUser.role === 'accountant' ? '<button class="btn btn-primary btn-sm-compact" onclick="window.markAsPaid(\'expense\',\'' + id + '\')">💰 Оплатить</button>' : '') +
                 ' <button class="btn btn-outline btn-sm-compact" onclick="window.closeFinanceModal()">✕ Закрыть</button></div>';
-        } else if (type === 'order') {
+                } else if (type === 'order') {
             var orderResult = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('id', id).single();
             var o = orderResult.data;
             if (!o) return;
@@ -1112,6 +1112,7 @@
             var ordResult = await supabase.from('work_orders').select('*').eq('brigade_id', o.brigade_id);
             var sumOrders = (ordResult.data || []).filter(function(x) { return x.payment_status === 'approved' || x.payment_status === 'paid'; }).reduce(function(s, x) { return s + (x.total_amount || 0); }, 0);
             var guarantee = o.guarantee_amount || 0;
+            
             html = '<h3>👷 Наряд: ' + escapeHtml(o.work_type || '—') + '</h3>' +
                 '<div class="modal-field"><div class="modal-field-label">👷 Бригада</div><div class="modal-field-value">' + escapeHtml(o.brigades && o.brigades.name ? o.brigades.name : '—') + '</div></div>' +
                 '<div class="modal-field"><div class="modal-field-label">🏗️ Объект</div><div class="modal-field-value">' + escapeHtml(o.projects && o.projects.name ? o.projects.name : '—') + '</div></div>' +
@@ -1119,15 +1120,16 @@
                 '<table class="calc-table-compact"><tr><td>💰 Сумма закрываемых работ</td><td>' + formatMoney(o.original_amount || o.total_amount) + '</td></tr><tr><td>💸 Выплачено авансов</td><td>' + formatMoney(sumAdvance) + '</td></tr><tr><td>💸 Выплачено по нарядам</td><td>' + formatMoney(sumOrders) + '</td></tr><tr><td>🔒 Удержание 10%</td><td class="negative">-' + formatMoney(guarantee) + '</td></tr><tr class="total-row"><td>💳 СУММА К ОПЛАТЕ</td><td style="font-size:18px;color:var(--success);">' + formatMoney(o.total_amount) + '</td></tr></table>' +
                 '<div style="margin-top:16px;padding-top:16px;border-top:2px solid var(--border);">' +
                 '<h4 style="margin-bottom:12px;font-size:14px;">📎 Документы</h4>' +
-                (o.avr_url ? '<div style="margin-bottom:8px;">📎 АВР: <a href="' + o.avr_url + '" target="_blank" class="tag tag-green" style="text-decoration:none;">Просмотреть</a></div>' : '') +
-                (o.invoice_file_url ? '<div style="margin-bottom:8px;">📎 Счёт-фактура: <a href="' + o.invoice_file_url + '" target="_blank" class="tag tag-green" style="text-decoration:none;">' + escapeHtml(o.invoice_file_name || 'Просмотреть') + '</a></div>' : '') +
+                (o.avr_url ? '<div style="margin-bottom:8px;">📎 АВР: <a href="' + o.avr_url + '" target="_blank" class="tag tag-green" style="text-decoration:none;">Просмотреть</a></div>' : '<div style="margin-bottom:4px;font-size:11px;color:var(--text-secondary);">📎 АВР: не загружен</div>') +
+                (o.invoice_file_url ? '<div style="margin-bottom:8px;">📎 Счёт-фактура: <a href="' + o.invoice_file_url + '" target="_blank" class="tag tag-green" style="text-decoration:none;">' + escapeHtml(o.invoice_file_name || 'Просмотреть') + '</a></div>' : '<div style="margin-bottom:4px;font-size:11px;color:var(--text-secondary);">📎 Счёт-фактура: не загружен</div>') +
                 '<div class="form-group"><label class="form-label" style="font-size:11px;color:var(--text-secondary);">📎 АВР ' + (o.avr_url ? '✅' : '(обязательно)') + '</label><input type="file" id="fin-avr-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;"></div>' +
                 '<div class="form-group"><label class="form-label" style="font-size:11px;color:var(--text-secondary);">📎 Счёт-фактура ' + (o.invoice_file_url ? '✅' : '(обязательно)') + '</label><input type="file" id="fin-invoice-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;"></div>' +
+                '<div class="form-group"><label class="form-label" style="font-size:11px;color:var(--text-secondary);">📎 Счёт на оплату</label><input type="file" id="fin-bill-file" class="form-input" accept=".pdf,.jpg,.jpeg,.png" style="font-size:12px;"></div>' +
                 '<div class="form-group"><label class="form-label" style="font-size:11px;color:var(--text-secondary);">📝 Комментарий</label><textarea id="fin-comment" class="form-input" rows="2" style="font-size:12px;">' + escapeHtml(o.comment || '') + '</textarea></div>' +
                 '</div>' +
                 '<div class="modal-actions" style="margin-top:16px;">' +
                 '<button class="btn btn-outline btn-sm-compact" onclick="window.saveFinanceRecord(\'order\',\'' + id + '\')">💾 Сохранить</button>' +
-                ((o.payment_status === 'pending' || o.status === 'pending' || o.status === 'pending_foreman') ? '<button class="btn btn-success btn-sm-compact" onclick="window.approveRecord(\'order\',\'' + id + '\')">✅ Утвердить</button>' : '') +
+                (o.payment_status === 'pending' ? '<button class="btn btn-success btn-sm-compact" onclick="window.approveRecord(\'order\',\'' + id + '\')">✅ Утвердить</button>' : '') +
                 (o.payment_status === 'approved' && currentUser && currentUser.role === 'accountant' ? '<button class="btn btn-primary btn-sm-compact" onclick="window.markAsPaid(\'order\',\'' + id + '\')">💰 Оплатить</button>' : '') +
                 ' <button class="btn btn-outline btn-sm-compact" onclick="window.closeFinanceModal()">✕ Закрыть</button></div>';
         } else if (type === 'advance') {
@@ -1174,39 +1176,52 @@
         if (modal) modal.classList.add('hidden');
     };
 
-        window.approveRecord = async function(type, id) {
+            window.approveRecord = async function(type, id) {
         if (!confirm('✅ Утвердить? Запись уйдёт в "Утверждённые" и будет ждать оплаты бухгалтером.')) return;
-        var updateData = { approved_by: currentUser ? currentUser.id : null, approved_at: new Date().toISOString() };
+        var now = new Date().toISOString();
+        var userId = currentUser ? currentUser.id : null;
         
         if (type === 'expense') {
-            updateData.payment_status = 'approved';
-            updateData.sent_to_accountant = true;
-            await supabase.from('expenses').update(updateData).eq('id', id);
-        } else if (type === 'order') {
-            await supabase.from('work_orders').update({ 
+            await supabase.from('expenses').update({ 
                 payment_status: 'approved', 
-                approved_by: updateData.approved_by, 
-                approved_at: updateData.approved_at 
+                sent_to_accountant: true,
+                approved_by: userId, 
+                approved_at: now 
             }).eq('id', id);
+        } else if (type === 'order') {
+            // Пробуем обновить ТОЛЬКО payment_status
+            var result = await supabase.from('work_orders').update({ 
+                payment_status: 'approved'
+            }).eq('id', id);
+            
+            if (result.error) {
+                console.error('Order approve error:', result.error);
+                alert('Ошибка утверждения: ' + result.error.message);
+                return;
+            }
         } else if (type === 'advance') {
-            updateData.status = 'approved';
-            await supabase.from('advances').update(updateData).eq('id', id);
+            await supabase.from('advances').update({ 
+                status: 'approved',
+                approved_by: userId, 
+                approved_at: now 
+            }).eq('id', id);
         }
         
         window.closeFinanceModal();
         window.loadPage('finances');
     };
-        window.saveFinanceRecord = async function(type, id) {
-        var fileInput = document.getElementById('fin-invoice-file');
-        var avrInput = document.getElementById('fin-avr-file');
+            window.saveFinanceRecord = async function(type, id) {
+        var invoiceFileInput = document.getElementById('fin-invoice-file');
+        var avrFileInput = document.getElementById('fin-avr-file');
+        var billFileInput = document.getElementById('fin-bill-file');
         var commentEl = document.getElementById('fin-comment');
         var updateData = {};
         
         if (commentEl) updateData.comment = commentEl.value;
         
-        // Загрузка файла счёта
-        if (fileInput && fileInput.files[0]) {
-            var file = fileInput.files[0];
+        // Загрузка счёта-фактуры
+        if (invoiceFileInput && invoiceFileInput.files[0]) {
+            var file = invoiceFileInput.files[0];
             var cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
             var fileName = 'invoices/' + Date.now() + '_' + cleanName;
             var uploadResult = await supabase.storage.from('reports').upload(fileName, file);
@@ -1217,15 +1232,28 @@
             }
         }
         
-        // Загрузка АВР (только для нарядов)
-        if (avrInput && avrInput.files[0]) {
-            var avrFile = avrInput.files[0];
+        // Загрузка АВР (для нарядов)
+        if (avrFileInput && avrFileInput.files[0]) {
+            var avrFile = avrFileInput.files[0];
             var avrCleanName = avrFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
             var avrFileName = 'avr/' + Date.now() + '_' + avrCleanName;
             var avrUploadResult = await supabase.storage.from('reports').upload(avrFileName, avrFile);
             if (!avrUploadResult.error) {
                 var avrUrlResult = supabase.storage.from('reports').getPublicUrl(avrFileName);
                 updateData.avr_url = avrUrlResult.data.publicUrl;
+            }
+        }
+        
+        // Загрузка счёта на оплату (для нарядов)
+        if (billFileInput && billFileInput.files[0]) {
+            var billFile = billFileInput.files[0];
+            var billCleanName = billFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            var billFileName = 'bills/' + Date.now() + '_' + billCleanName;
+            var billUploadResult = await supabase.storage.from('reports').upload(billFileName, billFile);
+            if (!billUploadResult.error) {
+                var billUrlResult = supabase.storage.from('reports').getPublicUrl(billFileName);
+                updateData.bill_url = billUrlResult.data.publicUrl;
+                updateData.bill_file_name = billFile.name;
             }
         }
         
