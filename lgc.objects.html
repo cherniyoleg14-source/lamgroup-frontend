@@ -177,7 +177,8 @@
         document.getElementById('user-info').textContent = '👤 ' + currentUser.full_name + ' | ' + (currentUser.role==='manager'?'Руководитель':'ИТР');
 
         await loadBrigades();
-        await loadProjects();
+        await loadProjectsForObjects();
+
         setupFilters();
     }
 
@@ -185,21 +186,20 @@
         const { data } = await supabase.from('brigades').select('*').order('name');
         allBrigades = data || [];
     }
-
-    async function loadProjects() {
+async function loadProjectsForObjects() {
         let q = supabase.from('projects').select('*').order('name');
         if (currentUser.role !== 'manager') q = q.eq('responsible_worker_id', currentUser.id);
         const { data } = await q;
         allProjects = data || [];
-        renderProjects();
+        renderProjectsList();
     }
 
-    function renderProjects(filter = 'all') {
+    function renderProjectsList(filter = 'all') {
         let f = allProjects;
         if (filter === 'in_progress') f = allProjects.filter(p => p.status === 'in_progress');
         else if (filter === 'completed') f = allProjects.filter(p => p.status === 'completed');
 
-        const grid = document.getElementById('objects-grid');
+        const grid = let html = '<button class="btn btn-primary" onclick="openCreateProjectModal()" style="margin-bottom:16px;">➕ Создать объект</button>';
         if (!f.length) { grid.innerHTML = '<div class="card" style="text-align:center;padding:40px;">Нет объектов</div>'; return; }
 
         grid.innerHTML = f.map(p => {
@@ -221,7 +221,7 @@
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
-                renderProjects(this.dataset.filter);
+                renderProjectsList(this.dataset.filter);
             });
         });
     }
@@ -537,7 +537,7 @@
                 customer_company_name: document.getElementById('ep-customer').value
             }).eq('id', projectId);
             closeModal();
-            loadProjects();
+loadProjectsForObjects();
             openObject(projectId);
         };
     };
