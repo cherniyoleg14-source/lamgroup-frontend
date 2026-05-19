@@ -127,6 +127,29 @@
             .detail-grid { grid-template-columns: 1fr; }
             .task-card-grid { grid-template-columns: 1fr; }
         }
+                /* ===== МОДАЛЬНОЕ ОКНО ФИНАНСОВ ===== */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15,23,42,0.7); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10001; padding: 20px;
+        }
+        .modal-overlay.hidden { display: none; }
+        .modal-card-finance {
+            background: white; border-radius: 20px; padding: 28px 24px;
+            max-width: 580px; width: 100%; max-height: 85vh; overflow-y: auto;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25); position: relative;
+        }
+        .modal-field { margin-bottom: 12px; }
+        .modal-field-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .modal-field-value { font-size: 14px; font-weight: 500; }
+        .modal-actions { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+        .modal-actions .btn { width: auto; }
+        .calc-table-compact { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+        .calc-table-compact td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+        .calc-table-compact td:last-child { text-align: right; font-weight: 600; }
+        .calc-table-compact .total-row { background: #F8FAFC; font-weight: 700; font-size: 15px; }
+        .calc-table-compact .negative { color: var(--danger); }
     </style>
 </head>
 <body>
@@ -161,7 +184,10 @@
     <div class="modal-overlay hidden" id="finance-modal-overlay" onclick="if(event.target===this)closeFinanceModal()">
         <div class="modal-card" id="finance-modal-card"></div>
     </div>
-
+    <!-- МОДАЛЬНОЕ ОКНО ФИНАНСОВ -->
+    <div class="modal-overlay hidden" id="finance-modal-overlay" onclick="if(event.target===this)window.closeFinanceModal()">
+        <div class="modal-card-finance" id="finance-modal-card"></div>
+    </div>
     <div class="app-layout hidden" id="app-layout">
         <div class="sidebar" id="sidebar">
             <div class="sidebar-logo">🏗️ LamGroup</div>
@@ -843,27 +869,314 @@
         window.loadPage('tasks');
     };
 
-    // ========== ФИНАНСЫ (УПРОЩЁННАЯ ВЕРСИЯ) ==========
+     // ========== ФИНАНСЫ (ПОЛНАЯ ВЕРСИЯ) ==========
+    var financeFilter = { project: 'all', period: 'month', dateFrom: '', dateTo: '' };
+
     async function loadFinancesPage(container) {
-        container.innerHTML = '<div class="kpi-grid">' +
-            '<div class="kpi-card"><div class="kpi-value">—</div><div class="kpi-label">Приход</div></div>' +
-            '<div class="kpi-card"><div class="kpi-value">—</div><div class="kpi-label">Расходы</div></div>' +
-            '</div>' +
-            '<div class="card"><h2>💰 Финансы</h2><p>Загрузка данных...</p></div>';
+        var now = new Date();
+        var months = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+        var monthLabel = months[now.getMonth()] + ' ' + now.getFullYear();
+
+        var pq = supabase.from('projects').select('id,name').order('name');
+        if (currentUser.role !== 'manager') pq = pq.eq('responsible_worker_id', currentUser.id);
+        var projectsResult = await pq;
+        var allProjects = projectsResult.data || [];
+
+        var incQ = supabase.from('incomes').select('*, projects(name)').order('date', { ascending: false });
+        var expQ = supabase.from('expenses').select('*, projects(name)').order('date', { ascending: false });
+        var ordQ = supabase.from('work_orders').select('*, projects(name), brigades(name)').order('created_at', { ascending: false });
+        var advQ = supabase.from('advances').select('*, projects(name), brigades(name)').order('created_at', { ascending: false });
+
+        if (currentUser.role !== 'manager') {
+            var pids = allProjects.map(function(p) { return p.id; });
+            if (pids.length) { incQ = incQ.in('project_id', pids); expQ = expQ.in('project_id', pids); ordQ = ordQ.in('project_id', pids); advQ = advQ.in('project_id', pids); }
+        }
+        if (financeFilter.project !== 'all') {
+            incQ = incQ.eq('project_id', financeFilter.project);
+            expQ = expQ.eq('project_id', financeFilter.project);
+            ordQ = ordQ.eq('project_id', financeFilter.project);
+            advQ = advQ.eq('project_id', financeFilter.project);
+        }
+
+        var results = await Promise.all([incQ, expQ, ordQ, advQ]);
+        var incomes = results[0].data || [];
+        var expenses = results[1].data || [];
+        var workOrders = results[2].data || [];
+        var advances = results[3].data || [];
+
+        var dateFrom, dateTo;
+        if (financeFilter.period === 'ytd') {
+            dateFrom = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+            dateTo = now.toISOString().split('T')[0];
+        } else if (financeFilter.period === 'custom' && financeFilter.dateFrom && financeFilter.dateTo) {
+            dateFrom = financeFilter.dateFrom;
+            dateTo = financeFilter.dateTo;
+        } else {
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            dateTo = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+        }
+
+        function inRange(d) { return d >= dateFrom && d <= dateTo; }
+        function filterData(arr, field) {
+            field = field || 'date';
+            return arr.filter(function(x) {
+                var d = x[field] || (x.created_at ? x.created_at.split('T')[0] : '');
+                return inRange(d);
+            });
+        }
+
+        var fIncomes = filterData(incomes);
+        var fExpenses = filterData(expenses);
+        var fOrders = filterData(workOrders, 'created_at');
+        var fAdvances = filterData(advances, 'created_at');
+
+        var totalIncome = fIncomes.filter(function(i) { return i.status === 'paid'; }).reduce(function(s, i) { return s + (i.amount || 0); }, 0);
+        var totalPlanIncome = fIncomes.filter(function(i) { return i.status === 'pending'; }).reduce(function(s, i) { return s + (i.amount || 0); }, 0);
+        var totalExpenseAndPayouts = fExpenses.filter(function(e) { return e.payment_status === 'paid'; }).reduce(function(s, e) { return s + (e.amount || 0); }, 0) +
+            fOrders.filter(function(o) { return o.payment_status === 'paid'; }).concat(fAdvances.filter(function(a) { return a.status === 'paid'; })).reduce(function(s, x) { return s + (x.amount || x.total_amount || 0); }, 0);
+
+        var weekEnd = new Date(now);
+        weekEnd.setDate(now.getDate() + 7);
+        var weekEndStr = weekEnd.toISOString().split('T')[0];
+        var todayStr = now.toISOString().split('T')[0];
+
+        var weekIncomes = incomes.filter(function(i) { return i.status === 'pending'; });
+        var weekExpenses = expenses.filter(function(e) { return e.payment_status === 'pending'; });
+        var weekOrders = workOrders.filter(function(o) { return o.payment_status === 'pending'; });
+        var weekAdvances = advances.filter(function(a) { return a.status === 'pending'; });
+
+        // План на неделю — строки таблиц
+        var weekRowsLeft = '', weekNumL = 0, weekTotalL = 0;
+
+        weekExpenses.forEach(function(e) {
+            weekNumL++; weekTotalL += (e.amount || 0);
+            var isOverdue = e.planned_payment_date && new Date(e.planned_payment_date) < new Date();
+            weekRowsLeft += '<tr style="cursor:pointer;' + (isOverdue ? 'background:#FEF2F2;' : '') + '" onclick="window.openFinanceCard(\'expense\',\'' + e.id + '\')">' +
+                '<td>' + weekNumL + '</td><td><span class="tag tag-red">📤 Расход</span></td><td>' + escapeHtml(e.name) + '</td>' +
+                '<td style="color:' + (isOverdue ? 'var(--danger)' : 'var(--text-secondary)') + ';">' + formatDate(e.planned_payment_date || e.date) + (isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : '') + '</td>' +
+                '<td class="text-danger">-' + (e.amount || 0).toLocaleString() + ' ₸</td></tr>';
+        });
+
+        weekOrders.forEach(function(o) {
+            weekNumL++; weekTotalL += (o.total_amount || 0);
+            var payDate = o.payment_date || (o.created_at ? o.created_at.split('T')[0] : '');
+            var isOverdue = payDate && new Date(payDate) < new Date();
+            weekRowsLeft += '<tr style="cursor:pointer;' + (isOverdue ? 'background:#FEF2F2;' : '') + '" onclick="window.openFinanceCard(\'order\',\'' + o.id + '\')">' +
+                '<td>' + weekNumL + '</td><td><span class="tag tag-yellow">👷 Наряд</span></td><td>' + escapeHtml(o.work_type || 'Наряд') + ' — ' + escapeHtml(o.brigades && o.brigades.name ? o.brigades.name : '') + '</td>' +
+                '<td style="color:' + (isOverdue ? 'var(--danger)' : 'var(--text-secondary)') + ';">' + formatDate(payDate) + (isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : '') + '</td>' +
+                '<td class="text-danger">-' + (o.total_amount || 0).toLocaleString() + ' ₸</td></tr>';
+        });
+
+        weekAdvances.forEach(function(a) {
+            weekNumL++; weekTotalL += (a.amount || 0);
+            var payDate = a.payment_date || (a.created_at ? a.created_at.split('T')[0] : '');
+            var isOverdue = payDate && new Date(payDate) < new Date();
+            weekRowsLeft += '<tr style="cursor:pointer;' + (isOverdue ? 'background:#FEF2F2;' : '') + '" onclick="window.openFinanceCard(\'advance\',\'' + a.id + '\')">' +
+                '<td>' + weekNumL + '</td><td><span class="tag tag-blue">💳 Аванс</span></td><td>Аванс — ' + escapeHtml(a.brigades && a.brigades.name ? a.brigades.name : '') + '</td>' +
+                '<td style="color:' + (isOverdue ? 'var(--danger)' : 'var(--text-secondary)') + ';">' + formatDate(payDate) + (isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : '') + '</td>' +
+                '<td class="text-danger">-' + (a.amount || 0).toLocaleString() + ' ₸</td></tr>';
+        });
+
+        if (!weekRowsLeft) weekRowsLeft = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Нет данных</td></tr>';
+
+        var weekRowsRight = '', weekNumR = 0, weekTotalR = 0;
+
+        weekIncomes.forEach(function(i) {
+            weekNumR++; weekTotalR += (i.amount || 0);
+            var isOverdue = i.date && new Date(i.date) < new Date() && i.status === 'pending';
+            weekRowsRight += '<tr style="cursor:pointer;' + (isOverdue ? 'background:#FEF2F2;' : '') + '" onclick="window.openFinanceCard(\'income\',\'' + i.id + '\')">' +
+                '<td>' + weekNumR + '</td><td>' + escapeHtml(i.income_type || i.description || 'Поступление') + '</td>' +
+                '<td>' + escapeHtml(i.projects && i.projects.customer_company_name ? i.projects.customer_company_name : (i.projects && i.projects.name ? i.projects.name : '—')) + '</td>' +
+                '<td style="color:' + (isOverdue ? 'var(--danger)' : 'var(--text-secondary)') + ';">' + formatDate(i.date) + (isOverdue ? ' <span class="tag tag-red">Просрочен</span>' : '') + '</td>' +
+                '<td class="text-success">+' + (i.amount || 0).toLocaleString() + ' ₸</td></tr>';
+        });
+
+        if (!weekRowsRight) weekRowsRight = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Нет данных</td></tr>';
+
+        // Утверждённые
+        var approvedOrders = workOrders.filter(function(o) { return o.status === 'approved' && o.payment_status !== 'paid'; });
+        var approvedExpenses = expenses.filter(function(e) { return e.payment_status === 'approved'; });
+        var approvedAdvances = advances.filter(function(a) { return a.status === 'approved'; });
+        var allApproved = [];
+        approvedOrders.forEach(function(o) { allApproved.push({ cardType: 'order', id: o.id, displayName: o.work_type || 'Наряд', displayAmount: o.total_amount, brigadeName: o.brigades && o.brigades.name ? o.brigades.name : '', projectName: o.projects && o.projects.name ? o.projects.name : '—', approvedAt: o.approved_at }); });
+        approvedExpenses.forEach(function(e) { allApproved.push({ cardType: 'expense', id: e.id, displayName: e.name, displayAmount: e.amount, brigadeName: '', projectName: e.projects && e.projects.name ? e.projects.name : '—', approvedAt: e.approved_at }); });
+        approvedAdvances.forEach(function(a) { allApproved.push({ cardType: 'advance', id: a.id, displayName: 'Аванс', displayAmount: a.amount, brigadeName: a.brigades && a.brigades.name ? a.brigades.name : '', projectName: a.projects && a.projects.name ? a.projects.name : '—', approvedAt: a.approved_at }); });
+
+        var approvedHtml = '';
+        if (allApproved.length) {
+            approvedHtml = '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="window.toggleBlock(\'approved-content\')"><h2 style="margin:0;">✅ Утверждённые (ожидают оплаты)</h2><span id="approved-arrow">▾</span></div>' +
+                '<div id="approved-content" style="margin-top:12px;"><div class="table-wrap"><table style="font-size:11px;"><thead><tr><th>№</th><th>Тип</th><th>Наименование</th><th>Сумма</th><th>Объект</th><th>Утверждён</th></tr></thead><tbody>';
+            allApproved.forEach(function(item, idx) {
+                var tagClass = item.cardType === 'expense' ? 'tag-red' : item.cardType === 'order' ? 'tag-yellow' : 'tag-blue';
+                var typeLabel = item.cardType === 'expense' ? '📤 Расход' : item.cardType === 'order' ? '👷 Наряд' : '💳 Аванс';
+                approvedHtml += '<tr style="cursor:pointer;" onclick="window.openFinanceCard(\'' + item.cardType + '\',\'' + item.id + '\')">' +
+                    '<td>' + (idx + 1) + '</td><td><span class="tag ' + tagClass + '">' + typeLabel + '</span></td>' +
+                    '<td>' + escapeHtml(item.displayName) + (item.brigadeName ? ' — ' + escapeHtml(item.brigadeName) : '') + '</td>' +
+                    '<td class="text-danger">-' + (item.displayAmount || 0).toLocaleString() + ' ₸</td>' +
+                    '<td>' + escapeHtml(item.projectName) + '</td><td>' + formatDate(item.approvedAt) + '</td></tr>';
+            });
+            approvedHtml += '</tbody></table></div></div></div>';
+        }
+
+        // Оплаченные
+        var paidOrders = workOrders.filter(function(o) { return o.payment_status === 'paid'; });
+        var paidExpenses = expenses.filter(function(e) { return e.payment_status === 'paid'; });
+        var paidAdvances = advances.filter(function(a) { return a.status === 'paid'; });
+        var paidIncomes = fIncomes.filter(function(i) { return i.status === 'paid'; });
+        var allPaid = [];
+        paidOrders.forEach(function(o) { allPaid.push({ cardType: 'order', id: o.id, displayName: o.work_type || 'Наряд', displayAmount: o.total_amount, brigadeName: o.brigades && o.brigades.name ? o.brigades.name : '', projectName: o.projects && o.projects.name ? o.projects.name : '—', paidDate: o.payment_date }); });
+        paidExpenses.forEach(function(e) { allPaid.push({ cardType: 'expense', id: e.id, displayName: e.name, displayAmount: e.amount, brigadeName: '', projectName: e.projects && e.projects.name ? e.projects.name : '—', paidDate: e.planned_payment_date }); });
+        paidAdvances.forEach(function(a) { allPaid.push({ cardType: 'advance', id: a.id, displayName: 'Аванс', displayAmount: a.amount, brigadeName: a.brigades && a.brigades.name ? a.brigades.name : '', projectName: a.projects && a.projects.name ? a.projects.name : '—', paidDate: a.payment_date }); });
+        paidIncomes.forEach(function(i) { allPaid.push({ cardType: 'income', id: i.id, displayName: i.income_type || 'Поступление', displayAmount: i.amount, brigadeName: '', projectName: i.projects && i.projects.name ? i.projects.name : '—', paidDate: i.date }); });
+
+        var paidHtml = '';
+        if (allPaid.length) {
+            paidHtml = '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="window.toggleBlock(\'paid-content\')"><h2 style="margin:0;">💰 Оплаченные</h2><span id="paid-arrow">▾</span></div>' +
+                '<div id="paid-content" style="margin-top:12px;"><div class="table-wrap"><table style="font-size:11px;"><thead><tr><th>№</th><th>Тип</th><th>Наименование</th><th>Сумма</th><th>Объект</th><th>Дата оплаты</th></tr></thead><tbody>';
+            allPaid.forEach(function(item, idx) {
+                var isIncome = item.cardType === 'income';
+                paidHtml += '<tr style="cursor:pointer;" onclick="window.openFinanceCard(\'' + item.cardType + '\',\'' + item.id + '\')">' +
+                    '<td>' + (idx + 1) + '</td><td><span class="tag tag-green">' + (item.cardType === 'expense' ? '📤 Расход' : item.cardType === 'order' ? '👷 Наряд' : item.cardType === 'advance' ? '💳 Аванс' : '📥 Поступление') + '</span></td>' +
+                    '<td>' + escapeHtml(item.displayName) + (item.brigadeName ? ' — ' + escapeHtml(item.brigadeName) : '') + '</td>' +
+                    '<td style="color:' + (isIncome ? 'var(--success)' : 'var(--danger)') + ';">' + (isIncome ? '+' : '-') + (item.displayAmount || 0).toLocaleString() + ' ₸</td>' +
+                    '<td>' + escapeHtml(item.projectName) + '</td><td>' + formatDate(item.paidDate) + '</td></tr>';
+            });
+            paidHtml += '</tbody></table></div></div></div>';
+        }
+
+        var projectOpts = '<option value="all">Все объекты</option>' + allProjects.map(function(p) { return '<option value="' + p.id + '"' + (financeFilter.project === p.id ? ' selected' : '') + '>' + p.name + '</option>'; }).join('');
+
+        container.innerHTML = '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">' +
+            '<select id="finance-filter-project" class="form-input" style="flex:1;min-width:140px;padding:8px;" onchange="window.setFinanceFilter(\'project\', this.value)">' + projectOpts + '</select>' +
+            '<select id="finance-filter-period" class="form-input" style="flex:1;min-width:120px;padding:8px;" onchange="window.setFinanceFilter(\'period\', this.value)"><option value="month" selected>' + monthLabel + '</option><option value="ytd">С начала года</option><option value="custom">Свой период</option></select>' +
+            '<div id="custom-period" class="' + (financeFilter.period === 'custom' ? '' : 'hidden') + '" style="display:flex;gap:4px;align-items:center;"><input type="date" id="date-from" class="form-input" style="width:130px;padding:6px;font-size:11px;" value="' + (financeFilter.dateFrom || dateFrom) + '" onchange="window.setFinanceFilter(\'dateFrom\', this.value)"><span>—</span><input type="date" id="date-to" class="form-input" style="width:130px;padding:6px;font-size:11px;" value="' + (financeFilter.dateTo || dateTo) + '" onchange="window.setFinanceFilter(\'dateTo\', this.value)"></div></div>' +
+
+            '<div class="kpi-grid"><div class="kpi-card" style="border-left:4px solid var(--success);"><div style="font-size:20px;">💰</div><div class="kpi-value text-success">' + totalIncome.toLocaleString() + ' ₸</div><div class="kpi-label">Приход (зашло)</div></div>' +
+            '<div class="kpi-card" style="border-left:4px solid var(--info);"><div style="font-size:20px;">📥</div><div class="kpi-value" style="color:var(--info);">' + totalPlanIncome.toLocaleString() + ' ₸</div><div class="kpi-label">План поступлений</div></div>' +
+            '<div class="kpi-card" style="border-left:4px solid var(--danger);"><div style="font-size:20px;">💳</div><div class="kpi-value text-danger">' + totalExpenseAndPayouts.toLocaleString() + ' ₸</div><div class="kpi-label">Расходы + Выплаты</div></div>' +
+            '<div class="kpi-card" style="border-left:4px solid var(--gold);"><div style="font-size:20px;">📊</div><div class="kpi-value" style="color:' + (totalIncome - totalExpenseAndPayouts >= 0 ? 'var(--success)' : 'var(--danger)') + ';">' + (totalIncome - totalExpenseAndPayouts).toLocaleString() + ' ₸</div><div class="kpi-label">Чистый поток</div></div></div>' +
+
+            '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="window.toggleBlock(\'week-plan-content\')"><h2 style="margin:0;">📅 План на неделю (' + formatDate(todayStr) + ' — ' + formatDate(weekEndStr) + ')</h2><span id="week-plan-arrow">▾</span></div>' +
+            '<div id="week-plan-content" style="margin-top:12px;"><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"><div><h3 style="font-size:13px;margin-bottom:8px;">📤 Выплаты и расходы</h3><div class="table-wrap"><table style="font-size:11px;"><thead><tr><th>№</th><th>Тип</th><th>Наименование</th><th>Оплатить до</th><th>Сумма</th></tr></thead><tbody>' + weekRowsLeft + '<tr style="font-weight:700;background:#F8FAFC;"><td colspan="3">ИТОГО: ' + weekNumL + ' операций</td><td></td><td class="text-danger">-' + weekTotalL.toLocaleString() + ' ₸</td></tr></tbody></table></div></div>' +
+            '<div><h3 style="font-size:13px;margin-bottom:8px;">📥 Поступления</h3><div class="table-wrap"><table style="font-size:11px;"><thead><tr><th>№</th><th>Вид</th><th>От кого</th><th>Ожидаем</th><th>Сумма</th></tr></thead><tbody>' + weekRowsRight + '<tr style="font-weight:700;background:#F8FAFC;"><td colspan="3">ИТОГО: ' + weekNumR + ' поступлений</td><td></td><td class="text-success">+' + weekTotalR.toLocaleString() + ' ₸</td></tr></tbody></table></div></div></div></div></div>' +
+
+            approvedHtml + paidHtml +
+
+            '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;" onclick="window.toggleBlock(\'chart-content\')"><h2 style="margin:0;">📊 Приходы и расходы</h2><span id="chart-arrow">▾</span></div><div id="chart-content"><canvas id="finance-chart" height="60" style="margin-top:12px;"></canvas></div></div>';
+
+        setTimeout(function() {
+            var ctx = document.getElementById('finance-chart');
+            if (ctx) new Chart(ctx, {
+                type: 'bar',
+                data: { labels: ['Приход', 'План поступлений', 'Расходы + Выплаты', 'Чистый поток'], datasets: [{ label: 'Сумма (₸)', data: [totalIncome, totalPlanIncome, totalExpenseAndPayouts, totalIncome - totalExpenseAndPayouts], backgroundColor: ['#10B981', '#3B82F6', '#EF4444', '#F59E0B'], borderRadius: 8 }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: function(v) { return (v/1000000).toFixed(1) + 'M ₸'; } } } } }
+            });
+        }, 300);
     }
+
+    // ===== МОДАЛЬНОЕ ОКНО =====
+    window.openFinanceCard = async function(type, id) {
+        var overlay = document.getElementById('finance-modal-overlay');
+        var card = document.getElementById('finance-modal-card');
+        var html = '';
+
+        if (type === 'expense') {
+            var expenseResult = await supabase.from('expenses').select('*, projects(name)').eq('id', id).single();
+            var e = expenseResult.data;
+            if (!e) return;
+            html = '<h3>📤 Расход: ' + escapeHtml(e.name) + '</h3>' +
+                '<div class="modal-field"><div class="modal-field-label">🏗️ Объект</div><div class="modal-field-value">' + escapeHtml(e.projects && e.projects.name ? e.projects.name : '—') + '</div></div>' +
+                '<div class="modal-field"><div class="modal-field-label">💰 Сумма</div><div class="modal-field-value" style="color:var(--danger);font-size:18px;font-weight:700;">' + formatMoney(e.amount) + '</div></div>' +
+                '<div class="modal-field"><div class="modal-field-label">🏷️ Категория</div><div class="modal-field-value">' + escapeHtml(e.category || '—') + '</div></div>' +
+                '<div class="modal-field"><div class="modal-field-label">📅 Дата</div><div class="modal-field-value">' + formatDate(e.date) + '</div></div>' +
+                '<div class="modal-field"><div class="modal-field-label">💳 Статус</div><div class="modal-field-value"><span class="tag ' + (e.payment_status === 'paid' ? 'tag-green' : e.payment_status === 'approved' ? 'tag-blue' : 'tag-yellow') + '">' + (e.payment_status === 'paid' ? '💳 Оплачен' : e.payment_status === 'approved' ? '✅ Утверждён' : '⏳ Ожидает') + '</span></div></div>' +
+                '<div class="modal-actions">' + (e.payment_status === 'pending' ? '<button class="btn btn-success btn-sm-compact" onclick="window.approveRecord(\'expense\',\'' + id + '\')">✅ Утвердить</button>' : '') + ' ' + (e.payment_status === 'approved' && currentUser && currentUser.role === 'accountant' ? '<button class="btn btn-primary btn-sm-compact" onclick="window.markAsPaid(\'expense\',\'' + id + '\')">💰 Оплатить</button>' : '') + ' <button class="btn btn-outline btn-sm-compact" onclick="window.closeFinanceModal()">✕ Закрыть</button></div>';
+        } else if (type === 'order') {
+            var orderResult = await supabase.from('work_orders').select('*, projects(name), brigades(name)').eq('id', id).single();
+            var o = orderResult.data;
+            if (!o) return;
+            var advResult = await supabase.from('advances').select('*').eq('brigade_id', o.brigade_id);
+            var sumAdvance = (advResult.data || []).filter(function(a) { return a.status === 'approved' || a.status === 'paid'; }).reduce(function(s, a) { return s + (a.amount || 0); }, 0);
+            var ordResult = await supabase.from('work_orders').select('*').eq('brigade_id', o.brigade_id);
+            var sumOrders = (ordResult.data || []).filter(function(x) { return x.status === 'approved' || x.payment_status === 'paid'; }).reduce(function(s, x) { return s + (x.total_amount || 0); }, 0);
+            var guarantee = o.guarantee_amount || 0;
+            html = '<h3>👷 Наряд: ' + escapeHtml(o.work_type || '—') + '</h3>' +
+                '<div class="modal-field"><div class="modal-field-label">👷 Бригада</div><div class="modal-field-value">' + escapeHtml(o.brigades && o.brigades.name ? o.brigades.name : '—') + '</div></div>' +
+                '<div class="modal-field"><div class="modal-field-label">🏗️ Объект</div><div class="modal-field-value">' + escapeHtml(o.projects && o.projects.name ? o.projects.name : '—') + '</div></div>' +
+                '<table class="calc-table-compact"><tr><td>💰 Сумма закрываемых работ</td><td>' + formatMoney(o.original_amount || o.total_amount) + '</td></tr><tr><td>💸 Выплачено авансов</td><td>' + formatMoney(sumAdvance) + '</td></tr><tr><td>💸 Выплачено по нарядам</td><td>' + formatMoney(sumOrders) + '</td></tr><tr><td>🔒 Удержание 10%</td><td class="negative">-' + formatMoney(guarantee) + '</td></tr><tr class="total-row"><td>💳 СУММА К ОПЛАТЕ</td><td style="font-size:18px;color:var(--success);">' + formatMoney(o.total_amount) + '</td></tr></table>' +
+                '<div class="modal-actions">' + (o.status === 'pending' || o.payment_status === 'pending' ? '<button class="btn btn-success btn-sm-compact" onclick="window.approveRecord(\'order\',\'' + id + '\')">✅ Утвердить</button>' : '') + ' ' + (o.payment_status === 'approved' && currentUser && currentUser.role === 'accountant' ? '<button class="btn btn-primary btn-sm-compact" onclick="window.markAsPaid(\'order\',\'' + id + '\')">💰 Оплатить</button>' : '') + ' <button class="btn btn-outline btn-sm-compact" onclick="window.closeFinanceModal()">✕ Закрыть</button></div>';
+        } else if (type === 'advance') {
+            var advanceResult = await supabase.from('advances').select('*, projects(name), brigades(name)').eq('id', id).single();
+            var a = advanceResult.data;
+            if (!a) return;
+            html = '<h3>💳 Аванс</h3>' +
+                '<div class="modal-field"><div class="modal-field-label">👷 Бригада</div><div class="modal-field-value">' + escapeHtml(a.brigades && a.brigades.name ? a.brigades.name : '—') + '</div></div>' +
+                '<div class="modal-field"><div class="modal-field-label">🏗️ Объект</div><div class="modal-field-value">' + escapeHtml(a.projects && a.projects.name ? a.projects.name : '—') + '</div></div>' +
+                '<div class="modal-field"><div class="modal-field-label">💰 Сумма</div><div class="modal-field-value" style="color:var(--danger);font-size:18px;font-weight:700;">' + formatMoney(a.amount) + '</div></div>' +
+                '<div class="modal-field"><div class="modal-field-label">💳 Статус</div><div class="modal-field-value"><span class="tag ' + (a.status === 'paid' ? 'tag-green' : a.status === 'approved' ? 'tag-blue' : 'tag-yellow') + '">' + (a.status === 'paid' ? '💳 Выплачен' : a.status === 'approved' ? '✅ Утверждён' : '⏳ Ожидает') + '</span></div></div>' +
+                '<div class="modal-actions">' + (a.status === 'pending' ? '<button class="btn btn-success btn-sm-compact" onclick="window.approveRecord(\'advance\',\'' + id + '\')">✅ Утвердить</button>' : '') + ' ' + (a.status === 'approved' && currentUser && currentUser.role === 'accountant' ? '<button class="btn btn-primary btn-sm-compact" onclick="window.markAsPaid(\'advance\',\'' + id + '\')">💰 Выплатить</button>' : '') + ' <button class="btn btn-outline btn-sm-compact" onclick="window.closeFinanceModal()">✕ Закрыть</button></div>';
+        } else if (type === 'income') {
+            var incomeResult = await supabase.from('incomes').select('*, projects(name)').eq('id', id).single();
+            var i = incomeResult.data;
+            if (!i) return;
+            html = '<h3>📥 Поступление</h3>' +
+                '<div class="modal-field"><div class="modal-field-label">🏗️ Объект</div><div class="modal-field-value">' + escapeHtml(i.projects && i.projects.name ? i.projects.name : '—') + '</div></div>' +
+                '<div class="modal-field"><div class="modal-field-label">💰 Сумма</div><div class="modal-field-value" style="color:var(--success);font-size:18px;font-weight:700;">' + formatMoney(i.amount) + '</div></div>' +
+                '<div class="modal-field"><div class="modal-field-label">📅 Дата</div><div class="modal-field-value">' + formatDate(i.date) + '</div></div>' +
+                '<div class="modal-field"><div class="modal-field-label">💳 Статус</div><div class="modal-field-value"><span class="tag ' + (i.status === 'paid' ? 'tag-green' : 'tag-yellow') + '">' + (i.status === 'paid' ? '💳 Оплачен' : '⏳ Ожидает') + '</span></div></div>' +
+                '<div class="modal-actions">' + (i.status === 'pending' && currentUser && currentUser.role === 'accountant' ? '<button class="btn btn-primary btn-sm-compact" onclick="window.markAsPaid(\'income\',\'' + id + '\')">💰 Оплатить</button>' : '') + ' <button class="btn btn-outline btn-sm-compact" onclick="window.closeFinanceModal()">✕ Закрыть</button></div>';
+        }
+
+        card.innerHTML = html;
+        overlay.classList.remove('hidden');
+    };
 
     window.closeFinanceModal = function() {
         var modal = document.getElementById('finance-modal-overlay');
         if (modal) modal.classList.add('hidden');
     };
 
+    window.approveRecord = async function(type, id) {
+        if (!confirm('✅ Утвердить? Запись уйдёт в "Утверждённые" и будет ждать оплаты бухгалтером.')) return;
+        var updateData = { approved_by: currentUser ? currentUser.id : null, approved_at: new Date().toISOString() };
+        if (type === 'expense') { updateData.payment_status = 'approved'; await supabase.from('expenses').update(updateData).eq('id', id); }
+        else if (type === 'order') { await supabase.from('work_orders').update({ status: 'approved', payment_status: 'approved', approved_by: updateData.approved_by, approved_at: updateData.approved_at }).eq('id', id); }
+        else if (type === 'advance') { updateData.status = 'approved'; await supabase.from('advances').update(updateData).eq('id', id); }
+        window.closeFinanceModal();
+        window.loadPage('finances');
+    };
+
+    window.markAsPaid = async function(type, id) {
+        if (!confirm('💰 Отметить как оплаченный?')) return;
+        var updateData = { paid_by_name: currentUser ? currentUser.full_name : '', payment_date: new Date().toISOString().split('T')[0] };
+        if (type === 'expense') { updateData.payment_status = 'paid'; await supabase.from('expenses').update(updateData).eq('id', id); }
+        else if (type === 'order') { updateData.payment_status = 'paid'; await supabase.from('work_orders').update(updateData).eq('id', id); }
+        else if (type === 'advance') { updateData.status = 'paid'; await supabase.from('advances').update(updateData).eq('id', id); }
+        else if (type === 'income') { updateData.status = 'paid'; await supabase.from('incomes').update(updateData).eq('id', id); }
+        window.closeFinanceModal();
+        window.loadPage('finances');
+    };
+
+    window.setFinanceFilter = function(type, value) {
+        financeFilter[type] = value;
+        if (type === 'period') {
+            var customEl = document.getElementById('custom-period');
+            if (customEl) {
+                if (value === 'custom') { customEl.classList.remove('hidden'); customEl.style.display = 'flex'; }
+                else { customEl.classList.add('hidden'); customEl.style.display = 'none'; }
+            }
+        }
+        window.loadPage('finances');
+    };
+
     window.toggleBlock = function(id) {
         var el = document.getElementById(id);
         var arrow = document.getElementById(id.replace('content', 'arrow'));
-        if (el && arrow) {
-            el.classList.toggle('hidden');
-            arrow.textContent = el.classList.contains('hidden') ? '▸' : '▾';
-        }
+        if (el && arrow) { el.classList.toggle('hidden'); arrow.textContent = el.classList.contains('hidden') ? '▸' : '▾'; }
+    };
+
+    window.generateFinanceReport = function(type) {
+        alert('📊 Функция отчётов будет добавлена.\nДанные уже загружены в таблицы выше.');
     };
 
     checkAuth();
